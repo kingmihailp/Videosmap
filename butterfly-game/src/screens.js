@@ -53,7 +53,7 @@ const Screens = (() => {
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, '8 биомов · 48 реальных видов · найди их места обитания', SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
+      T.draw(ctx, `8 биомов · ${SPECIES.length} реальных видов · найди их места обитания`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -130,9 +130,9 @@ const Screens = (() => {
         T.draw(ctx, b.name, 14, iy, { size: 10, color: biomeCol[b.id] });
         T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°${b.lat >= 0 ? 'N' : 'S'} ${Math.abs(b.lon).toFixed(1)}°${b.lon >= 0 ? 'E' : 'W'}`, 14, iy + 13, { size: 8, color: c.dim });
         T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 });
-        b.species.forEach((sp, k) => { const has = Save.has(sp.id); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has, '#587868'), 276 + (k % 3) * 40, iy + Math.floor(k / 3) * 21, 40, 20); });
-        T.draw(ctx, `поймано ${Save.biomeCount(b)} из ${b.species.length}`, 276, iy + 44, { size: 8, color: c.text });
-        T.draw(ctx, `${b.alt} · ${b.climate}`, 276, iy + 55, { size: 8, color: c.dim });
+        b.species.forEach((sp, k) => { const has = Save.has(sp.id); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has, '#587868'), 276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); });
+        T.draw(ctx, `поймано ${Save.biomeCount(b)} из ${b.species.length}`, 276, iy + 45, { size: 8, color: c.text });
+        T.draw(ctx, `${b.alt} · ${b.climate}`, 276, iy + 56, { size: 8, color: c.dim });
       }
       this.btns.forEach(bt => UIK.btn(ctx, bt, UIK.hit(bt, m.x, m.y))); UIK.btn(ctx, this.go, !this.go.disabled && UIK.hit(this.go, m.x, m.y));
     },
@@ -149,7 +149,9 @@ const Screens = (() => {
     tab: 0, sel: 0, btns: [], slots: [], tabs: [],
     layout() {
       this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 58, y: 22, w: 56, h: 15 }));
-      this.slots = []; const b = BIOMES[this.tab]; b.species.forEach((sp, k) => this.slots.push({ k, sp, x: 10 + (k % 2) * 103, y: 46 + Math.floor(k / 2) * 72, w: 101, h: 68 }));
+      this.slots = []; const b = BIOMES[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
+      b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
+      this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
     },
     draw(ctx, t, m) {
@@ -193,10 +195,13 @@ const Screens = (() => {
         left = Math.floor((bottom - y) / lh);
         take(`Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
       }
+      this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
     },
+    turn(d) { const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
       const tb = this.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.tab = tb.i; this.sel = 0; Snd.sfx.page(); return 'tab'; }
       const s = this.slots.find(s => UIK.hit(s, x, y)); if (s) { this.sel = s.k; Snd.sfx.click(); return 'slot'; }
       return null;

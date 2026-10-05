@@ -1,6 +1,6 @@
 // =====================================================================
 // Flora0world: Butterflies — data
-// 8 biomes x 6 real butterfly species (habitat / range / wingspan checked
+// 8 biomes x 6 hand-researched species here (+25 per biome in species_more.js) (habitat / range / wingspan checked
 // against public sources: Wikipedia, GBIF-based guides, euroButterflies,
 // Butterfly Conservation, butterflyidentification.com, etc.)
 // `approx:true` means the source did not give a clean wingspan figure.
@@ -291,6 +291,9 @@ const BEH = {
 };
 
 const SPECIES_BY_ID = {};
-SPECIES.forEach(s => { SPECIES_BY_ID[s.id] = s; });
 const BIOME_BY_ID = {};
-BIOMES.forEach(b => { BIOME_BY_ID[b.id] = b; b.species = SPECIES.filter(s => s.biome === b.id); });
+function rebuildSpeciesIndex() {
+  SPECIES.forEach(s => { SPECIES_BY_ID[s.id] = s; });
+  BIOMES.forEach(b => { BIOME_BY_ID[b.id] = b; b.species = SPECIES.filter(s => s.biome === b.id); });
+}
+rebuildSpeciesIndex();

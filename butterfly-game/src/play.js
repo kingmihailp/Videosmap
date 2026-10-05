@@ -148,7 +148,8 @@ class Play {
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
-    biome.species.forEach(sp => { const n = sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
+    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'));
+    this.pool.forEach(sp => { const n = sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
@@ -286,15 +287,15 @@ class Play {
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, b.name, 12, 9, { size: 8, color: c.gold }); T.draw(ctx, `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
     // species checklist
-    const n = b.species.length; const px = SW - 6 - n * 42; UIK.panel(ctx, px - 4, 6, n * 42 + 2, 44, { fill: 'rgba(16,32,28,0.82)' });
+    const n = this.pool.length; const px = SW - 6 - n * 32; UIK.panel(ctx, px - 4, 6, n * 32 + 2, 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
-    b.species.forEach((sp, i) => {
-      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * 42;
-      ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, 40, 20);
-      T.draw(ctx, has ? '✓' : '?', x + 20, 30, { size: 8, align: 'c', color: has ? c.green : c.dim });
-      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, 38, 1); }
+    this.pool.forEach((sp, i) => {
+      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * 32;
+      ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, 30, 15);
+      T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim });
+      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, 28, 1); }
     });
-    T.draw(ctx, `Биом: ${Save.biomeCount(b)} из ${n}`, SW - 10, 40, { size: 8, align: 'r', color: c.text });
+    T.draw(ctx, `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, 40, { size: 8, align: 'r', color: c.text });
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
@@ -339,4 +340,10 @@ class Play {
   }
   dispose() { Snd.stopAmbient(); this.world.dispose(); }
 }
+// each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
+Play.pickPool = (biome, rng, size = 9) => {
+  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (Save.has(sp.id) ? 1 : 1.8) })); const out = [];
+  while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
+  return out;
+};
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);

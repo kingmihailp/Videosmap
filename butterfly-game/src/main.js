@@ -91,7 +91,7 @@
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
-        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } return;
+        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
@@ -103,7 +103,7 @@
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
-      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; }
+      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
     }
   });
   ui.addEventListener('mousedown', e => {
@@ -127,7 +127,7 @@
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
   ui.addEventListener('contextmenu', e => e.preventDefault());
-  ui.addEventListener('wheel', e => { if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') { S.journal.tab = (S.journal.tab + (e.deltaY > 0 ? 1 : 7)) % 8; S.journal.sel = 0; Snd.sfx.page(); } });
+  ui.addEventListener('wheel', e => { if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
 
   // ---------------- loop
   let last = performance.now();
