@@ -1,4 +1,5 @@
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
+const collText = () => BIOME_BY_ID.ocean.secret ? `${Save.total()}/${REAL}+???` : `${Save.total()}/${SPECIES.length}`;
 const Screens = (() => {
   const c = UIK.col;
   const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
@@ -18,8 +19,9 @@ const Screens = (() => {
     for (const s of stars) { const a = 0.35 + 0.65 * Math.abs(Math.sin(t * s.b + s.ph)); ctx.fillStyle = `rgba(230,240,255,${a * s.b})`; ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); }
     ctx.fillStyle = '#eee8c0'; ctx.beginPath(); ctx.arc(392, 52, 16, 0, 6.3); ctx.fill(); ctx.fillStyle = '#d8d2a8'; [[-5, -4, 3], [4, 3, 4], [-3, 8, 2], [6, -6, 2]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(392 + x, 52 + y, r, 0, 6.3); ctx.fill(); });
     const mg = ctx.createRadialGradient(392, 52, 10, 392, 52, 80); mg.addColorStop(0, 'rgba(120,150,200,0.35)'); mg.addColorStop(1, 'rgba(120,150,200,0)'); ctx.fillStyle = mg; ctx.fillRect(300, 0, 180, 140);
-    ctx.fillStyle = '#0e2a3a'; ctx.beginPath(); ctx.moveTo(0, 190); for (let x = 0; x <= SW; x += 10) ctx.lineTo(x, 164 + Math.sin(x * 0.03) * 10 + Math.sin(x * 0.09) * 5); ctx.lineTo(SW, SH); ctx.lineTo(0, SH); ctx.fill();
-    ctx.fillStyle = '#0a2230'; pines.forEach((p, i) => pine(ctx, (p.x - t * 3) % (SW + 40) + (p.x - t * 3 < 0 ? SW + 40 : 0), 196, p.h, p.w, '#0a2230'));
+    const sc = t * 3, hillY = wx => 164 + Math.sin(wx * 0.03) * 10 + Math.sin(wx * 0.09) * 5;                 // the hill scrolls with the trees, so the trees stay planted on it
+    ctx.fillStyle = '#0e2a3a'; ctx.beginPath(); ctx.moveTo(0, SH); for (let x = 0; x <= SW + 4; x += 4) ctx.lineTo(x, hillY(x + sc)); ctx.lineTo(SW + 4, SH); ctx.fill();
+    ctx.fillStyle = '#0a2230'; pines.forEach(p => { const sx = ((p.x - sc) % (SW + 40) + (SW + 40)) % (SW + 40) - 20; pine(ctx, Math.round(sx), Math.round(hillY(sx + sc)) + 7, p.h, p.w, '#0a2230'); });
     ctx.fillStyle = '#06161e'; ctx.fillRect(0, 214, SW, SH - 214);
     for (let i = 0; i < 70; i++) { const x = (i * 37) % SW, h = 5 + (i * 13) % 14, sw = Math.sin(t * 1.4 + i) * 2; ctx.fillStyle = i % 3 ? '#0c2a1c' : '#123a26'; ctx.fillRect(x, SH - h - 6 + 0, 1, h); ctx.fillRect(x + Math.round(sw / 2), SH - h - 6 - 3, 1, 3); }
     for (const f of fireflies) { const x = f.x + Math.sin(t * f.sp + f.ph) * f.a, y = f.y + Math.cos(t * f.sp * 0.8 + f.ph) * f.a * 0.5; const b = Math.max(0, Math.sin(t * 1.6 * f.sp + f.ph * 3)) ** 3; if (b > 0.1) { ctx.fillStyle = `rgba(200,255,120,${b})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); ctx.fillStyle = `rgba(160,240,90,${b * 0.2})`; ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, 6, 6); } }
@@ -27,8 +29,9 @@ const Screens = (() => {
   }
   function drawFlyer(ctx, f, t) {
     const x = (f.x + t * f.v) % (SW + 120) - 60, y = f.y + Math.sin(t * 0.9 + f.ph) * f.a; const fl = Math.abs(Math.cos(t * 7 + f.ph)) * 0.8 + 0.2;
+    const vy = Math.cos(t * 0.9 + f.ph) * 0.9 * f.a; const ang = Math.atan2(vy, f.v);       // fly head-first along the path (the picture's head points up)
     const img = Art.specimen(f.sp); const w = 80 * f.s, h = 40 * f.s; ctx.imageSmoothingEnabled = false;
-    ctx.save(); ctx.translate(x, y); ctx.scale(1, 1); ctx.drawImage(img, 0, 0, 80, 40, -w / 2 * fl, -h / 2, w * fl, h); ctx.restore();
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(Math.PI / 2 + ang); ctx.drawImage(img, 0, 0, 80, 40, -w / 2 * fl, -h / 2, w * fl, h); ctx.restore();
   }
 
   // ------------------------------------------------------------------ TITLE
@@ -38,7 +41,7 @@ const Screens = (() => {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
         { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}/${REAL}+???`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'journal', label: `Коллекция  ${collText()}`, x, y: 168, w, h: 16, size: 8 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
@@ -53,7 +56,7 @@ const Screens = (() => {
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
+      T.draw(ctx, BIOME_BY_ID.ocean.secret ? `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…` : `9 биомов · ${SPECIES.length} видов · тайна океана раскрыта`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -93,7 +96,7 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${REAL}+???`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
@@ -159,7 +162,7 @@ const Screens = (() => {
     draw(ctx, t, m) {
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${REAL}+???`, 200, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText(), 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);

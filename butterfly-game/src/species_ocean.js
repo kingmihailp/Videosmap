@@ -55,3 +55,12 @@
   rebuildSpeciesIndex();
 })();
 const REAL = SPECIES.filter(s => !s.mystery).length;
+
+// when every ocean butterfly has been caught, the question marks go away and the place becomes an ordinary biome
+function revealOcean() {
+  const b = BIOME_BY_ID.ocean; if (!b) return false;
+  const done = b.species.length > 0 && b.species.every(sp => Save.has(sp.id));
+  if (done && b.secret) { b.secret = false; b.name = 'Ночной океан'; b.place = 'Точка Немо · Тихий океан'; b.climate = 'ночь · ливень'; b.desc = 'Остров с маяком посреди океана: маяк, стоящие двери и светящиеся грибы. Здесь живут бабочки по мотивам героев Doors — теперь вы знаете их всех.'; if (typeof Screens !== 'undefined') Screens.short.ocean = 'Океан'; return true; }
+  if (done) { if (typeof Screens !== 'undefined') Screens.short.ocean = 'Океан'; }
+  return false;
+}

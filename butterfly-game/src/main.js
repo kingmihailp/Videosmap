@@ -1,10 +1,10 @@
 // ---------------------------------------------------------------- main: renderer, pixel post-process, input, state machine
 (() => {
   const gl = document.getElementById('gl'), ui = document.getElementById('ui'), stage = document.getElementById('stage');
-  gl.width = SW; gl.height = SH; ui.width = SW; ui.height = SH;
+  gl.width = SW; gl.height = SH; let uiK = 2; ui.width = SW * uiK; ui.height = SH * uiK;
   const ctx = ui.getContext('2d');
   const params = new URLSearchParams(location.hash.replace('#', '?'));
-  Save.load();
+  Save.load(); revealOcean();
 
   // ---------------- renderer + post (palette quantisation + ordered dither + depth outlines)
   const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('debug') });
@@ -40,7 +40,7 @@
   const mouse = { x: -100, y: -100 };
   const S = Screens;
   function toNative(e) { const r = ui.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * SW; mouse.y = (e.clientY - r.top) / r.height * SH; }
-  function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; }
+  function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
   addEventListener('resize', fit); fit();
   function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
   function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
@@ -134,6 +134,7 @@
   function frame(ts) {
     requestAnimationFrame(frame);
     const dt = clamp((ts - last) / 1000, 0, 0.05); last = ts; App.time += dt; const t = App.time;
+    ctx.setTransform(uiK, 0, 0, uiK, 0, 0);
     if (!App.ready) { ctx.fillStyle = '#04080a'; ctx.fillRect(0, 0, SW, SH); return; }
     ctx.imageSmoothingEnabled = false;
     // fades

@@ -694,6 +694,15 @@ rebuildSpeciesIndex();
 })();
 const REAL = SPECIES.filter(s => !s.mystery).length;
 
+// when every ocean butterfly has been caught, the question marks go away and the place becomes an ordinary biome
+function revealOcean() {
+  const b = BIOME_BY_ID.ocean; if (!b) return false;
+  const done = b.species.length > 0 && b.species.every(sp => Save.has(sp.id));
+  if (done && b.secret) { b.secret = false; b.name = 'Ночной океан'; b.place = 'Точка Немо · Тихий океан'; b.climate = 'ночь · ливень'; b.desc = 'Остров с маяком посреди океана: маяк, стоящие двери и светящиеся грибы. Здесь живут бабочки по мотивам героев Doors — теперь вы знаете их всех.'; if (typeof Screens !== 'undefined') Screens.short.ocean = 'Океан'; return true; }
+  if (done) { if (typeof Screens !== 'undefined') Screens.short.ocean = 'Океан'; }
+  return false;
+}
+
 // ===== util.js =====
 // ---------------------------------------------------------------- utilities
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -802,14 +811,22 @@ function fmtDate(ts) {
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
+// ===== font_ttf.js =====
+const FONT_TTF = "data:font/woff;base64,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";
+
 // ===== font.js =====
 // ---------------------------------------------------------------- pixel text engine (atlas generated from DejaVu Sans Bold)
 const T = (() => {
   const img = new Image();
   let ready = false;
   const waiting = [];
-  img.onload = () => { ready = true; waiting.splice(0).forEach(f => f()); };
+  // The pixel atlas is kept for small offscreen textures; the main UI canvas uses the real (vector) font so text is smooth at any scale.
+  let imgOk = false, fontDone = false, vecOk = false;
+  const check = () => { if (imgOk && fontDone && !ready) { ready = true; waiting.splice(0).forEach(f => f()); } };
+  img.onload = () => { imgOk = true; check(); };
   img.src = FONT_PNG;
+  try { const ff = new FontFace('F0W', 'url(' + FONT_TTF + ')'); ff.load().then(f => { document.fonts.add(f); vecOk = true; fontDone = true; check(); }).catch(() => { fontDone = true; check(); }); } catch (e) { fontDone = true; }
+  const mcv = document.createElement('canvas').getContext('2d');
   const tinted = {};
   function atlas(color) {
     let c = tinted[color];
@@ -823,6 +840,7 @@ const T = (() => {
   }
   function meta(size) { return FONT_META[size] || FONT_META[8]; }
   function width(str, size = 8) {
+    if (vecOk) { mcv.font = `bold ${size}px F0W`; return mcv.measureText(str).width; }
     const m = meta(size).g; let w = 0;
     for (const ch of str) { const g = m[ch] || m['?']; w += g[4]; }
     return w;
@@ -837,8 +855,18 @@ const T = (() => {
     }
   }
   // opt: size, color, align ('l','c','r'), shadow, outline
+  function drawVec(ctx, str, x, y, size, opt) {
+    const w = width(str, size); const half = v => Math.round(v * 2) / 2;
+    if (opt.align === 'c') x -= w / 2; else if (opt.align === 'r') x -= w;
+    x = half(x); const by = half(y) + meta(size).asc;
+    ctx.save(); ctx.font = `bold ${size}px F0W`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+    if (opt.outline) { ctx.strokeStyle = opt.outline; ctx.lineWidth = 2.2; ctx.strokeText(str, x, by); }
+    if (opt.shadow) { ctx.fillStyle = opt.shadow; ctx.fillText(str, x + 1, by + 1); }
+    ctx.fillStyle = opt.color || '#fff'; ctx.fillText(str, x, by); ctx.restore(); return w;
+  }
   function draw(ctx, str, x, y, opt = {}) {
     const size = opt.size || 8; const color = opt.color || '#fff';
+    if (vecOk && ctx.canvas && ctx.canvas.id === 'ui') return drawVec(ctx, str, x, y, size, opt);
     x = Math.round(x); y = Math.round(y);
     const w = width(str, size);
     if (opt.align === 'c') x -= Math.round(w / 2); else if (opt.align === 'r') x -= w;
@@ -1130,7 +1158,7 @@ const Snd = (() => {
   const sfx = {
     click() { if (!ac) return; const t = now(); osc('square', 880, t, 0.06, 0.07); osc('square', 1320, t + 0.045, 0.07, 0.06); },
     hover() { if (!ac) return; osc('square', 1320, now(), 0.03, 0.025); },
-    step(kind) { if (!ac) return; const t = now(); const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
+    step(kind) { if (!ac) return; const t = now(); if (kind === 'water') { noiseBurst(t, 0.2, 2400, 800, 0.16, 'bandpass', 0.9); noiseBurst(t + 0.05, 0.12, 900, 500, 0.08, 'lowpass', 0.7); return; } const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
     swing() { if (!ac) return; const t = now(); noiseBurst(t, 0.28, 500, 2200, 0.32, 'bandpass', 1.2); },
     miss() { if (!ac) return; const t = now(); osc('triangle', 220, t, 0.18, 0.08, null, 140); },
     flutter() { if (!ac) return; const t = now(); noiseBurst(t, 0.09, 3000, 5200, 0.05, 'bandpass', 3); },
@@ -2090,7 +2118,7 @@ const Ocean = (() => {
     seedStr = seedStr || World.randomSeed();
     const seed = strSeed('ocean:' + seedStr), rng = new Rng(seed), noise = new Noise2(seed ^ 0x77ab), ISL = 44;
     const scene = new THREE.Scene(); const fogCol = new THREE.Color('#04080f'); scene.background = fogCol.clone(); const fog = new THREE.FogExp2(fogCol, 0.03); scene.fog = fog;
-    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: R_PLAY, spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0, fog: 1 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
+    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: 52, canWalk: (x, z) => heightAt(x, z) > -0.3, edgeMsg: 'Дальше только открытое море.', deepMsg: 'Дальше слишком глубоко — вода уже по горло.', spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0, fog: 1 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
 
     // ---------------- relief: one low island, sea level at y = 0
     const edgeR = (x, z) => ISL * (0.84 + 0.3 * (noise.fbm(x * 0.045 + 3, z * 0.045 + 9, 3) - 0.5) * 1.4);
@@ -2157,8 +2185,6 @@ const Ocean = (() => {
       for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.3, 0.16), mWood); p.position.set(s * 0.62, 1.15, 0); g.add(p); } const top = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.12, 0.16), mWood); top.position.y = 2.3; g.add(top);
       add(g, c.x, c.y, c.z, rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.7 });
     });
-    // wreck on the beach
-    { const c = scatter(1, 5, 28, 40, 0.3)[0]; if (c) { const g = new THREE.Group(); const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.2, 8, 8, 1, true, 0, Math.PI), mWood); hull.rotation.set(0, 0, Math.PI / 2); hull.rotation.order = 'ZYX'; hull.rotation.x = Math.PI; hull.scale.y = 1; g.add(hull); for (let i = -3; i <= 3; i++) { const rib = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.07, 5, 10, Math.PI), mWoodD); rib.position.x = i * 1.1; rib.rotation.y = Math.PI / 2; rib.rotation.z = 0; g.add(rib); } add(g, c.x, c.y + 0.6, c.z, rng.range(0, 6)); g.rotation.z = rng.range(-0.15, 0.15); world.colliders.push({ x: c.x, z: c.z, r: 2.0 }); } }
     // lighthouse with a sweeping beam
     let beam = null, beamLight = null, lampMesh = null;
     { const c = scatter(1, 5, 14, 32, 0.9)[0] || { x: -14, z: -10, y: heightAt(-14, -10) }; const g = new THREE.Group();
@@ -2168,8 +2194,7 @@ const Ocean = (() => {
       lampMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.4, 8), new THREE.MeshBasicMaterial({ color: '#fff4c0' })); lampMesh.position.y = 13.1; g.add(lampMesh);
       const roof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 8), mDark); roof.position.y = 14.4; g.add(roof);
       beamLight = new THREE.SpotLight('#fff0c0', 4, 90, 0.2, 0.4, 1); beamLight.position.set(0, 13.1, 0); const tgt = new THREE.Object3D(); tgt.position.set(0, 11, -20); g.add(beamLight, tgt); beamLight.target = tgt;
-      beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 30, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.045, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
-      beam.geometry.translate(0, -15, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); const pivot = new THREE.Group(); pivot.position.set(0, 0, 0); pivot.add(beam); g.add(pivot); beam.userData.pivot = pivot; world.lighthouse = { g, pivot, tgt };
+      const pivot = new THREE.Group(); g.add(pivot); world.lighthouse = { g, pivot, tgt };
       add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
     // glowing fungi — perches for the butterflies
     { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;
@@ -2238,7 +2263,7 @@ const PLAY_MODS = {
   bigcatch: { good: true, name: 'Большой обруч: поймать проще' }, silent: { good: true, name: 'Тихие шаги: шум в 2,5 раза меньше' }, slowmo: { good: true, name: 'Сонные бабочки: летают медленнее' },
   fast: { good: false, name: 'Лихорадка: бабочки быстрее' }, storm: { good: false, name: 'Шторм: ливень и молнии' }, dim: { good: false, name: 'Севший фонарь: свет тусклый' },
   flicker: { good: false, name: 'Мигание: фонарь барахлит' }, fog: { good: false, name: 'Густой туман' }, loud: { good: false, name: 'Громкие шаги: бабочки пугаются' },
-  smallnet: { good: false, name: 'Дырявая сетка: обруч меньше' }, skittish: { good: false, name: 'Пугливые бабочки' }, blind: { good: false, name: 'Тьма: почти ничего не видно' },
+  smallnet: { good: false, name: 'Дырявая сетка: обруч меньше' }, skittish: { good: false, name: 'Пугливые бабочки (немного)' }, blind: { good: false, name: 'Тьма: почти ничего не видно' },
   heavy: { good: false, name: 'Тяжёлые ноги: ходьба медленнее' }, ghosts: { good: false, name: 'Невидимки: видны только в луче или вблизи' }, teleport: { good: false, name: 'Телепорты: бабочки скачут' },
   blackout: { good: false, name: 'Перебои: фонарь гаснет сам' }, mirror: { good: false, name: 'Зеркало: мышь по горизонтали наоборот' }, dizzy: { good: false, name: 'Головокружение: мир качается' },
 };
@@ -2454,7 +2479,7 @@ class Play {
   toggleFlash() { if (!this.flash) return false; this.flashOn = !this.flashOn; Snd.sfx.flash(); return true; }
   hasMod(id) { return !!this.mod && this.mod.id === id; }
   speedMul() { return this.hasMod('fast') ? 1.45 : this.hasMod('slowmo') ? 0.65 : 1; }
-  calmMul() { return this.hasMod('calm') ? 0.5 : this.hasMod('skittish') ? 1.6 : 1; }
+  calmMul() { return this.hasMod('calm') ? 0.5 : this.hasMod('skittish') ? 1.25 : 1; }
   catchMul() { return this.hasMod('bigcatch') ? 1.6 : this.hasMod('smallnet') ? 0.6 : 1; }
   applyMod(id) {
     const w = this.world.mod; w.storm = 1; w.bright = 0; w.fog = 1;
@@ -2519,13 +2544,13 @@ class Play {
   checkCatch() {
     this.hoopWorld(_v);
     for (const f of this.flies) {
-      if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
+      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
   onCatch(f) {
-    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); this.stats.catches++; this.caughtHere.add(sp.id);
+    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
@@ -2550,20 +2575,23 @@ class Play {
     let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
     const sprint = inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'), slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight');
-    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1);
+    const wading = w.inWater(P.pos.x, P.pos.z, 0);
+    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1);
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
     const tx = (fx * -mz + rx * mx) * spd, tz = (fz * -mz + rz * mx) * spd;
     P.vel.x = damp(P.vel.x, tx, 11, dt); P.vel.y = damp(P.vel.y, tz, 11, dt);
     let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt;
-    if (w.inWater(nx, P.pos.z, 0.2)) nx = P.pos.x; if (w.inWater(P.pos.x, nz, 0.2)) nz = P.pos.z;
+    const deep = (x, z) => w.canWalk && !w.canWalk(x, z); let hitDeep = false;
+    if (deep(nx, P.pos.z)) { nx = P.pos.x; hitDeep = true; } if (deep(P.pos.x, nz)) { nz = P.pos.z; hitDeep = true; }
+    if (hitDeep && (!this.deepT || this.t - this.deepT > 5)) { this.toast(w.deepMsg || 'Здесь слишком глубоко', 2.5); this.deepT = this.t; }
     for (const c of w.colliders) { const cx = nx - c.x, cz = nz - c.z, mr = c.r + 0.38, d2 = cx * cx + cz * cz; if (d2 < mr * mr) { const d = Math.sqrt(d2) || 0.01; nx += cx / d * (mr - d); nz += cz / d * (mr - d); } }
-    const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast('Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
+    const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
     const gy = w.heightAt(nx, nz) + 1.65; P.y = damp(P.y, gy, 14, dt);
     const speedNow = moved / Math.max(dt, 1e-4);
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
-    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
-    const targetNoise = (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
+    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
+    const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
     P.swingNoise = Math.max(0, P.swingNoise - dt * 1.2); P.noise = damp(P.noise, targetNoise + P.swingNoise, 5, dt);
     P.pos.y = P.y + Math.sin(P.bob) * 0.035 * Math.min(1, speedNow / 3);
     this.camera.position.copy(P.pos); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
@@ -2609,15 +2637,15 @@ class Play {
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
     // species checklist
-    const n = this.pool.length, tw = b.secret ? 21 : 32, th = b.secret ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, b.secret ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
+    const n = this.pool.length, cmp = n > 9, tw = cmp ? 21 : 32, th = cmp ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, cmp ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
     this.pool.forEach((sp, i) => {
       const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * tw;
       if (b.secret && !has) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(x + 1, 10, tw - 3, th); T.draw(ctx, '?', x + tw / 2 - 1, 11, { size: 8, align: 'c', color: c.dim }); }
-      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!b.secret) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
+      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!cmp) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
       if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, tw - 3, 1); }
     });
-    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, b.secret ? 28 : 40, { size: 8, align: 'r', color: c.text });
+    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, cmp ? 28 : 40, { size: 8, align: 'r', color: c.text });
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
@@ -2678,6 +2706,7 @@ const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 
 // ===== screens.js =====
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
+const collText = () => BIOME_BY_ID.ocean.secret ? `${Save.total()}/${REAL}+???` : `${Save.total()}/${SPECIES.length}`;
 const Screens = (() => {
   const c = UIK.col;
   const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
@@ -2697,8 +2726,9 @@ const Screens = (() => {
     for (const s of stars) { const a = 0.35 + 0.65 * Math.abs(Math.sin(t * s.b + s.ph)); ctx.fillStyle = `rgba(230,240,255,${a * s.b})`; ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); }
     ctx.fillStyle = '#eee8c0'; ctx.beginPath(); ctx.arc(392, 52, 16, 0, 6.3); ctx.fill(); ctx.fillStyle = '#d8d2a8'; [[-5, -4, 3], [4, 3, 4], [-3, 8, 2], [6, -6, 2]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(392 + x, 52 + y, r, 0, 6.3); ctx.fill(); });
     const mg = ctx.createRadialGradient(392, 52, 10, 392, 52, 80); mg.addColorStop(0, 'rgba(120,150,200,0.35)'); mg.addColorStop(1, 'rgba(120,150,200,0)'); ctx.fillStyle = mg; ctx.fillRect(300, 0, 180, 140);
-    ctx.fillStyle = '#0e2a3a'; ctx.beginPath(); ctx.moveTo(0, 190); for (let x = 0; x <= SW; x += 10) ctx.lineTo(x, 164 + Math.sin(x * 0.03) * 10 + Math.sin(x * 0.09) * 5); ctx.lineTo(SW, SH); ctx.lineTo(0, SH); ctx.fill();
-    ctx.fillStyle = '#0a2230'; pines.forEach((p, i) => pine(ctx, (p.x - t * 3) % (SW + 40) + (p.x - t * 3 < 0 ? SW + 40 : 0), 196, p.h, p.w, '#0a2230'));
+    const sc = t * 3, hillY = wx => 164 + Math.sin(wx * 0.03) * 10 + Math.sin(wx * 0.09) * 5;                 // the hill scrolls with the trees, so the trees stay planted on it
+    ctx.fillStyle = '#0e2a3a'; ctx.beginPath(); ctx.moveTo(0, SH); for (let x = 0; x <= SW + 4; x += 4) ctx.lineTo(x, hillY(x + sc)); ctx.lineTo(SW + 4, SH); ctx.fill();
+    ctx.fillStyle = '#0a2230'; pines.forEach(p => { const sx = ((p.x - sc) % (SW + 40) + (SW + 40)) % (SW + 40) - 20; pine(ctx, Math.round(sx), Math.round(hillY(sx + sc)) + 7, p.h, p.w, '#0a2230'); });
     ctx.fillStyle = '#06161e'; ctx.fillRect(0, 214, SW, SH - 214);
     for (let i = 0; i < 70; i++) { const x = (i * 37) % SW, h = 5 + (i * 13) % 14, sw = Math.sin(t * 1.4 + i) * 2; ctx.fillStyle = i % 3 ? '#0c2a1c' : '#123a26'; ctx.fillRect(x, SH - h - 6 + 0, 1, h); ctx.fillRect(x + Math.round(sw / 2), SH - h - 6 - 3, 1, 3); }
     for (const f of fireflies) { const x = f.x + Math.sin(t * f.sp + f.ph) * f.a, y = f.y + Math.cos(t * f.sp * 0.8 + f.ph) * f.a * 0.5; const b = Math.max(0, Math.sin(t * 1.6 * f.sp + f.ph * 3)) ** 3; if (b > 0.1) { ctx.fillStyle = `rgba(200,255,120,${b})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); ctx.fillStyle = `rgba(160,240,90,${b * 0.2})`; ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, 6, 6); } }
@@ -2706,8 +2736,9 @@ const Screens = (() => {
   }
   function drawFlyer(ctx, f, t) {
     const x = (f.x + t * f.v) % (SW + 120) - 60, y = f.y + Math.sin(t * 0.9 + f.ph) * f.a; const fl = Math.abs(Math.cos(t * 7 + f.ph)) * 0.8 + 0.2;
+    const vy = Math.cos(t * 0.9 + f.ph) * 0.9 * f.a; const ang = Math.atan2(vy, f.v);       // fly head-first along the path (the picture's head points up)
     const img = Art.specimen(f.sp); const w = 80 * f.s, h = 40 * f.s; ctx.imageSmoothingEnabled = false;
-    ctx.save(); ctx.translate(x, y); ctx.scale(1, 1); ctx.drawImage(img, 0, 0, 80, 40, -w / 2 * fl, -h / 2, w * fl, h); ctx.restore();
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(Math.PI / 2 + ang); ctx.drawImage(img, 0, 0, 80, 40, -w / 2 * fl, -h / 2, w * fl, h); ctx.restore();
   }
 
   // ------------------------------------------------------------------ TITLE
@@ -2717,7 +2748,7 @@ const Screens = (() => {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
         { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}/${REAL}+???`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'journal', label: `Коллекция  ${collText()}`, x, y: 168, w, h: 16, size: 8 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
@@ -2732,7 +2763,7 @@ const Screens = (() => {
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
+      T.draw(ctx, BIOME_BY_ID.ocean.secret ? `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…` : `9 биомов · ${SPECIES.length} видов · тайна океана раскрыта`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -2772,7 +2803,7 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${REAL}+???`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
@@ -2838,7 +2869,7 @@ const Screens = (() => {
     draw(ctx, t, m) {
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${REAL}+???`, 200, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText(), 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
@@ -3582,16 +3613,20 @@ const Cabinet = (() => {
         const leafMat = (c) => new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide });
         const greens = kind === 'ficus' ? ['#2a6a34', '#337a3c', '#245a30', '#3a8644'] : ['#3a8a3c', '#4a9a44', '#2e7a38', '#58a84c'];
         if (kind === 'ficus') {
-          const trunk = cyl(g, 0.022, 0.035, 0.9, 0.0, 0.78, 0, lam('#5a4028'), 6); trunk.rotation.z = 0.05;
-          for (let k = 0; k < 26; k++) {
-            const t = k / 26, az = k * 2.4 + rr.range(-0.3, 0.3), h = 0.5 + t * 0.78; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
-            const out = 0.03 + (1 - Math.abs(t - 0.45)) * 0.02; lf.position.set(Math.sin(az) * out, h, Math.cos(az) * out); lf.rotation.set(0.85 + rr.range(-0.2, 0.3) + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.15 - t * 0.35); g.add(lf);
+          // a trunk with leaves on short stalks; each leaf has its own height and azimuth (golden angle) and hangs outward, so nothing crosses
+          const trunk = cyl(g, 0.02, 0.032, 0.95, 0.0, 0.8, 0, lam('#5a4028'), 6);
+          for (let k = 0; k < 16; k++) {
+            const t = k / 15, az = k * 2.39996, h = 0.5 + t * 0.78, reach = 0.05 + (1 - Math.abs(t - 0.4)) * 0.07;
+            const st = cyl(g, 0.006, 0.008, reach + 0.06, Math.sin(az) * (reach + 0.06) / 2, h + 0.01, Math.cos(az) * (reach + 0.06) / 2, lam('#4a6a30'), 4); st.rotation.set(Math.cos(az) * Math.PI / 2 * 0.93, 0, -Math.sin(az) * Math.PI / 2 * 0.93);
+            const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
+            lf.position.set(Math.sin(az) * (reach + 0.06), h + 0.01, Math.cos(az) * (reach + 0.06)); lf.rotation.set(1.05 + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.0 - t * 0.3); g.add(lf);
           }
-          for (let k = 0; k < 4; k++) { const az = k * 1.57 + 0.5; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k])); lf.position.set(0, 1.33, 0); lf.rotation.set(0.35 + k * 0.1, az, 0, 'YXZ'); lf.scale.setScalar(0.7); g.add(lf); }
+          const top = new THREE.Mesh(LEAFG.broad, leafMat(greens[0])); top.position.set(0, 1.28, 0); top.rotation.set(-0.12, 0.4, 0); top.scale.setScalar(0.55); g.add(top);
         } else {
-          for (let k = 0; k < 18; k++) {
-            const az = k * 2.4 + rr.range(-0.2, 0.2), tilt = 0.25 + (k % 6) * 0.13 + rr.range(0, 0.15); const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[k % 4])); lf.castShadow = true;
-            lf.position.set(Math.sin(az) * 0.03, 0.34, Math.cos(az) * 0.03); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, 0.65 + (k % 5) * 0.12, 1); g.add(lf);
+          // dracaena rosette: two rings of blades at evenly spaced azimuths, outer ring flatter and offset by half a step, so the blades fan out without crossing
+          for (let ring = 0; ring < 2; ring++) for (let k = 0; k < 7; k++) {
+            const az = (k + ring * 0.5) / 7 * Math.PI * 2, tilt = ring ? 0.95 : 0.38; const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[(k + ring) % 4])); lf.castShadow = true;
+            lf.position.set(Math.sin(az) * 0.035, 0.34 + ring * 0.01, Math.cos(az) * 0.035); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, ring ? 0.8 : 1.0, 1); g.add(lf);
           }
         }
         this.addCol(x - 0.28, x + 0.28, z - 0.28, z + 0.28);
@@ -3770,10 +3805,10 @@ const Cabinet = (() => {
 // ---------------------------------------------------------------- main: renderer, pixel post-process, input, state machine
 (() => {
   const gl = document.getElementById('gl'), ui = document.getElementById('ui'), stage = document.getElementById('stage');
-  gl.width = SW; gl.height = SH; ui.width = SW; ui.height = SH;
+  gl.width = SW; gl.height = SH; let uiK = 2; ui.width = SW * uiK; ui.height = SH * uiK;
   const ctx = ui.getContext('2d');
   const params = new URLSearchParams(location.hash.replace('#', '?'));
-  Save.load();
+  Save.load(); revealOcean();
 
   // ---------------- renderer + post (palette quantisation + ordered dither + depth outlines)
   const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('debug') });
@@ -3809,7 +3844,7 @@ const Cabinet = (() => {
   const mouse = { x: -100, y: -100 };
   const S = Screens;
   function toNative(e) { const r = ui.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * SW; mouse.y = (e.clientY - r.top) / r.height * SH; }
-  function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; }
+  function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
   addEventListener('resize', fit); fit();
   function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
   function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
@@ -3903,6 +3938,7 @@ const Cabinet = (() => {
   function frame(ts) {
     requestAnimationFrame(frame);
     const dt = clamp((ts - last) / 1000, 0, 0.05); last = ts; App.time += dt; const t = App.time;
+    ctx.setTransform(uiK, 0, 0, uiK, 0, 0);
     if (!App.ready) { ctx.fillStyle = '#04080a'; ctx.fillRect(0, 0, SW, SH); return; }
     ctx.imageSmoothingEnabled = false;
     // fades

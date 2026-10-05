@@ -25,7 +25,7 @@ const PLAY_MODS = {
   bigcatch: { good: true, name: 'Большой обруч: поймать проще' }, silent: { good: true, name: 'Тихие шаги: шум в 2,5 раза меньше' }, slowmo: { good: true, name: 'Сонные бабочки: летают медленнее' },
   fast: { good: false, name: 'Лихорадка: бабочки быстрее' }, storm: { good: false, name: 'Шторм: ливень и молнии' }, dim: { good: false, name: 'Севший фонарь: свет тусклый' },
   flicker: { good: false, name: 'Мигание: фонарь барахлит' }, fog: { good: false, name: 'Густой туман' }, loud: { good: false, name: 'Громкие шаги: бабочки пугаются' },
-  smallnet: { good: false, name: 'Дырявая сетка: обруч меньше' }, skittish: { good: false, name: 'Пугливые бабочки' }, blind: { good: false, name: 'Тьма: почти ничего не видно' },
+  smallnet: { good: false, name: 'Дырявая сетка: обруч меньше' }, skittish: { good: false, name: 'Пугливые бабочки (немного)' }, blind: { good: false, name: 'Тьма: почти ничего не видно' },
   heavy: { good: false, name: 'Тяжёлые ноги: ходьба медленнее' }, ghosts: { good: false, name: 'Невидимки: видны только в луче или вблизи' }, teleport: { good: false, name: 'Телепорты: бабочки скачут' },
   blackout: { good: false, name: 'Перебои: фонарь гаснет сам' }, mirror: { good: false, name: 'Зеркало: мышь по горизонтали наоборот' }, dizzy: { good: false, name: 'Головокружение: мир качается' },
 };
@@ -241,7 +241,7 @@ class Play {
   toggleFlash() { if (!this.flash) return false; this.flashOn = !this.flashOn; Snd.sfx.flash(); return true; }
   hasMod(id) { return !!this.mod && this.mod.id === id; }
   speedMul() { return this.hasMod('fast') ? 1.45 : this.hasMod('slowmo') ? 0.65 : 1; }
-  calmMul() { return this.hasMod('calm') ? 0.5 : this.hasMod('skittish') ? 1.6 : 1; }
+  calmMul() { return this.hasMod('calm') ? 0.5 : this.hasMod('skittish') ? 1.25 : 1; }
   catchMul() { return this.hasMod('bigcatch') ? 1.6 : this.hasMod('smallnet') ? 0.6 : 1; }
   applyMod(id) {
     const w = this.world.mod; w.storm = 1; w.bright = 0; w.fog = 1;
@@ -306,13 +306,13 @@ class Play {
   checkCatch() {
     this.hoopWorld(_v);
     for (const f of this.flies) {
-      if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
+      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
   onCatch(f) {
-    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); this.stats.catches++; this.caughtHere.add(sp.id);
+    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
@@ -337,20 +337,23 @@ class Play {
     let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
     const sprint = inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'), slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight');
-    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1);
+    const wading = w.inWater(P.pos.x, P.pos.z, 0);
+    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1);
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
     const tx = (fx * -mz + rx * mx) * spd, tz = (fz * -mz + rz * mx) * spd;
     P.vel.x = damp(P.vel.x, tx, 11, dt); P.vel.y = damp(P.vel.y, tz, 11, dt);
     let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt;
-    if (w.inWater(nx, P.pos.z, 0.2)) nx = P.pos.x; if (w.inWater(P.pos.x, nz, 0.2)) nz = P.pos.z;
+    const deep = (x, z) => w.canWalk && !w.canWalk(x, z); let hitDeep = false;
+    if (deep(nx, P.pos.z)) { nx = P.pos.x; hitDeep = true; } if (deep(P.pos.x, nz)) { nz = P.pos.z; hitDeep = true; }
+    if (hitDeep && (!this.deepT || this.t - this.deepT > 5)) { this.toast(w.deepMsg || 'Здесь слишком глубоко', 2.5); this.deepT = this.t; }
     for (const c of w.colliders) { const cx = nx - c.x, cz = nz - c.z, mr = c.r + 0.38, d2 = cx * cx + cz * cz; if (d2 < mr * mr) { const d = Math.sqrt(d2) || 0.01; nx += cx / d * (mr - d); nz += cz / d * (mr - d); } }
-    const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast('Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
+    const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
     const gy = w.heightAt(nx, nz) + 1.65; P.y = damp(P.y, gy, 14, dt);
     const speedNow = moved / Math.max(dt, 1e-4);
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
-    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
-    const targetNoise = (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
+    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
+    const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
     P.swingNoise = Math.max(0, P.swingNoise - dt * 1.2); P.noise = damp(P.noise, targetNoise + P.swingNoise, 5, dt);
     P.pos.y = P.y + Math.sin(P.bob) * 0.035 * Math.min(1, speedNow / 3);
     this.camera.position.copy(P.pos); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
@@ -396,15 +399,15 @@ class Play {
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
     // species checklist
-    const n = this.pool.length, tw = b.secret ? 21 : 32, th = b.secret ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, b.secret ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
+    const n = this.pool.length, cmp = n > 9, tw = cmp ? 21 : 32, th = cmp ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, cmp ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
     this.pool.forEach((sp, i) => {
       const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * tw;
       if (b.secret && !has) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(x + 1, 10, tw - 3, th); T.draw(ctx, '?', x + tw / 2 - 1, 11, { size: 8, align: 'c', color: c.dim }); }
-      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!b.secret) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
+      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!cmp) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
       if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, tw - 3, 1); }
     });
-    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, b.secret ? 28 : 40, { size: 8, align: 'r', color: c.text });
+    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, cmp ? 28 : 40, { size: 8, align: 'r', color: c.text });
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });

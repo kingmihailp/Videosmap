@@ -42,7 +42,7 @@ const Snd = (() => {
   const sfx = {
     click() { if (!ac) return; const t = now(); osc('square', 880, t, 0.06, 0.07); osc('square', 1320, t + 0.045, 0.07, 0.06); },
     hover() { if (!ac) return; osc('square', 1320, now(), 0.03, 0.025); },
-    step(kind) { if (!ac) return; const t = now(); const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
+    step(kind) { if (!ac) return; const t = now(); if (kind === 'water') { noiseBurst(t, 0.2, 2400, 800, 0.16, 'bandpass', 0.9); noiseBurst(t + 0.05, 0.12, 900, 500, 0.08, 'lowpass', 0.7); return; } const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
     swing() { if (!ac) return; const t = now(); noiseBurst(t, 0.28, 500, 2200, 0.32, 'bandpass', 1.2); },
     miss() { if (!ac) return; const t = now(); osc('triangle', 220, t, 0.18, 0.08, null, 140); },
     flutter() { if (!ac) return; const t = now(); noiseBurst(t, 0.09, 3000, 5200, 0.05, 'bandpass', 3); },

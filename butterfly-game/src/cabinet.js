@@ -208,16 +208,20 @@ const Cabinet = (() => {
         const leafMat = (c) => new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide });
         const greens = kind === 'ficus' ? ['#2a6a34', '#337a3c', '#245a30', '#3a8644'] : ['#3a8a3c', '#4a9a44', '#2e7a38', '#58a84c'];
         if (kind === 'ficus') {
-          const trunk = cyl(g, 0.022, 0.035, 0.9, 0.0, 0.78, 0, lam('#5a4028'), 6); trunk.rotation.z = 0.05;
-          for (let k = 0; k < 26; k++) {
-            const t = k / 26, az = k * 2.4 + rr.range(-0.3, 0.3), h = 0.5 + t * 0.78; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
-            const out = 0.03 + (1 - Math.abs(t - 0.45)) * 0.02; lf.position.set(Math.sin(az) * out, h, Math.cos(az) * out); lf.rotation.set(0.85 + rr.range(-0.2, 0.3) + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.15 - t * 0.35); g.add(lf);
+          // a trunk with leaves on short stalks; each leaf has its own height and azimuth (golden angle) and hangs outward, so nothing crosses
+          const trunk = cyl(g, 0.02, 0.032, 0.95, 0.0, 0.8, 0, lam('#5a4028'), 6);
+          for (let k = 0; k < 16; k++) {
+            const t = k / 15, az = k * 2.39996, h = 0.5 + t * 0.78, reach = 0.05 + (1 - Math.abs(t - 0.4)) * 0.07;
+            const st = cyl(g, 0.006, 0.008, reach + 0.06, Math.sin(az) * (reach + 0.06) / 2, h + 0.01, Math.cos(az) * (reach + 0.06) / 2, lam('#4a6a30'), 4); st.rotation.set(Math.cos(az) * Math.PI / 2 * 0.93, 0, -Math.sin(az) * Math.PI / 2 * 0.93);
+            const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
+            lf.position.set(Math.sin(az) * (reach + 0.06), h + 0.01, Math.cos(az) * (reach + 0.06)); lf.rotation.set(1.05 + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.0 - t * 0.3); g.add(lf);
           }
-          for (let k = 0; k < 4; k++) { const az = k * 1.57 + 0.5; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k])); lf.position.set(0, 1.33, 0); lf.rotation.set(0.35 + k * 0.1, az, 0, 'YXZ'); lf.scale.setScalar(0.7); g.add(lf); }
+          const top = new THREE.Mesh(LEAFG.broad, leafMat(greens[0])); top.position.set(0, 1.28, 0); top.rotation.set(-0.12, 0.4, 0); top.scale.setScalar(0.55); g.add(top);
         } else {
-          for (let k = 0; k < 18; k++) {
-            const az = k * 2.4 + rr.range(-0.2, 0.2), tilt = 0.25 + (k % 6) * 0.13 + rr.range(0, 0.15); const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[k % 4])); lf.castShadow = true;
-            lf.position.set(Math.sin(az) * 0.03, 0.34, Math.cos(az) * 0.03); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, 0.65 + (k % 5) * 0.12, 1); g.add(lf);
+          // dracaena rosette: two rings of blades at evenly spaced azimuths, outer ring flatter and offset by half a step, so the blades fan out without crossing
+          for (let ring = 0; ring < 2; ring++) for (let k = 0; k < 7; k++) {
+            const az = (k + ring * 0.5) / 7 * Math.PI * 2, tilt = ring ? 0.95 : 0.38; const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[(k + ring) % 4])); lf.castShadow = true;
+            lf.position.set(Math.sin(az) * 0.035, 0.34 + ring * 0.01, Math.cos(az) * 0.035); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, ring ? 0.8 : 1.0, 1); g.add(lf);
           }
         }
         this.addCol(x - 0.28, x + 0.28, z - 0.28, z + 0.28);

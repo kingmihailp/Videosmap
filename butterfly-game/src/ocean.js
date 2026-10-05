@@ -10,7 +10,7 @@ const Ocean = (() => {
     seedStr = seedStr || World.randomSeed();
     const seed = strSeed('ocean:' + seedStr), rng = new Rng(seed), noise = new Noise2(seed ^ 0x77ab), ISL = 44;
     const scene = new THREE.Scene(); const fogCol = new THREE.Color('#04080f'); scene.background = fogCol.clone(); const fog = new THREE.FogExp2(fogCol, 0.03); scene.fog = fog;
-    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: R_PLAY, spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0, fog: 1 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
+    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: 52, canWalk: (x, z) => heightAt(x, z) > -0.3, edgeMsg: 'Дальше только открытое море.', deepMsg: 'Дальше слишком глубоко — вода уже по горло.', spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0, fog: 1 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
 
     // ---------------- relief: one low island, sea level at y = 0
     const edgeR = (x, z) => ISL * (0.84 + 0.3 * (noise.fbm(x * 0.045 + 3, z * 0.045 + 9, 3) - 0.5) * 1.4);
@@ -77,8 +77,6 @@ const Ocean = (() => {
       for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.3, 0.16), mWood); p.position.set(s * 0.62, 1.15, 0); g.add(p); } const top = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.12, 0.16), mWood); top.position.y = 2.3; g.add(top);
       add(g, c.x, c.y, c.z, rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.7 });
     });
-    // wreck on the beach
-    { const c = scatter(1, 5, 28, 40, 0.3)[0]; if (c) { const g = new THREE.Group(); const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.2, 8, 8, 1, true, 0, Math.PI), mWood); hull.rotation.set(0, 0, Math.PI / 2); hull.rotation.order = 'ZYX'; hull.rotation.x = Math.PI; hull.scale.y = 1; g.add(hull); for (let i = -3; i <= 3; i++) { const rib = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.07, 5, 10, Math.PI), mWoodD); rib.position.x = i * 1.1; rib.rotation.y = Math.PI / 2; rib.rotation.z = 0; g.add(rib); } add(g, c.x, c.y + 0.6, c.z, rng.range(0, 6)); g.rotation.z = rng.range(-0.15, 0.15); world.colliders.push({ x: c.x, z: c.z, r: 2.0 }); } }
     // lighthouse with a sweeping beam
     let beam = null, beamLight = null, lampMesh = null;
     { const c = scatter(1, 5, 14, 32, 0.9)[0] || { x: -14, z: -10, y: heightAt(-14, -10) }; const g = new THREE.Group();
@@ -88,8 +86,7 @@ const Ocean = (() => {
       lampMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.4, 8), new THREE.MeshBasicMaterial({ color: '#fff4c0' })); lampMesh.position.y = 13.1; g.add(lampMesh);
       const roof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 8), mDark); roof.position.y = 14.4; g.add(roof);
       beamLight = new THREE.SpotLight('#fff0c0', 4, 90, 0.2, 0.4, 1); beamLight.position.set(0, 13.1, 0); const tgt = new THREE.Object3D(); tgt.position.set(0, 11, -20); g.add(beamLight, tgt); beamLight.target = tgt;
-      beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 30, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.045, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
-      beam.geometry.translate(0, -15, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); const pivot = new THREE.Group(); pivot.position.set(0, 0, 0); pivot.add(beam); g.add(pivot); beam.userData.pivot = pivot; world.lighthouse = { g, pivot, tgt };
+      const pivot = new THREE.Group(); g.add(pivot); world.lighthouse = { g, pivot, tgt };
       add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
     // glowing fungi — perches for the butterflies
     { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;
