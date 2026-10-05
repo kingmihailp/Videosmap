@@ -15,11 +15,10 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-W, H, FPS, DUR, SCALE = 320, 180, 24, 70, 4
+W, H, FPS, DUR, SCALE = 320, 180, 24, 58, 4
 
 # ----------------------------------------------------------------- timeline
-S1, S2, S3A, S3B, S4, S5, S7 = 0, 9, 19, 25, 31, 43, 57
-ITEM_TIMES = [S4 + 0.9 + i * 1.05 for i in range(8)]
+S1, S2, S3A, S3B, S5, S7 = 0, 9, 19, 25, 31, 45
 PIN_TIMES = [S5 + 2.4 + i * 1.85 for i in range(5)]
 LOGO_HIT = S7 + 4.4                  # 77.4 s
 
@@ -775,168 +774,6 @@ def scene3b(ctx, lt):
     name_plate(ctx, lt, 1.6, 5.7, "Morpho menelaus", "голубой морфо · Nymphalidae", (60, 140, 240))
 
 
-# ================================================================== SCENE 4
-EQUIP = ["САЧОК", "ЭКСГАУСТЕР", "ЛУПА", "ДНЕВНИК", "НАЛОБНИК", "УФ-ЛАМПА", "РАСПРАВИЛКА", "ТЕРРАРИУМ"]
-
-
-@lru_cache(None)
-def wood_bg():
-    r = np.random.RandomState(8)
-    cols = np.array([(46, 28, 18), (54, 34, 20), (62, 40, 24), (40, 24, 16)], np.uint8)
-    stripe = r.randint(0, 4, (1, W // 3 + 1))
-    base = np.repeat(stripe, 3, axis=1)[:, :W]
-    noise = (r.rand(H, W) * 0.9).astype(np.float32)
-    idx = np.clip((base + noise).astype(int), 0, 3)
-    img = Image.fromarray(cols[idx])
-    d = ImageDraw.Draw(img)
-    for x in range(0, W, 24):
-        d.line([(x, 0), (x, H)], fill=(24, 14, 8))
-    rr = random.Random(9)
-    for _ in range(90):
-        x, y = rr.randrange(W), rr.randrange(H)
-        d.line([(x, y), (x + rr.randrange(-1, 2), y + rr.randrange(6, 20))], fill=(34, 20, 12))
-    return img
-
-
-def draw_item(d, i, t, W_=72, H_=46):
-    """draw item i into a 72x46 area (local origin top-left)."""
-    if i == 0:   # net
-        d.line([(10, 44), (44, 14)], fill=(150, 100, 52), width=3)
-        d.line([(10, 44), (44, 14)], fill=(196, 146, 82), width=1)
-        bag = [(34, 12), (30, 30), (50, 42), (60, 30), (56, 12)]
-        d.polygon(bag, fill=(150, 176, 160), outline=(210, 220, 200))
-        for k in range(4):
-            d.line([(34 + k * 6, 12), (32 + k * 6 + (k - 1.5) * 2, 36)], fill=(110, 140, 124))
-        for yy in (18, 24, 30):
-            d.line([(32, yy), (58, yy)], fill=(110, 140, 124))
-        d.ellipse([30, 6, 60, 18], outline=(220, 224, 230), width=2)
-        d.point((36, 8), fill=(255, 255, 255))
-    elif i == 1:   # aspirator jar
-        d.rectangle([24, 14, 50, 40], fill=(120, 184, 200), outline=(210, 240, 250))
-        d.rectangle([26, 18, 32, 38], fill=(180, 228, 238))
-        d.rectangle([22, 8, 52, 14], fill=(150, 98, 52), outline=(82, 50, 22))
-        d.line([(30, 8), (30, 2), (14, 2), (10, 12)], fill=(60, 60, 70), width=2)
-        d.line([(44, 8), (44, 0), (62, 4), (66, 18)], fill=(60, 60, 70), width=2)
-        mini_beetle(d, 38, 34, (40, 24, 14), 1.3)
-        d.ellipse([34, 24, 40, 28], fill=(60, 130, 60))
-        d.line([(44, 30), (47, 27)], fill=(30, 40, 20))
-        d.point((46, 20), fill=(255, 255, 255))
-    elif i == 2:   # magnifier
-        d.line([(16, 44), (34, 28)], fill=(120, 76, 36), width=4)
-        d.line([(16, 44), (34, 28)], fill=(176, 120, 60), width=1)
-        d.ellipse([28, 2, 62, 36], fill=(150, 200, 190), outline=(210, 180, 70), width=3)
-        stag_beetle(d, 47, 20, 0.2, t * 6, 0.3)
-        d.arc([33, 6, 57, 30], 200, 260, fill=(255, 255, 255), width=2)
-        gl = int(sstep(0, 1, (t * 0.7) % 1) * 20)
-        d.point((32 + gl, 8 + gl // 2), fill=(255, 255, 255))
-    elif i == 3:   # field notebook
-        d.rectangle([14, 6, 58, 42], fill=(112, 64, 30), outline=(52, 28, 12))
-        d.rectangle([18, 8, 22, 40], fill=(86, 46, 20))
-        d.rectangle([24, 10, 54, 38], fill=(224, 208, 164), outline=(160, 140, 96))
-        for yy in range(14, 36, 4):
-            d.line([(27, yy), (50 - (yy % 3) * 4, yy)], fill=(120, 100, 70))
-        d.ellipse([42, 24, 50, 34], fill=(70, 130, 60))
-        d.line([(46, 24), (46, 36)], fill=(40, 80, 30))
-        d.rectangle([56, 18, 60, 30], fill=(190, 50, 40))
-        d.line([(10, 40), (40, 10)], fill=(240, 200, 60), width=2)
-        d.point((40, 10), fill=(60, 60, 60))
-    elif i == 4:   # headlamp
-        d.arc([8, 4, 52, 44], 190, 350, fill=(60, 60, 70), width=3)
-        d.rectangle([22, 14, 40, 26], fill=(70, 74, 86), outline=(150, 156, 170))
-        d.ellipse([27, 16, 36, 25], fill=(255, 244, 190), outline=(200, 180, 80))
-        d.polygon([(38, 20), (70, 8), (70, 34)], fill=(70, 62, 30))
-        d.polygon([(38, 20), (62, 12), (62, 30)], fill=(120, 108, 50))
-        d.rectangle([24, 28, 38, 32], fill=(50, 54, 64))
-    elif i == 5:   # UV lamp
-        pulse = 0.6 + 0.4 * math.sin(t * 6)
-        d.rectangle([24, 38, 48, 44], fill=(50, 50, 60), outline=(100, 100, 120))
-        d.rectangle([34, 12, 38, 38], fill=(60, 60, 70))
-        d.rectangle([28, 4, 44, 14], fill=(int(150 + 90 * pulse), int(100 + 60 * pulse), 255), outline=(110, 70, 200))
-        for k in range(4):
-            a = k * 0.8 + t * 1.5
-            moth(d, 36 + math.cos(a) * 24, 10 + math.sin(a) * 8, 0.28, t * 20 + k, a + 1.57, k % 2)
-    elif i == 6:   # spreading board with butterfly
-        d.polygon([(4, 30), (68, 30), (62, 44), (10, 44)], fill=(170, 124, 70), outline=(90, 58, 26))
-        d.rectangle([32, 24, 40, 34], fill=(70, 44, 22))
-        for dx in (-1, 1):
-            d.rectangle([36 + dx * 6 - (6 if dx < 0 else -1) , 26, 36 + dx * 6 + (0 if dx < 0 else 7), 29], fill=(246, 244, 236))
-        morpho(d, 36, 22, 0.42, 0.0, 0.0)
-        d.point((36, 6), fill=(230, 230, 230))
-        for px, py in ((24, 20), (48, 20), (36, 30)):
-            d.ellipse([px - 1, py - 1, px + 1, py + 1], fill=(220, 220, 220))
-        d.rectangle([14, 36, 22, 40], fill=(246, 244, 236))
-        d.text((14, 33), "", fill=(0, 0, 0))
-    elif i == 7:   # terrarium with a mantis
-        d.rectangle([8, 4, 64, 42], fill=(36, 66, 70), outline=(180, 220, 230), width=1)
-        d.rectangle([9, 32, 63, 41], fill=(86, 58, 32))
-        for x in range(10, 62, 4):
-            d.point((x, 34 + (x % 3)), fill=(120, 84, 48))
-        d.line([(14, 40), (30, 22), (52, 16)], fill=(102, 66, 34), width=3)
-        for (x, y) in ((16, 30), (22, 36), (58, 34), (54, 28)):
-            d.polygon([(x, y), (x + 4, y - 8), (x + 8, y)], fill=(54, 140, 60), outline=(30, 90, 40))
-        mantis(d, 38, 20, 0.5, t * 1.5)
-        d.rectangle([10, 5, 62, 7], fill=(255, 230, 150))
-        d.line([(12, 8), (14, 38)], fill=(210, 240, 250))
-
-
-def slot_surface(i, t, k):
-    sw, sh = 72, 62
-    surf = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
-    d = ImageDraw.Draw(surf)
-    d.rectangle([0, 0, sw - 1, sh - 1], fill=(26, 52, 40, 255), outline=(206, 164, 76, 255))
-    d.rectangle([2, 2, sw - 3, sh - 3], outline=(110, 84, 34, 255))
-    for cx, cy in ((3, 3), (sw - 4, 3), (3, sh - 4), (sw - 4, sh - 4)):
-        d.point((cx, cy), fill=(255, 224, 120, 255))
-    inner = Image.new("RGBA", (72, 46), (0, 0, 0, 0))
-    draw_item(ImageDraw.Draw(inner), i, t)
-    surf.alpha_composite(inner, (0, 3))
-    d.rectangle([4, sh - 15, sw - 5, sh - 4], fill=(222, 198, 146, 255), outline=(110, 80, 40, 255))
-    txt(d, sw / 2, sh - 9, EQUIP[i], (60, 36, 18, 255), 7, "b", anchor="mm")
-    return surf
-
-
-def scene4(ctx, lt):
-    ctx.img.paste(wood_bg())
-    d = ctx.d
-    # brass header
-    d.rectangle([0, 11, W, 25], fill=(30, 18, 10))
-    d.line([(0, 25), (W, 25)], fill=(206, 164, 76))
-    txt(d, W / 2, 18, "ПОЛЕВОЙ НАБОР НАТУРАЛИСТА", (236, 200, 110), 8, "b", anchor="mm", shadow=(20, 10, 4))
-    for i in range(8):
-        t0 = ITEM_TIMES[i] - S4
-        if lt < t0:
-            continue
-        k = ease_back((lt - t0) / 0.55)
-        surf = slot_surface(i, lt, k)
-        col, row = i % 4, i // 4
-        cx = 10 + col * 76 + 36
-        cy = 29 + row * 69 + 31
-        sc = max(0.05, k)
-        sz = (max(1, int(72 * sc)), max(1, int(62 * sc)))
-        s2 = surf.resize(sz, Image.NEAREST)
-        ctx.img.paste(s2, (int(cx - sz[0] / 2), int(cy - sz[1] / 2)), s2)
-        if 0 < lt - t0 < 0.5:    # little pop sparks
-            r = random.Random(i)
-            for _ in range(8):
-                a = r.uniform(0, 6.28)
-                rd = (lt - t0) * 90 * r.uniform(0.4, 1)
-                d.point((cx + math.cos(a) * rd, cy + math.sin(a) * rd), fill=(255, 230, 140))
-    # sweeping glint across all slots at the end
-    if lt > 9.4:
-        gx = (lt - 9.4) / 2.4 * (W + 80) - 40
-        for x in range(int(gx) - 6, int(gx) + 6):
-            if 0 <= x < W:
-                for y in range(28, 160):
-                    if (x + y) % 2 == 0 and abs((x - gx)) < 5:
-                        p = ctx.img.getpixel((x, y))
-                        ctx.img.putpixel((x, y), tuple(min(255, c + 60) for c in p))
-    ctx.flush()
-    arr = np.asarray(ctx.img).astype(np.float32)
-    vg = np.clip(1 - (((XX - W / 2) / (W * 0.8)) ** 2 + ((YY - H / 2) / (H * 1.0)) ** 2) * 0.8, 0.35, 1)
-    ctx.img = Image.fromarray(np.clip(np.floor(arr * vg[..., None] + BAY[..., None]), 0, 255).astype(np.uint8))
-    ctx.d = ImageDraw.Draw(ctx.img)
-
-
 # ================================================================== SCENE 5
 @lru_cache(None)
 def height_map():
@@ -1357,9 +1194,9 @@ def scene7(ctx, lt):
 
 
 # ================================================================ PIPELINE
-SCENES = [(S1, S2, scene1), (S2, S3A, scene2), (S3A, S3B, scene3a), (S3B, S4, scene3b),
-          (S4, S5, scene4), (S5, S7, scene5), (S7, DUR, scene7)]
-TRANS = {S2: ("dissolve", 0.9), S3A: ("dissolve", 0.8), S3B: ("iris", 1.0), S4: ("wipey", 0.9),
+SCENES = [(S1, S2, scene1), (S2, S3A, scene2), (S3A, S3B, scene3a), (S3B, S5, scene3b),
+          (S5, S7, scene5), (S7, DUR, scene7)]
+TRANS = {S2: ("dissolve", 0.9), S3A: ("dissolve", 0.8), S3B: ("iris", 1.0),
          S5: ("wipex", 0.9), S7: ("dissolve", 1.2)}
 
 

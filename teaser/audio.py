@@ -12,7 +12,7 @@ import video as V
 SR = 44100
 DUR = V.DUR
 N = SR * DUR
-BAR = V.LOGO_HIT / 20.0          # the logo hit lands exactly on a bar line
+BAR = V.LOGO_HIT / 16.0          # the logo hit lands exactly on a bar line
 BEAT = BAR / 4
 rng = np.random.RandomState(7)
 
@@ -198,7 +198,7 @@ for b in range(NBARS):
     put(PAD, t0, (sig + sub) * env, 1.0)
 PAD = lp(PAD, 1400, 4)
 tg = np.arange(N) / SR
-PAD *= level(tg, [(0, 0.0), (2.5, 0.28), (9, 0.3), (31, 0.36), (45, 0.36), (V.LOGO_HIT - 9, 0.45), (V.LOGO_HIT - 1.2, 0.8),
+PAD *= level(tg, [(0, 0.0), (2.5, 0.28), (9, 0.3), (31, 0.36), (V.LOGO_HIT - 8, 0.45), (V.LOGO_HIT - 1.2, 0.8),
                   (GAP0 + 0.1, 0.05), (GAP1 - 0.02, 0.05), (GAP1 + 0.05, 0.95), (DUR - 6, 0.8), (DUR, 0.0)])
 for ch_, gn in ((L, 0.5), (R, 0.5)):
     ch_ += PAD * gn
@@ -238,27 +238,23 @@ while t < DUR - 1:
             if bi in (1, 3):
                 play(tri(mid(ch["root"] + 12), BEAT * 0.4, 0.12), t + BEAT / 2, g * 0.5, 0.5)
         # kicks
-        if 19 <= t < 43 and bi in (0, 2) and t < 31:
+        if 19 <= t < 31 and bi in (0, 2):
             play(kick(), t, 0.3, 0.5)
-        if t >= 31 and t < 43 and bi == 0:
+        if t >= 31 and t < 37 and bi == 0:
             play(kick(), t, 0.4, 0.5)
-        if t >= 43 and (t < DUR - 4):
+        if t >= 37 and (t < DUR - 4):
             play(kick(), t, 0.62 if t < V.S7 else 0.8, 0.5) if bi in (0, 2) else None
             if bi in (1, 3):
-                play(snare(), t, 0.3 if t < 50 else 0.42, 0.5, 0.25)
+                play(snare(), t, 0.3 if t < 45 else 0.42, 0.5, 0.25)
             for h in (0, 1):
                 play(hat(), t + h * BEAT / 2, 0.14 if h == 0 else 0.1, 0.62 if h else 0.4)
-        elif 31 <= t < 43:
+        elif 31 <= t < 37:
             play(hat(), t, 0.08, 0.6)
             play(hat(), t + BEAT / 2, 0.05, 0.4)
     t += BEAT
 
 # ---- interface / foley events -------------------------------------
 PENTA = [69, 72, 74, 76, 79, 81, 84]
-for i, tm in enumerate(V.ITEM_TIMES):
-    play(plink(mid(PENTA[i % 7] + 12), 0.6, 0.15), tm, 0.28, 0.2 + 0.08 * i, 0.5)
-    play(tick(0.03), tm, 0.25, 0.5)
-    play(bloop(300, 700, 0.12), tm - 0.06, 0.16, 0.5)
 for i, tm in enumerate(V.PIN_TIMES):
     play(bloop(1100, 260, 0.45), tm - 0.0, 0.12, 0.3 + 0.1 * i)
     play(kick(0.2) * 0.8, tm + 0.46, 0.35, 0.5)
@@ -272,7 +268,7 @@ for k in range(14):   # night sparkles in scene 1
     play(plink(mid(PENTA[rng.randint(0, 7)] + 12), 0.6, 0.2), tm, 0.045, rng.uniform(0.2, 0.8), 0.9)
 
 # ---- transitions ------------------------------------------------------
-for tm, d in ((V.S2, 0.9), (V.S3A, 0.8), (V.S4, 0.9), (V.S5, 0.9)):
+for tm, d in ((V.S2, 0.9), (V.S3A, 0.8), (V.S5, 0.9)):
     play(whoosh(d), tm - d / 2, 0.22, 0.5, 0.3)
 play(whoosh(1.0, False), V.S3B - 0.5, 0.2, 0.5, 0.3)
 play(bell(mid(81), 2.0, 0.9), V.S3B - 0.1, 0.12, 0.5, 0.6)

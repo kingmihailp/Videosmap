@@ -1,18 +1,17 @@
-# Flora0world: HUB — teaser (1:10)
+# Flora0world: HUB — teaser (0:58)
 
 Pixel-art cinematic teaser for the opening of the Flora0world: HUB community
 (community of entomologists, naturalists and keepers: catch locations, dates, observations).
 
-`Flora0world_HUB_teaser.mp4` — 1280x720, 24 fps, 70 s, stereo.
+`Flora0world_HUB_teaser.mp4` — 1280x720, 24 fps, 58 s, stereo.
 
 | Time | Scene |
 |---|---|
 | 0:00–0:09 | Night forest, fireflies, glowing mushrooms, a moth drifting to the moon |
 | 0:09–0:19 | UV light-trap sheet, moths landing, hawkmoth *Sphinx ligustri* |
 | 0:19–0:31 | Macro: stag beetle *Lucanus cervus*, then *Morpho menelaus* on a flower |
-| 0:31–0:43 | Field kit: net, aspirator, loupe, notebook, headlamp, UV lamp, spreading board, terrarium |
-| 0:43–0:57 | Map of finds: pins drop with species, place and date |
-| 0:57–1:10 | Fireflies form the Flora0world logo, HUB badge, tagline and feature chips |
+| 0:31–0:45 | Map of finds: pins drop with species, place and date |
+| 0:45–0:58 | Fireflies form the Flora0world logo, HUB badge, tagline and feature chips |
 
 Everything (graphics and music) is generated procedurally:
 
