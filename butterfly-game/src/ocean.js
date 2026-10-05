@@ -10,7 +10,7 @@ const Ocean = (() => {
     seedStr = seedStr || World.randomSeed();
     const seed = strSeed('ocean:' + seedStr), rng = new Rng(seed), noise = new Noise2(seed ^ 0x77ab), ISL = 44;
     const scene = new THREE.Scene(); const fogCol = new THREE.Color('#04080f'); scene.background = fogCol.clone(); const fog = new THREE.FogExp2(fogCol, 0.03); scene.fog = fog;
-    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: R_PLAY, spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
+    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: R_PLAY, spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0, fog: 1 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
 
     // ---------------- relief: one low island, sea level at y = 0
     const edgeR = (x, z) => ISL * (0.84 + 0.3 * (noise.fbm(x * 0.045 + 3, z * 0.045 + 9, 3) - 0.5) * 1.4);
@@ -117,7 +117,7 @@ const Ocean = (() => {
       if (thunderAt > 0 && t >= thunderAt) { thunderAt = -1; Snd.sfx.thunder(); }
       let fl = 0; if (boltT > 0) { boltT -= dt; fl = boltAmp * (boltT > 0.35 ? 1 : boltT > 0.28 ? 0.1 : boltT > 0.2 ? 0.8 : boltT / 0.25); } world.flash = fl;
       const br = world.mod.bright; hemi.intensity = 0.55 + br * 0.5 + fl * 2.6; moon.intensity = 0.55 + br * 0.45 + fl * 1.8;
-      fog.density = 0.03 * (1 - br * 0.45) * (1 - fl * 0.5); fogCol.set('#04080f').lerp(new THREE.Color('#5a6a90'), fl * 0.6 + br * 0.12); scene.background.copy(fogCol); fog.color.copy(fogCol);
+      fog.density = 0.03 * (world.mod.fog || 1) * (1 - br * 0.45) * (1 - fl * 0.5); fogCol.set('#04080f').lerp(new THREE.Color('#5a6a90'), fl * 0.6 + br * 0.12); scene.background.copy(fogCol); fog.color.copy(fogCol);
       moonS.position.set(focus.x - 120, 140, focus.z - 180);
       // lighthouse sweep
       if (world.lighthouse) { const ang = t * 0.5; world.lighthouse.pivot.rotation.y = ang; world.lighthouse.tgt.position.set(-Math.sin(ang) * 20, 12.4, -Math.cos(ang) * 20); lampMesh.material.color.setScalar(0.85 + 0.15 * Math.sin(t * 3)); }
