@@ -73,14 +73,14 @@ const Snd = (() => {
     rainforest2:{ wind: 0.2, bird: 'tropic', insect: ['cicada', 5200, 0.07], frog: true, base: 53, scale: [0, 2, 4, 7, 9], mus: 0.8 },
     savanna:    { wind: 0.55, bird: 'dove', insect: ['cricket', 3800, 0.04], base: 50, scale: [0, 2, 5, 7, 10], mus: 0.8 },
     prairie:    { wind: 0.65, bird: 'lark', insect: ['cricket', 4000, 0.05], base: 55, scale: [0, 2, 4, 7, 9], mus: 0.9 },
-    cabinet:    { wind: 0.07, bird: 'sparse', insect: null, clock: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
+    cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {
     if (!ac) return; stopAmbient(); const cfg = AMB[kind] || AMB.meadow; ambKind = kind; amb = { cfg, nodes: [] };
     const t = now();
     // wind
-    const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6;
+    if (cfg.wind) { const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6; }
     const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.35 * cfg.wind; lfo.connect(lg); lg.connect(wg.gain); wg.gain.value = 0.28 * cfg.wind; w.connect(wf); wf.connect(wg); wg.connect(ambG); w.start(); lfo.start(); amb.nodes.push(w, lfo);
     if (cfg.water) { const s = noiseSrc(true), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9; g.gain.value = 0.07; s.connect(f); f.connect(g); g.connect(ambG); s.start(); amb.nodes.push(s); }
     if (cfg.insect) { // constant insect bed
@@ -121,10 +121,66 @@ const Snd = (() => {
       musNext = t + beat;
     }
   }
+
+  // --- slow jazz ballad: walking bass, brushes, electric-piano comping and a breathy sax line -------------
+  let reverb = null;
+  function revNode() {
+    if (reverb) return reverb; const len = ac.sampleRate * 1.8, buf = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    const cv = ac.createConvolver(); cv.buffer = buf; const g = ac.createGain(); g.gain.value = 0.55; cv.connect(g); g.connect(musG); reverb = cv; return cv;
+  }
+  const JZ = [ // bars: [root midi (bass register), chord tones above, scale for the melody]
+    { r: 38, ch: [53, 57, 60, 64], sc: [62, 64, 65, 67, 69, 71, 72] },   // Dm9
+    { r: 43, ch: [53, 57, 59, 64], sc: [62, 64, 65, 67, 69, 71, 72] },   // G13
+    { r: 36, ch: [55, 59, 62, 64], sc: [60, 62, 64, 67, 69, 71, 72] },   // Cmaj9
+    { r: 45, ch: [55, 58, 61, 64], sc: [61, 64, 65, 67, 69, 70, 73] },   // A7(b9)
+  ];
+  function pnote(f, t, vol, dur) { // soft electric piano: sine + bell partial, fast hammer decay
+    const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain(), lp = ac.createBiquadFilter();
+    o.type = 'sine'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 4.01; lp.type = 'lowpass'; lp.frequency.value = 2600;
+    env(g, t, 0.006, dur, vol); env(g2, t, 0.002, 0.18, vol * 0.35); o.connect(g); o2.connect(g2); g.connect(lp); g2.connect(lp); lp.connect(musG); lp.connect(revNode());
+    o.start(t); o2.start(t); o.stop(t + dur + 0.1); o2.stop(t + 0.3);
+  }
+  function bassNote(m, t, dur) {
+    const f = midi(m), o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter(); o.type = 'triangle'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 520;
+    env(g, t, 0.012, dur, 0.5); o.connect(lp); lp.connect(g); g.connect(musG); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function brush(t, vol, hi) { noiseBurst(t, hi ? 0.09 : 0.2, hi ? 7200 : 3800, hi ? 6000 : 2000, vol, 'highpass', 0.7, musG); }
+  function sax(m, t, dur, vol) {
+    const f = midi(m), o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter(), vib = ac.createOscillator(), vg = ac.createGain();
+    o.type = 'sawtooth'; o2.type = 'square'; o.frequency.value = f; o2.frequency.value = f * 2.003; vib.frequency.value = 5.2; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.012, t + dur * 0.7); vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.linearRampToValueAtTime(1700, t + dur * 0.4); lp.Q.value = 1.4;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.07); g.gain.setValueAtTime(vol * 0.85, t + dur * 0.7); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    const g2 = ac.createGain(); g2.gain.value = 0.18; o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(musG); g.connect(revNode());
+    noiseBurst(t, 0.12, 3000, 2000, vol * 0.25, 'bandpass', 2, musG);
+    o.start(t); o2.start(t); vib.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05); vib.stop(t + dur + 0.05);
+  }
+  function jazz(t) {
+    const J = amb.jz || (amb.jz = { next: t + 0.4, n: 0, lastM: 69, bassLast: 38 }); const beat = 0.92; // ~65 bpm
+    musG.gain.setTargetAtTime(A.music ? 0.9 : 0, now(), 0.3);
+    while (J.next < t + 0.3) {
+      const bt = J.next, n = J.n, bar = Math.floor(n / 4) % (JZ.length * 2), chord = JZ[Math.floor(bar / 2) % JZ.length], nxt = JZ[(Math.floor(bar / 2) + (bar % 2 === 1 ? 1 : 0)) % JZ.length], b = n % 4, swing = beat * 0.64;
+      // bass walk
+      const tones = [chord.r, chord.r + 7, chord.r + 4, chord.r + 7]; let bm = b === 0 ? chord.r : b === 3 ? (nxt.r + (Math.random() < 0.5 ? 1 : -1)) : tones[b] + (Math.random() < 0.3 ? 2 : 0);
+      if (bm < 34) bm += 12; bassNote(bm, bt, beat * 0.9);
+      // brushes: swing ride pattern + soft backbeat
+      brush(bt, 0.05, true); if (b === 1 || b === 3) brush(bt, 0.03, false); brush(bt + swing, 0.025, true);
+      if (b === 1 || b === 3) noiseBurst(bt, 0.08, 220, 120, 0.05, 'lowpass', 0.7, musG);
+      // piano comping
+      if (b === 0 && (n / 4 | 0) % 2 === 0 || (b === 2 && Math.random() < 0.45)) chord.ch.forEach((m, i) => pnote(midi(m + (Math.random() < 0.1 ? 12 : 0)), bt + (b === 2 ? swing : 0) + i * 0.012, 0.045, beat * 2.2));
+      if (b === 0 && Math.random() < 0.5) pnote(midi(chord.ch[3] + 12), bt + beat * 1.5, 0.03, 1.4);
+      // melody: sparse phrases with long notes and a swung feel
+      if (b === 0 && J.n % 8 === 0 && Math.random() < 0.8 || (b === 0 && Math.random() < 0.3)) {
+        const sc = chord.sc; let idx = Math.max(0, sc.findIndex(m => m >= J.lastM)); const cnt = 2 + (Math.random() * 3 | 0); let at = bt + (Math.random() < 0.5 ? 0 : swing);
+        for (let k = 0; k < cnt; k++) { idx = clamp(idx + [-2, -1, -1, 1, 1, 2][(Math.random() * 6) | 0], 0, sc.length - 1); const m = sc[idx] + (Math.random() < 0.25 ? 12 : 0) - (idx > 4 ? 12 : 0) + 12; const dur = beat * (k === cnt - 1 ? 2.4 : [0.7, 1.0, 1.5][(Math.random() * 3) | 0]); sax(Math.min(m, 81), at, dur, 0.1); J.lastM = m; at += dur * (k % 2 ? 1 : 0.95) + (Math.random() < 0.3 ? beat * 0.5 : 0); }
+      }
+      J.next += beat; J.n++;
+    }
+  }
   function tick() {
     if (!ac || !amb) return; const t = now();
     if (t >= nextEvt) { ambientEvents(t + 0.05); nextEvt = t + 1.2 + Math.random() * 3.2; }
-    music(t + 0.05);
+    if (amb.cfg.jazz) jazz(t + 0.05); else music(t + 0.05);
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
   return { init, sfx, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };

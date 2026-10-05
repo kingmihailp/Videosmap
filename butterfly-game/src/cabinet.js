@@ -198,8 +198,31 @@ const Cabinet = (() => {
       fr(-HX + 0.04, 1.85, -2.4, Math.PI / 2, SPECIES_BY_ID.machaon || SPECIES[0]); fr(-HX + 0.04, 1.85, 2.4, Math.PI / 2, SPECIES[Math.min(10, SPECIES.length - 1)]); fr(HX - 0.04, 1.9, -0.05, -Math.PI / 2, SPECIES[Math.min(24, SPECIES.length - 1)]);
       // --- pendant lamp, plants, globe
       cyl(S, 0.01, 0.01, 0.7, 0.3, RH - 0.45, 0.4, bas('#14100c'), 4, { cast: false }); cyl(S, 0.08, 0.34, 0.26, 0.3, RH - 0.9, 0.4, lam('#2a6a4a', { side: THREE.DoubleSide }), 14); this.bulb = mesh(new THREE.SphereGeometry(0.08, 8, 6), bas('#fff2c0'), 0.3, RH - 0.98, 0.4, { cast: false, recv: false }); S.add(this.bulb);
-      const plant = (x, z) => { cyl(S, 0.2, 0.15, 0.36, x, 0.18, z, lam('#8a4a2a'), 10); for (let i = 0; i < 9; i++) { const a = i / 9 * 6.283; const lf = cube(S, 0.05, 0.5, 0.14, x + Math.sin(a) * 0.12, 0.62, z + Math.cos(a) * 0.12, lam(i % 2 ? '#3a8a40' : '#2e7a38'), { cast: false }); lf.rotation.z = Math.sin(a) * 0.5; lf.rotation.x = Math.cos(a) * 0.5; } this.addCol(x - 0.25, x + 0.25, z - 0.25, z + 0.25); };
-      plant(-4.15, -2.85); plant(4.15, -2.85); plant(-4.1, 2.8);
+      // houseplants: a proper pot with soil and either a rubber-plant (broad leaves on a trunk) or a dracaena (arching blades)
+      const leafGeo = (w, l, bend) => { const g = new THREE.PlaneGeometry(w, l, 2, 6); const pp = g.attributes.position; for (let k = 0; k < pp.count; k++) { const t = (pp.getY(k) + l / 2) / l, x = pp.getX(k); const tap = Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.92 + 0.04)), 0.7); pp.setX(k, x * tap); pp.setY(k, t * l); pp.setZ(k, bend * t * t * l + Math.abs(x) * 0.35); } g.computeVertexNormals(); return g; };
+      const LEAFG = { broad: leafGeo(0.2, 0.34, -0.5), blade: leafGeo(0.075, 1.05, -0.85) };
+      const plant = (x, z, kind, sc = 1, seed = 1) => {
+        const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(sc); S.add(g); const rr = new Rng(seed);
+        const pot = lam('#b0623a'), potDark = lam('#8a4a2a');
+        cyl(g, 0.17, 0.12, 0.3, 0, 0.15, 0, pot, 14); cyl(g, 0.2, 0.2, 0.05, 0, 0.32, 0, potDark, 14); cyl(g, 0.15, 0.15, 0.02, 0, 0.335, 0, lam('#2a1c12'), 14); cyl(g, 0.15, 0.15, 0.025, 0, 0.012, 0, potDark, 14);
+        const leafMat = (c) => new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide });
+        const greens = kind === 'ficus' ? ['#2a6a34', '#337a3c', '#245a30', '#3a8644'] : ['#3a8a3c', '#4a9a44', '#2e7a38', '#58a84c'];
+        if (kind === 'ficus') {
+          const trunk = cyl(g, 0.022, 0.035, 0.9, 0.0, 0.78, 0, lam('#5a4028'), 6); trunk.rotation.z = 0.05;
+          for (let k = 0; k < 26; k++) {
+            const t = k / 26, az = k * 2.4 + rr.range(-0.3, 0.3), h = 0.5 + t * 0.78; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
+            const out = 0.03 + (1 - Math.abs(t - 0.45)) * 0.02; lf.position.set(Math.sin(az) * out, h, Math.cos(az) * out); lf.rotation.set(0.85 + rr.range(-0.2, 0.3) + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.15 - t * 0.35); g.add(lf);
+          }
+          for (let k = 0; k < 4; k++) { const az = k * 1.57 + 0.5; const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k])); lf.position.set(0, 1.33, 0); lf.rotation.set(0.35 + k * 0.1, az, 0, 'YXZ'); lf.scale.setScalar(0.7); g.add(lf); }
+        } else {
+          for (let k = 0; k < 18; k++) {
+            const az = k * 2.4 + rr.range(-0.2, 0.2), tilt = 0.25 + (k % 6) * 0.13 + rr.range(0, 0.15); const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[k % 4])); lf.castShadow = true;
+            lf.position.set(Math.sin(az) * 0.03, 0.34, Math.cos(az) * 0.03); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, 0.65 + (k % 5) * 0.12, 1); g.add(lf);
+          }
+        }
+        this.addCol(x - 0.28, x + 0.28, z - 0.28, z + 0.28);
+      };
+      plant(-4.0, -2.7, 'ficus', 1.25, 3); plant(4.0, -2.7, 'dracaena', 1.35, 5); plant(-3.9, 2.65, 'ficus', 1.05, 8);
       const gl = new THREE.Group(); gl.position.set(-1.75, 0, -2.3); S.add(gl); cyl(gl, 0.18, 0.2, 0.05, 0, 0.9 + 0.02, 0, darkWood, 10); cyl(gl, 0.04, 0.04, 0.8, 0, 0.52, 0, darkWood, 8); cyl(gl, 0.26, 0.2, 0.06, 0, 0.03, 0, darkWood, 10);
       const gtex = ctex(64, 32, (x, w, h) => { x.fillStyle = '#3a78a8'; x.fillRect(0, 0, w, h); const nz = new Noise2(9); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const v = nz.fbm(i * 0.09, j * 0.12, 3); if (v > 0.52) { x.fillStyle = v > 0.66 ? '#6a8a3a' : '#4e9a48'; x.fillRect(i, j, 1, 1); } } }, 0, 0, false);
       const globe = mesh(new THREE.SphereGeometry(0.3, 14, 10), lam('#ffffff', { map: gtex }), 0, 1.3, 0, {}); globe.rotation.z = 0.4; gl.add(globe); this.globe = globe; this.addCol(-2.1, -1.4, -2.65, -1.95);
