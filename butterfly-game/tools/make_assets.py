@@ -13,47 +13,68 @@ FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 SIZES = [8, 10, 14, 22]
 CHARS = [chr(c) for c in range(32, 127)] + [chr(c) for c in range(0x410, 0x450)] + ["Ё", "ё"] + list("—–·…×→←↑↓♥✓•°«»№’“”±≈½©★▪✕›")
 
-def glyph(font4, ch, size):
-    l, t, r, b = font4.getbbox(ch, anchor="ls")
-    adv = font4.getlength(ch) / 4.0
+# ---- font: Tiny5 (real pixel font, native 8px grid) rendered 1-bit, enlarged by whole numbers; extra symbols are hand-made bitmaps
+F_CYR = os.path.join(HERE, "data", "fonts", "Tiny5-cyrillic.ttf")
+F_LAT = os.path.join(HERE, "data", "fonts", "Tiny5-latin.ttf")
+BASE = 8
+SCALE = {8: 1, 10: 1, 14: 2, 22: 3}      # game text size -> pixel scale; size 10 uses the same grid as 8
+ASC = {8: 7, 10: 8, 14: 14, 22: 21}
+LH = {8: 11, 10: 14, 14: 19, 22: 30}
+HAND = {   # char: (rows, y offset from baseline, advance)
+    "→": (["..#..", "...#.", "#####", "...#.", "..#.."], -6, 7), "←": (["..#..", ".#...", "#####", ".#...", "..#.."], -6, 7),
+    "♥": ([".#.#.", "#####", "#####", ".###.", "..#.."], -6, 7), "✓": (["....#", "...#.", "#.#..", ".#..."], -5, 7),
+    "≈": ([".#.#.", "#.#.#", ".....", ".#.#.", "#.#.#"], -6, 7), "★": (["..#..", "#####", ".###.", ".#.#.", "#...#"], -6, 7),
+    "▪": (["###", "###", "###"], -4, 5), "✕": (["#...#", ".#.#.", "..#..", ".#.#.", "#...#"], -6, 7),
+}
+
+from fontTools.ttLib import TTFont
+FONTS = [ImageFont.truetype(F_LAT, BASE), ImageFont.truetype(F_CYR, BASE)]
+CMAPS = [TTFont(F_LAT).getBestCmap(), TTFont(F_CYR).getBestCmap()]
+
+def base_glyph(ch):
+    """1-bit bitmap of one glyph at the native grid: (PIL 'L' image or None, advance, xoff, yoff)."""
+    if ch in HAND:
+        rows, yo, adv = HAND[ch]; w = max(len(r) for r in rows); im = Image.new("L", (w, len(rows)), 0)
+        for y, r in enumerate(rows):
+            for x, c in enumerate(r):
+                if c == "#": im.putpixel((x, y), 255)
+        return im, adv, 0, yo
+    font = FONTS[1] if ord(ch) in CMAPS[1] and ord(ch) not in CMAPS[0] else FONTS[0]
+    adv = max(1, int(round(font.getlength(ch))))
     if ch == " ":
-        return None, max(2, round(adv)), 0, 0
-    py = int(math.ceil(-t / 4)) + 1
-    cw = int(math.ceil((8 + r + 8) / 4)) * 4
-    ch_ = int(math.ceil((4 * py + b + 8) / 4)) * 4
-    big = Image.new("L", (cw, ch_), 0)
-    ImageDraw.Draw(big).text((8, 4 * py), ch, font=font4, fill=255, anchor="ls")
-    small = big.resize((cw // 4, ch_ // 4), Image.BOX).point(lambda v: 255 if v > 80 else 0)
-    bb = small.getbbox()
+        return None, 3, 0, 0
+    l, t, r, b = font.getbbox(ch, anchor="ls")
+    pad = 4; w, h = int(r - l) + pad * 2 + 2, int(b - t) + pad * 2 + 2
+    im = Image.new("L", (w, h), 0); d = ImageDraw.Draw(im); d.fontmode = "1"
+    ox, oy = pad - int(l), pad - int(t)
+    d.text((ox, oy), ch, font=font, fill=255, anchor="ls")
+    bb = im.getbbox()
     if not bb:
-        return None, max(2, round(adv)), 0, 0
-    crop = small.crop(bb)
-    xoff = bb[0] - 2           # pen starts at x=2 in the small image
-    yoff = bb[1] - py          # relative to baseline
-    return crop, max(1, round(adv)), xoff, yoff
+        return None, adv, 0, 0
+    return im.crop(bb), adv, bb[0] - ox, bb[1] - oy
 
 def build_font():
     atlas = Image.new("RGBA", (1024, 256), (0, 0, 0, 0))
     meta = {}
     cx = cy = rowh = 0
     for size in SIZES:
-        f4 = ImageFont.truetype(FONT, size * 4)
-        f1 = ImageFont.truetype(FONT, size)
-        asc = f1.getmetrics()[0]
-        meta[size] = {"asc": asc, "lh": round(size * 1.35), "g": {}}
+        sc = SCALE[size]
+        meta[size] = {"asc": ASC[size], "lh": LH[size], "g": {}}
         for ch in CHARS:
-            img, adv, xo, yo = glyph(f4, ch, size)
+            img, adv, xo, yo = base_glyph(ch)
             if img is None:
-                meta[size]["g"][ch] = [0, 0, 0, 0, adv, 0, 0]
+                meta[size]["g"][ch] = [0, 0, 0, 0, adv * sc, 0, 0]
                 continue
+            if sc > 1:
+                img = img.resize((img.width * sc, img.height * sc), Image.NEAREST)
             w, h = img.size
             if cx + w + 1 > 1024:
                 cx, cy, rowh = 0, cy + rowh + 1, 0
             rgba = Image.new("RGBA", (w, h), (255, 255, 255, 0))
-            rgba.putalpha(img)
-            rgba.paste((255, 255, 255, 255), mask=img)
+            rgba.putalpha(img.point(lambda v: 255 if v > 100 else 0))
+            rgba.paste((255, 255, 255, 255), mask=rgba.split()[3])
             atlas.paste(rgba, (cx, cy))
-            meta[size]["g"][ch] = [cx, cy, w, h, adv, xo, yo]
+            meta[size]["g"][ch] = [cx, cy, w, h, adv * sc, xo * sc, yo * sc]
             cx += w + 1
             rowh = max(rowh, h)
         cx, cy, rowh = 0, cy + rowh + 1, 0
