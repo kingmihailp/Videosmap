@@ -50,6 +50,7 @@ const Art = (() => {
     const fB = bbox(fM), hB = bbox(hM);
     const cv = document.createElement('canvas'); cv.width = cv.height = N;
     const ctx = cv.getContext('2d'); const img = ctx.createImageData(N, N); const px = img.data;
+    const imgF = ctx.createImageData(N, N), imgH = ctx.createImageData(N, N);
     const edgeC = C(a.edge ? a.edge[0] : '#222'), edgeW = a.edge ? a.edge[1] : 1;
     const dotsC = a.dots ? C(a.dots) : null;
     const veinC = a.veins ? C(a.veins) : null;
@@ -96,17 +97,45 @@ const Art = (() => {
       if (d === 0) { c = mixc(c, [10, 8, 8], 0.55); if (dotsC && edgeW <= 1 && ((x + y) % 3 === 0)) c = dotsC; }
       return c;
     }
-    const put = (x, y, c) => { const i = (y * N + x) * 4; px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255; };
+    const put = (x, y, c, part) => { const i = (y * N + x) * 4; px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255; const q = part.data; q[i] = c[0]; q[i + 1] = c[1]; q[i + 2] = c[2]; q[i + 3] = 255; };
     // hind first, tail, then fore on top
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (hM[i]) put(x, y, colorAt(x, y, 'h', hD[i])); }
-    if (tM) { const tc = C(typeof a.tail === 'string' ? a.tail : '#111'); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (tM[i]) put(x, y, tD[i] === 0 ? mixc(tc, [0, 0, 0], 0.4) : tc); } }
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i]) put(x, y, colorAt(x, y, 'f', fD[i])); }
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (hM[i]) put(x, y, colorAt(x, y, 'h', hD[i]), imgH); }
+    if (tM) { const tc = C(typeof a.tail === 'string' ? a.tail : '#111'); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (tM[i]) put(x, y, tD[i] === 0 ? mixc(tc, [0, 0, 0], 0.4) : tc, imgH); } }
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i]) put(x, y, colorAt(x, y, 'f', fD[i]), imgF); }
     // soft darkening where forewing overlaps hindwing (depth cue)
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i] && hM[i] && fD[i] === 1 && y > 17) { const k = (y * N + x) * 4; px[k] *= 0.75; px[k + 1] *= 0.75; px[k + 2] *= 0.75; } }
     ctx.putImageData(img, 0, 0);
+    const part = im => { const c2 = document.createElement('canvas'); c2.width = c2.height = N; c2.getContext('2d').putImageData(im, 0, 0); return c2; };
+    const tipOf = (m, py) => { let bx = 0, by = py, bd = -1; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (m[y * N + x]) { const d = (x + 0.5) * (x + 0.5) + (y + 0.5 - py) * (y + 0.5 - py); if (d > bd) { bd = d; bx = x + 0.5; by = y + 0.5; } } return [bx, by - py]; };
+    partsCache[sp.id] = { f: part(imgF), h: part(imgH), tf: tipOf(fM, PIV.f), th: tipOf(hM, PIV.h) };
     cache[sp.id] = cv;
     return cv;
   }
+
+  // ---- spread poses: every wing is rotated by a (rad) about its root and compressed along its own length by s
+  const PIV = { f: 18, h: 21 };
+  const partsCache = {};
+  const RAW = { rf: { a: -0.85, s: 0.62 }, lf: { a: -0.85, s: 0.62 }, rh: { a: -1.4, s: 0.6 }, lh: { a: -1.4, s: 0.6 } };
+  const IDEAL = { rf: { a: 0, s: 1 }, lf: { a: 0, s: 1 }, rh: { a: 0, s: 1 }, lh: { a: 0, s: 1 } };
+  function wingParts(sp) { wingCanvas(sp); return partsCache[sp.id]; }
+  function drawBody(ctx, cx, cy, sc, silhouette) {
+    const r = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(cx + x * sc), Math.round(cy + (y - 20) * sc), Math.round(w * sc), Math.round(h * sc)); };
+    const bc = silhouette ? '#000' : '#1e1612';
+    r(-1, 11, 2, 19, bc); r(-1, 8, 2, 3, bc); r(-2, 12, 4, 4, bc); r(-1, 29, 2, 2, bc); r(-2, 14, 1, 1, silhouette ? '#000' : '#4a3a30');
+    r(-2, 6, 1, 2, bc); r(1, 6, 1, 2, bc); r(-3, 4, 1, 2, bc); r(2, 4, 1, 2, bc);
+  }
+  function drawPose(ctx, sp, pose, cx, cy, sc, o = {}) {
+    const P = wingParts(sp); pose = pose || RAW; ctx.imageSmoothingEnabled = false;
+    if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
+    for (const [k, part, m] of [['lh', 'h', -1], ['rh', 'h', 1], ['lf', 'f', -1], ['rf', 'f', 1]]) {
+      const w = pose[k]; if (!w) continue; const piv = PIV[part];
+      ctx.save(); ctx.translate(cx, cy + (piv - 20) * sc); ctx.scale(m * sc, sc); ctx.rotate(w.a); ctx.scale(w.s, 1); ctx.drawImage(P[part], 0, -piv); ctx.restore();
+    }
+    drawBody(ctx, cx, cy, sc, false);
+    ctx.globalAlpha = 1;
+  }
+  // tip of a wing (relative to its root, in wing units) for a given pose entry
+  function tipPos(sp, k, w) { const P = wingParts(sp); const t = k[1] === 'f' ? P.tf : P.th; const x = t[0] * w.s, y = t[1]; const c = Math.cos(w.a), s2 = Math.sin(w.a); return [x * c - y * s2, x * s2 + y * c]; }
 
   // full spread specimen: 2N wide, body in the middle
   function specimen(sp, silhouette, tint) {
@@ -165,5 +194,5 @@ const Art = (() => {
   }
   function setFlap(g, ang) { g.userData.R.rotation.z = ang; g.userData.L.rotation.z = -ang; }
 
-  return { wingCanvas, specimen, makeButterfly, setFlap, SF, N };
+  return { wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
 })();

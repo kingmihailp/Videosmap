@@ -56,22 +56,49 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, settings: { sound: true, music: true, quality: 'high' } },
+  data: { caught: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  CAP: { S: 1, M: 4, L: 9 },
   load() {
-    try { const s = localStorage.getItem(SAVE_KEY); if (s) { const d = JSON.parse(s); this.data = Object.assign(this.data, d); this.data.settings = Object.assign({ sound: true, music: true, quality: 'high' }, d.settings); } } catch (e) {}
+    try {
+      const s = localStorage.getItem(SAVE_KEY);
+      if (s) {
+        const d = JSON.parse(s); this.data = Object.assign(this.data, d);
+        this.data.settings = Object.assign({ sound: true, music: true, quality: 'high' }, d.settings);
+        if (!d.specimens) { // older save: make a few raw specimens from the journal
+          this.data.specimens = []; this.data.boxes = [];
+          for (const id in this.data.caught) { const c = this.data.caught[id]; for (let i = 0; i < Math.min(c.count, 3); i++) this.data.specimens.push({ uid: this.nextUid(), sp: id, biome: c.place, date: c.first, q: null, pose: null, box: null }); }
+        }
+        if (!this.data.boxes) this.data.boxes = [];
+        this.data.specimens = this.data.specimens.filter(x => SPECIES_BY_ID[x.sp]);
+      }
+    } catch (e) {}
   },
   write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) {} },
+  nextUid() { return this.data.uid++; },
   has(id) { return !!this.data.caught[id]; },
   count(id) { return this.data.caught[id] ? this.data.caught[id].count : 0; },
   add(id, biomeId) {
     const first = !this.data.caught[id];
     if (first) this.data.caught[id] = { count: 0, first: Date.now(), place: biomeId };
     this.data.caught[id].count++;
+    const sp = this.data.specimens;
+    sp.push({ uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null });
+    if (sp.length > 400) { const k = sp.findIndex(x => x.q === null && !x.box); if (k >= 0) sp.splice(k, 1); }
     this.write();
     return first;
   },
   total() { return Object.keys(this.data.caught).length; },
   biomeCount(b) { return b.species.filter(s => this.has(s.id)).length; },
+  // ---- cabinet
+  rawList() { return this.data.specimens.filter(s => s.q === null).sort((a, b) => b.date - a.date); },
+  spreadList() { return this.data.specimens.filter(s => s.q !== null); },
+  freeSpread() { return this.data.specimens.filter(s => s.q !== null && !s.box).sort((a, b) => b.q - a.q); },
+  spec(uid) { return this.data.specimens.find(s => s.uid === uid); },
+  box(uid) { return this.data.boxes.find(b => b.uid === uid); },
+  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this.write(); return b; },
+  removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this.write(); return true; },
+  putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this.write(); return true; },
+  takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this.write(); },
 };
 function fmtDate(ts) {
   const d = new Date(ts); const p = n => String(n).padStart(2, '0');

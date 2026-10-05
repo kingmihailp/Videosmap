@@ -37,10 +37,11 @@ const Screens = (() => {
     layout() {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
-        { id: 'play', label: 'Играть', x, y: 150, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}/${SPECIES.length}`, x, y: 174, w, h: 18, size: 8 },
-        { id: 'help', label: 'Управление', x, y: 196, w: 68, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 196, w: 68, h: 16 },
+        { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
+        { id: 'journal', label: `Коллекция  ${Save.total()}/${SPECIES.length}`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
+        { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
       ];
     },
     draw(ctx, t, m) {
@@ -92,7 +93,7 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${SPECIES.length}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 82, y: MAPY + MAP_H * MS + 14, w: 72, h: 24, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${SPECIES.length}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 82, y: MAPY + MAP_H * MS + 14, w: 72, h: 24, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
@@ -207,14 +208,15 @@ const Screens = (() => {
     btns: [],
     layout(play) {
       const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 82, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 106, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 126, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 146, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 146, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 166, w: 180, h: 16 },
-        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 186, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 206, w: 180, h: 16 },
+        { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 101, w: 180, h: 16 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 120, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 139, w: 180, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 158, w: 88, h: 16 },
+        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 158, w: 88, h: 16 },
+        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 177, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 196, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 215, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
@@ -222,8 +224,7 @@ const Screens = (() => {
       UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
       T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 228, { size: 8, align: 'c', color: c.text });
-      T.draw(ctx, 'каждая генерация — новый мир (#seed=... в адресе повторит этот)', SW / 2, 240, { size: 8, align: 'c', color: '#6a8a78' });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };

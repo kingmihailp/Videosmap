@@ -42,7 +42,7 @@ const Snd = (() => {
   const sfx = {
     click() { if (!ac) return; const t = now(); osc('square', 880, t, 0.06, 0.07); osc('square', 1320, t + 0.045, 0.07, 0.06); },
     hover() { if (!ac) return; osc('square', 1320, now(), 0.03, 0.025); },
-    step(kind) { if (!ac) return; const t = now(); const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
+    step(kind) { if (!ac) return; const t = now(); const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
     swing() { if (!ac) return; const t = now(); noiseBurst(t, 0.28, 500, 2200, 0.32, 'bandpass', 1.2); },
     miss() { if (!ac) return; const t = now(); osc('triangle', 220, t, 0.18, 0.08, null, 140); },
     flutter() { if (!ac) return; const t = now(); noiseBurst(t, 0.09, 3000, 5200, 0.05, 'bandpass', 3); },
@@ -55,6 +55,12 @@ const Snd = (() => {
     complete() { if (!ac) return; const t = now(); [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => { bell(midi(67 + n), t + i * 0.1, 0.2, 2.2); }); osc('triangle', midi(43), t, 1.6, 0.12); osc('triangle', midi(50), t, 1.6, 0.1); },
     pin() { if (!ac) return; const t = now(); osc('sine', 900, t, 0.2, 0.15, null, 300); bell(midi(88), t + 0.14, 0.12, 0.8); },
     page() { if (!ac) return; noiseBurst(now(), 0.12, 2400, 900, 0.1, 'bandpass', 0.8); },
+    grab() { if (!ac) return; osc('triangle', 520, now(), 0.05, 0.05, null, 700); },
+    stick(q) { if (!ac) return; const t = now(); noiseBurst(t, 0.05, 3200, 1200, 0.22, 'bandpass', 2); osc('sine', 150, t, 0.12, 0.2, null, 70); if (q > 0.75) bell(midi(96), t + 0.05, 0.05, 0.6); },
+    tear() { if (!ac) return; noiseBurst(now(), 0.22, 2600, 5200, 0.16, 'highpass', 0.8); },
+    thud() { if (!ac) return; const t = now(); osc('sine', 120, t, 0.16, 0.25, null, 55); noiseBurst(t, 0.06, 700, 300, 0.12, 'lowpass', 0.7); },
+    grade(q) { if (!ac) return; const t = now(); const n = q >= 95 ? 7 : q >= 85 ? 5 : q >= 70 ? 4 : q >= 50 ? 3 : 2; const sc = [0, 4, 7, 12, 16, 19, 24]; for (let i = 0; i < n; i++) bell(midi(60 + sc[i] + (q < 50 ? -5 : 0)), t + i * 0.11, 0.17, 1.8); },
+    door() { if (!ac) return; const t = now(); noiseBurst(t, 0.3, 300, 120, 0.18, 'lowpass', 0.7); osc('sine', 90, t, 0.25, 0.15, null, 60); },
     deny() { if (!ac) return; const t = now(); osc('square', 180, t, 0.12, 0.08); osc('square', 140, t + 0.1, 0.16, 0.08); },
   };
 
@@ -67,6 +73,7 @@ const Snd = (() => {
     rainforest2:{ wind: 0.2, bird: 'tropic', insect: ['cicada', 5200, 0.07], frog: true, base: 53, scale: [0, 2, 4, 7, 9], mus: 0.8 },
     savanna:    { wind: 0.55, bird: 'dove', insect: ['cricket', 3800, 0.04], base: 50, scale: [0, 2, 5, 7, 10], mus: 0.8 },
     prairie:    { wind: 0.65, bird: 'lark', insect: ['cricket', 4000, 0.05], base: 55, scale: [0, 2, 4, 7, 9], mus: 0.9 },
+    cabinet:    { wind: 0.07, bird: 'sparse', insect: null, clock: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {
@@ -118,6 +125,7 @@ const Snd = (() => {
     if (!ac || !amb) return; const t = now();
     if (t >= nextEvt) { ambientEvents(t + 0.05); nextEvt = t + 1.2 + Math.random() * 3.2; }
     music(t + 0.05);
+    if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
   return { init, sfx, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();

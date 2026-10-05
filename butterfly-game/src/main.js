@@ -46,12 +46,20 @@
   function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
   function unlock() { if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
-  App.toTitle = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'title'; App.overlay = null; Snd.stopAmbient(); };
-  App.toMap = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'map'; App.overlay = null; Snd.stopAmbient(); };
-  App.start = (biomeId, seed) => {
-    App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
+  function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); }
+  App.toTitle = () => { leave(); App.screen = 'title'; };
+  App.toMap = () => { leave(); App.screen = 'map'; };
+  const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
+  App.toCabinet = () => {
+    leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
     setTimeout(() => {
-      if (App.play) { App.play.dispose(); App.play = null; }
+      App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
+      if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
+    }, 60);
+  };
+  App.start = (biomeId, seed) => {
+    leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
+    setTimeout(() => {
       App.play = new Play(BIOME_BY_ID[biomeId], seed || params.get('seed') || undefined); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
@@ -68,9 +76,10 @@
   document.addEventListener('pointerlockchange', () => {
     App.locked = document.pointerLockElement === ui;
     if (!App.locked && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
+    if (!App.locked && App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause';
   });
-  document.addEventListener('pointerlockerror', () => { if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } });
+  document.addEventListener('pointerlockerror', () => { if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } if (document.hidden && App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; unlock(); } });
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => inp.keys.delete(e.code));
   addEventListener('keydown', e => {
@@ -78,6 +87,7 @@
     inp.keys.add(e.code);
     if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
+    if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
@@ -86,37 +96,38 @@
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
       if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
-    } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } }
+    } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
       else if (e.code >= 'Digit1' && e.code <= 'Digit8') { S.wmap.sel = +e.code.slice(5) - 1; Snd.sfx.pin(); }
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
-      else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map');
+      else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
       if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; }
     }
   });
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
+    if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { const bid = App.play.biome.id; go(() => App.start(bid)); } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { const bid = App.play.biome.id; go(() => App.start(bid)); } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
       if (App.locked) inp.fire = true; else lock();
     } else if (sc === 'title') {
       const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
-      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
-      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
+      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
   ui.addEventListener('contextmenu', e => e.preventDefault());
-  ui.addEventListener('wheel', e => { if (App.screen === 'journal' || App.overlay === 'journal') { S.journal.tab = (S.journal.tab + (e.deltaY > 0 ? 1 : 7)) % 8; S.journal.sel = 0; Snd.sfx.page(); } });
+  ui.addEventListener('wheel', e => { if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') { S.journal.tab = (S.journal.tab + (e.deltaY > 0 ? 1 : 7)) % 8; S.journal.sel = 0; Snd.sfx.page(); } });
 
   // ---------------- loop
   let last = performance.now();
@@ -135,6 +146,12 @@
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else p.draw(ctx);
+    } else if (sc === 'cabinet' && App.cab) {
+      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place'].includes(cb.ov);
+      if (!cb.ov && (App.locked || App.noLock)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; if (!cb.ov) cb.animate(dt); }
+      ctx.clearRect(0, 0, SW, SH);
+      if (!full) { renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
+      cb.draw(ctx, t, mouse, dt);
     } else {
       gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
       if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
@@ -151,6 +168,6 @@
   ui.addEventListener('mousedown', () => { if (App.helpFromTitle) App.helpTimer = performance.now(); });
 
   App.renderer = renderer;
-  T.onReady(() => { App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } });
+  T.onReady(() => { App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } else if (params.has('cabinet')) setTimeout(() => App.toCabinet(), 200); });
   requestAnimationFrame(frame);
 })();
