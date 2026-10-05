@@ -81,7 +81,7 @@ const Cabinet = (() => {
   // ------------------------------------------------------------ the room
   class Cab {
     constructor(hooks) {
-      this.hooks = hooks; this.ov = null; this.t = 0; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#1a1410');
+      this.hooks = hooks; this.ov = null; this.t = 0; this.sit = 0; this.sitDir = 0; this.sitFrom = null; this.sitOpen = null; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#1a1410');
       this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
       this.player = { pos: new THREE.Vector3(3.5, 0, 0.9), yaw: Math.PI / 2 + 0.25, pitch: -0.05, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
       this.colliders = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null;
@@ -348,6 +348,7 @@ const Cabinet = (() => {
     }
     update(dt, inp) {
       this.t += dt; const P = this.player;
+      if (this.sitDir || this.sit > 0) { inp.dx = inp.dy = 0; P.vel.x = P.vel.y = 0; P.moving = false; this.prompt = null; this.animate(dt); return; }
       P.yaw -= inp.dx * 0.0022; P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.3, 1.3); inp.dx = inp.dy = 0;
       P.yaw += ((inp.keys.has('ArrowLeft') ? 1 : 0) - (inp.keys.has('ArrowRight') ? 1 : 0)) * dt * 1.9; P.pitch = clamp(P.pitch + ((inp.keys.has('ArrowUp') ? 1 : 0) - (inp.keys.has('ArrowDown') ? 1 : 0)) * dt * 1.4, -1.3, 1.3);
       let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
@@ -365,17 +366,31 @@ const Cabinet = (() => {
     }
     animate(dt) {
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
-      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10 }); } }
+      this.sitStep(dt);
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 }); } }
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;
     }
     // ------------------------------------------------------------ overlays / input
+    // the entomologist sits down on the chair by the spreading desk (and stands up again) with a short animation
+    sitStep(dt) {
+      if (!this.sitDir && this.sit <= 0) return; const P = this.player, SEAT = { x: -2.83, z: 0.14 }, SYAW = Math.PI / 2 + 0.15;
+      this.sit = clamp(this.sit + (this.sitDir ? dt : -dt) / 0.95, 0, 1); const k = ease(this.sit), f = this.sitFrom || { x: P.pos.x, z: P.pos.z, yaw: P.yaw, pitch: P.pitch };
+      const mv = ease(clamp(this.sit / 0.6)), dy = Math.atan2(Math.sin(SYAW - f.yaw), Math.cos(SYAW - f.yaw));
+      P.pos.x = f.x + (SEAT.x - f.x) * mv; P.pos.z = f.z + (SEAT.z - f.z) * mv; P.yaw = f.yaw + dy * mv; P.pitch = f.pitch + (-0.5 - f.pitch) * k; P.bob = 0;
+      const hop = Math.sin(clamp(this.sit / 0.6) * Math.PI) * 0.04 * (1 - k);
+      this.camera.position.set(P.pos.x, 1.62 - 0.2 * k + hop, P.pos.z); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+      if (this.sitDir && this.sit >= 1 && this.sitOpen) { const n = this.sitOpen; this.sitOpen = null; this.open(n); }
+      if (this.sitDir && this.sit >= 1 && !this.sitOpen && !this.ov) this.standUp();
+      if (!this.sitDir && this.sit <= 0) this.sitFrom = null;
+    }
+    standUp() { if (this.sit > 0 || this.sitDir) { this.sitDir = 0; this.sitOpen = null; Snd.sfx.step('wood'); } }
     open(name) { this.ov = name; this.hooks.unlock(); if (name === 'pick') Spread.pick.open(); if (name === 'bench') Boxes.bench.open(); }
-    close() { this.ov = null; this.refresh(); this.hooks.lock(); }
+    close() { this.ov = null; this.standUp(); this.refresh(); this.hooks.lock(); }
     interact() {
       const s = this.prompt; if (!s) return;
-      if (s.id === 'spread') { if (!Save.rawList().length) { Snd.sfx.deny(); this.toast('Нет неразобранных бабочек: наловите их в экспедиции', 3); return; } Snd.sfx.page(); this.open('pick'); }
+      if (s.id === 'spread') { if (!Save.rawList().length) { Snd.sfx.deny(); this.toast('Нет неразобранных бабочек: наловите их в экспедиции', 3); return; } Snd.sfx.page(); this.sitFrom = { x: this.player.pos.x, z: this.player.pos.z, yaw: this.player.yaw, pitch: this.player.pitch }; this.sitDir = 1; this.sitOpen = 'pick'; }
       else if (s.id === 'journal') { Snd.sfx.page(); this.open('journal'); }
       else if (s.id === 'bench') { Snd.sfx.page(); this.open('bench'); }
       else if (s.id === 'desk') { Snd.sfx.page(); Boxes.place.open('desk'); this.open('place'); }
@@ -384,6 +399,7 @@ const Cabinet = (() => {
     }
     key(e) {
       const ov = this.ov;
+      if (!ov && (this.sitDir || this.sit > 0)) return;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'Tab') { Snd.sfx.page(); this.open('journal'); } else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }

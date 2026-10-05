@@ -518,7 +518,7 @@ class Play {
     this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
   }
   drawSense(ctx) {
-    let best = null, bd = 1e9; const pref = this.guideT > 0; for (const f of this.flies) { if (f.state === CAUGHT || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
+    let best = null, bd = 1e9; const pref = this.guideT > 0; const nowMs = performance.now(); for (const f of this.flies) { if (f.state === CAUGHT || f.remote || f.pendingCatch || f.hid || (f.puppet && nowMs - f.seen > 1200) || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
     if (!best) return; const q = best.pos.clone().project(this.camera); const behind = q.z > 1; let sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (behind) { sx = SW - sx; sy = SH - 30; }
     const m = 14; const inside = sx > m && sx < SW - m && sy > m && sy < SH - m && !behind; sx = clamp(sx, m, SW - m); sy = clamp(sy, m + 30, SH - m - 22);
     const a = Math.atan2(sy - SH / 2, sx - SW / 2); const pulse = 0.6 + 0.4 * Math.sin(this.t * 5);
