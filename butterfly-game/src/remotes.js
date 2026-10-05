@@ -1,3 +1,21 @@
+// A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim. Origin = the grip, pole along -z.
+function makeNetModel() {
+    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: '#9a6a38' }), dark = new THREE.MeshLambertMaterial({ color: '#2a2018' }), metal = new THREE.MeshBasicMaterial({ color: '#eef2f4' });
+    const POLE = 1.2, R = 0.3, BAG = 0.9;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, POLE, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -POLE / 2; g.add(pole);
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.34, 6), dark); grip.rotation.x = Math.PI / 2; grip.position.z = -0.12; g.add(grip);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), dark); cap.position.z = 0.05; g.add(cap);
+    const root = new THREE.Group(); root.position.set(0, 0, -POLE - R); g.add(root);            // hoop centre: on the pole axis, one radius beyond its tip
+    const roll = new THREE.Group(); root.add(roll);                                               // roll about the pole axis
+    const torus = new THREE.TorusGeometry(R, 0.015, 5, 26); torus.rotateY(Math.PI / 2); roll.add(new THREE.Mesh(torus, metal));   // ring normal = +x
+    const cone = new THREE.ConeGeometry(R, BAG, 16, 5, true); cone.rotateZ(-Math.PI / 2); cone.translate(BAG / 2, 0, 0);      // base on the ring, apex along +x
+    const pos = cone.attributes.position; for (let i = 0; i < pos.count; i++) { const t = pos.getX(i) / BAG; pos.setY(i, pos.getY(i) - 0.16 * t * t * R * 2); }   // the bag sags a little
+    cone.computeVertexNormals();
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })));
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })));
+    return { g, root, roll };
+}
+
 // ---------------------------------------------------------------- other players: simple pixel-style avatars with a name tag, net and flashlight
 class Remotes {
   constructor(scene, opts = {}) { this.scene = scene; this.flash = !!opts.flash; this.av = {}; this.t = 0; }
@@ -14,11 +32,11 @@ class Remotes {
     const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 10), new THREE.MeshLambertMaterial({ color: '#c8b070' })); hat.position.y = 0.12; head.add(hat);
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.1, 10), new THREE.MeshLambertMaterial({ color: '#b09858' })); crown.position.y = 0.18; head.add(crown);
     const nose = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.06), new THREE.MeshLambertMaterial({ color: '#d8a888' })); nose.position.set(0, -0.01, -0.17); head.add(nose);
-    // butterfly net on a pole, held in the right hand; swings when the player swings
-    const net = new THREE.Group(); net.position.set(0.3, 1.05, -0.1); up.add(net);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.3, 5), new THREE.MeshBasicMaterial({ color: '#c8843a' })); pole.rotation.x = Math.PI / 2; pole.position.z = -0.5; net.add(pole);
-    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.012, 5, 14), new THREE.MeshBasicMaterial({ color: '#f0f0f0' })); hoop.position.z = -1.2; net.add(hoop);
-    const bag = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 8, 1, true), new THREE.MeshBasicMaterial({ color: '#a8b8b8', side: THREE.DoubleSide, transparent: true, opacity: 0.6 })); bag.rotation.x = -Math.PI / 2; bag.position.z = -1.42; net.add(bag);
+    // the same net model as in the first-person view, held in the right hand (pole forward and up, bag hanging), with arms
+    const nm = makeNetModel(), net = nm.g; net.scale.setScalar(0.9); net.position.set(0.33, 1.02, -0.12); up.add(net); nm.roll.rotation.z = -Math.PI / 2;
+    const limb2 = (A, B, rad) => { const d = B.clone().sub(A), m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, d.length(), 6), jm); m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); up.add(m); return m; };
+    limb2(new THREE.Vector3(-0.25, 1.27, 0), new THREE.Vector3(-0.3, 0.8, -0.04), 0.06); limb2(new THREE.Vector3(0.25, 1.27, 0), new THREE.Vector3(0.33, 1.02, -0.12), 0.06);
+    for (const [hx, hy, hz] of [[-0.3, 0.78, -0.04], [0.33, 1.02, -0.12]]) { const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), new THREE.MeshLambertMaterial({ color: skin })); hd.position.set(hx, hy, hz); up.add(hd); }
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lamp.position.set(-0.28, 1.05, -0.2); up.add(lamp);
     const cv = document.createElement('canvas'); const w = Math.max(24, T.width(r.name, 8) + 8); cv.width = w; cv.height = 12; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = 'rgba(8,16,14,0.7)'; x.fillRect(0, 0, w, 12); T.draw(x, r.name, w / 2, 2, { size: 8, align: 'c', color: '#f0f0dc' });
     const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
@@ -34,7 +52,8 @@ class Remotes {
       if (!alive) continue;
       const k = Math.min(1, dt * 12); a.g.position.x += (r.pos.x - a.g.position.x) * k; a.g.position.z += (r.pos.z - a.g.position.z) * k; a.g.position.y += (r.pos.y - 1.65 - a.g.position.y) * k;
       let dy = r.yaw - a.g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); a.g.rotation.y += dy * k; a.head.rotation.x = clamp(r.pitch, -1, 1) * 0.8;
-      const sw = r.swinging ? 1 : 0; a.swv = (a.swv || 0) + (sw - (a.swv || 0)) * Math.min(1, dt * 14); a.net.rotation.x = -0.55 + a.swv * 0.9 + Math.sin(this.t * 2 + id) * 0.02; a.net.rotation.z = -a.swv * 0.35;
+      const sw = r.swinging ? 1 : 0; a.swv = (a.swv || 0) + (sw - (a.swv || 0)) * Math.min(1, dt * 14); const v = a.swv;
+      a.net.rotation.set(0.5 - v * 0.7 + Math.sin(this.t * 2 + id) * 0.015, -0.12 + v * 0.8, v * 0.3, 'YXZ');
       // legs: walking swing, or sitting down on the chair (r.sit = 0..1, sent by the player)
       const stT = clamp(r.sit || 0, 0, 1); a.sitK += (stT - a.sitK) * Math.min(1, dt * 10); const sk = a.sitK, e = sk * sk * (3 - 2 * sk);
       const walk = Math.min(1, (r.speedNow || 0) / 2.5) * (1 - e); a.ph = (a.ph || 0) + dt * (2 + (r.speedNow || 0) * 1.6) * walk;

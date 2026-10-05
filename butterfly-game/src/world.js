@@ -140,19 +140,24 @@ const World = (() => {
   }
   // main trunk as a gently curved chain of connected limbs; returns top point
   function trunk(parts, r, H, r0, r1, lean, col, segs = 5) {
-    let prev = new V3(0, 0, 0); const dir = r.range(0, 6.28);
+    let prev = new V3(0, 0, 0); const dir = r.range(0, 6.28); const pts = [prev];
     for (let i = 1; i <= segs; i++) {
       const t = i / segs; const off = lean * t * t * H; const p = new V3(Math.cos(dir) * off, H * t, Math.sin(dir) * off);
-      const L = limb(prev, p, lerp(r0, r1, (i - 1) / segs), lerp(r0, r1, t), 6); parts.push({ g: L.g, m: L.m, c: col, j: 0.06 }); prev = p;
+      const L = limb(prev, p, lerp(r0, r1, (i - 1) / segs), lerp(r0, r1, t), 6); parts.push({ g: L.g, m: L.m, c: col, j: 0.06 }); prev = p; pts.push(p);
     }
-    return prev;
+    prev.pts = pts; prev.r0 = r0; prev.r1 = r1; return prev;
   }
 
   // ------------------------------------------------------------ trees
   const TREES = {
     birch(r) {
       const parts = []; const H = r.range(6, 8.6); const top = trunk(parts, r, H, 0.17, 0.07, r.range(-0.05, 0.05), ['#eceadc', '#d8d6c8', 0, H]);
-      for (let i = 0; i < 7; i++) parts.push({ g: new THREE.BoxGeometry(0.4, 0.07, 0.4), m: M(top.x * (0.6 + i * 0.05), 0.7 + i * (H / 8.2), top.z * (0.6 + i * 0.05), 0, i * 0.7, 0), c: '#2a2a28', j: 0 });
+      // dark bark marks: thin flat patches lying ON the trunk surface (they follow the leaning trunk and never stick out)
+      for (let i = 0; i < 9; i++) {
+        const y = 0.6 + i * (H - 2.2) / 8 + r.range(-0.15, 0.15), t = y / H, k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1));
+        const cx = lerp(A.x, B.x, u), cz = lerp(A.z, B.z, u), rad = lerp(top.r0, top.r1, t) * 0.8, a = r.range(0, 6.28), w = rad * r.range(1.1, 2.0);
+        parts.push({ g: new THREE.BoxGeometry(w, 0.05 + r.next() * 0.06, 0.03), m: M(cx + Math.cos(a) * rad, y, cz + Math.sin(a) * rad, 0, Math.PI / 2 - a, 0), c: '#34332e', j: 0 });
+      }
       const cy = H * 0.8; const cols = ['#6aa238', '#5a9230', '#7ab444', '#8cc050'];
       const out = crown(parts, r, top.x, cy, top.z, 1.5, 1.7, 1.5, 9, 0.75, 1.15, cols);
       for (let i = 0; i < 4; i++) { const t = out[i]; const a = new V3(top.x * 0.55, H * r.range(0.45, 0.65), top.z * 0.55); const L = limb(a, new V3(t.x, Math.max(t.y - 0.4, a.y + 0.4), t.z), 0.06, 0.03, 5); parts.push({ g: L.g, m: L.m, c: '#e2e0d2', j: 0.05 }); }

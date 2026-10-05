@@ -336,20 +336,7 @@ class Play {
   // ---------------------------------------------------------------- net model
   // A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim.
   buildNet() {
-    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: '#9a6a38' }), dark = new THREE.MeshLambertMaterial({ color: '#2a2018' }), metal = new THREE.MeshBasicMaterial({ color: '#eef2f4' });
-    const POLE = 1.2, R = 0.3, BAG = 0.9;
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, POLE, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -POLE / 2; g.add(pole);
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.34, 6), dark); grip.rotation.x = Math.PI / 2; grip.position.z = -0.12; g.add(grip);
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), dark); cap.position.z = 0.05; g.add(cap);
-    const root = new THREE.Group(); root.position.set(0, 0, -POLE - R); g.add(root);            // hoop centre: on the pole axis, one radius beyond its tip
-    const roll = new THREE.Group(); root.add(roll);                                               // roll about the pole axis
-    const torus = new THREE.TorusGeometry(R, 0.015, 5, 26); torus.rotateY(Math.PI / 2); roll.add(new THREE.Mesh(torus, metal));   // ring normal = +x
-    const cone = new THREE.ConeGeometry(R, BAG, 16, 5, true); cone.rotateZ(-Math.PI / 2); cone.translate(BAG / 2, 0, 0);      // base on the ring, apex along +x
-    const pos = cone.attributes.position; for (let i = 0; i < pos.count; i++) { const t = pos.getX(i) / BAG; pos.setY(i, pos.getY(i) - 0.16 * t * t * R * 2); }   // the bag sags a little
-    cone.computeVertexNormals();
-    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })));
-    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })));
-    g.traverse(o => { o.frustumCulled = false; });
+    const { g, root, roll } = makeNetModel(); g.traverse(o => { o.frustumCulled = false; });
     this.netGroup = g; this.hoop = root; this.netRoll = roll; g.scale.setScalar(0.9);
     // idle pose: pole points up-left across the view; roll the hoop so its mouth faces the player and the bag trails away
     this.NET_IDLE = { px: 0.5, py: -0.5, pz: -0.34, rx: 0.34, ry: 0.55, rz: 0 };
