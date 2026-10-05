@@ -340,9 +340,9 @@ const BEH = {
   timothy: { speed: 1.4, flap: 14, glide: 0, erratic: 0.5, h: [0.1, 0.6], wary: 2.6, perch: 0.9, special: 'timothy' },
   glitch:  { speed: 2.2, flap: 9, glide: 0.1, erratic: 0.6, h: [0.5, 2.2], wary: 4.5, perch: 0.2, special: 'glitch' },
   jeff:    { speed: 1.8, flap: 6.5, glide: 0.3, erratic: 0.2, h: [0.6, 2.0], wary: 4.2, perch: 0.5 },
-  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7ad8ff' },
-  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffc050' },
-  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#d070ff' },
+  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7fd3f5' },
+  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffe58e' },
+  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#ff7272' },
 };
 
 const SPECIES_BY_ID = {};
@@ -680,14 +680,14 @@ rebuildSpeciesIndex();
       A('round', ['#e8d890', '#f8e8a0'], ['#d8c070', '#e8d088'], { edge: ['#4a3a14', 2], band: ['f', .5, .62, '#3a6a3a'], sp: sp('f', [[.3, .5, 2, '#c8a030'], [.7, .45, 2, '#c8a030']]) }),
       'Парит неспешно, поблёскивая золотом', 'Только открытый океан', 'монеты', 'Торговка: не боится света, но ловкая. Блестит, как золотая монета.'],
     ['Lux ductrix', 'Путеводная бабочка', 'Guiding moth', 36, 48, 2, 'guiding',
-      A('std', ['#d8f4ff', '#58b8f0'], ['#d8f4ff', '#6ac8ff'], { edge: ['#1a4a7a', 1], dots: W, sheen: ['#ffffff', .6], sp: [...sp('f', [[.5, .5, 3, W]]), ...sp('h', [[.5, .5, 2, W]])] }),
-      'Летит впереди вас, показывая путь', 'Только открытый океан', 'надежда', 'Голубое сияние. Поймаете — минуту будет работать стрелка к ближайшей ещё не пойманной бабочке.'],
+      A('std', ['#0c2a62', '#2a68b8'], ['#0a2458', '#2458a8'], { edge: ['#0e2a5a', 1], dots: '#def8ff', sheen: ['#ffffff', .35], glyph: { shape: 'moon', at: [['f', 20, 11, 18], ['h', 17, 28, 12]] } }),
+      'Летит впереди вас, показывая путь', 'Только открытый океан', 'надежда', 'Голубое сияние с лунным знаком на крыле. Поймаете — минуту будет работать стрелка к ближайшей ещё не пойманной бабочке.'],
     ['Lux curiosa', 'Любопытная бабочка', 'Curious moth', 36, 48, 2, 'curious',
-      A('std', ['#fff0b0', '#ffa830'], ['#fff0b0', '#ff9020'], { edge: ['#7a4a10', 1], dots: '#fff8d8', sheen: ['#ffffff', .5], sp: [...sp('f', [[.5, .5, 3, W]]), ...sp('h', [[.5, .5, 2, W]])] }),
-      'Кружит вокруг вас, не отходя далеко', 'Только открытый океан', 'любопытство', 'Тёплый оранжевый огонёк. Поймаете — на 30 секунд все бабочки на острове подсветятся.'],
+      A('std', ['#b85a06', '#f0a020'], ['#a85006', '#e49418'], { edge: ['#6a3a08', 1], dots: '#fff0b0', sheen: ['#ffffff', .3], glyph: { shape: 'star', at: [['f', 20, 11, 18], ['h', 17, 28, 12]] } }),
+      'Кружит вокруг вас, не отходя далеко', 'Только открытый океан', 'любопытство', 'Тёплый жёлтый огонёк со звездой на крыле. Поймаете — на 30 секунд все бабочки на острове подсветятся.'],
     ['Mutator chromatis', 'Бабочка-модификатор', 'Modifier moth', 36, 52, 3, 'modifier',
-      A('round', ['#b030ff', '#ff40d8'], ['#6020d8', '#d040ff'], { edge: ['#1a0838', 1], dots: '#ffe0ff', sheen: ['#ffffff', .6], checker: ['#a030f0', '#ff50d0'], sp: sp('f', [[.5, .5, 2.4, W]]) }),
-      'Мерцает всеми цветами, ускользает', 'Только открытый океан', 'случайность', 'Фиолетовый переливающийся огонёк. Поймаете — получите случайный модификатор ночи на полтора минуты.'],
+      A('round', ['#5a0614', '#c82636'], ['#4e0510', '#b81e2e'], { edge: ['#400610', 1], dots: '#ffafaf', sheen: ['#ffffff', .25], glyph: { shape: 'swirl', at: [['f', 20, 11, 18], ['h', 17, 28, 12]] } }),
+      'Мерцает, ускользает и телепортирует свет', 'Только открытый океан', 'случайность', 'Красная бабочка с завитком на крыле. Поймаете — получите случайный модификатор ночи на полтора минуты.'],
   ];
   R.forEach(([la, ru, en, lo, hi, rar, beh, art, hab, range, host, fact]) => SPECIES.push({ id: la.toLowerCase().replace(/[^a-z]+/g, '_'), la, ru, en, fam: 'Ночные', biome: 'ocean', mm: [lo, hi], hab, range, host, fact, look: hab, rar, beh, art, glow: true, mystery: true }));
   rebuildSpeciesIndex();
@@ -908,6 +908,25 @@ const Art = (() => {
   const C = h => hex2rgb(h);
   const mixc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 
+
+  // light-sign glyphs (from the Doors-style light icons): drawn pixel-perfect on the wings. Paths are in a 256x256 box.
+  const GLYPHS = {
+    swirl: { glow: 'M253 137 130 11 5 138 146 251 155 243 79 148 135 86 184 141 156 168 137 144 137 143 174 170 146 79 87 145 149 222Z', main: 'M240 136 130 24 18 137 146 243 67 148 135 72 196 142 155 181 125 143 137 131 160 151 142 97 99 145 150 209Z', cols: ['#ffafaf', '#ff7272', '#ff7272'] },
+    star:  { glow: 'M128 251 92 164 5 128 92 92 128 5 164 92 251 128 164 164Z', main: 'M128 230 99 157 26 128 99 99 128 26 157 99 230 128 157 157Z', cols: ['#ffffff', '#ffe58e', '#fdd552'] },
+    moon:  { glow: 'M15 152 28 73 71 21 153 14 155 23 115 48 88 75 79 114 95 155 138 176 197 157 228 99 235 99 237 161 199 221 123 242 51 214Z', main: 'M24 150 36 77 76 30 143 22 110 41 80 70 70 115 88 161 137 186 203 164 229 112 230 158 193 213 123 233 57 207Z', cols: ['#DEF8FF', '#7FD3F5', '#67C4EB'] },
+  };
+  function stampGlyph(name, targets, mask, cx, cy, size) {
+    const g = GLYPHS[name]; if (!g) return;
+    const cols = g.cols.map(hex2rgb);
+    const render = (d) => { const c2 = document.createElement('canvas'); c2.width = c2.height = N; const x = c2.getContext('2d'); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 256, size / 256); x.fillStyle = '#fff'; x.fill(new Path2D(d)); return x.getImageData(0, 0, N, N).data; };
+    const glow = render(g.glow), main = render(g.main);
+    for (let y = 0; y < N; y++) for (let xx = 0; xx < N; xx++) {
+      const i = y * N + xx; if (!mask[i]) continue; const ga = glow[i * 4 + 3], ma = main[i * 4 + 3]; if (ga < 50 && ma < 100) continue;
+      const t = clamp((y - (cy - size / 2)) / size), c = t < 0.5 ? mixc(cols[0], cols[1], t * 2) : mixc(cols[1], cols[2], (t - 0.5) * 2);
+      for (const d of targets) { const k = i * 4; if (ma >= 100) { d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255; } else { d[k] = lerp(d[k], c[0], 0.4); d[k + 1] = lerp(d[k + 1], c[1], 0.4); d[k + 2] = lerp(d[k + 2], c[2], 0.4); d[k + 3] = 255; } }
+    }
+  }
+
   function wingCanvas(sp) {
     if (cache[sp.id]) return cache[sp.id];
     const a = sp.art; const sh = SHAPES[a.t] || SHAPES.std;
@@ -972,6 +991,7 @@ const Art = (() => {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i]) put(x, y, colorAt(x, y, 'f', fD[i]), imgF); }
     // soft darkening where forewing overlaps hindwing (depth cue)
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i] && hM[i] && fD[i] === 1 && y > 17) { const k = (y * N + x) * 4; px[k] *= 0.75; px[k + 1] *= 0.75; px[k + 2] *= 0.75; } }
+    if (a.glyph) for (const [w, gx, gy, gs] of a.glyph.at) stampGlyph(a.glyph.shape, [w === 'f' ? imgF.data : imgH.data, px], w === 'f' ? fM : hM, gx, gy, gs);
     ctx.putImageData(img, 0, 0);
     const part = im => { const c2 = document.createElement('canvas'); c2.width = c2.height = N; c2.getContext('2d').putImageData(im, 0, 0); return c2; };
     const tipOf = (m, py) => { let bx = 0, by = py, bd = -1; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (m[y * N + x]) { const d = (x + 0.5) * (x + 0.5) + (y + 0.5 - py) * (y + 0.5 - py); if (d > bd) { bd = d; bx = x + 0.5; by = y + 0.5; } } return [bx, by - py]; };
@@ -2342,7 +2362,7 @@ class Fly {
     const p = this.play, w = p.world, pl = p.player, ground = w.heightAt(this.pos.x, this.pos.z);
     if (kind === 'dread') { this.mesh.visible = dist < 3.4 || p.lit(this.pos); return false; }
     if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
-    if (kind === 'modifier') { const m = this.mesh.userData.R.children[0].material, h = (t * 0.35 + this.sway) % 1; m.color.setHSL(h, 0.9, 0.62); if (this.light) this.light.color.setHSL(h, 1, 0.6); return false; }
+    if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
       if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;

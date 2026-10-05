@@ -40,6 +40,25 @@ const Art = (() => {
   const C = h => hex2rgb(h);
   const mixc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 
+
+  // light-sign glyphs (from the Doors-style light icons): drawn pixel-perfect on the wings. Paths are in a 256x256 box.
+  const GLYPHS = {
+    swirl: { glow: 'M253 137 130 11 5 138 146 251 155 243 79 148 135 86 184 141 156 168 137 144 137 143 174 170 146 79 87 145 149 222Z', main: 'M240 136 130 24 18 137 146 243 67 148 135 72 196 142 155 181 125 143 137 131 160 151 142 97 99 145 150 209Z', cols: ['#ffafaf', '#ff7272', '#ff7272'] },
+    star:  { glow: 'M128 251 92 164 5 128 92 92 128 5 164 92 251 128 164 164Z', main: 'M128 230 99 157 26 128 99 99 128 26 157 99 230 128 157 157Z', cols: ['#ffffff', '#ffe58e', '#fdd552'] },
+    moon:  { glow: 'M15 152 28 73 71 21 153 14 155 23 115 48 88 75 79 114 95 155 138 176 197 157 228 99 235 99 237 161 199 221 123 242 51 214Z', main: 'M24 150 36 77 76 30 143 22 110 41 80 70 70 115 88 161 137 186 203 164 229 112 230 158 193 213 123 233 57 207Z', cols: ['#DEF8FF', '#7FD3F5', '#67C4EB'] },
+  };
+  function stampGlyph(name, targets, mask, cx, cy, size) {
+    const g = GLYPHS[name]; if (!g) return;
+    const cols = g.cols.map(hex2rgb);
+    const render = (d) => { const c2 = document.createElement('canvas'); c2.width = c2.height = N; const x = c2.getContext('2d'); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 256, size / 256); x.fillStyle = '#fff'; x.fill(new Path2D(d)); return x.getImageData(0, 0, N, N).data; };
+    const glow = render(g.glow), main = render(g.main);
+    for (let y = 0; y < N; y++) for (let xx = 0; xx < N; xx++) {
+      const i = y * N + xx; if (!mask[i]) continue; const ga = glow[i * 4 + 3], ma = main[i * 4 + 3]; if (ga < 50 && ma < 100) continue;
+      const t = clamp((y - (cy - size / 2)) / size), c = t < 0.5 ? mixc(cols[0], cols[1], t * 2) : mixc(cols[1], cols[2], (t - 0.5) * 2);
+      for (const d of targets) { const k = i * 4; if (ma >= 100) { d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255; } else { d[k] = lerp(d[k], c[0], 0.4); d[k + 1] = lerp(d[k + 1], c[1], 0.4); d[k + 2] = lerp(d[k + 2], c[2], 0.4); d[k + 3] = 255; } }
+    }
+  }
+
   function wingCanvas(sp) {
     if (cache[sp.id]) return cache[sp.id];
     const a = sp.art; const sh = SHAPES[a.t] || SHAPES.std;
@@ -104,6 +123,7 @@ const Art = (() => {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i]) put(x, y, colorAt(x, y, 'f', fD[i]), imgF); }
     // soft darkening where forewing overlaps hindwing (depth cue)
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x; if (fM[i] && hM[i] && fD[i] === 1 && y > 17) { const k = (y * N + x) * 4; px[k] *= 0.75; px[k + 1] *= 0.75; px[k + 2] *= 0.75; } }
+    if (a.glyph) for (const [w, gx, gy, gs] of a.glyph.at) stampGlyph(a.glyph.shape, [w === 'f' ? imgF.data : imgH.data, px], w === 'f' ? fM : hM, gx, gy, gs);
     ctx.putImageData(img, 0, 0);
     const part = im => { const c2 = document.createElement('canvas'); c2.width = c2.height = N; c2.getContext('2d').putImageData(im, 0, 0); return c2; };
     const tipOf = (m, py) => { let bx = 0, by = py, bd = -1; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (m[y * N + x]) { const d = (x + 0.5) * (x + 0.5) + (y + 0.5 - py) * (y + 0.5 - py); if (d > bd) { bd = d; bx = x + 0.5; by = y + 0.5; } } return [bx, by - py]; };

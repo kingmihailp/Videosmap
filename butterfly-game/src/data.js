@@ -303,9 +303,9 @@ const BEH = {
   timothy: { speed: 1.4, flap: 14, glide: 0, erratic: 0.5, h: [0.1, 0.6], wary: 2.6, perch: 0.9, special: 'timothy' },
   glitch:  { speed: 2.2, flap: 9, glide: 0.1, erratic: 0.6, h: [0.5, 2.2], wary: 4.5, perch: 0.2, special: 'glitch' },
   jeff:    { speed: 1.8, flap: 6.5, glide: 0.3, erratic: 0.2, h: [0.6, 2.0], wary: 4.2, perch: 0.5 },
-  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7ad8ff' },
-  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffc050' },
-  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#d070ff' },
+  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7fd3f5' },
+  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffe58e' },
+  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#ff7272' },
 };
 
 const SPECIES_BY_ID = {};

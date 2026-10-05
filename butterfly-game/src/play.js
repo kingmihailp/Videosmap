@@ -149,7 +149,7 @@ class Fly {
     const p = this.play, w = p.world, pl = p.player, ground = w.heightAt(this.pos.x, this.pos.z);
     if (kind === 'dread') { this.mesh.visible = dist < 3.4 || p.lit(this.pos); return false; }
     if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
-    if (kind === 'modifier') { const m = this.mesh.userData.R.children[0].material, h = (t * 0.35 + this.sway) % 1; m.color.setHSL(h, 0.9, 0.62); if (this.light) this.light.color.setHSL(h, 1, 0.6); return false; }
+    if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
       if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
