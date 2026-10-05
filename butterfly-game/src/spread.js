@@ -107,7 +107,7 @@ const Spread = (() => {
       const mean = pn.reduce((a, b) => a + b.score, 0) / pn.length;
       const q = Math.round(clamp(0.85 * mean + 0.15 * sym, 1, 100));
       this.res = { acc: avg(p => p.acc), tim: avg(p => p.tim), gen: avg(p => p.gen), sym, q };
-      this.spec.q = q; this.spec.pose = copy(this.pose); Save.write();
+      this.spec.q = q; this.spec.pose = copy(this.pose); Save.syncSpread(this.spec);
       this.phase = 'result'; this.resT = 0; Snd.sfx.grade(q);
     },
     tick(dt) { if (this.phase === 'finish') { this.doneT -= dt; if (this.doneT <= 0) this.finish(); } if (this.phase === 'result') this.resT += dt; },

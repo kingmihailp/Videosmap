@@ -89,6 +89,7 @@ const Cabinet = (() => {
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
       this.build(); this.applyTime(this.realHour()); this.refresh();
       Snd.startAmbient('cabinet'); this.toast('Добро пожаловать в кабинет!', 3);
+      this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.cab = () => this.refresh(); Net.hooks.pjoin = m => this.toast(`${m.name} вошёл в кабинет`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} вышел`, 2.5); }
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
     toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
@@ -364,6 +365,7 @@ const Cabinet = (() => {
     }
     animate(dt) {
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10 }); } }
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;
@@ -436,6 +438,7 @@ const Cabinet = (() => {
       T.draw(ctx, 'Кабинет энтомолога', 12, 10, { size: 8, color: c.gold });
       T.draw(ctx, `ждут: ${raw} · расправлено: ${sp}`, 12, 21, { size: 8, color: c.text });
       T.draw(ctx, `коробок: ${bx}   на выставке: ${on}`, 12, 32, { size: 8, color: c.dim });
+      if (this.remotes) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', '), 8, 54, { size: 8, color: '#9ae0b0', shadow: '#000' });
       ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(SW / 2 - 1, SH / 2 - 1, 2, 2);
       if (this.prompt && !this.ov) { const s = this.prompt.label(); const w = T.width(s, 8) + 20; UIK.panel(ctx, SW / 2 - w / 2, SH - 54, w, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s, SW / 2, SH - 49, { size: 8, align: 'c', color: '#fff' }); }
       if (this.toastT > 0) T.draw(ctx, this.toastText, SW / 2, 62, { size: 8, align: 'c', color: c.gold, shadow: '#000' });
@@ -453,7 +456,7 @@ const Cabinet = (() => {
       T.para(ctx, 'Расправилка (у окна): подцепите иглой кончик крыла, плавно переведите его к золотой точке и нажмите ПРОБЕЛ, когда кольцо сожмётся. Резкие движения рвут крыло. Мастерская (справа): создайте коробку S, M или L и разложите расправленных бабочек. Стол в центре и стена на севере — выставка ваших коллекций.', 76, 140, 330, { size: 8, color: c.dim, lh: 10 });
       T.draw(ctx, 'нажмите любую клавишу', SW / 2, 228, { size: 8, align: 'c', color: c.gold });
     }
-    dispose() { Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map && !boxTex.has(x.map.image)) x.map.dispose(); x.dispose(); }); }); }
+    dispose() { if (this.remotes) { this.remotes.dispose(); Net.hooks.cab = Net.hooks.pjoin = Net.hooks.pleave = null; } Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map && !boxTex.has(x.map.image)) x.map.dispose(); x.dispose(); }); }); }
   }
   return Cab;
 })();

@@ -58,6 +58,7 @@ const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
   data: { caught: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
+  mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
     try {
       const s = localStorage.getItem(SAVE_KEY);
@@ -73,17 +74,23 @@ const Save = {
       }
     } catch (e) {}
   },
-  write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) {} },
-  nextUid() { return this.data.uid++; },
+  // while online the cabinet (specimens + boxes) is the server's shared one; the personal journal and settings stay local
+  write() { try { const d = this.mp && this.stash ? Object.assign({}, this.data, { specimens: this.stash.specimens, boxes: this.stash.boxes, uid: this.stash.uid }) : this.data; localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} },
+  enterMP(cab, idx) { if (!this.mp) this.stash = { specimens: this.data.specimens, boxes: this.data.boxes, uid: this.data.uid }; this.mp = true; this.mpIdx = idx; this.mpCnt = 0; this.setCab(cab); },
+  leaveMP() { if (!this.mp) return; this.mp = false; if (this.stash) { this.data.specimens = this.stash.specimens; this.data.boxes = this.stash.boxes; this.data.uid = this.stash.uid; } this.stash = null; },
+  setCab(cab) { this.data.specimens = cab.specimens.filter(x => SPECIES_BY_ID[x.sp]); this.data.boxes = cab.boxes; },
+  nextUid() { return this.mp ? this.mpIdx * 1000000 + (++this.mpCnt) : this.data.uid++; },
+  _op(op) { if (this.mp) Net.sendOp(op); },
   has(id) { return !!this.data.caught[id]; },
   count(id) { return this.data.caught[id] ? this.data.caught[id].count : 0; },
   add(id, biomeId) {
     const first = !this.data.caught[id];
     if (first) this.data.caught[id] = { count: 0, first: Date.now(), place: biomeId };
     this.data.caught[id].count++;
-    const sp = this.data.specimens;
-    sp.push({ uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null });
-    if (sp.length > 400) { const k = sp.findIndex(x => x.q === null && !x.box); if (k >= 0) sp.splice(k, 1); }
+    const sp = this.data.specimens, spec = { uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null };
+    if (this.mp) spec.by = Net.name;
+    sp.push(spec); this._op({ k: 'addSpec', spec });
+    if (!this.mp && sp.length > 400) { const k = sp.findIndex(x => x.q === null && !x.box); if (k >= 0) sp.splice(k, 1); }
     this.write();
     return first;
   },
@@ -95,10 +102,27 @@ const Save = {
   freeSpread() { return this.data.specimens.filter(s => s.q !== null && !s.box).sort((a, b) => b.q - a.q); },
   spec(uid) { return this.data.specimens.find(s => s.uid === uid); },
   box(uid) { return this.data.boxes.find(b => b.uid === uid); },
-  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this.write(); return b; },
-  removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this.write(); return true; },
-  putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this.write(); return true; },
-  takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this.write(); },
+  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style } }); this.write(); return b; },
+  removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this._op({ k: 'delBox', uid }); this.write(); return true; },
+  putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this._op({ k: 'putIn', box: box.uid, slot, spec: specUid }); this.write(); return true; },
+  takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this._op({ k: 'takeOut', box: box.uid, slot }); this.write(); },
+  syncSpread(spec) { this._op({ k: 'spread', uid: spec.uid, q: spec.q, pose: spec.pose }); this.write(); },
+  syncBoxLoc(box) { this._op({ k: 'boxLoc', uid: box.uid, loc: box.loc }); this.write(); },
+  syncBoxStyle(box) { this._op({ k: 'boxStyle', uid: box.uid, style: box.style }); this.write(); },
+  // an operation from another player (already validated by the server)
+  applyOp(op) {
+    const D = this.data;
+    switch (op.k) {
+      case 'addSpec': if (!this.spec(op.spec.uid) && SPECIES_BY_ID[op.spec.sp]) D.specimens.push(Object.assign({ q: null, pose: null, box: null }, op.spec, { q: null, pose: null, box: null })); break;
+      case 'spread': { const s = this.spec(op.uid); if (s) { s.q = op.q; s.pose = op.pose; } break; }
+      case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
+      case 'delBox': { const b = this.box(op.uid); if (b) { b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
+      case 'putIn': { const b = this.box(op.box), s = this.spec(op.spec); if (b && s) { b.items[op.slot] = s.uid; s.box = b.uid; } break; }
+      case 'takeOut': { const b = this.box(op.box); if (b) { const s = this.spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; } break; }
+      case 'boxLoc': { const b = this.box(op.uid); if (b) b.loc = op.loc; break; }
+      case 'boxStyle': { const b = this.box(op.uid); if (b) b.style = op.style; break; }
+    }
+  },
 };
 function fmtDate(ts) {
   const d = new Date(ts); const p = n => String(n).padStart(2, '0');

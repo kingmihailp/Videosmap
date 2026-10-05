@@ -46,25 +46,38 @@
   function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
   function unlock() { if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
-  function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); }
+  function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); if (Net.on) Net.leave(); }
   App.toTitle = () => { leave(); App.screen = 'title'; };
   App.toMap = () => { leave(); App.screen = 'map'; };
   const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
+  // multiplayer: ask the server for the shared location first, then build it with the server's seed and role (host simulates the butterflies)
+  const netFail = e => { leave(); App.screen = 'title'; App.fade = 0; App.fadeTarget = 0; Screens.mp.msg = 'Сервер: ' + (e && e.message || 'ошибка'); };
+  const enterCabinet = () => {
+    App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
+    if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
+  };
   App.toCabinet = () => {
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
-    setTimeout(() => {
-      App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
-      if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
-    }, 60);
+    if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
   };
   App.start = (biomeId, seed) => {
-    leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
-    setTimeout(() => {
-      App.play = new Play(BIOME_BY_ID[biomeId], seed || params.get('seed') || undefined); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+    leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
+    const make = (sd, mp) => {
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
-    }, 60);
+    };
+    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod }), 40)).catch(netFail);
+    else setTimeout(() => make(seed || params.get('seed') || undefined), 60);
   };
+  Net.hooks.reseed = m => go(() => App.start(m.loc));
+  Net.hooks.closed = () => { if (App.screen === 'play' || App.screen === 'cabinet' || App.screen === 'loading') { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } Snd.stopAmbient(); App.overlay = null; App.screen = 'title'; } Screens.mp.msg = 'Соединение с сервером потеряно'; };
+  function mpConnect() {
+    const M = Screens.mp, addr = M.fields[0].val.trim(), name = M.fields[1].val.trim() || 'Гость'; if (!addr) { M.msg = 'Введите адрес сервера'; return; }
+    M.busy = true; M.msg = 'Подключение…';
+    Net.connect(addr, name).then(() => { M.busy = false; M.msg = ''; try { localStorage.setItem('f0w_mp', JSON.stringify({ addr, name })); } catch (e) {} Snd.sfx.complete(); }).catch(e => { M.busy = false; M.msg = e.message; });
+  }
+  function mpAct(id) { if (id === 'connect') mpConnect(); else if (id === 'disc') { Net.disconnect(); Screens.mp.msg = ''; } else if (id === 'back') { Snd.sfx.click(); App.screen = 'title'; } }
   function journalIndex() { if (App.play) { S.journal.tab = BIOMES.indexOf(App.play.biome); S.journal.sel = 0; } }
   function openJournal(from) { App.journalFrom = from; if (from === 'play') { unlock(); App.overlay = 'journal'; journalIndex(); } else { App.screen = 'journal'; } Snd.sfx.page(); }
   function closeJournal() { if (App.journalFrom === 'play') { App.overlay = 'pause'; } else App.screen = App.journalFrom; Snd.sfx.page(); }
@@ -87,6 +100,7 @@
     inp.keys.add(e.code);
     if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
+    if (sc === 'mp') { if (['Backspace', 'Tab', 'Space', 'ArrowDown', 'ArrowUp'].includes(e.code)) e.preventDefault(); mpAct(S.mp.key(e)); return; }
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
@@ -113,14 +127,15 @@
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { const bid = App.play.biome.id; go(() => App.start(bid)); } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
       if (App.locked) inp.fire = true; else lock();
     } else if (sc === 'title') {
       const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
-      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'mp') { S.mp.msg = ''; App.screen = 'mp'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+    } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
       if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
@@ -157,6 +172,7 @@
       gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
       if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
       else if (sc === 'map') S.wmap.draw(ctx, t, mouse);
+      else if (sc === 'mp') S.mp.draw(ctx, t, mouse);
       else if (sc === 'journal') S.journal.draw(ctx, t, mouse);
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
@@ -169,6 +185,6 @@
   ui.addEventListener('mousedown', () => { if (App.helpFromTitle) App.helpTimer = performance.now(); });
 
   App.renderer = renderer;
-  T.onReady(() => { App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } else if (params.has('cabinet')) setTimeout(() => App.toCabinet(), 200); });
+  T.onReady(() => { if (params.has('mp')) { const addr = params.get('server') || Net.defaultUrl(), nm = params.get('mp') || 'Гость'; Net.connect(addr, nm).then(() => { const b0 = params.get('biome'); if (b0 && BIOME_BY_ID[b0]) { App.noLockAuto = true; setTimeout(() => App.start(b0), 200); } else if (params.has('cabinet')) setTimeout(() => App.toCabinet(), 200); }).catch(() => {}); } App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.has('mp') ? null : params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } else if (params.has('cabinet') && !params.has('mp')) setTimeout(() => App.toCabinet(), 200); });
   requestAnimationFrame(frame);
 })();

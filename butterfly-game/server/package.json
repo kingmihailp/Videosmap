@@ -1,0 +1,9 @@
+{
+  "name": "flora0world-butterflies-server",
+  "version": "1.0.0",
+  "description": "Multiplayer server for Flora0world: Butterflies (shared locations, butterflies and entomologist's cabinet)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "ws": "^8.18.0" },
+  "license": "MIT"
+}

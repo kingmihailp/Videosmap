@@ -764,6 +764,7 @@ const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
   data: { caught: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
+  mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
     try {
       const s = localStorage.getItem(SAVE_KEY);
@@ -779,17 +780,23 @@ const Save = {
       }
     } catch (e) {}
   },
-  write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) {} },
-  nextUid() { return this.data.uid++; },
+  // while online the cabinet (specimens + boxes) is the server's shared one; the personal journal and settings stay local
+  write() { try { const d = this.mp && this.stash ? Object.assign({}, this.data, { specimens: this.stash.specimens, boxes: this.stash.boxes, uid: this.stash.uid }) : this.data; localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} },
+  enterMP(cab, idx) { if (!this.mp) this.stash = { specimens: this.data.specimens, boxes: this.data.boxes, uid: this.data.uid }; this.mp = true; this.mpIdx = idx; this.mpCnt = 0; this.setCab(cab); },
+  leaveMP() { if (!this.mp) return; this.mp = false; if (this.stash) { this.data.specimens = this.stash.specimens; this.data.boxes = this.stash.boxes; this.data.uid = this.stash.uid; } this.stash = null; },
+  setCab(cab) { this.data.specimens = cab.specimens.filter(x => SPECIES_BY_ID[x.sp]); this.data.boxes = cab.boxes; },
+  nextUid() { return this.mp ? this.mpIdx * 1000000 + (++this.mpCnt) : this.data.uid++; },
+  _op(op) { if (this.mp) Net.sendOp(op); },
   has(id) { return !!this.data.caught[id]; },
   count(id) { return this.data.caught[id] ? this.data.caught[id].count : 0; },
   add(id, biomeId) {
     const first = !this.data.caught[id];
     if (first) this.data.caught[id] = { count: 0, first: Date.now(), place: biomeId };
     this.data.caught[id].count++;
-    const sp = this.data.specimens;
-    sp.push({ uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null });
-    if (sp.length > 400) { const k = sp.findIndex(x => x.q === null && !x.box); if (k >= 0) sp.splice(k, 1); }
+    const sp = this.data.specimens, spec = { uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null };
+    if (this.mp) spec.by = Net.name;
+    sp.push(spec); this._op({ k: 'addSpec', spec });
+    if (!this.mp && sp.length > 400) { const k = sp.findIndex(x => x.q === null && !x.box); if (k >= 0) sp.splice(k, 1); }
     this.write();
     return first;
   },
@@ -801,10 +808,27 @@ const Save = {
   freeSpread() { return this.data.specimens.filter(s => s.q !== null && !s.box).sort((a, b) => b.q - a.q); },
   spec(uid) { return this.data.specimens.find(s => s.uid === uid); },
   box(uid) { return this.data.boxes.find(b => b.uid === uid); },
-  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this.write(); return b; },
-  removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this.write(); return true; },
-  putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this.write(); return true; },
-  takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this.write(); },
+  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style } }); this.write(); return b; },
+  removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this._op({ k: 'delBox', uid }); this.write(); return true; },
+  putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this._op({ k: 'putIn', box: box.uid, slot, spec: specUid }); this.write(); return true; },
+  takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this._op({ k: 'takeOut', box: box.uid, slot }); this.write(); },
+  syncSpread(spec) { this._op({ k: 'spread', uid: spec.uid, q: spec.q, pose: spec.pose }); this.write(); },
+  syncBoxLoc(box) { this._op({ k: 'boxLoc', uid: box.uid, loc: box.loc }); this.write(); },
+  syncBoxStyle(box) { this._op({ k: 'boxStyle', uid: box.uid, style: box.style }); this.write(); },
+  // an operation from another player (already validated by the server)
+  applyOp(op) {
+    const D = this.data;
+    switch (op.k) {
+      case 'addSpec': if (!this.spec(op.spec.uid) && SPECIES_BY_ID[op.spec.sp]) D.specimens.push(Object.assign({ q: null, pose: null, box: null }, op.spec, { q: null, pose: null, box: null })); break;
+      case 'spread': { const s = this.spec(op.uid); if (s) { s.q = op.q; s.pose = op.pose; } break; }
+      case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
+      case 'delBox': { const b = this.box(op.uid); if (b) { b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
+      case 'putIn': { const b = this.box(op.box), s = this.spec(op.spec); if (b && s) { b.items[op.slot] = s.uid; s.box = b.uid; } break; }
+      case 'takeOut': { const b = this.box(op.box); if (b) { const s = this.spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; } break; }
+      case 'boxLoc': { const b = this.box(op.uid); if (b) b.loc = op.loc; break; }
+      case 'boxStyle': { const b = this.box(op.uid); if (b) b.style = op.style; break; }
+    }
+  },
 };
 function fmtDate(ts) {
   const d = new Date(ts); const p = n => String(n).padStart(2, '0');
@@ -2218,6 +2242,96 @@ const Ocean = (() => {
   return { build };
 })();
 
+// ===== net.js =====
+// ---------------------------------------------------------------- multiplayer client: WebSocket link, shared cabinet mirror, remote players
+const Net = (() => {
+  const N = { on: false, ws: null, id: 0, idx: 0, name: '', url: '', list: [], loc: null, host: false, remote: {}, seeds: {}, hooks: {}, status: '', chat: [] };
+  let joinWait = null, connWait = null, lastErr = '';
+  const EUL = new THREE.Euler();
+  N.defaultUrl = () => (location.protocol === 'http:' || location.protocol === 'https:') ? location.host : 'localhost:3000';
+  N.send = (t, o) => { if (N.ws && N.ws.readyState === 1) N.ws.send(JSON.stringify(Object.assign({ t }, o))); };
+  N.sendOp = op => N.send('op', { op });
+  N.count = () => N.list.length;
+  N.names = loc => N.list.filter(p => (loc === undefined || p.loc === loc)).map(p => p.name);
+
+  N.connect = (addr, name) => new Promise((res, rej) => {
+    if (N.ws) try { N.ws.close(); } catch (e) {}
+    let url = addr.trim(); if (!/^wss?:\/\//.test(url)) url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + url;
+    N.status = 'Подключение…'; let done = false, ws;
+    try { ws = new WebSocket(url); } catch (e) { rej(new Error('Неверный адрес')); return; }
+    N.ws = ws; N.url = addr.trim(); connWait = { res, rej };
+    const to = setTimeout(() => { if (!done) { done = true; try { ws.close(); } catch (e) {} rej(new Error('Сервер не отвечает')); } }, 15000);
+    ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name }));
+    ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'welcome') { done = true; clearTimeout(to); } handle(m); };
+    ws.onerror = () => { lastErr = 'Не удалось подключиться'; };
+    ws.onclose = () => { clearTimeout(to); if (!done) { done = true; rej(new Error(lastErr || 'Соединение закрыто')); } if (ws === N.ws) { const was = N.on; N.on = false; N.ws = null; N.remote = {}; N.list = []; N.loc = null; N.host = false; Save.leaveMP(); N.status = ''; if (was && N.hooks.closed) N.hooks.closed(); } };
+  });
+  N.disconnect = () => { if (N.ws) { try { N.ws.close(); } catch (e) {} } };
+  // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
+  N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; N.send('join', { loc }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
+  N.leave = () => { N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
+
+  function handle(m) {
+    switch (m.t) {
+      case 'welcome': N.on = true; N.id = m.id; N.idx = m.idx; N.name = m.name; N.seeds = m.seeds; N.list = m.players; Save.enterMP(m.cab, m.idx); N.status = 'Онлайн'; if (connWait) { connWait.res(m); connWait = null; } break;
+      case 'plist': N.list = m.list; break;
+      case 'joined': N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
+      case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
+      case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
+      case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.t = performance.now(); r.fresh = true; break; }
+      case 'host': N.host = m.id === N.id; if (N.hooks.host) N.hooks.host(m); break;
+      case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
+      case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
+      case 'chat': N.chat.push(m); if (N.chat.length > 6) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
+      default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
+    }
+  }
+  function mkRemote(id, name) { return { id, name, pos: new THREE.Vector3(0, -50, 0), fwd: new THREE.Vector3(0, 0, -1), yaw: 0, pitch: 0, noise: 0, flashOn: false, swinging: false, speedNow: 0, t: 0 }; }
+  return N;
+})();
+
+// ===== remotes.js =====
+// ---------------------------------------------------------------- other players: simple pixel-style avatars with a name tag, net and flashlight
+class Remotes {
+  constructor(scene, opts = {}) { this.scene = scene; this.flash = !!opts.flash; this.av = {}; this.t = 0; }
+  make(r) {
+    const g = new THREE.Group(); let h = 0; for (const ch of r.name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const jacket = new THREE.Color().setHSL((h % 360) / 360, 0.55, 0.42), skin = '#e8c8a0';
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.95, 8), new THREE.MeshLambertMaterial({ color: jacket })); body.position.y = 0.62; g.add(body);
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.2, 8), new THREE.MeshLambertMaterial({ color: '#2a2a34' })); legs.position.y = 0.1; g.add(legs);
+    const head = new THREE.Group(); head.position.y = 1.52; g.add(head);
+    head.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshLambertMaterial({ color: skin })));
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 10), new THREE.MeshLambertMaterial({ color: '#c8b070' })); hat.position.y = 0.12; head.add(hat);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.1, 10), new THREE.MeshLambertMaterial({ color: '#b09858' })); crown.position.y = 0.18; head.add(crown);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.06), new THREE.MeshLambertMaterial({ color: '#d8a888' })); nose.position.set(0, -0.01, -0.17); head.add(nose);
+    // butterfly net on a pole, held in the right hand; swings when the player swings
+    const net = new THREE.Group(); net.position.set(0.3, 1.05, -0.1); g.add(net);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.3, 5), new THREE.MeshBasicMaterial({ color: '#c8843a' })); pole.rotation.x = Math.PI / 2; pole.position.z = -0.5; net.add(pole);
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.012, 5, 14), new THREE.MeshBasicMaterial({ color: '#f0f0f0' })); hoop.position.z = -1.2; net.add(hoop);
+    const bag = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 8, 1, true), new THREE.MeshBasicMaterial({ color: '#a8b8b8', side: THREE.DoubleSide, transparent: true, opacity: 0.6 })); bag.rotation.x = -Math.PI / 2; bag.position.z = -1.42; net.add(bag);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lamp.position.set(-0.28, 1.05, -0.2); g.add(lamp);
+    const cv = document.createElement('canvas'); const w = Math.max(24, T.width(r.name, 8) + 8); cv.width = w; cv.height = 12; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = 'rgba(8,16,14,0.7)'; x.fillRect(0, 0, w, 12); T.draw(x, r.name, w / 2, 2, { size: 8, align: 'c', color: '#f0f0dc' });
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, fog: false, depthWrite: false })); sp.scale.set(w / 40, 12 / 40, 1); sp.position.y = 2.1; g.add(sp);
+    let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.28, 1.05, -0.25); const tg = new THREE.Object3D(); tg.position.set(-0.28, 1.0, -6); g.add(light, tg); light.target = tg; }
+    this.scene.add(g); return { g, head, net, light, lastPos: new THREE.Vector3() };
+  }
+  update(dt) {
+    this.t += dt; const now = performance.now(), R = Net.remote;
+    for (const id in R) {
+      const r = R[id]; let a = this.av[id]; if (!a) a = this.av[id] = this.make(r);
+      const alive = now - r.t < 4000 && r.t > 0; a.g.visible = alive;
+      if (!alive) continue;
+      const k = Math.min(1, dt * 12); a.g.position.x += (r.pos.x - a.g.position.x) * k; a.g.position.z += (r.pos.z - a.g.position.z) * k; a.g.position.y += (r.pos.y - 1.65 - a.g.position.y) * k;
+      let dy = r.yaw - a.g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); a.g.rotation.y += dy * k; a.head.rotation.x = clamp(r.pitch, -1, 1) * 0.8;
+      const sw = r.swinging ? 1 : 0; a.swv = (a.swv || 0) + (sw - (a.swv || 0)) * Math.min(1, dt * 14); a.net.rotation.x = -0.55 + a.swv * 0.9 + Math.sin(this.t * 2 + id) * 0.02; a.net.rotation.z = -a.swv * 0.35;
+      if (a.light) { a.light.visible = r.flashOn; a.light.intensity = r.flashOn ? 2.2 : 0; }
+    }
+    for (const id in this.av) if (!R[id]) { this.scene.remove(this.av[id].g); delete this.av[id]; }
+  }
+  dispose() { for (const id in this.av) this.scene.remove(this.av[id].g); this.av = {}; }
+}
+
 // ===== play.js =====
 // ---------------------------------------------------------------- gameplay: player, net, butterflies, HUD
 const SW = 480, SH = 270;
@@ -2256,18 +2370,19 @@ const SHADOW_GEO = new THREE.CircleGeometry(0.5, 10);
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
 
 class Fly {
-  constructor(play, sp, nearPlayer) {
-    this.play = play; this.sp = sp; this.beh = BEH[sp.beh]; this.mesh = Art.makeButterfly(sp); this.mesh.rotation.order = 'YXZ';
+  constructor(play, sp, nearPlayer, opts) {
+    opts = opts || {}; this.play = play; this.sp = sp; this.beh = BEH[sp.beh]; this.mesh = Art.makeButterfly(sp); this.mesh.rotation.order = 'YXZ';
     this.span = this.mesh.userData.span; this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.tgt = new THREE.Vector3();
     this.state = FLY; this.t = 0; this.ph = Math.random() * 6.28; this.yaw = Math.random() * 6.28; this.bank = 0; this.pitch = 0; this.flower = null; this.glideT = 0; this.alive = true;
     this.speedK = 0.85 + Math.random() * 0.3; this.sway = Math.random() * 6.28;
     this.kind = this.beh.special || null; this.gt = 1 + Math.random() * 2; this.gs = Math.random() * 2; this.gf = 0; this.cool = 0; this.rs = { ph: 'hide', t: 2 + Math.random() * 6 };
     if (this.beh.light) { this.light = new THREE.PointLight(this.beh.light, 1.4, 13, 1.5); this.mesh.add(this.light); }
+    this.id = opts.id || play.nextFid++; this.puppet = !!opts.puppet; this.netPos = new THREE.Vector3(); this.netYaw = 0; this.hid = false; this.seen = performance.now(); this.baseScale = this.kind === 'timothy' ? 0.55 : 1;
     if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
-    this.place(nearPlayer);
+    if (!this.puppet) this.place(nearPlayer);
     this.play.world.scene.add(this.mesh);
     this.shadow = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT); this.shadow.rotation.x = -Math.PI / 2; this.play.world.scene.add(this.shadow);
-    this.pickTarget();
+    if (!this.puppet) this.pickTarget();
   }
   place(near) {
     const p = this.play, R = p.world.R * 0.85;
@@ -2284,7 +2399,7 @@ class Fly {
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
     const w = this.play.world, b = this.beh; this.releaseFlower(); this.perchTarget = false;
-    if (this.kind === 'screech') { const pl = this.play.player, a = Math.random() * 6.28, d = 1.8 + Math.random() * 2.6; this.tgt.set(pl.pos.x + Math.cos(a) * d, pl.pos.y - 0.6 + Math.random() * 1.2, pl.pos.z + Math.sin(a) * d); return; }
+    if (this.kind === 'screech') { const pl = this.play.nearestPlayer(this.pos), a = Math.random() * 6.28, d = 1.8 + Math.random() * 2.6; this.tgt.set(pl.pos.x + Math.cos(a) * d, pl.pos.y - 0.6 + Math.random() * 1.2, pl.pos.z + Math.sin(a) * d); return; }
     const wantsBait = (this.sp.beh === 'owl' || this.sp.beh === 'bird' || this.sp.beh === 'emperor' || this.sp.beh === 'morph') && w.baits.length && Math.random() < 0.55;
     if (wantsBait) { const bt = w.baits[(Math.random() * w.baits.length) | 0]; this.tgt.set(bt.x + (Math.random() - 0.5) * 0.7, bt.y + 0.05, bt.z + (Math.random() - 0.5) * 0.7); this.perchTarget = true; return; }
     if (Math.random() < b.perch && w.flowers.length) {
@@ -2310,11 +2425,20 @@ class Fly {
     if (this.play.dist(this.pos) < 14) Snd.sfx.flutter();
   }
   update(dt, t) {
-    const p = this.play, b = this.beh, w = p.world, pl = p.player;
+    const p = this.play, b = this.beh, w = p.world, pl = p.nearestPlayer(this.pos);
+    if (this.state === CAUGHT && this.remote) { this.t -= dt; this.mesh.scale.setScalar(Math.max(0.01, this.t / 0.4) * this.baseScale); if (this.t <= 0) this.alive = false; return; }
     if (this.state === CAUGHT) { // glued to the net hoop
       this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.heightAt(this.pos.x, this.pos.z));
       if (this.t <= 0) this.alive = false; return;
     }
+    if (this.puppet) { // another client simulates this butterfly: follow its last reported state
+      const k = Math.min(1, dt * 12); this.pos.lerp(this.netPos, k); let dyw = this.netYaw - this.yaw; dyw = Math.atan2(Math.sin(dyw), Math.cos(dyw)); this.yaw += dyw * k;
+      this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1); const gyp = w.heightAt(this.pos.x, this.pos.z);
+      if (this.state === PERCH) { Art.setFlap(this.mesh, b.flutterPerch ? 0.35 + 0.35 * Math.abs(Math.sin(this.ph * 1.2)) : 0.75 + 0.5 * Math.sin(this.ph * 0.18 + this.sway)); this.mesh.rotation.set(-0.1, this.yaw, 0); }
+      else { Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); this.mesh.rotation.set(0, this.yaw, 0); }
+      this.mesh.visible = !this.hid && (this.kind !== 'dread' || p.lit(this.pos)); this.mesh.position.copy(this.pos); this.updateShadow(gyp); return;
+    }
+    if (this.kind === 'rush' || this.kind === 'ambush') this.hid = this.rs.ph === 'hide' || this.rs.ph === 'warn';
     this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1);
     const dx = this.pos.x - pl.pos.x, dz = this.pos.z - pl.pos.z, dist = Math.hypot(dx, dz, this.pos.y - pl.pos.y);
     // ---- senses
@@ -2323,7 +2447,7 @@ class Fly {
     const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
       this.t -= dt;
-      if (dist < scareBase * 0.62 || (p.netBusy() && dist < 2.8 && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
+      if (dist < scareBase * 0.62 || (p.netBusyAny(this.pos, 2.8) && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
       else if (this.t <= 0) { this.state = FLY; this.pickTarget(); }
     } else if (this.state === FLY) {
       if (dist < 1.4 * (0.5 + pl.noise * 0.5) && pl.noise > 1) { this.startFlee(_v.set(dx, 0, dz)); }
@@ -2378,7 +2502,7 @@ class Fly {
   steer(dt, tx, ty, tz, spd, k = 3) { _w.set(tx - this.pos.x, ty - this.pos.y, tz - this.pos.z); const L = _w.length(); if (L > 0.02) _w.multiplyScalar(spd * this.play.speedMul() / L * Math.min(1, L * 0.6)); this.vel.lerp(_w, Math.min(1, dt * k)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); }
   // special rules of the secret-ocean butterflies. Returns true when the butterfly has moved itself this frame.
   special(kind, dt, t, dx, dz, dist) {
-    const p = this.play, w = p.world, pl = p.player, ground = w.heightAt(this.pos.x, this.pos.z);
+    const p = this.play, w = p.world, pl = p.nearestPlayer(this.pos), ground = w.heightAt(this.pos.x, this.pos.z);
     if (kind === 'dread') { this.mesh.visible = p.lit(this.pos); return false; }
     if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
     if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
@@ -2388,19 +2512,19 @@ class Fly {
         if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
       return false;
     }
-    if (kind === 'halt') { if (p.lit(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
-    if (kind === 'screech') { if (p.lit(this.pos) && dist < 30 && !(this.state === FLEE && this.t > 0.6)) { this.startFlee(_v.set(dx, 0, dz)); this.t = 1.6; } return false; }
+    if (kind === 'halt') { if (p.litAny(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
+    if (kind === 'screech') { if (p.litAny(this.pos) && dist < 30 && !(this.state === FLEE && this.t > 0.6)) { this.startFlee(_v.set(dx, 0, dz)); this.t = 1.6; } return false; }
     if (kind === 'seek') {
-      const seen = p.looked(this.pos, 0.8) && (dist < 10 || p.lit(this.pos)); const ty = pl.pos.y - 0.5 + Math.sin(t) * 0.2;
+      const seen = p.lookedAny(this.pos, 0.8) && (dist < 10 || p.litAny(this.pos)); const ty = pl.pos.y - 0.5 + Math.sin(t) * 0.2;
       if (seen) { this.vel.multiplyScalar(Math.max(0, 1 - dt * 14)); Art.setFlap(this.mesh, 0.18); this.frozen = true; }
       else { this.frozen = false; if (dist > 2.3) this.steer(dt, pl.pos.x, ty, pl.pos.z, 2.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t * 0.9) * 2, ty, pl.pos.z + Math.sin(t * 0.9) * 2, 1.2); }
       this.post(false); return true;
     }
     if (kind === 'eyes') {
       this.cool -= dt;
-      const stare = p.looked(this.pos, 0.965) && dist < 26;
+      const stare = p.lookedAny(this.pos, 0.965) && dist < 26;
       if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
-      if (p.looked(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
+      if (p.lookedAny(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
         const fx = p.fwd.x, fz = p.fwd.z, side = ((this.pos.x - pl.pos.x) * fz - (this.pos.z - pl.pos.z) * fx) >= 0 ? 1 : -1;
         this.vel.lerp(_w.set(-fz * side * 7.5, 0.4, fx * side * 7.5), Math.min(1, dt * 9)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
       } else if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.9);
@@ -2425,7 +2549,7 @@ class Fly {
     }
     if (kind === 'curious') {
       this.ca = (this.ca || 0) + dt * 0.8; const R0 = pl.speedNow < 0.4 ? 1.9 : 3.4;
-      if (p.netBusy() && dist < 3.4 && Math.random() < dt * 3) { this.vel.set(dx, 0.5, dz).normalize().multiplyScalar(5); }
+      if (p.netBusyAny(this.pos, 3.4) && Math.random() < dt * 3) { this.vel.set(dx, 0.5, dz).normalize().multiplyScalar(5); }
       this.steer(dt, pl.pos.x + Math.cos(this.ca) * R0, pl.pos.y - 0.3 + Math.sin(this.ca * 1.7) * 0.5, pl.pos.z + Math.sin(this.ca) * R0, 2.6); this.post(false); return true;
     }
     return false;
@@ -2436,8 +2560,8 @@ class Fly {
 
 // ---------------------------------------------------------------- the play session
 class Play {
-  constructor(biome, seed) {
-    this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
+  constructor(biome, seed, mp) {
+    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
@@ -2448,9 +2572,11 @@ class Play {
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
-    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9);
+    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
     this.helperT = 40;
-    this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
+    if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); }
+    if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
+    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
@@ -2465,12 +2591,81 @@ class Play {
   calmMul() { return this.hasMod('calm') ? 0.5 : this.hasMod('skittish') ? 1.25 : 1; }
   catchMul() { return this.hasMod('bigcatch') ? 1.6 : this.hasMod('smallnet') ? 0.6 : 1; }
   applyMod(id) {
-    const w = this.world.mod; w.storm = 1; w.bright = 0; w.fog = 1;
+    const w = this.world.mod || (this.world.mod = { storm: 1, bright: 0, fog: 1 }); w.storm = 1; w.bright = 0; w.fog = 1;
     const d = PLAY_MODS[id]; this.mod = { id, t: 90, name: d.name, good: d.good };
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
   }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
+
+  // ------------------------------------------------------------ multiplayer
+  hookNet() {
+    const H = Net.hooks, me = this;
+    H.flies = m => me.netFlies(m.list); H.caught = m => me.netCaught(m); H.catchOk = m => me.netCatchOk(m); H.catchNo = m => me.netCatchNo(m);
+    H.mod = m => { const d = me.applyMod(m.id); me.toast(`${m.by}: ${PLAY_MODS[m.id].good ? 'хороший' : 'плохой'} модификатор — ${PLAY_MODS[m.id].name}`, 5, true); Snd.sfx.modifier(); };
+    H.host = m => { if (m.id === Net.id && !me.isHost) me.becomeHost(); };
+    H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
+    H.regenNo = () => me.toast('Сменить местность можно, только когда вы здесь один', 3);
+  }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = null; }
+  others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
+  nearestPlayer(pos) {
+    let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
+    for (const r of this.others()) { const d = pos.distanceToSquared(r.pos); if (d < bd) { bd = d; best = r; } }
+    return best;
+  }
+  litAny(pos) {
+    if (this.lit(pos)) return true; if (!this.mp) return false;
+    for (const r of this.others()) { if (!r.flashOn || !this.world.hasFlash) continue; _v2.copy(pos).sub(r.pos); const d = _v2.length(); if (d < 34 && (d < 0.5 || _v2.normalize().dot(r.fwd) > 0.93)) return true; }
+    return false;
+  }
+  lookedAny(pos, cos) {
+    if (this.looked(pos, cos)) return true; if (!this.mp) return false;
+    for (const r of this.others()) { _v2.copy(pos).sub(r.pos); const d = _v2.length(); if (d < 45 && d > 0.2 && _v2.normalize().dot(r.fwd) > cos) return true; }
+    return false;
+  }
+  netBusyAny(pos, dist) {
+    if (this.netBusy() && this.player.pos.distanceTo(pos) < dist) return true; if (!this.mp) return false;
+    for (const r of this.others()) if (r.swinging && r.pos.distanceTo(pos) < dist) return true;
+    return false;
+  }
+  snapshot() { const R = n => Math.round(n * 100) / 100; return this.flies.filter(f => f.state !== CAUGHT || f.pendingCatch).map(f => [f.id, f.sp.id, R(f.pos.x), R(f.pos.y), R(f.pos.z), R(f.yaw), f.state, f.hid ? 1 : 0]); }
+  adoptSnapshot(list, puppets) {
+    let mx = 0; for (const e of list) mx = Math.max(mx, e[0]); this.nextFid = mx + 1;
+    for (const e of list) { const sp = SPECIES_BY_ID[e[1]]; if (!sp) continue; const f = new Fly(this, sp, false, { id: e[0], puppet: puppets }); f.pos.set(e[2], e[3], e[4]); f.netPos.copy(f.pos); f.yaw = f.netYaw = e[5]; f.state = puppets ? e[6] : FLY; this.flies.push(f); if (!puppets) f.pickTarget(); }
+  }
+  netFlies(list) {
+    if (this.isHost) return; const now = performance.now();
+    for (const e of list) {
+      let f = this.flies.find(x => x.id === e[0]);
+      if (!f) { const sp = SPECIES_BY_ID[e[1]]; if (!sp) continue; f = new Fly(this, sp, false, { id: e[0], puppet: true }); f.pos.set(e[2], e[3], e[4]); f.yaw = e[5]; this.flies.push(f); }
+      if (f.pendingCatch || f.remote) { f.seen = now; continue; }
+      f.netPos.set(e[2], e[3], e[4]); f.netYaw = e[5]; f.state = e[6] === CAUGHT ? FLY : e[6]; f.hid = !!e[7]; f.seen = now;
+    }
+    const ids = new Set(list.map(e => e[0])); for (const f of this.flies) if (f.puppet && !ids.has(f.id) && !f.pendingCatch && !f.remote && now - f.seen > 1500) f.alive = false;
+  }
+  becomeHost() {
+    this.isHost = true;
+    for (const f of this.flies) if (f.puppet) { f.puppet = false; if (f.state === CAUGHT) continue; f.state = FLY; f.vel.set(0, 0, 0); f.rs = { ph: 'hide', t: 2 + Math.random() * 4 }; f.pickTarget(); }
+    this.toast('Вы теперь ведёте бабочек в этой локации', 3);
+  }
+  netCatch(f) { f.pendingCatch = true; f.releaseFlower(); f.state = CAUGHT; f.t = 2.0; Net.send('catch', { fid: f.id }); }
+  netCatchOk(m) {
+    const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp]; if (!sp) return;
+    this.onCatch(f && f.pendingCatch ? f : { sp, beh: BEH[sp.beh], catchIt() {}, id: m.fid }); if (f) f.pendingCatch = false;
+  }
+  netCatchNo(m) { const f = this.flies.find(x => x.id === m.fid); if (!f || f.remote || !f.pendingCatch) return; f.pendingCatch = false; f.state = FLY; if (!f.puppet) f.pickTarget(); }
+  netCaught(m) {
+    const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
+    if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
+    if (this.isHost && sp) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (BEH[sp.beh].light ? 3 : 1) });
+    if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
+  }
+  sendNet(dt) {
+    this.netAcc += dt; if (this.netAcc < 0.1) return; this.netAcc = 0; const P = this.player, R = n => Math.round(n * 100) / 100;
+    Net.send('pos', { x: R(P.pos.x), y: R(P.pos.y), z: R(P.pos.z), yaw: R(P.yaw), pitch: R(P.pitch), nz: R(P.noise), fl: this.flashOn ? 1 : 0, sw: this.netBusy() ? 1 : 0, sp: R(P.speedNow) });
+    if (this.isHost) Net.send('flies', { list: this.snapshot() });
+  }
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
 
   // ---------------------------------------------------------------- net model
@@ -2529,7 +2724,7 @@ class Play {
     for (const f of this.flies) {
       if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
-      if (d < r) { this.onCatch(f); this.net.caughtThisSwing = true; }
+      if (d < r) { if (this.mp) { if (f.pendingCatch) continue; this.netCatch(f); } else this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
   onCatch(f) {
@@ -2539,11 +2734,11 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) });
+    if (!this.mp || this.isHost) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) });
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
-    else if (spc === 'modifier') { const md = this.applyMod(this.rollMod()); this.toast((md.good ? 'Хороший модификатор: ' : 'Плохой модификатор: ') + md.name, 5, true); Snd.sfx.modifier(); }
+    else if (spc === 'modifier') { if (this.mp) Net.send('mod', { id: this.rollMod() }); else { const md = this.applyMod(this.rollMod()); this.toast((md.good ? 'Хороший модификатор: ' : 'Плохой модификатор: ') + md.name, 5, true); Snd.sfx.modifier(); } }
     if (this.biome.species.every(s => this.caughtHere.has(s.id) || Save.has(s.id)) && !this.completeShown && this.biome.species.every(s => Save.has(s.id))) { this.completeShown = true; setTimeout(() => { Snd.sfx.complete(); this.toast('Все виды этого биома собраны!', 5, true); }, 1100); }
   }
 
@@ -2590,12 +2785,13 @@ class Play {
     if (inp.fire) { this.swing(); inp.fire = false; }
     this.updateNet(dt);
     // butterflies
+    if (this.mp) { this.sendNet(dt); this.remotes.update(dt); }
     this.helperT -= dt;
-    if (this.helperT <= 0) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34) this.flies.push(new Fly(this, sp, false)); }
+    if (this.helperT <= 0 && (!this.mp || this.isHost)) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34) this.flies.push(new Fly(this, sp, false)); }
     const ghosts = this.hasMod('ghosts');
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; } f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
-    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { this.flies.push(new Fly(this, r.sp, false)); this.respawns.splice(i, 1); } }
+    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, r.sp, false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?
     this.reticle = 0; const fwd = new THREE.Vector3(0, 0, -1).applyEuler(this.camera.rotation);
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
@@ -2619,6 +2815,7 @@ class Play {
     // biome plate
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
+    if (this.mp) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', '), 8, 33, { size: 8, color: '#9ae0b0', shadow: '#000' });
     // species checklist
     const n = this.pool.length, cmp = n > 9, tw = cmp ? 21 : 32, th = cmp ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, cmp ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
@@ -2677,11 +2874,11 @@ class Play {
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
     ctx.globalAlpha = 1;
   }
-  dispose() { Snd.stopAmbient(); this.world.dispose(); }
+  dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
-Play.pickPool = (biome, rng, size = 9) => {
-  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (Save.has(sp.id) ? 1 : 1.8) })); const out = [];
+Play.pickPool = (biome, rng, size = 9, shared = false) => {
+  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
@@ -2689,7 +2886,7 @@ const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 
 // ===== screens.js =====
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
-const collText = () => BIOME_BY_ID.ocean.secret ? `${Save.total()}/${REAL}+???` : `${Save.total()}/${SPECIES.length}`;
+const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const have = sec ? SPECIES.filter(s => !s.mystery && Save.has(s.id)).length : Save.total(); return `${have}/${sec ? REAL : SPECIES.length}`; };
 const Screens = (() => {
   const c = UIK.col;
   const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
@@ -2730,11 +2927,12 @@ const Screens = (() => {
     layout() {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
-        { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}`, x, y: 168, w, h: 16, size: 8 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
-        { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
+        { id: 'play', label: 'Играть', x, y: 138, w, h: 20, size: 10 },
+        { id: 'journal', label: `Коллекция  ${collText()}`, x, y: 162, w, h: 16, size: 8 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 181, w, h: 16, size: 8 },
+        { id: 'mp', label: Net.on ? `Онлайн: ${Net.count()} · ${Net.name}` : 'Мультиплеер', x, y: 200, w, h: 16, size: 8 },
+        { id: 'help', label: 'Управление', x, y: 219, w: 68, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 219, w: 68, h: 16 },
       ];
     },
     draw(ctx, t, m) {
@@ -2749,6 +2947,46 @@ const Screens = (() => {
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+
+  // ------------------------------------------------------------------ MULTIPLAYER (connect to a server)
+  const mp = {
+    fields: [{ id: 'addr', label: 'Адрес сервера', val: '', max: 60 }, { id: 'name', label: 'Ваше имя', val: '', max: 16 }], focus: 0, msg: '', busy: false, btns: [], inited: false,
+    init() { if (this.inited) return; this.inited = true; let d = {}; try { d = JSON.parse(localStorage.getItem('f0w_mp') || '{}'); } catch (e) {} this.fields[0].val = d.addr || Net.defaultUrl(); this.fields[1].val = d.name || ''; },
+    layout() {
+      const x = SW / 2 - 110; this.rect = { x: SW / 2 - 140, y: 36, w: 280, h: 200 };
+      this.fr = this.fields.map((f, i) => ({ id: 'f' + i, i, x, y: 78 + i * 38, w: 220, h: 16 }));
+      this.btns = Net.on ? [{ id: 'disc', label: 'Отключиться', x, y: 190, w: 106, h: 18 }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }]
+        : [{ id: 'connect', label: this.busy ? 'Подключение…' : 'Подключиться', x, y: 190, w: 106, h: 18, size: 8, disabled: this.busy }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }];
+    },
+    draw(ctx, t, m) {
+      this.init(); this.layout(); nightBackdrop(ctx, t, 0.45); const r = this.rect;
+      UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: 'rgba(16,32,28,0.95)', border: c.gold });
+      T.draw(ctx, 'Мультиплеер', SW / 2, r.y + 8, { size: 14, align: 'c', color: c.gold });
+      if (Net.on) {
+        T.draw(ctx, `Вы в сети: ${Net.name}`, SW / 2, r.y + 34, { size: 8, align: 'c', color: c.green }); T.draw(ctx, Net.url, SW / 2, r.y + 46, { size: 8, align: 'c', color: c.dim });
+        T.draw(ctx, `Игроки онлайн (${Net.count()}):`, r.x + 16, r.y + 66, { size: 8, color: c.text });
+        Net.list.slice(0, 8).forEach((p, i) => T.draw(ctx, `${p.name}${p.id === Net.id ? ' (вы)' : ''} — ${p.loc ? (p.loc === 'cabinet' ? 'кабинет' : (short[p.loc] || p.loc)) : 'на карте'}`, r.x + 22, r.y + 80 + i * 10, { size: 8, color: p.id === Net.id ? c.gold : c.dim }));
+        T.draw(ctx, 'Локации, бабочки и кабинет общие для всех на сервере', SW / 2, r.y + 172, { size: 8, align: 'c', color: '#6a8a78' });
+      } else {
+        T.draw(ctx, 'Общие локации, бабочки и кабинет энтомолога', SW / 2, r.y + 28, { size: 8, align: 'c', color: c.dim });
+        this.fr.forEach(fr => { const f = this.fields[fr.i], on = this.focus === fr.i; T.draw(ctx, f.label, fr.x, fr.y - 11, { size: 8, color: c.text }); UIK.panel(ctx, fr.x, fr.y, fr.w, fr.h, { fill: '#0a1612', border: on ? c.gold : c.line, shadow: false }); const txt = f.val; const w = T.width(txt, 8); const sh = Math.max(0, w - (fr.w - 8)); ctx.save(); ctx.beginPath(); ctx.rect(fr.x + 2, fr.y + 1, fr.w - 4, fr.h - 2); ctx.clip(); T.draw(ctx, txt, fr.x + 4 - sh, fr.y + 4, { size: 8, color: '#fff' }); if (on && Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.gold; ctx.fillRect(fr.x + 4 - sh + w + 1, fr.y + 3, 1, 10); } ctx.restore(); });
+        T.para(ctx, 'Запустите сервер: node server/server.js (см. README). Если игра открыта с адреса сервера, адрес уже заполнен.', r.x + 16, r.y + 142, 248, { size: 8, color: '#6a8a78', lh: 10 });
+      }
+      if (this.msg) T.draw(ctx, this.msg, SW / 2, r.y + 176, { size: 8, align: 'c', color: this.msg.startsWith('Подкл') ? c.dim : c.red });
+      this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) { const f = this.fr.find(f => UIK.hit(f, x, y)); if (f && !Net.on) { this.focus = f.i; return null; } const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); return b ? b.id : null; },
+    key(e) {
+      const f = this.fields[this.focus];
+      if (e.code === 'Escape') return 'back'; if (e.code === 'Enter') return Net.on ? null : 'connect';
+      if (Net.on) return null;
+      if (e.code === 'Tab' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { this.focus = (this.focus + 1) % this.fields.length; return null; }
+      if (e.code === 'Backspace') { f.val = f.val.slice(0, -1); return null; }
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') { try { navigator.clipboard.readText().then(tx => { f.val = (f.val + tx.replace(/[\r\n]/g, '')).slice(0, f.max); }); } catch (er) {} return null; }
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && f.val.length < f.max) f.val += e.key;
+      return null;
+    },
   };
 
   // ------------------------------------------------------------------ WORLD MAP
@@ -2942,7 +3180,7 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, help, loading, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
 // ===== spread.js =====
@@ -3055,7 +3293,7 @@ const Spread = (() => {
       const mean = pn.reduce((a, b) => a + b.score, 0) / pn.length;
       const q = Math.round(clamp(0.85 * mean + 0.15 * sym, 1, 100));
       this.res = { acc: avg(p => p.acc), tim: avg(p => p.tim), gen: avg(p => p.gen), sym, q };
-      this.spec.q = q; this.spec.pose = copy(this.pose); Save.write();
+      this.spec.q = q; this.spec.pose = copy(this.pose); Save.syncSpread(this.spec);
       this.phase = 'result'; this.resT = 0; Snd.sfx.grade(q);
     },
     tick(dt) { if (this.phase === 'finish') { this.doneT -= dt; if (this.doneT <= 0) this.finish(); } if (this.phase === 'result') this.resT += dt; },
@@ -3215,8 +3453,8 @@ const Boxes = (() => {
     if (t === 'drawer') return boxesAt(t, i).reduce((a, b) => a + UNITS[b.size], 0) + UNITS[box.size] <= DRAWER_UNITS;
     return false;
   }
-  function place(box, t, i) { if (!fits(box, t, i)) return false; box.loc = { t, i }; Save.write(); return true; }
-  function unplace(box) { box.loc = null; Save.write(); }
+  function place(box, t, i) { if (!fits(box, t, i)) return false; box.loc = { t, i }; Save.syncBoxLoc(box); return true; }
+  function unplace(box) { box.loc = null; Save.syncBoxLoc(box); }
   const locName = b => !b.loc ? 'не размещена' : b.loc.t === 'wall' ? 'стена ' + (b.loc.i + 1) : b.loc.t === 'top' ? 'витрина ' + (b.loc.i + 1) : 'ящик ' + (b.loc.i + 1);
   const fillOf = b => b.items.filter(Boolean).length;
   const boxLabel = b => `${SIZE_NAME[b.size]} · ${STYLES[b.style].name} · ${fillOf(b)}/${b.items.length}`;
@@ -3283,7 +3521,7 @@ const Boxes = (() => {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
         if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 24) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
-        if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.write(); } return 'changed'; }
+        if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
@@ -3475,6 +3713,7 @@ const Cabinet = (() => {
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
       this.build(); this.applyTime(this.realHour()); this.refresh();
       Snd.startAmbient('cabinet'); this.toast('Добро пожаловать в кабинет!', 3);
+      this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.cab = () => this.refresh(); Net.hooks.pjoin = m => this.toast(`${m.name} вошёл в кабинет`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} вышел`, 2.5); }
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
     toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
@@ -3750,6 +3989,7 @@ const Cabinet = (() => {
     }
     animate(dt) {
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10 }); } }
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;
@@ -3822,6 +4062,7 @@ const Cabinet = (() => {
       T.draw(ctx, 'Кабинет энтомолога', 12, 10, { size: 8, color: c.gold });
       T.draw(ctx, `ждут: ${raw} · расправлено: ${sp}`, 12, 21, { size: 8, color: c.text });
       T.draw(ctx, `коробок: ${bx}   на выставке: ${on}`, 12, 32, { size: 8, color: c.dim });
+      if (this.remotes) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', '), 8, 54, { size: 8, color: '#9ae0b0', shadow: '#000' });
       ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(SW / 2 - 1, SH / 2 - 1, 2, 2);
       if (this.prompt && !this.ov) { const s = this.prompt.label(); const w = T.width(s, 8) + 20; UIK.panel(ctx, SW / 2 - w / 2, SH - 54, w, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s, SW / 2, SH - 49, { size: 8, align: 'c', color: '#fff' }); }
       if (this.toastT > 0) T.draw(ctx, this.toastText, SW / 2, 62, { size: 8, align: 'c', color: c.gold, shadow: '#000' });
@@ -3839,7 +4080,7 @@ const Cabinet = (() => {
       T.para(ctx, 'Расправилка (у окна): подцепите иглой кончик крыла, плавно переведите его к золотой точке и нажмите ПРОБЕЛ, когда кольцо сожмётся. Резкие движения рвут крыло. Мастерская (справа): создайте коробку S, M или L и разложите расправленных бабочек. Стол в центре и стена на севере — выставка ваших коллекций.', 76, 140, 330, { size: 8, color: c.dim, lh: 10 });
       T.draw(ctx, 'нажмите любую клавишу', SW / 2, 228, { size: 8, align: 'c', color: c.gold });
     }
-    dispose() { Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map && !boxTex.has(x.map.image)) x.map.dispose(); x.dispose(); }); }); }
+    dispose() { if (this.remotes) { this.remotes.dispose(); Net.hooks.cab = Net.hooks.pjoin = Net.hooks.pleave = null; } Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map && !boxTex.has(x.map.image)) x.map.dispose(); x.dispose(); }); }); }
   }
   return Cab;
 })();
@@ -3893,25 +4134,38 @@ const Cabinet = (() => {
   function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
   function unlock() { if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
-  function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); }
+  function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); if (Net.on) Net.leave(); }
   App.toTitle = () => { leave(); App.screen = 'title'; };
   App.toMap = () => { leave(); App.screen = 'map'; };
   const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
+  // multiplayer: ask the server for the shared location first, then build it with the server's seed and role (host simulates the butterflies)
+  const netFail = e => { leave(); App.screen = 'title'; App.fade = 0; App.fadeTarget = 0; Screens.mp.msg = 'Сервер: ' + (e && e.message || 'ошибка'); };
+  const enterCabinet = () => {
+    App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
+    if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
+  };
   App.toCabinet = () => {
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
-    setTimeout(() => {
-      App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
-      if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
-    }, 60);
+    if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
   };
   App.start = (biomeId, seed) => {
-    leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
-    setTimeout(() => {
-      App.play = new Play(BIOME_BY_ID[biomeId], seed || params.get('seed') || undefined); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+    leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
+    const make = (sd, mp) => {
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
-    }, 60);
+    };
+    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod }), 40)).catch(netFail);
+    else setTimeout(() => make(seed || params.get('seed') || undefined), 60);
   };
+  Net.hooks.reseed = m => go(() => App.start(m.loc));
+  Net.hooks.closed = () => { if (App.screen === 'play' || App.screen === 'cabinet' || App.screen === 'loading') { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } Snd.stopAmbient(); App.overlay = null; App.screen = 'title'; } Screens.mp.msg = 'Соединение с сервером потеряно'; };
+  function mpConnect() {
+    const M = Screens.mp, addr = M.fields[0].val.trim(), name = M.fields[1].val.trim() || 'Гость'; if (!addr) { M.msg = 'Введите адрес сервера'; return; }
+    M.busy = true; M.msg = 'Подключение…';
+    Net.connect(addr, name).then(() => { M.busy = false; M.msg = ''; try { localStorage.setItem('f0w_mp', JSON.stringify({ addr, name })); } catch (e) {} Snd.sfx.complete(); }).catch(e => { M.busy = false; M.msg = e.message; });
+  }
+  function mpAct(id) { if (id === 'connect') mpConnect(); else if (id === 'disc') { Net.disconnect(); Screens.mp.msg = ''; } else if (id === 'back') { Snd.sfx.click(); App.screen = 'title'; } }
   function journalIndex() { if (App.play) { S.journal.tab = BIOMES.indexOf(App.play.biome); S.journal.sel = 0; } }
   function openJournal(from) { App.journalFrom = from; if (from === 'play') { unlock(); App.overlay = 'journal'; journalIndex(); } else { App.screen = 'journal'; } Snd.sfx.page(); }
   function closeJournal() { if (App.journalFrom === 'play') { App.overlay = 'pause'; } else App.screen = App.journalFrom; Snd.sfx.page(); }
@@ -3934,6 +4188,7 @@ const Cabinet = (() => {
     inp.keys.add(e.code);
     if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
+    if (sc === 'mp') { if (['Backspace', 'Tab', 'Space', 'ArrowDown', 'ArrowUp'].includes(e.code)) e.preventDefault(); mpAct(S.mp.key(e)); return; }
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
@@ -3960,14 +4215,15 @@ const Cabinet = (() => {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { const bid = App.play.biome.id; go(() => App.start(bid)); } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
       if (App.locked) inp.fire = true; else lock();
     } else if (sc === 'title') {
       const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
-      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'mp') { S.mp.msg = ''; App.screen = 'mp'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+    } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
       if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
@@ -4004,6 +4260,7 @@ const Cabinet = (() => {
       gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
       if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
       else if (sc === 'map') S.wmap.draw(ctx, t, mouse);
+      else if (sc === 'mp') S.mp.draw(ctx, t, mouse);
       else if (sc === 'journal') S.journal.draw(ctx, t, mouse);
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
@@ -4016,7 +4273,7 @@ const Cabinet = (() => {
   ui.addEventListener('mousedown', () => { if (App.helpFromTitle) App.helpTimer = performance.now(); });
 
   App.renderer = renderer;
-  T.onReady(() => { App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } else if (params.has('cabinet')) setTimeout(() => App.toCabinet(), 200); });
+  T.onReady(() => { if (params.has('mp')) { const addr = params.get('server') || Net.defaultUrl(), nm = params.get('mp') || 'Гость'; Net.connect(addr, nm).then(() => { const b0 = params.get('biome'); if (b0 && BIOME_BY_ID[b0]) { App.noLockAuto = true; setTimeout(() => App.start(b0), 200); } else if (params.has('cabinet')) setTimeout(() => App.toCabinet(), 200); }).catch(() => {}); } App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.has('mp') ? null : params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } else if (params.has('cabinet') && !params.has('mp')) setTimeout(() => App.toCabinet(), 200); });
   requestAnimationFrame(frame);
 })();
 

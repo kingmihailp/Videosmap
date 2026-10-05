@@ -2,7 +2,7 @@
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-ORDER = ["assets_gen.js", "data.js", "species_more.js", "species_ocean.js", "util.js", "font.js", "art.js", "audio.js", "world.js", "ocean.js", "play.js", "screens.js", "spread.js", "boxes.js", "cabinet.js", "main.js"]
+ORDER = ["assets_gen.js", "data.js", "species_more.js", "species_ocean.js", "util.js", "font.js", "art.js", "audio.js", "world.js", "ocean.js", "net.js", "remotes.js", "play.js", "screens.js", "spread.js", "boxes.js", "cabinet.js", "main.js"]
 src = os.path.join(ROOT, "src")
 parts = []
 for name in ORDER:

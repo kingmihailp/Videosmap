@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
-const collText = () => BIOME_BY_ID.ocean.secret ? `${Save.total()}/${REAL}+???` : `${Save.total()}/${SPECIES.length}`;
+const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const have = sec ? SPECIES.filter(s => !s.mystery && Save.has(s.id)).length : Save.total(); return `${have}/${sec ? REAL : SPECIES.length}`; };
 const Screens = (() => {
   const c = UIK.col;
   const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
@@ -40,11 +40,12 @@ const Screens = (() => {
     layout() {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
-        { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}`, x, y: 168, w, h: 16, size: 8 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
-        { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
+        { id: 'play', label: 'Играть', x, y: 138, w, h: 20, size: 10 },
+        { id: 'journal', label: `Коллекция  ${collText()}`, x, y: 162, w, h: 16, size: 8 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 181, w, h: 16, size: 8 },
+        { id: 'mp', label: Net.on ? `Онлайн: ${Net.count()} · ${Net.name}` : 'Мультиплеер', x, y: 200, w, h: 16, size: 8 },
+        { id: 'help', label: 'Управление', x, y: 219, w: 68, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 219, w: 68, h: 16 },
       ];
     },
     draw(ctx, t, m) {
@@ -59,6 +60,46 @@ const Screens = (() => {
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+
+  // ------------------------------------------------------------------ MULTIPLAYER (connect to a server)
+  const mp = {
+    fields: [{ id: 'addr', label: 'Адрес сервера', val: '', max: 60 }, { id: 'name', label: 'Ваше имя', val: '', max: 16 }], focus: 0, msg: '', busy: false, btns: [], inited: false,
+    init() { if (this.inited) return; this.inited = true; let d = {}; try { d = JSON.parse(localStorage.getItem('f0w_mp') || '{}'); } catch (e) {} this.fields[0].val = d.addr || Net.defaultUrl(); this.fields[1].val = d.name || ''; },
+    layout() {
+      const x = SW / 2 - 110; this.rect = { x: SW / 2 - 140, y: 36, w: 280, h: 200 };
+      this.fr = this.fields.map((f, i) => ({ id: 'f' + i, i, x, y: 78 + i * 38, w: 220, h: 16 }));
+      this.btns = Net.on ? [{ id: 'disc', label: 'Отключиться', x, y: 190, w: 106, h: 18 }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }]
+        : [{ id: 'connect', label: this.busy ? 'Подключение…' : 'Подключиться', x, y: 190, w: 106, h: 18, size: 8, disabled: this.busy }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }];
+    },
+    draw(ctx, t, m) {
+      this.init(); this.layout(); nightBackdrop(ctx, t, 0.45); const r = this.rect;
+      UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: 'rgba(16,32,28,0.95)', border: c.gold });
+      T.draw(ctx, 'Мультиплеер', SW / 2, r.y + 8, { size: 14, align: 'c', color: c.gold });
+      if (Net.on) {
+        T.draw(ctx, `Вы в сети: ${Net.name}`, SW / 2, r.y + 34, { size: 8, align: 'c', color: c.green }); T.draw(ctx, Net.url, SW / 2, r.y + 46, { size: 8, align: 'c', color: c.dim });
+        T.draw(ctx, `Игроки онлайн (${Net.count()}):`, r.x + 16, r.y + 66, { size: 8, color: c.text });
+        Net.list.slice(0, 8).forEach((p, i) => T.draw(ctx, `${p.name}${p.id === Net.id ? ' (вы)' : ''} — ${p.loc ? (p.loc === 'cabinet' ? 'кабинет' : (short[p.loc] || p.loc)) : 'на карте'}`, r.x + 22, r.y + 80 + i * 10, { size: 8, color: p.id === Net.id ? c.gold : c.dim }));
+        T.draw(ctx, 'Локации, бабочки и кабинет общие для всех на сервере', SW / 2, r.y + 172, { size: 8, align: 'c', color: '#6a8a78' });
+      } else {
+        T.draw(ctx, 'Общие локации, бабочки и кабинет энтомолога', SW / 2, r.y + 28, { size: 8, align: 'c', color: c.dim });
+        this.fr.forEach(fr => { const f = this.fields[fr.i], on = this.focus === fr.i; T.draw(ctx, f.label, fr.x, fr.y - 11, { size: 8, color: c.text }); UIK.panel(ctx, fr.x, fr.y, fr.w, fr.h, { fill: '#0a1612', border: on ? c.gold : c.line, shadow: false }); const txt = f.val; const w = T.width(txt, 8); const sh = Math.max(0, w - (fr.w - 8)); ctx.save(); ctx.beginPath(); ctx.rect(fr.x + 2, fr.y + 1, fr.w - 4, fr.h - 2); ctx.clip(); T.draw(ctx, txt, fr.x + 4 - sh, fr.y + 4, { size: 8, color: '#fff' }); if (on && Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.gold; ctx.fillRect(fr.x + 4 - sh + w + 1, fr.y + 3, 1, 10); } ctx.restore(); });
+        T.para(ctx, 'Запустите сервер: node server/server.js (см. README). Если игра открыта с адреса сервера, адрес уже заполнен.', r.x + 16, r.y + 142, 248, { size: 8, color: '#6a8a78', lh: 10 });
+      }
+      if (this.msg) T.draw(ctx, this.msg, SW / 2, r.y + 176, { size: 8, align: 'c', color: this.msg.startsWith('Подкл') ? c.dim : c.red });
+      this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) { const f = this.fr.find(f => UIK.hit(f, x, y)); if (f && !Net.on) { this.focus = f.i; return null; } const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); return b ? b.id : null; },
+    key(e) {
+      const f = this.fields[this.focus];
+      if (e.code === 'Escape') return 'back'; if (e.code === 'Enter') return Net.on ? null : 'connect';
+      if (Net.on) return null;
+      if (e.code === 'Tab' || e.code === 'ArrowDown' || e.code === 'ArrowUp') { this.focus = (this.focus + 1) % this.fields.length; return null; }
+      if (e.code === 'Backspace') { f.val = f.val.slice(0, -1); return null; }
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') { try { navigator.clipboard.readText().then(tx => { f.val = (f.val + tx.replace(/[\r\n]/g, '')).slice(0, f.max); }); } catch (er) {} return null; }
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && f.val.length < f.max) f.val += e.key;
+      return null;
+    },
   };
 
   // ------------------------------------------------------------------ WORLD MAP
@@ -252,5 +293,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, help, loading, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, help, loading, mp, nightBackdrop, biomeCol, short };
 })();

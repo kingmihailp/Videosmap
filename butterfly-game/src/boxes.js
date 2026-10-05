@@ -61,8 +61,8 @@ const Boxes = (() => {
     if (t === 'drawer') return boxesAt(t, i).reduce((a, b) => a + UNITS[b.size], 0) + UNITS[box.size] <= DRAWER_UNITS;
     return false;
   }
-  function place(box, t, i) { if (!fits(box, t, i)) return false; box.loc = { t, i }; Save.write(); return true; }
-  function unplace(box) { box.loc = null; Save.write(); }
+  function place(box, t, i) { if (!fits(box, t, i)) return false; box.loc = { t, i }; Save.syncBoxLoc(box); return true; }
+  function unplace(box) { box.loc = null; Save.syncBoxLoc(box); }
   const locName = b => !b.loc ? 'не размещена' : b.loc.t === 'wall' ? 'стена ' + (b.loc.i + 1) : b.loc.t === 'top' ? 'витрина ' + (b.loc.i + 1) : 'ящик ' + (b.loc.i + 1);
   const fillOf = b => b.items.filter(Boolean).length;
   const boxLabel = b => `${SIZE_NAME[b.size]} · ${STYLES[b.style].name} · ${fillOf(b)}/${b.items.length}`;
@@ -129,7 +129,7 @@ const Boxes = (() => {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
         if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 24) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
-        if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.write(); } return 'changed'; }
+        if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
