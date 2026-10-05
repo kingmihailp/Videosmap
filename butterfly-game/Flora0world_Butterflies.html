@@ -2955,28 +2955,31 @@ const Screens = (() => {
     init() { if (this.inited) return; this.inited = true; let d = {}; try { d = JSON.parse(localStorage.getItem('f0w_mp') || '{}'); } catch (e) {} this.fields[0].val = d.addr || Net.defaultUrl(); this.fields[1].val = d.name || ''; },
     layout() {
       const x = SW / 2 - 110; this.rect = { x: SW / 2 - 140, y: 36, w: 280, h: 200 };
-      this.fr = this.fields.map((f, i) => ({ id: 'f' + i, i, x, y: 78 + i * 38, w: 220, h: 16 }));
+      this.fr = this.fields.map((f, i) => ({ id: 'f' + i, i, x, y: 90 + i * 34, w: 220, h: 16 }));
       this.btns = Net.on ? [{ id: 'disc', label: 'Отключиться', x, y: 190, w: 106, h: 18 }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }]
-        : [{ id: 'connect', label: this.busy ? 'Подключение…' : 'Подключиться', x, y: 190, w: 106, h: 18, size: 8, disabled: this.busy }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }];
+        : [{ id: 'connect', label: this.busy ? 'Подключение…' : 'Подключиться', x, y: 190, w: 106, h: 18, size: 8, disabled: this.busy }, { id: 'back', label: '← Назад', x: x + 114, y: 190, w: 106, h: 18 }, { id: 'info', label: this.info ? 'К форме' : 'Как играть вместе?', x, y: 212, w: 220, h: 16 }];
+      if (this.info) this.btns = [{ id: 'info', label: 'К форме', x, y: 212, w: 220, h: 16 }, { id: 'back', label: '← Назад', x, y: 192, w: 220, h: 16 }];
+      else if (Net.on) this.btns.push({ id: 'info', label: this.info ? 'К списку' : 'Как играть вместе?', x, y: 212, w: 220, h: 16 });
     },
     draw(ctx, t, m) {
       this.init(); this.layout(); nightBackdrop(ctx, t, 0.45); const r = this.rect;
       UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: 'rgba(16,32,28,0.95)', border: c.gold });
       T.draw(ctx, 'Мультиплеер', SW / 2, r.y + 8, { size: 14, align: 'c', color: c.gold });
-      if (Net.on) {
+      if (this.info) {
+        let yy = r.y + 26; [['ЗАПУСК СЕРВЕРА', c.gold], ['В папке server: npm install, затем node server.js [порт] (по умолчанию 3000). Откройте http://<адрес>:3000 — сервер сам отдаёт игру, адрес подставится сам.', c.text], ['ОБЩЕЕ', c.gold], ['Локации и бабочки, кабинет, коробки, стена, стол. Бабочку получает тот, кто поймал первым. Расправлять и раскладывать можно и чужих бабочек.', c.text], ['ЛИЧНОЕ', c.gold], ['Дневник и настройки.', c.text]].forEach(([tx, col]) => { yy += T.para(ctx, tx, r.x + 14, yy, 252, { size: 8, color: col, lh: 10 }) + 2; });
+      } else if (Net.on) {
         T.draw(ctx, `Вы в сети: ${Net.name}`, SW / 2, r.y + 34, { size: 8, align: 'c', color: c.green }); T.draw(ctx, Net.url, SW / 2, r.y + 46, { size: 8, align: 'c', color: c.dim });
         T.draw(ctx, `Игроки онлайн (${Net.count()}):`, r.x + 16, r.y + 66, { size: 8, color: c.text });
         Net.list.slice(0, 8).forEach((p, i) => T.draw(ctx, `${p.name}${p.id === Net.id ? ' (вы)' : ''} — ${p.loc ? (p.loc === 'cabinet' ? 'кабинет' : (short[p.loc] || p.loc)) : 'на карте'}`, r.x + 22, r.y + 80 + i * 10, { size: 8, color: p.id === Net.id ? c.gold : c.dim }));
         T.draw(ctx, 'Локации, бабочки и кабинет общие для всех на сервере', SW / 2, r.y + 172, { size: 8, align: 'c', color: '#6a8a78' });
       } else {
-        T.draw(ctx, 'Общие локации, бабочки и кабинет энтомолога', SW / 2, r.y + 28, { size: 8, align: 'c', color: c.dim });
-        this.fr.forEach(fr => { const f = this.fields[fr.i], on = this.focus === fr.i; T.draw(ctx, f.label, fr.x, fr.y - 11, { size: 8, color: c.text }); UIK.panel(ctx, fr.x, fr.y, fr.w, fr.h, { fill: '#0a1612', border: on ? c.gold : c.line, shadow: false }); const txt = f.val; const w = T.width(txt, 8); const sh = Math.max(0, w - (fr.w - 8)); ctx.save(); ctx.beginPath(); ctx.rect(fr.x + 2, fr.y + 1, fr.w - 4, fr.h - 2); ctx.clip(); T.draw(ctx, txt, fr.x + 4 - sh, fr.y + 4, { size: 8, color: '#fff' }); if (on && Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.gold; ctx.fillRect(fr.x + 4 - sh + w + 1, fr.y + 3, 1, 10); } ctx.restore(); });
-        T.para(ctx, 'Запустите сервер: node server/server.js (см. README). Если игра открыта с адреса сервера, адрес уже заполнен.', r.x + 16, r.y + 142, 248, { size: 8, color: '#6a8a78', lh: 10 });
+        T.draw(ctx, 'Общие локации, бабочки и кабинет энтомолога', SW / 2, r.y + 24, { size: 8, align: 'c', color: c.dim });
+        if (!this.info) this.fr.forEach(fr => { const f = this.fields[fr.i], on = this.focus === fr.i; T.draw(ctx, f.label, fr.x, fr.y - 11, { size: 8, color: c.text }); UIK.panel(ctx, fr.x, fr.y, fr.w, fr.h, { fill: '#0a1612', border: on ? c.gold : c.line, shadow: false }); const txt = f.val; const w = T.width(txt, 8); const sh = Math.max(0, w - (fr.w - 8)); ctx.save(); ctx.beginPath(); ctx.rect(fr.x + 2, fr.y + 1, fr.w - 4, fr.h - 2); ctx.clip(); T.draw(ctx, txt, fr.x + 4 - sh, fr.y + 4, { size: 8, color: '#fff' }); if (on && Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.gold; ctx.fillRect(fr.x + 4 - sh + w + 1, fr.y + 3, 1, 10); } ctx.restore(); });
       }
-      if (this.msg) T.draw(ctx, this.msg, SW / 2, r.y + 176, { size: 8, align: 'c', color: this.msg.startsWith('Подкл') ? c.dim : c.red });
+      if (this.msg) T.draw(ctx, this.msg, SW / 2, r.y + 150, { size: 8, align: 'c', color: this.msg.startsWith('Подкл') ? c.dim : c.red });
       this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
     },
-    click(x, y) { const f = this.fr.find(f => UIK.hit(f, x, y)); if (f && !Net.on) { this.focus = f.i; return null; } const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); return b ? b.id : null; },
+    click(x, y) { const f = this.fr.find(f => UIK.hit(f, x, y)); if (f && !Net.on && !this.info) { this.focus = f.i; return null; } const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); return b ? b.id : null; },
     key(e) {
       const f = this.fields[this.focus];
       if (e.code === 'Escape') return 'back'; if (e.code === 'Enter') return Net.on ? null : 'connect';
@@ -4165,7 +4168,7 @@ const Cabinet = (() => {
     M.busy = true; M.msg = 'Подключение…';
     Net.connect(addr, name).then(() => { M.busy = false; M.msg = ''; try { localStorage.setItem('f0w_mp', JSON.stringify({ addr, name })); } catch (e) {} Snd.sfx.complete(); }).catch(e => { M.busy = false; M.msg = e.message; });
   }
-  function mpAct(id) { if (id === 'connect') mpConnect(); else if (id === 'disc') { Net.disconnect(); Screens.mp.msg = ''; } else if (id === 'back') { Snd.sfx.click(); App.screen = 'title'; } }
+  function mpAct(id) { if (id === 'connect') mpConnect(); else if (id === 'disc') { Net.disconnect(); Screens.mp.msg = ''; } else if (id === 'info') { Snd.sfx.click(); Screens.mp.info = !Screens.mp.info; } else if (id === 'back') { Snd.sfx.click(); App.screen = 'title'; } }
   function journalIndex() { if (App.play) { S.journal.tab = BIOMES.indexOf(App.play.biome); S.journal.sel = 0; } }
   function openJournal(from) { App.journalFrom = from; if (from === 'play') { unlock(); App.overlay = 'journal'; journalIndex(); } else { App.screen = 'journal'; } Snd.sfx.page(); }
   function closeJournal() { if (App.journalFrom === 'play') { App.overlay = 'pause'; } else App.screen = App.journalFrom; Snd.sfx.page(); }
