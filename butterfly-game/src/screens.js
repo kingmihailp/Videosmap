@@ -207,21 +207,23 @@ const Screens = (() => {
     btns: [],
     layout(play) {
       const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 92, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 116, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 136, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 156, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 156, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 176, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 196, w: 180, h: 16 },
+        { id: 'resume', label: 'Продолжить', x, y: 82, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 106, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 126, w: 180, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 146, w: 88, h: 16 },
+        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 146, w: 88, h: 16 },
+        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 166, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 186, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 206, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
       this.layout(play); ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH);
-      UIK.panel(ctx, SW / 2 - 106, 52, 212, 184, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
-      T.draw(ctx, 'Пауза', SW / 2, 60, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, play.biome.name, SW / 2, 78, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Пойманных видов в этом биоме: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 220, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 228, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, 'каждая генерация — новый мир (#seed=... в адресе повторит этот)', SW / 2, 240, { size: 8, align: 'c', color: '#6a8a78' });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };

@@ -1,7 +1,7 @@
 (() => new Promise(res => setTimeout(() => {
   F0W.overlay = null; F0W.locked = true; F0W.fade = 0; F0W.fadeTarget = 0;
   const p = F0W.play; const inp = { keys: new Set(), dx: 0, dy: 0, fire: false };
-  const dt = 1 / 30; const T = 150; const caught = {}, fleeEv = { n: 0 }; let swings = 0, nan = false; const stateTime = [0, 0, 0, 0];
+  const dt = 1 / 30; const T = 100; const caught = {}, fleeEv = { n: 0 }; let swings = 0, nan = false; const stateTime = [0, 0, 0, 0];
   let lastCatches = 0, ts = [];
   for (let t = 0; t < T; t += dt) {
     inp.keys.clear(); let best = null, bd = 1e9;

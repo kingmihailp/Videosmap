@@ -1,0 +1,4 @@
+(() => { const out = []; for (const b of BIOMES) { for (let k = 0; k < 3; k++) { const t0 = performance.now(); let err = null, w = null; const seed = 'T' + k + b.id; try { w = World.build(b, seed); } catch (e) { err = e.message; }
+  if (w) { const sd = w.sdf(0, 0); let wetFloat = 0; for (let x = -56; x <= 56; x += 2) for (let z = -56; z <= 56; z += 2) { if (w.sdf(x, z) < 0) { /* water cell: ground must be below water */ } }
+    out.push([b.id, seed, Math.round(performance.now() - t0) + 'ms', 'water:' + w.waters.map(q => q.kind).join('+'), 'lm:' + w.landmarks.join('+'), 'col:' + w.colliders.length, 'flw:' + w.flowers.length, 'spawnClear:' + (w.sdf(0, 0) > 8), 'h0:' + w.heightAt(0, 0).toFixed(2)].join(' ')); w.dispose(); }
+  else out.push([b.id, seed, 'ERR', err].join(' ')); } } return out; })()

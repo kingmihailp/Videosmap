@@ -48,11 +48,11 @@
 
   App.toTitle = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'title'; App.overlay = null; Snd.stopAmbient(); };
   App.toMap = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'map'; App.overlay = null; Snd.stopAmbient(); };
-  App.start = (biomeId) => {
+  App.start = (biomeId, seed) => {
     App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
     setTimeout(() => {
       if (App.play) { App.play.dispose(); App.play = null; }
-      App.play = new Play(BIOME_BY_ID[biomeId]); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+      App.play = new Play(BIOME_BY_ID[biomeId], seed || params.get('seed') || undefined); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     }, 60);
@@ -102,7 +102,7 @@
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { const bid = App.play.biome.id; go(() => App.start(bid)); } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }

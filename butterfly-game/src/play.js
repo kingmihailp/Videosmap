@@ -138,11 +138,11 @@ class Fly {
 
 // ---------------------------------------------------------------- the play session
 class Play {
-  constructor(biome) {
-    this.biome = biome; this.world = World.build(biome); this.scene = this.world.scene;
+  constructor(biome, seed) {
+    this.biome = biome; this.world = World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
-    this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: Math.random() * 6.28, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
+    this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
     const sx = 0, sz = 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y;
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false };
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
@@ -158,16 +158,30 @@ class Play {
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
 
   // ---------------------------------------------------------------- net model
+  // A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim.
   buildNet() {
-    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: '#8a5a30' }), dark = new THREE.MeshLambertMaterial({ color: '#2a2018' }), metal = new THREE.MeshBasicMaterial({ color: '#e8eef0' });
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.021, 1.4, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -0.68; g.add(pole);
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.3, 6), dark); grip.rotation.x = Math.PI / 2; grip.position.z = -0.1; g.add(grip);
-    const hp = new THREE.Group(); hp.position.z = -1.42; g.add(hp);
-    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.015, 5, 20), metal); hp.add(hoop);
-    const cone = new THREE.ConeGeometry(0.31, 0.9, 14, 4, true); cone.rotateX(Math.PI / 2); cone.translate(0, 0, 0.45);
-    const bag = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#cfe4dc', transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false })); hp.add(bag);
-    const mesh = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#7a9a90', wireframe: true, transparent: true, opacity: 0.8 })); hp.add(mesh);
-    g.traverse(o => { o.frustumCulled = false; }); this.netGroup = g; this.hoop = hp; this.camera.add(g); g.scale.setScalar(0.82); g.position.set(0.42, -0.5, -0.3); g.rotation.set(0.15, 0.1, 0);
+    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: '#9a6a38' }), dark = new THREE.MeshLambertMaterial({ color: '#2a2018' }), metal = new THREE.MeshBasicMaterial({ color: '#eef2f4' });
+    const POLE = 1.2, R = 0.3, BAG = 0.9;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, POLE, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -POLE / 2; g.add(pole);
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.34, 6), dark); grip.rotation.x = Math.PI / 2; grip.position.z = -0.12; g.add(grip);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), dark); cap.position.z = 0.05; g.add(cap);
+    const root = new THREE.Group(); root.position.set(0, 0, -POLE - R); g.add(root);            // hoop centre: on the pole axis, one radius beyond its tip
+    const roll = new THREE.Group(); root.add(roll);                                               // roll about the pole axis
+    const torus = new THREE.TorusGeometry(R, 0.015, 5, 26); torus.rotateY(Math.PI / 2); roll.add(new THREE.Mesh(torus, metal));   // ring normal = +x
+    const cone = new THREE.ConeGeometry(R, BAG, 16, 5, true); cone.rotateZ(-Math.PI / 2); cone.translate(BAG / 2, 0, 0);      // base on the ring, apex along +x
+    const pos = cone.attributes.position; for (let i = 0; i < pos.count; i++) { const t = pos.getX(i) / BAG; pos.setY(i, pos.getY(i) - 0.16 * t * t * R * 2); }   // the bag sags a little
+    cone.computeVertexNormals();
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })));
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })));
+    g.traverse(o => { o.frustumCulled = false; });
+    this.netGroup = g; this.hoop = root; this.netRoll = roll; g.scale.setScalar(0.9);
+    // idle pose: pole points up-left across the view; roll the hoop so its mouth faces the player and the bag trails away
+    this.NET_IDLE = { px: 0.5, py: -0.5, pz: -0.34, rx: 0.34, ry: 0.55, rz: 0 };
+    g.rotation.order = 'YXZ'; g.rotation.set(this.NET_IDLE.rx, this.NET_IDLE.ry, 0);
+    g.updateMatrix(); const Rm = new THREE.Matrix4().extractRotation(g.matrix); let bestPhi = 0, bestV = -9;
+    for (let k = 0; k < 72; k++) { const phi = k / 72 * 6.2832; const n = new THREE.Vector3(Math.cos(phi), Math.sin(phi), 0).applyMatrix4(Rm); const v = -n.z * 1.0 + n.x * -0.15 + n.y * -0.1; if (v > bestV) { bestV = v; bestPhi = phi; } }
+    roll.rotation.z = bestPhi;
+    this.camera.add(g); g.position.set(this.NET_IDLE.px, this.NET_IDLE.py, this.NET_IDLE.pz);
   }
   hoopWorld(out) { this.hoop.updateWorldMatrix(true, false); return out.setFromMatrixPosition(this.hoop.matrixWorld); }
   netBusy() { return this.net.phase >= 0 && this.net.phase < 0.6; }
@@ -177,23 +191,22 @@ class Play {
     for (const f of this.flies) { if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); if (d < 3.6) { const p = f.state === PERCH ? 0.3 + (f.beh.wary - 3) * 0.04 : 0.18; if (Math.random() < p) f.startFlee(new THREE.Vector3(f.pos.x - this.player.pos.x, 0, f.pos.z - this.player.pos.z)); } }
   }
   updateNet(dt) {
-    const n = this.net; n.cd = Math.max(0, n.cd - dt); const g = this.netGroup;
-    let ph = n.phase; const idle = { px: 0.42, py: 0.5, rx: 0.15, ry: 0.1, rz: 0 };
-    let px = idle.px, py = -idle.py, pz = -0.3, rx = idle.rx, ry = idle.ry, rz = idle.rz;
-    if (ph >= 0) {
-      ph += dt / 0.62; n.phase = ph;
-      const W = { px: 0.52, py: -0.18, rx: 0.55, ry: -0.7, rz: -0.55 }, S = { px: 0.12, py: -0.4, rx: 0.02, ry: 0.95, rz: 0.4 };
-      const I = { px, py, rx, ry, rz };
-      const mix = (A, B, k) => ({ px: lerp(A.px, B.px, k), py: lerp(A.py, B.py, k), rx: lerp(A.rx, B.rx, k), ry: lerp(A.ry, B.ry, k), rz: lerp(A.rz, B.rz, k) });
-      let c;
-      if (ph < 0.2) c = mix(I, W, smooth(0, 0.2, ph)); else if (ph < 0.55) c = mix(W, S, smooth(0.2, 0.55, ph)); else c = mix(S, I, smooth(0.55, 1, ph));
-      px = c.px; py = c.py; rx = c.rx; ry = c.ry; rz = c.rz;
+    const n = this.net, g = this.netGroup, I = this.NET_IDLE; n.cd = Math.max(0, n.cd - dt);
+    let c = { px: I.px, py: I.py, pz: I.pz, rx: I.rx, ry: I.ry, rz: I.rz };
+    const mv = clamp(this.player.speedNow / 3.3, 0, 1.6);
+    if (n.phase >= 0) {
+      n.phase += dt / 0.62; const ph = n.phase;
+      const W = { px: 0.66, py: -0.3, pz: -0.3, rx: 0.6, ry: -0.75, rz: -0.35 }, S = { px: 0.0, py: -0.52, pz: -0.34, rx: 0.02, ry: 1.0, rz: 0.35 };
+      const mix = (A, B, k) => { const o = {}; for (const key in A) o[key] = lerp(A[key], B[key], k); return o; };
+      if (ph < 0.2) c = mix(c, W, smooth(0, 0.2, ph)); else if (ph < 0.55) c = mix(W, S, smooth(0.2, 0.55, ph)); else c = mix(S, c, smooth(0.55, 1, ph));
       if (ph > 0.24 && ph < 0.58) this.checkCatch();
-      if (ph >= 1) { n.phase = -1; n.cd = 0.18; if (!n.caughtThisSwing) { Snd.sfx.miss(); } }
-    } else { // gentle idle sway
-      const bob = Math.sin(this.t * 2.1) * 0.006 + this.player.bob * 0.01; py += bob; ry += Math.sin(this.t * 0.9) * 0.01;
+      if (ph >= 1) { n.phase = -1; n.cd = 0.18; if (!n.caughtThisSwing) Snd.sfx.miss(); }
+    } else {
+      // gentle idle sway + walking bob (bounded: sin of the step phase, never the raw accumulator)
+      const b = Math.sin(this.player.bob) * 0.014 * mv, b2 = Math.cos(this.player.bob * 0.5) * 0.01 * mv;
+      c.py += Math.sin(this.t * 1.9) * 0.004 + b; c.px += b2; c.ry += Math.sin(this.t * 0.9) * 0.01 + b2 * 0.6; c.rx += b * 0.4;
     }
-    g.position.set(px, py, pz); g.rotation.set(rx, ry, rz);
+    g.position.set(c.px, c.py, c.pz); g.rotation.set(c.rx, c.ry, c.rz);
   }
   checkCatch() {
     this.hoopWorld(_v);
