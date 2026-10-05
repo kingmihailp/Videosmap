@@ -15,29 +15,13 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-W, H, FPS, DUR, SCALE = 320, 180, 24, 90, 4
+W, H, FPS, DUR, SCALE = 320, 180, 24, 70, 4
 
 # ----------------------------------------------------------------- timeline
-S1, S2, S3A, S3B, S4, S5, S6, S7 = 0, 9, 19, 25, 31, 43, 57, 73
+S1, S2, S3A, S3B, S4, S5, S7 = 0, 9, 19, 25, 31, 43, 57
 ITEM_TIMES = [S4 + 0.9 + i * 1.05 for i in range(8)]
 PIN_TIMES = [S5 + 2.4 + i * 1.85 for i in range(5)]
-# forum (local time inside scene 6)
-TYPING = [  # (start, text, seconds per char)
-    (6.4, "Lucanus cervus", 0.07),
-    (7.8, "Подмосковье, дубрава", 0.055),
-    (9.7, "12.07 · 22:40", 0.07),
-    (10.9, "3 самца на УФ-свет у старого дуба", 0.045),
-]
-FORUM_CLICKS = [5.3, 13.4]           # "new note" / "publish"
-MAP_PIN_UI = 9.35                    # pin drops on the mini map in composer
 LOGO_HIT = S7 + 4.4                  # 77.4 s
-
-
-def typing_click_times():
-    out = []
-    for st, text, sp in TYPING:
-        out += [S6 + st + i * sp for i in range(len(text))]
-    return out
 
 
 # ------------------------------------------------------------------ helpers
@@ -503,6 +487,24 @@ def orbit(p, t):
     return LAMP[0] + math.cos(a) * p["rx"] + math.sin(t * 7 + p["ph"]) * 2, LAMP[1] + 12 + math.sin(a * 1.3) * p["ry"], a
 
 
+def field_net(d, x, y, glow_col=(150, 100, 50)):
+    """butterfly net leaning against the table: pole, hoop, mesh bag."""
+    pole_top = (x + 14, y - 6)
+    d.line([(x - 12, y + 70), pole_top], fill=(70, 46, 24), width=3)
+    d.line([(x - 11, y + 70), (x + 15, y - 6)], fill=(128, 92, 50), width=1)
+    d.rectangle([x - 8, y + 44, x - 5, y + 62], fill=(40, 40, 46))          # grip
+    hx, hy = x + 14, y - 14
+    bag = [(hx, hy - 12), (hx + 16, hy - 12), (hx + 34, hy - 4), (hx + 40, hy + 8), (hx + 30, hy + 14), (hx + 14, hy + 12), (hx, hy + 12)]
+    d.polygon(bag, fill=(78, 98, 112), outline=(150, 170, 182))
+    for k in range(1, 6):                                               # mesh
+        d.line([(hx + k * 6, hy - 12 + abs(k - 3)), (hx + k * 6 + 3, hy + 13 - abs(k - 3))], fill=(120, 140, 154))
+    for k in range(-1, 2):
+        d.line([(hx + 2, hy + k * 8), (hx + 36 - abs(k) * 6, hy + k * 8 + 3)], fill=(120, 140, 154))
+    d.ellipse([hx - 7, hy - 13, hx + 7, hy + 13], outline=(200, 208, 216), width=2)   # hoop
+    d.arc([hx - 7, hy - 13, hx + 7, hy + 13], 270, 90, fill=(244, 248, 250), width=1)
+    d.point((hx + 38, hy + 8), fill=glow_col)
+
+
 def scene2(ctx, lt):
     d = ctx.d
     ctx.img.paste(vgrad((4, 6, 20), (12, 26, 38)))
@@ -540,8 +542,7 @@ def scene2(ctx, lt):
     d.rectangle([77, 116, 83, 122], fill=(255, 220, 130))
     ctx.glow(80, 119, 34, (255, 170, 70), 0.85 + 0.1 * math.sin(lt * 9))
     d.rectangle([88, 120, 94, 124], fill=(150, 100, 60))   # notebook
-    d.line([(52, 128), (58, 70)], fill=(120, 90, 50), width=1)  # net handle
-    d.ellipse([46, 52, 64, 72], outline=(200, 200, 200))
+    field_net(d, 44, 66)
     # naturalist silhouette (right), headlamp
     pc, rim = (10, 12, 20), (60, 44, 100)
     d.polygon([(258, 112), (272, 112), (276, 136), (254, 136)], fill=pc, outline=rim)
@@ -1165,7 +1166,7 @@ def scene5(ctx, lt):
     ctx.d = ImageDraw.Draw(ctx.img)
 
 
-# ================================================================== SCENE 6
+# ---------------------------------------------------------------- icons
 UI_BG = (22, 30, 38)
 UI_PANEL = (30, 42, 52)
 UI_LINE = (68, 96, 108)
@@ -1234,259 +1235,6 @@ def icon_cam(d, x, y, c=UI_DIM):
     d.rectangle([x, y + 2, x + 8, y + 7], outline=c)
     d.rectangle([x + 2, y, x + 5, y + 2], fill=c)
     d.ellipse([x + 2, y + 3, x + 6, y + 6], outline=c)
-
-
-def avatar(d, x, y, kind):
-    bgs = [(60, 40, 24), (30, 60, 96), (40, 70, 40), (70, 40, 80), (96, 60, 20)]
-    d.rectangle([x, y, x + 19, y + 19], fill=bgs[kind % 5], outline=(160, 200, 190))
-    cols = (214, 228, 214)
-    [icon_beetle, icon_butterfly, icon_mantis, icon_spider, icon_butterfly][kind % 5](d, x + 6, y + 6, cols)
-    d.point((x + 17, y + 2), fill=UI_GREEN)
-
-
-THREADS = [
-    ("Rosalia alpina — сезон", "Карпаты · 03.07 · 5 фото", "ЖУКИ", (200, 60, 40), 0, 24, 312),
-    ("Бражники у реки", "Алтай · 21.07 · УФ-ловушка", "БАБОЧКИ", (60, 120, 220), 1, 17, 205),
-    ("Hierodula: линька L6", "Содержание · дневник кипера", "КИПЕРАМ", (60, 170, 70), 2, 41, 598),
-    ("Аномальный Parnassius", "Тянь-Шань · 15.08 · наблюдение", "НАБЛЮД.", (190, 130, 30), 4, 9, 143),
-]
-NEW_POST = ("Lucanus cervus: 3 самца", "Подмосковье · 12.07 · 22:40 · УФ", "ЖУКИ", (200, 60, 40), 0)
-
-MOUSE = [(0, 250, 150), (1.0, 250, 150), (2.6, 210, 100), (3.8, 160, 70), (4.6, 262, 40), (5.3, 262, 36), (5.9, 262, 36),
-         (12.0, 250, 128), (13.1, 250, 150), (13.4, 250, 150), (15.0, 250, 150)]
-# composer button position changes -> mouse target for publish is set in composer
-MOUSE_PUB = [(11.8, 160, 120), (13.1, 252, 141), (13.4, 252, 141)]
-
-
-def mouse_pos(lt):
-    if lt < 11.8:
-        pts = MOUSE[:7]
-    else:
-        pts = [(11.8, 160, 120), (13.1, 252, 141), (13.4, 252, 141), (16, 252, 141)]
-    if lt <= pts[0][0]:
-        return pts[0][1], pts[0][2]
-    for (t0, x0, y0), (t1, x1, y1) in zip(pts, pts[1:]):
-        if t0 <= lt <= t1:
-            k = sstep(t0, t1, lt)
-            return lerp(x0, x1, k), lerp(y0, y1, k)
-    return pts[-1][1], pts[-1][2]
-
-
-def draw_mouse(d, x, y):
-    pts = [(0, 0), (0, 11), (3, 8), (5, 13), (7, 12), (5, 7), (9, 7)]
-    d.polygon([(x + a + 1, y + b + 1) for a, b in pts], fill=(0, 0, 0))
-    d.polygon([(x + a, y + b) for a, b in pts], fill=(255, 255, 255), outline=(10, 10, 10))
-
-
-def typed(lt, idx):
-    st, text, sp = TYPING[idx]
-    if lt < st:
-        return "", False
-    n = min(len(text), int((lt - st) / sp) + 1)
-    return text[:n], n < len(text)
-
-
-def forum_window(ctx, lt, pop):
-    d = ctx.d
-    x0, y0, x1, y1 = 8, 13, 312, 167
-    if pop < 1:
-        s = ease_back(pop)
-        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-        x0, x1 = cx - (cx - x0) * s, cx + (x1 - cx) * s
-        y0, y1 = cy - (cy - y0) * s, cy + (y1 - cy) * s
-        d.rectangle([x0, y0, x1, y1], fill=UI_BG, outline=UI_GREEN)
-        return False
-    d.rectangle([x0 + 2, y0 + 2, x1 + 2, y1 + 2], fill=(4, 8, 10))
-    d.rectangle([x0, y0, x1, y1], fill=UI_BG, outline=UI_GREEN)
-    # title bar
-    d.rectangle([x0 + 1, y0 + 1, x1 - 1, y0 + 11], fill=(36, 66, 56))
-    icon_beetle(d, x0 + 4, y0 + 2, UI_GOLD)
-    txt(d, x0 + 15, y0 + 2, "FLORA0WORLD: HUB", UI_GOLD, 8, "mb")
-    txt(d, x0 + 118, y0 + 3, "/ форум энтомологов", UI_DIM, 7, "r")
-    for i, c in enumerate(((220, 90, 80), (230, 190, 70), (90, 200, 100))):
-        d.rectangle([x1 - 30 + i * 9, y0 + 4, x1 - 25 + i * 9, y0 + 9], fill=c)
-    # sidebar
-    d.rectangle([x0 + 1, y0 + 12, x0 + 74, y1 - 1], fill=UI_PANEL)
-    d.line([(x0 + 74, y0 + 12), (x0 + 74, y1 - 1)], fill=UI_LINE)
-    txt(d, x0 + 6, y0 + 15, "РАЗДЕЛЫ", UI_DIM, 7, "b")
-    cats = [("Жуки", icon_beetle), ("Бабочки", icon_butterfly), ("Богомолы", icon_mantis), ("Пауки", icon_spider),
-            ("Места ловли", icon_pin), ("Киперам", icon_flask), ("Наблюдения", icon_eye)]
-    for i, (nm, ic) in enumerate(cats):
-        yy = y0 + 26 + i * 17
-        act = (i == 4)
-        if act:
-            d.rectangle([x0 + 3, yy - 3, x0 + 72, yy + 11], fill=(44, 90, 70), outline=UI_GREEN)
-        ic(d, x0 + 6, yy, UI_GREEN if act else UI_TEXT)
-        txt(d, x0 + 18, yy, nm, UI_TEXT if not act else (255, 255, 255), 7, "b" if act else "r")
-    return True
-
-
-def thread_row(d, x, y, th, hl=False, new=False):
-    title, meta, tag, tcol, av = th[0], th[1], th[2], th[3], th[4]
-    RW = 212
-    d.rectangle([x, y, x + RW, y + 25], fill=(36, 52, 60) if not hl else (46, 72, 76), outline=UI_GOLD if new else UI_LINE)
-    avatar(d, x + 3, y + 3, av)
-    txt(d, x + 28, y + 3, title, (255, 250, 230) if new else UI_TEXT, 8, "b")
-    txt(d, x + 28, y + 15, meta, UI_DIM, 7, "r")
-    tx = x + RW - 4 - tw(tag, 6, "b")
-    d.rectangle([tx - 3, y + 15, x + RW - 2, y + 22], fill=tcol)
-    txt(d, tx, y + 14, tag, (255, 255, 255), 6, "b")
-    icon_bubble(d, x + RW - 62, y + 4)
-    txt(d, x + RW - 51, y + 3, str(th[5]) if len(th) > 5 else "0", UI_DIM, 7, "r")
-    if new:
-        d.rectangle([x + RW - 22, y + 3, x + RW - 3, y + 11], fill=UI_GOLD)
-        txt(d, x + RW - 12, y + 7, "NEW", (40, 24, 8), 6, "b", anchor="mm")
-
-
-def mini_map(d, x, y, w, h, pin_k):
-    d.rectangle([x, y, x + w, y + h], fill=(190, 170, 120), outline=UI_LINE)
-    base = map_base().crop((110, 50, 110 + int(w) - 1, 50 + int(h) - 1))
-    d._image.paste(base, (int(x) + 1, int(y) + 1))
-    if pin_k > 0:
-        px, py = x + w * 0.55, y + h * 0.7
-        e = pin_k
-        yo = -max(0.0, 1 - e / 0.4) ** 2 * 30
-        draw_pin(d, px, py + yo, (200, 50, 40), 0.9)
-
-
-def scene6(ctx, lt):
-    ctx.img.paste(vgrad((6, 12, 18), (14, 30, 30)))
-    d = ctx.d
-    for x, y, sp, b in STARS[:60]:
-        c = int(60 + 80 * b)
-        d.point((x, y), fill=(c, c, c))
-    ctx.flush()
-    d = ctx.d
-    ok = forum_window(ctx, lt, clamp(lt / 0.7))
-    if not ok:
-        return
-    mx0 = 8 + 82
-    # header strip
-    txt(d, mx0 + 4, 30, "Места ловли · свежие находки", UI_TEXT, 8, "b")
-    bpress = FORUM_CLICKS[0] <= lt < FORUM_CLICKS[0] + 0.25
-    bx0 = 252
-    d.rectangle([bx0, 28, bx0 + 54, 40], fill=(60, 150, 90) if not bpress else (40, 110, 66), outline=(170, 255, 190))
-    txt(d, bx0 + 27, 34, "+ ЗАМЕТКА", (255, 255, 255), 7, "b", anchor="mm")
-    composer_open = 5.6 < lt < 14.0
-    published = lt >= 13.5
-    # rows
-    rows = list(THREADS)
-    if published:
-        rows = [NEW_POST + (0,)] + rows[:3]
-    mxrow = mx0 + 4
-    mhover = None
-    for i, th in enumerate(rows):
-        t_in = 0.8 + i * 0.35
-        if lt < t_in and not published:
-            continue
-        sl = ease_out((lt - t_in) / 0.5) if not published else 1.0
-        yy = 46 + i * 29
-        isnew = published and i == 0
-        if isnew:
-            k = ease_out((lt - 13.6) / 0.5)
-            yy = 46
-            th = (th[0], th[1], th[2], th[3], th[4], 3 if lt > 15.3 else 1)
-        else:
-            th = th if len(th) > 5 else th
-        thread_row(d, mxrow + int((1 - sl) * 230), yy, th, hl=(i == 1 and 2.4 < lt < 4.4), new=isnew)
-    # stat strip
-    if lt > 3.0 and not composer_open and not published:
-        txt(d, mx0 + 4, 160, "• 1 284 заметок  • 312 мест  • 96 видов", UI_DIM, 6, "r") if False else None
-    # composer
-    if composer_open:
-        e = ease_back((lt - 5.7) / 0.5)
-        close = 1 - ease_out((lt - 13.55) / 0.45) if lt > 13.55 else 1
-        s = e * close
-        if s > 0.02:
-            cx, cy = 200, 92
-            w2, h2 = 214 * s, 120 * s
-            xa, ya, xb, yb = cx - w2 / 2, cy - h2 / 2, cx + w2 / 2, cy + h2 / 2
-            d.rectangle([xa + 3, ya + 3, xb + 3, yb + 3], fill=(4, 8, 10))
-            d.rectangle([xa, ya, xb, yb], fill=(28, 44, 52), outline=UI_GOLD)
-            if s > 0.95:
-                d.rectangle([xa + 1, ya + 1, xb - 1, ya + 11], fill=(86, 70, 30))
-                txt(d, xa + 6, ya + 2, "НОВАЯ ЗАМЕТКА О НАХОДКЕ", UI_GOLD, 7, "b")
-                fy = ya + 16
-                fields = [("ВИД", 0), ("МЕСТО", 1), ("ДАТА", 2)]
-                fx = xa + 8
-                for i, (lab, idx) in enumerate(fields):
-                    yy = fy + i * 18
-                    txt(d, fx, yy - 1, lab, UI_DIM, 6, "b")
-                    wbox = 96 if idx != 2 else 70
-                    d.rectangle([fx, yy + 7, fx + wbox + (20 if idx == 1 else 0), yy + 16], fill=(14, 22, 28), outline=UI_LINE)
-                    s_txt, caret = typed(lt, idx)
-                    txt(d, fx + 3, yy + 8, s_txt, (240, 250, 230), 7, "m")
-                    cur = idx if (TYPING[idx][0] <= lt < TYPING[idx + 1][0] if idx < 3 else lt >= TYPING[idx][0]) else -1
-                    if cur == idx and int(lt * 3) % 2 == 0:
-                        d.rectangle([fx + 3 + tw(s_txt, 7, "m") + 1, yy + 9, fx + 3 + tw(s_txt, 7, "m") + 3, yy + 15], fill=UI_GREEN)
-                # mini-map with pin
-                pk = lt - MAP_PIN_UI
-                mini_map(d, xb - 74, fy + 2, 66, 46, pk if pk > 0 else -1)
-                if 0 < pk < 0.9:
-                    for a in range(0, 360, 30):
-                        r_ = pk * 14
-                        d.point((xb - 74 + 66 * 0.55 + math.cos(math.radians(a)) * r_, fy + 2 + 46 * 0.7 + math.sin(math.radians(a)) * r_ * 0.5), fill=(255, 120, 100))
-                # notes
-                ny = fy + 57
-                txt(d, fx, ny, "НАБЛЮДЕНИЕ", UI_DIM, 6, "b")
-                d.rectangle([fx, ny + 7, fx + 130, ny + 28], fill=(14, 22, 28), outline=UI_LINE)
-                s_txt, _ = typed(lt, 3)
-                words = s_txt
-                cut = 28
-                if len(words) > cut:
-                    cut = words.rfind(" ", 0, cut + 1) + 1 or cut
-                line1, line2 = words[:cut], words[cut:]
-                txt(d, fx + 3, ny + 8, line1, (240, 250, 230), 7, "m")
-                txt(d, fx + 3, ny + 18, line2, (240, 250, 230), 7, "m")
-                if TYPING[3][0] <= lt < 12.6 and int(lt * 3) % 2 == 0:
-                    cx2 = fx + 3 + tw(line2 if line2 else line1, 7, "m") + 1
-                    cy2 = ny + (18 if line2 else 8)
-                    d.rectangle([cx2, cy2 + 1, cx2 + 2, cy2 + 7], fill=UI_GREEN)
-                # photo attach
-                px0 = xb - 74
-                py0 = ny + 7
-                d.rectangle([px0, py0, px0 + 66, py0 + 21], fill=(14, 22, 28), outline=UI_LINE)
-                if lt > 12.5:
-                    k = ease_out((lt - 12.5) / 0.4)
-                    d.rectangle([px0 + 2, py0 + 2, px0 + 2 + 62 * k, py0 + 19], fill=(50, 70, 40))
-                    if k > 0.9:
-                        stag_beetle(d, px0 + 30, py0 + 11, 0.17, lt * 4, 0.0)
-                        icon_cam(d, px0 + 54, py0 + 10, UI_GREEN)
-                else:
-                    icon_cam(d, px0 + 6, py0 + 7, UI_DIM)
-                    txt(d, px0 + 18, py0 + 7, "+ фото", UI_DIM, 7, "r")
-                # publish button
-                pub_press = FORUM_CLICKS[1] <= lt < FORUM_CLICKS[1] + 0.2
-                d.rectangle([xb - 74, yb - 17, xb - 8, yb - 6], fill=(60, 150, 90) if not pub_press else (40, 110, 66), outline=(170, 255, 190))
-                txt(d, xb - 41, yb - 11, "ОПУБЛИКОВАТЬ", (255, 255, 255), 6, "b", anchor="mm")
-    # post-publish celebration
-    if lt > 14.2:
-        e = lt - 14.2
-        likes = int(clamp(e / 1.2) * 12)
-        icon_heart(d, mx0 + 160, 49, (236, 80, 96), 1.0)
-        txt(d, mx0 + 168, 48, str(likes), (255, 200, 210), 7, "b")
-        r = random.Random(77)
-        for i in range(7):
-            ph = (e * 0.9 + i * 0.37) % 1.0
-            hx = mx0 + 150 + r.uniform(-12, 24)
-            hy = 76 - ph * 40
-            icon_heart(d, hx, hy, shade((236, 80, 96), 1 - ph * 0.6), 0.8)
-        if e > 1.0:
-            k = ease_back((e - 1.0) / 0.4)
-            bw = int(124 * k)
-            d.rectangle([mx0 + 20, 150, mx0 + 20 + bw, 163], fill=(36, 66, 56), outline=UI_GREEN)
-            if k > 0.9:
-                txt(d, mx0 + 24, 152, "Мастер: отличная находка! Дуб — и мы там же!", UI_TEXT, 6, "r") if False else txt(d, mx0 + 24, 153, "Отличная находка! Ловили там же.", UI_TEXT, 6, "r")
-    # mouse
-    mxp, myp = mouse_pos(lt)
-    if lt > 0.8 and not (6.0 < lt < 11.7):
-        draw_mouse(d, mxp, myp)
-    ctx.flush()
-    # CRT scan tint
-    arr = np.asarray(ctx.img).astype(np.float32)
-    arr[::2] *= 0.94
-    ctx.img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
-    ctx.d = ImageDraw.Draw(ctx.img)
 
 
 # ================================================================== SCENE 7
@@ -1594,7 +1342,7 @@ def scene7(ctx, lt):
     d = ctx.d
     if lt > 7.0:
         a = sstep(7.0, 7.6, lt)
-        txt(d, W / 2, 127, "ФОРУМ ЭНТОМОЛОГОВ · НАТУРАЛИСТОВ · КИПЕРОВ", shade((220, 236, 200), a), 8, "b", anchor="mm", shadow=shade((6, 14, 12), a))
+        txt(d, W / 2, 127, "СООБЩЕСТВО ЭНТОМОЛОГОВ · НАТУРАЛИСТОВ · КИПЕРОВ", shade((220, 236, 200), a), 8, "b", anchor="mm", shadow=shade((6, 14, 12), a))
     chips = [("МЕСТА ЛОВЛИ", icon_pin), ("ДАТЫ ПОИМКИ", icon_flask), ("НАБЛЮДЕНИЯ", icon_eye)]
     for i, (nm, ic) in enumerate(chips):
         t0 = 8.3 + i * 0.45
@@ -1606,17 +1354,13 @@ def scene7(ctx, lt):
         d.rectangle([cx - wch / 2, 138, cx + wch / 2, 150], fill=shade((18, 40, 34), a), outline=shade((120, 220, 130), a))
         ic(d, cx - wch / 2 + 5, 141, shade((120, 220, 130), a))
         txt(d, cx + 6, 144, nm, shade((220, 240, 220), a), 7, "b", anchor="mm")
-    if lt > 11.0:
-        blink = 0.55 + 0.45 * math.sin(lt * 4)
-        a = sstep(11.0, 11.8, lt) * blink
-        txt(d, W / 2, 160, "ОТКРЫТИЕ СКОРО", shade((255, 214, 100), a), 10, "b", anchor="mm", shadow=shade((60, 30, 4), a))
 
 
 # ================================================================ PIPELINE
 SCENES = [(S1, S2, scene1), (S2, S3A, scene2), (S3A, S3B, scene3a), (S3B, S4, scene3b),
-          (S4, S5, scene4), (S5, S6, scene5), (S6, S7, scene6), (S7, DUR, scene7)]
+          (S4, S5, scene4), (S5, S7, scene5), (S7, DUR, scene7)]
 TRANS = {S2: ("dissolve", 0.9), S3A: ("dissolve", 0.8), S3B: ("iris", 1.0), S4: ("wipey", 0.9),
-         S5: ("wipex", 0.9), S6: ("dissolve", 0.9), S7: ("dissolve", 1.2)}
+         S5: ("wipex", 0.9), S7: ("dissolve", 1.2)}
 
 
 def render_scene(t):

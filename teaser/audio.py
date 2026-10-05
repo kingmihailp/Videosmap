@@ -12,7 +12,7 @@ import video as V
 SR = 44100
 DUR = V.DUR
 N = SR * DUR
-BAR = V.LOGO_HIT / 26.0          # the logo hit lands exactly on a bar line
+BAR = V.LOGO_HIT / 20.0          # the logo hit lands exactly on a bar line
 BEAT = BAR / 4
 rng = np.random.RandomState(7)
 
@@ -166,7 +166,7 @@ for k in range(9):
     t0 = rng.uniform(0, per)
     pan = rng.uniform(0.15, 0.85)
     while t0 < 34:
-        g = float(level(t0, [(0, 0.05), (19, 0.05), (31, 0.0)])) + (0.018 if 73 <= t0 < 77 else 0)
+        g = float(level(t0, [(0, 0.05), (19, 0.05), (31, 0.0)]))
         if g > 0.002:
             for p in range(npulse):
                 d = 0.024
@@ -198,8 +198,8 @@ for b in range(NBARS):
     put(PAD, t0, (sig + sub) * env, 1.0)
 PAD = lp(PAD, 1400, 4)
 tg = np.arange(N) / SR
-PAD *= level(tg, [(0, 0.0), (2.5, 0.28), (9, 0.3), (31, 0.36), (57, 0.36), (68, 0.45), (V.LOGO_HIT - 1.2, 0.8),
-                  (GAP0 + 0.1, 0.05), (GAP1 - 0.02, 0.05), (GAP1 + 0.05, 0.95), (84, 0.8), (DUR, 0.0)])
+PAD *= level(tg, [(0, 0.0), (2.5, 0.28), (9, 0.3), (31, 0.36), (45, 0.36), (V.LOGO_HIT - 9, 0.45), (V.LOGO_HIT - 1.2, 0.8),
+                  (GAP0 + 0.1, 0.05), (GAP1 - 0.02, 0.05), (GAP1 + 0.05, 0.95), (DUR - 6, 0.8), (DUR, 0.0)])
 for ch_, gn in ((L, 0.5), (R, 0.5)):
     ch_ += PAD * gn
 WL += PAD * 0.3
@@ -214,7 +214,7 @@ while t < DUR - 1:
     b = int(t / BAR)
     ch = PROG[b % 4]
     if not in_gap(t):
-        g = float(level(t, [(0, 0), (9, 0), (9.5, 0.05), (19, 0.05), (19.5, 0.1), (73, 0.1), (73.5, 0.12), (DUR - 4, 0.12), (DUR, 0.02)]))
+        g = float(level(t, [(0, 0), (9, 0), (9.5, 0.05), (19, 0.05), (19.5, 0.1), (V.S7, 0.1), (V.S7 + 0.5, 0.12), (DUR - 4, 0.12), (DUR, 0.02)]))
         step = int(round((t - b * BAR) / STEP)) % 8
         play_it = g > 0 and (t >= 19 or step % 2 == 0)
         if play_it:
@@ -232,7 +232,7 @@ while t < DUR - 1:
     bi = int(round((t - b * BAR) / BEAT)) % 4
     if not in_gap(t):
         if t >= 31:
-            g = float(level(t, [(31, 0.0), (32, 0.26), (73, 0.26), (DUR - 5, 0.24), (DUR, 0.0)]))
+            g = float(level(t, [(31, 0.0), (32, 0.26), (DUR - 5, 0.24), (DUR, 0.0)]))
             n = ch["root"] + (7 if bi == 2 else 0)
             play(tri(mid(n), BEAT * 0.9, 0.3), t, g, 0.5)
             if bi in (1, 3):
@@ -243,9 +243,9 @@ while t < DUR - 1:
         if t >= 31 and t < 43 and bi == 0:
             play(kick(), t, 0.4, 0.5)
         if t >= 43 and (t < DUR - 4):
-            play(kick(), t, 0.62 if t < 73 else 0.8, 0.5) if bi in (0, 2) else None
+            play(kick(), t, 0.62 if t < V.S7 else 0.8, 0.5) if bi in (0, 2) else None
             if bi in (1, 3):
-                play(snare(), t, 0.3 if t < 57 else 0.42, 0.5, 0.25)
+                play(snare(), t, 0.3 if t < 50 else 0.42, 0.5, 0.25)
             for h in (0, 1):
                 play(hat(), t + h * BEAT / 2, 0.14 if h == 0 else 0.1, 0.62 if h else 0.4)
         elif 31 <= t < 43:
@@ -263,16 +263,6 @@ for i, tm in enumerate(V.PIN_TIMES):
     play(bloop(1100, 260, 0.45), tm - 0.0, 0.12, 0.3 + 0.1 * i)
     play(kick(0.2) * 0.8, tm + 0.46, 0.35, 0.5)
     play(bell(mid(PENTA[(i * 2) % 7] + 12), 2.2, 0.8), tm + 0.46, 0.2, 0.3 + 0.1 * i, 0.7)
-for tm in V.typing_click_times():
-    play(tick(), tm, 0.22 + 0.06 * rng.rand(), 0.5 + rng.uniform(-0.05, 0.05))
-for tm in V.FORUM_CLICKS:
-    play(plink(880, 0.15, 0.05), V.S6 + tm, 0.3, 0.55)
-    play(plink(1320, 0.25, 0.08), V.S6 + tm + 0.07, 0.25, 0.55, 0.3)
-t9 = V.S6 + V.MAP_PIN_UI
-play(bloop(1000, 300, 0.3), t9, 0.14)
-play(bell(mid(88), 2.0, 0.7), t9 + 0.3, 0.22, 0.7, 0.7)
-for k in range(9):    # hearts: rising sparkle
-    play(plink(mid(PENTA[k % 7] + 12 + 12 * (k // 7)), 0.5, 0.2), V.S6 + 14.3 + k * 0.17, 0.16, 0.3 + 0.05 * k, 0.7)
 for k in range(46):   # fireflies converging into the logo
     tm = V.S7 + 1.0 + k * 0.08 + rng.uniform(0, 0.05)
     n = PENTA[rng.randint(0, 7)] + 12 + 12 * rng.randint(0, 2)
@@ -282,19 +272,20 @@ for k in range(14):   # night sparkles in scene 1
     play(plink(mid(PENTA[rng.randint(0, 7)] + 12), 0.6, 0.2), tm, 0.045, rng.uniform(0.2, 0.8), 0.9)
 
 # ---- transitions ------------------------------------------------------
-for tm, d in ((V.S2, 0.9), (V.S3A, 0.8), (V.S4, 0.9), (V.S5, 0.9), (V.S6, 0.9)):
+for tm, d in ((V.S2, 0.9), (V.S3A, 0.8), (V.S4, 0.9), (V.S5, 0.9)):
     play(whoosh(d), tm - d / 2, 0.22, 0.5, 0.3)
 play(whoosh(1.0, False), V.S3B - 0.5, 0.2, 0.5, 0.3)
 play(bell(mid(81), 2.0, 0.9), V.S3B - 0.1, 0.12, 0.5, 0.6)
 play(whoosh(1.2), V.S7 - 0.6, 0.24, 0.5, 0.4)
 
 # ---- riser + logo hit --------------------------------------------------
-rd = GAP0 - 70.0
+R0 = GAP0 - 7.0
+rd = GAP0 - R0
 tr = tt(rd)
 x = tr / rd
 rn = lp(noise(rd), 6000, 2) * (x ** 2.2)
 tone = np.sin(2 * np.pi * np.cumsum(180 * 2 ** (x * 3)) / SR) * (x ** 1.8) * 0.5
-play((rn * 0.5 + tone * 0.3).astype(np.float32), 70.0, 0.5, 0.5, 0.35)
+play((rn * 0.5 + tone * 0.3).astype(np.float32), R0, 0.5, 0.5, 0.35)
 for k in range(8):    # snare roll accelerating into the gap
     tm = GAP0 - 3.2 + k * (0.4 - k * 0.03)
     if tm < GAP0:
@@ -309,7 +300,6 @@ for j, n in enumerate((69, 72, 76, 79, 84, 88)):
 for k in range(24):   # shimmering tail
     n = PENTA[rng.randint(0, 7)] + 12 + 12 * rng.randint(0, 2)
     play(plink(mid(n), 0.8, 0.3), H0 + 0.4 + k * 0.17, 0.06 * (1 - k / 28), rng.uniform(0.1, 0.9), 0.9)
-play(bell(mid(88), 4.0, 1.5), V.S7 + 11.2, 0.12, 0.5, 0.8)      # "coming soon" sting
 
 # ---- reverb + master ----------------------------------------------
 def reverb(src, seed):
