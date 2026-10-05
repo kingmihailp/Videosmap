@@ -19,3 +19,8 @@ Everything (graphics and music) is generated procedurally:
 * `video.py` — 320x180 pixel canvas, nearest-neighbour x4, Bayer-dithered gradients and glows
 * `audio.py` — NumPy synth (pad, chiptune arp, bass, drums, UI foley, riser + logo hit)
 * `build.sh` — rebuilds `Flora0world_HUB_teaser.mp4` (about 8 minutes on 4 cores)
+
+## Avatar
+
+`avatar_Flora0world_HUB_512.png` (and `_1024.png`) — community avatar: pixel F + W over the entomologist's map,
+inside a brass ring (safe for Telegram's circular crop). Source: `avatar.py` (`python avatar.py out/`).
