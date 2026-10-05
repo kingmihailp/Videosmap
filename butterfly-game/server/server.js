@@ -10,7 +10,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 
 const PORT = +(process.argv[2] || process.env.PORT || 3000);
-const GAME = path.resolve(__dirname, '..', 'Flora0world_Butterflies.html');
+const GAME = path.resolve(process.env.GAME || path.join(__dirname, '..', 'Flora0world_Butterflies.html'));   // GAME=/path/to/file.html overrides
 const DATA_DIR = path.join(__dirname, 'data'), STATE_FILE = path.join(DATA_DIR, 'state.json');
 const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'ocean'];
 const MAX_NAME = 16;
@@ -111,6 +111,7 @@ wss.on('connection', ws => {
 });
 setInterval(() => { wss.clients.forEach(ws => { if (!ws.isAlive) return ws.terminate(); ws.isAlive = false; ws.ping(); }); }, 15000);
 server.listen(PORT, () => {
+  try { const st = fs.statSync(GAME); console.log(`Game file: ${GAME}  (${Math.round(st.size / 1024)} KB, modified ${st.mtime.toISOString().slice(0, 16).replace('T', ' ')})`); } catch (e) { console.log('WARNING: game file not found: ' + GAME); }
   const nets = require('os').networkInterfaces(); const ips = [].concat(...Object.values(nets)).filter(n => n && n.family === 'IPv4' && !n.internal).map(n => n.address);
   console.log(`Flora0world server on http://localhost:${PORT}` + (ips.length ? '   (LAN: ' + ips.map(i => `http://${i}:${PORT}`).join(', ') + ')' : ''));
 });
