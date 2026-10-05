@@ -1,0 +1,156 @@
+// ---------------------------------------------------------------- main: renderer, pixel post-process, input, state machine
+(() => {
+  const gl = document.getElementById('gl'), ui = document.getElementById('ui'), stage = document.getElementById('stage');
+  gl.width = SW; gl.height = SH; ui.width = SW; ui.height = SH;
+  const ctx = ui.getContext('2d');
+  const params = new URLSearchParams(location.hash.replace('#', '?'));
+  Save.load();
+
+  // ---------------- renderer + post (palette quantisation + ordered dither + depth outlines)
+  const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('debug') });
+  renderer.setPixelRatio(1); renderer.setSize(SW, SH, false); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+  const rt = new THREE.WebGLRenderTarget(SW, SH, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthTexture: new THREE.DepthTexture(SW, SH, THREE.UnsignedIntType) });
+  const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const postMat = new THREE.ShaderMaterial({
+    depthTest: false, depthWrite: false,
+    uniforms: { tColor: { value: rt.texture }, tDepth: { value: rt.depthTexture }, res: { value: new THREE.Vector2(SW, SH) }, near: { value: 0.07 }, far: { value: 700 }, levels: { value: 20 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform sampler2D tColor; uniform sampler2D tDepth; uniform vec2 res; uniform float near; uniform float far; uniform float levels; varying vec2 vUv;
+      float lin(float d){ float z = d * 2.0 - 1.0; return 2.0 * near * far / (far + near - z * (far - near)); }
+      float b2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+      float b4(vec2 a){ return b2(0.5 * a) * 0.25 + b2(a); }
+      void main(){
+        vec3 c = texture2D(tColor, vUv).rgb;
+        float d0 = lin(texture2D(tDepth, vUv).x); vec2 px = 1.0 / res; float edge = 0.0;
+        if (d0 < 380.0) {
+          vec2 o[4]; o[0] = vec2(px.x, 0.0); o[1] = vec2(-px.x, 0.0); o[2] = vec2(0.0, px.y); o[3] = vec2(0.0, -px.y);
+          for (int i = 0; i < 4; i++) { float dn = lin(texture2D(tDepth, vUv + o[i]).x); if (dn > d0 * 1.07 + 0.12) edge = 1.0; }
+        }
+        c *= 1.0 - edge * 0.42;
+        float l = dot(c, vec3(0.3, 0.59, 0.11)); c = mix(vec3(l), c, 1.1); c = pow(max(c, vec3(0.0)), vec3(0.96));
+        c = floor(c * levels + b4(gl_FragCoord.xy)) / levels;
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  });
+  postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
+
+  // ---------------- app state
+  const App = window.F0W = { screen: 'loading', overlay: null, play: null, time: 0, fade: 1, fadeTarget: 0, fadeCb: null, locked: false, noLock: params.has('nolock'), journalFrom: 'title', loadText: 'Загрузка…', ready: false };
+  const inp = { keys: new Set(), dx: 0, dy: 0, fire: false }; App.inp = inp;
+  const mouse = { x: -100, y: -100 };
+  const S = Screens;
+  function toNative(e) { const r = ui.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * SW; mouse.y = (e.clientY - r.top) / r.height * SH; }
+  function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; }
+  addEventListener('resize', fit); fit();
+  function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
+  function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  function unlock() { if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
+
+  App.toTitle = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'title'; App.overlay = null; Snd.stopAmbient(); };
+  App.toMap = () => { if (App.play) { App.play.dispose(); App.play = null; } App.screen = 'map'; App.overlay = null; Snd.stopAmbient(); };
+  App.start = (biomeId) => {
+    App.screen = 'loading'; App.loadText = 'Отправляемся: ' + BIOME_BY_ID[biomeId].place; App.overlay = null;
+    setTimeout(() => {
+      if (App.play) { App.play.dispose(); App.play = null; }
+      App.play = new Play(BIOME_BY_ID[biomeId]); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+      if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
+      journalIndex();
+    }, 60);
+  };
+  function journalIndex() { if (App.play) { S.journal.tab = BIOMES.indexOf(App.play.biome); S.journal.sel = 0; } }
+  function openJournal(from) { App.journalFrom = from; if (from === 'play') { unlock(); App.overlay = 'journal'; journalIndex(); } else { App.screen = 'journal'; } Snd.sfx.page(); }
+  function closeJournal() { if (App.journalFrom === 'play') { App.overlay = 'pause'; } else App.screen = App.journalFrom; Snd.sfx.page(); }
+  function resume() { App.overlay = null; lock(); }
+  function toggleSetting(k) { Save.data.settings[k] = !Save.data.settings[k]; Save.write(); Snd.applySettings(); Snd.sfx.click(); }
+
+  // ---------------- input
+  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  document.addEventListener('pointerlockchange', () => {
+    App.locked = document.pointerLockElement === ui;
+    if (!App.locked && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
+  });
+  document.addEventListener('pointerlockerror', () => { if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } });
+  addEventListener('blur', () => inp.keys.clear());
+  addEventListener('keyup', e => inp.keys.delete(e.code));
+  addEventListener('keydown', e => {
+    Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    inp.keys.add(e.code);
+    if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
+    const sc = App.screen;
+    if (sc === 'play') {
+      if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'journal') {
+        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } return;
+      }
+      if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
+      if (e.repeat) return;
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+    } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } }
+    else if (sc === 'map') {
+      if (e.code === 'Escape') go(() => { App.screen = 'title'; });
+      else if (e.code >= 'Digit1' && e.code <= 'Digit8') { S.wmap.sel = +e.code.slice(5) - 1; Snd.sfx.pin(); }
+      else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
+      else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map');
+    } else if (sc === 'journal') {
+      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; }
+    }
+  });
+  ui.addEventListener('mousedown', e => {
+    Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
+    if (sc === 'play') {
+      if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'pause') {
+        const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'map') go(() => App.toMap());
+        return;
+      }
+      if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
+      if (App.locked) inp.fire = true; else lock();
+    } else if (sc === 'title') {
+      const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
+      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+    } else if (sc === 'map') {
+      const id = S.wmap.click(x, y); if (!id) return;
+      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
+    } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
+  });
+  ui.addEventListener('contextmenu', e => e.preventDefault());
+  ui.addEventListener('wheel', e => { if (App.screen === 'journal' || App.overlay === 'journal') { S.journal.tab = (S.journal.tab + (e.deltaY > 0 ? 1 : 7)) % 8; S.journal.sel = 0; Snd.sfx.page(); } });
+
+  // ---------------- loop
+  let last = performance.now();
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    const dt = clamp((ts - last) / 1000, 0, 0.05); last = ts; App.time += dt; const t = App.time;
+    if (!App.ready) { ctx.fillStyle = '#04080a'; ctx.fillRect(0, 0, SW, SH); return; }
+    ctx.imageSmoothingEnabled = false;
+    // fades
+    if (App.fade !== App.fadeTarget) { const sp = dt * 4.5; App.fade = App.fade < App.fadeTarget ? Math.min(App.fadeTarget, App.fade + sp) : Math.max(App.fadeTarget, App.fade - sp); if (App.fade >= 1 && App.fadeTarget === 1 && App.fadeCb) { const cb = App.fadeCb; App.fadeCb = null; cb(); App.fadeTarget = 0; } }
+    const sc = App.screen;
+    if (sc === 'play' && App.play) {
+      const p = App.play;
+      const running = !App.overlay && (App.locked || App.noLock);
+      if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
+      renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+      gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else p.draw(ctx);
+    } else {
+      gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
+      if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
+      else if (sc === 'map') S.wmap.draw(ctx, t, mouse);
+      else if (sc === 'journal') S.journal.draw(ctx, t, mouse);
+      else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
+    }
+    if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
+    if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
+  }
+  // dismiss title help overlay on any key/click
+  addEventListener('keydown', () => { if (App.helpFromTitle && App.screen === 'title') App.helpFromTitle = false; });
+  ui.addEventListener('mouseup', () => { if (App.helpFromTitle && App.screen === 'title' && App.helpTimer && performance.now() - App.helpTimer > 200) App.helpFromTitle = false; });
+  ui.addEventListener('mousedown', () => { if (App.helpFromTitle) App.helpTimer = performance.now(); });
+
+  App.renderer = renderer;
+  T.onReady(() => { App.ready = true; App.screen = 'title'; App.fade = 1; App.fadeTarget = 0; const b = params.get('biome'); if (b && BIOME_BY_ID[b]) { App.noLockAuto = true; setTimeout(() => App.start(b), 200); } });
+  requestAnimationFrame(frame);
+})();
