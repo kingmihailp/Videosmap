@@ -152,7 +152,7 @@ class Fly {
     if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
-      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
+      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 0.45 + Math.random() * 0.6; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
         if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
       return false;
     }
@@ -166,17 +166,21 @@ class Fly {
     }
     if (kind === 'eyes') {
       this.cool -= dt;
-      if (this.cool <= 0 && p.looked(this.pos, 0.972) && dist < 18) { const a = pl.yaw + (Math.random() - 0.5) * 1.6, nx = pl.pos.x + Math.sin(a) * 9, nz = pl.pos.z + Math.cos(a) * 9; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 1.2; Snd.sfx.eyes(); } }
-      if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.7, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.8);
+      const stare = p.looked(this.pos, 0.965) && dist < 26;
+      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
+      if (p.looked(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
+        const fx = p.fwd.x, fz = p.fwd.z, side = ((this.pos.x - pl.pos.x) * fz - (this.pos.z - pl.pos.z) * fx) >= 0 ? 1 : -1;
+        this.vel.lerp(_w.set(-fz * side * 7.5, 0.4, fx * side * 7.5), Math.min(1, dt * 9)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
+      } else if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.9);
       this.post(false); return true;
     }
     if (kind === 'rush' || kind === 'ambush') {
       const S = this.rs; S.t -= dt;
       if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
-      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 12 : 9.5); } return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
       if (S.ph === 'dash') {
         this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
-        if (S.dist > 58) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
+        if (S.dist > 64) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
         this.post(true); return true;
       }
       if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
@@ -286,6 +290,7 @@ class Play {
     this.hoopWorld(_v);
     for (const f of this.flies) {
       if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); const r = 0.66 + f.span * 0.3;
+      if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }

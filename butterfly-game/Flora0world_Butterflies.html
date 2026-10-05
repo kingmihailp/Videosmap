@@ -645,7 +645,7 @@ rebuildSpeciesIndex();
   const R = [
     ['Nocturna screechia', 'Бабочка-Скрич', 'Screech moth', 18, 26, 2, 'screech',
       A('round', ['#0a0a18', '#161630'], ['#0a0a18', '#161630'], { edge: ['#000', 2], eye: [['f', .62, .42, 5.2, W, K], ['h', .5, .55, 3.4, W, K]], band: ['h', .78, .94, '#e8e8f0'] }),
-      'Темнота: не любит, когда на неё светят', 'Только открытый океан', 'шорох в темноте', 'Если погасить фонарь, она подлетает совсем близко. Включите свет — и она тут же исчезнет. Поймать её можно только в темноте.'],
+      'Темнота: не любит, когда на неё светят', 'Только открытый океан', 'шорох в темноте', 'Если погасить фонарь, она подлетает совсем близко. Включите свет — и она тут же улетит. Поймать её можно только при выключенном фонаре.'],
     ['Umbra dreadii', 'Бабочка-Дред', 'Dread moth', 60, 78, 2, 'dread',
       A('long', ['#0c1230', '#2a3a8a'], ['#0c1230', '#1c2a6a'], { edge: ['#05081a', 2], sheen: ['#5a7aff', .5], sp: [...sp('f', [[.45, .45, 1.6, '#7ae8ff'], [.62, .38, 1.2, '#7ae8ff']]), ...sp('h', [[.5, .5, 1.4, '#7ae8ff']])] }),
       'Невидима, пока на неё не упал свет фонаря', 'Только открытый океан', 'страх', 'Её видно лишь в луче фонаря или когда она совсем рядом. Двигается медленно и беззвучно.'],
@@ -658,12 +658,12 @@ rebuildSpeciesIndex();
     ['Cursor rushia', 'Бабочка-Раш', 'Rush moth', 40, 56, 3, 'rush',
       A('long', ['#0a0a0c', '#2a2a32'], ['#0a0a0c', '#1c1c22'], { edge: ['#000', 1], eye: [['f', .55, .45, 3.2, W, K]], band: ['fh', .8, .95, '#9a9aa8'] }),
       'Мелькает из темноты на огромной скорости', 'Только открытый океан', 'тишина перед бурей', 'Сначала мигает свет и стихают звуки — потом она проносится мимо. Ловите после пролёта, когда она устала.'],
-    ['Insidia ambushia', 'Бабочка-Эмбуш', 'Ambush moth', 40, 56, 3, 'ambush',
+    ['Insidia ambushia', 'Бабочка-Амбуш', 'Ambush moth', 40, 56, 3, 'ambush',
       A('long', ['#052a10', '#2aff6a'], ['#052a10', '#1ad858'], { edge: ['#021408', 1], eye: [['f', .55, .45, 3.2, '#d8ffe0', '#02200a']], band: ['fh', .78, .94, '#8affa8'] }),
-      'Пролетает туда-обратно несколько раз подряд', 'Только открытый океан', 'ваше терпение', 'Как Раш, но возвращается до трёх раз. Каждый пролёт — новая возможность.'],
+      'Пролетает туда-обратно несколько раз подряд', 'Только открытый океан', 'ваше терпение', 'Как Раш, но возвращается до трёх раз, и очень быстро. Каждый пролёт — новая возможность.'],
     ['Visus oculatus', 'Бабочка-Глаза', 'Eyes moth', 42, 58, 2, 'eyes',
       A('round', ['#14080e', '#2a1018'], ['#14080e', '#2a1018'], { edge: ['#000', 2], eye: [['f', .65, .5, 6.2, '#ff5a7a', '#200008'], ['h', .5, .55, 4.4, '#ff5a7a', '#200008']] }),
-      'Прячется от прямого взгляда', 'Только открытый океан', 'тьма', 'Исчезает, если смотреть прямо на неё. Подбирайтесь краем зрения, не глядя в упор.'],
+      'Прячется от прямого взгляда', 'Только открытый океан', 'тьма', 'Всеми силами уходит от прямого взгляда: стоит ей попасть в поле зрения — выскальзывает вбок или прыгает за спину. Ловите краем зрения.'],
     ['Figura caeca', 'Бабочка-Фигура', 'Figure moth', 62, 78, 2, 'figure',
       A('round', ['#6a4a3a', '#8a6a58'], ['#5a3a2e', '#7a5a48'], { edge: ['#2a1a14', 2], veins: '#c8b8a8', sheen: ['#b8a090', .3] }),
       'Слепая: реагирует только на шум', 'Только открытый океан', 'шаги', 'Не видит, но слышит. Подкрадывайтесь с Ctrl — бегущих она чует за много метров.'],
@@ -2365,7 +2365,7 @@ class Fly {
     if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
-      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
+      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 0.45 + Math.random() * 0.6; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
         if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
       return false;
     }
@@ -2379,17 +2379,21 @@ class Fly {
     }
     if (kind === 'eyes') {
       this.cool -= dt;
-      if (this.cool <= 0 && p.looked(this.pos, 0.972) && dist < 18) { const a = pl.yaw + (Math.random() - 0.5) * 1.6, nx = pl.pos.x + Math.sin(a) * 9, nz = pl.pos.z + Math.cos(a) * 9; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 1.2; Snd.sfx.eyes(); } }
-      if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.7, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.8);
+      const stare = p.looked(this.pos, 0.965) && dist < 26;
+      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
+      if (p.looked(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
+        const fx = p.fwd.x, fz = p.fwd.z, side = ((this.pos.x - pl.pos.x) * fz - (this.pos.z - pl.pos.z) * fx) >= 0 ? 1 : -1;
+        this.vel.lerp(_w.set(-fz * side * 7.5, 0.4, fx * side * 7.5), Math.min(1, dt * 9)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
+      } else if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.9);
       this.post(false); return true;
     }
     if (kind === 'rush' || kind === 'ambush') {
       const S = this.rs; S.t -= dt;
       if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
-      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 12 : 9.5); } return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
       if (S.ph === 'dash') {
         this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
-        if (S.dist > 58) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
+        if (S.dist > 64) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
         this.post(true); return true;
       }
       if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
@@ -2499,6 +2503,7 @@ class Play {
     this.hoopWorld(_v);
     for (const f of this.flies) {
       if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); const r = 0.66 + f.span * 0.3;
+      if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
