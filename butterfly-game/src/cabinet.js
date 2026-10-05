@@ -86,7 +86,8 @@ const Cabinet = (() => {
       this.player = { pos: new THREE.Vector3(3.5, 0, 0.9), yaw: Math.PI / 2 + 0.25, pitch: -0.05, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
       this.colliders = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null;
       this.dynamic = new THREE.Group(); this.scene.add(this.dynamic);
-      this.build(); this.refresh();
+      { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
+      this.build(); this.applyTime(this.realHour()); this.refresh();
       Snd.startAmbient('cabinet'); this.toast('Добро пожаловать в кабинет!', 3);
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
@@ -96,12 +97,13 @@ const Cabinet = (() => {
     build() {
       const S = this.scene, wood = lam('#7a4e2c', { map: T_WOOD() }), darkWood = lam('#4a2c18', { map: T_WOOD('#5a3820', '#3e2414') }), brass = lam('#c8a040'), metalM = lam('#9aa0aa');
       // --- lights
-      S.add(new THREE.HemisphereLight('#ffeacc', '#4a3624', 0.62));
+      this.hemi = new THREE.HemisphereLight('#ffeacc', '#4a3624', 0.62); S.add(this.hemi);
+      this.moonL = new THREE.DirectionalLight('#7a96d8', 0); this.moonL.position.set(-9, 6, 1); this.moonL.target.position.set(-1.5, 0, 0.3); S.add(this.moonL, this.moonL.target);
       const sun = this.sun = new THREE.DirectionalLight('#ffe2a8', 1.35); sun.position.set(-9, 5.4, -1.6); sun.target.position.set(-1.5, 0, 0.3); S.add(sun, sun.target);
       sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); const sc = sun.shadow.camera; sc.left = -7; sc.right = 7; sc.top = 7; sc.bottom = -7; sc.near = 1; sc.far = 24; sun.shadow.bias = -0.0008;
       this.pend = new THREE.PointLight('#ffcf8a', 0.9, 9, 1.6); this.pend.position.set(0.3, 2.7, 0.4); S.add(this.pend);
-      const l1 = new THREE.PointLight('#ffd89a', 0.55, 5.5, 1.8); l1.position.set(-3.6, 1.45, -0.9); S.add(l1);
-      const l2 = new THREE.PointLight('#ffd89a', 0.5, 5.5, 1.8); l2.position.set(3.5, 1.5, 1.6); S.add(l2);
+      const l1 = this.l1 = new THREE.PointLight('#ffd89a', 0.55, 5.5, 1.8); l1.position.set(-3.6, 1.45, -0.9); S.add(l1);
+      const l2 = this.l2 = new THREE.PointLight('#ffd89a', 0.5, 5.5, 1.8); l2.position.set(3.5, 1.5, 1.6); S.add(l2);
       // --- floor, ceiling, rug
       const floor = mesh(new THREE.PlaneGeometry(RW, RD), lam('#ffffff', { map: T_FLOOR() }), 0, 0, 0, { cast: false }); floor.rotation.x = -Math.PI / 2; S.add(floor);
       const ceil = mesh(new THREE.PlaneGeometry(RW, RD), lam('#d8cca8'), 0, RH, 0, { cast: true, recv: false }); ceil.rotation.x = Math.PI / 2; S.add(ceil);
@@ -114,14 +116,15 @@ const Cabinet = (() => {
         const sh = new THREE.Shape(); const hl = L / 2;
         if (notch && notch.type === 'door') { sh.moveTo(-hl, 0); sh.lineTo(notch.u0, 0); sh.lineTo(notch.u0, notch.h); sh.lineTo(notch.u1, notch.h); sh.lineTo(notch.u1, 0); sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); }
         else { sh.moveTo(-hl, 0); sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); if (notch) { const p = new THREE.Path(); p.moveTo(notch.u0, notch.y0); p.lineTo(notch.u0, notch.y1); p.lineTo(notch.u1, notch.y1); p.lineTo(notch.u1, notch.y0); p.lineTo(notch.u0, notch.y0); sh.holes.push(p); } }
-        const m = mesh(new THREE.ShapeGeometry(sh), wallMat(L), x, 0, z, { cast: rotY === Math.PI / 2 }); m.rotation.y = rotY; S.add(m); return m;
+        const m = mesh(new THREE.ShapeGeometry(sh), wallMat(L), x, 0, z, { cast: true }); m.rotation.y = rotY; S.add(m); return m;
       };
       mkWall(RW, 0, 0, -HZ); mkWall(RW, Math.PI, 0, HZ);
       mkWall(RD, Math.PI / 2, -HX, 0, { u0: -1.35, u1: 1.35, y0: 0.95, y1: 2.85 });
       mkWall(RD, -Math.PI / 2, HX, 0, { type: 'door', u0: -2.15, u1: -1.05, h: 2.35 });
       // --- window (west)
       const wx = -HX;
-      const sky = mesh(new THREE.PlaneGeometry(14, 7), bas('#ffffff', { map: T_SKY() }), wx - 5, 2.6, 0, { cast: false, recv: false }); sky.rotation.y = Math.PI / 2; S.add(sky);
+      this.skyCv = document.createElement('canvas'); this.skyCv.width = 256; this.skyCv.height = 128; this.skyTex = new THREE.CanvasTexture(this.skyCv); this.skyTex.magFilter = this.skyTex.minFilter = THREE.NearestFilter; this.skyTex.generateMipmaps = false;
+      const sky = mesh(new THREE.PlaneGeometry(14, 7), bas('#ffffff', { map: this.skyTex }), wx - 5, 2.6, 0, { cast: false, recv: false }); sky.rotation.y = Math.PI / 2; S.add(sky);
       const fm = darkWood; cube(S, 0.14, 0.08, 2.9, wx + 0.04, 0.95, 0, fm); cube(S, 0.14, 0.08, 2.9, wx + 0.04, 2.87, 0, fm); cube(S, 0.14, 1.92, 0.08, wx + 0.04, 1.9, -1.4, fm); cube(S, 0.14, 1.92, 0.08, wx + 0.04, 1.9, 1.4, fm);
       cube(S, 0.07, 1.9, 0.07, wx + 0.04, 1.9, 0, fm); cube(S, 0.07, 0.07, 2.8, wx + 0.04, 1.95, 0, fm); cube(S, 0.07, 0.07, 2.8, wx + 0.04, 2.55, 0, fm);
       cube(S, 0.3, 0.06, 3.0, wx + 0.14, 0.93, 0, wood);
@@ -129,32 +132,48 @@ const Cabinet = (() => {
       // curtains
       for (const sg of [-1, 1]) { const cur = cube(S, 0.12, 2.3, 0.5, wx + 0.14, 1.85, sg * 1.85, lam('#7a2a2a'), { cast: false }); for (let i = 0; i < 4; i++) cube(S, 0.14, 2.3, 0.04, wx + 0.15, 1.85, sg * 1.85 - 0.18 + i * 0.12, lam('#5a1c1c'), { cast: false }); }
       cube(S, 0.1, 0.06, 4.6, wx + 0.16, 3.05, 0, brass, { cast: false });
-      // --- sun beam + dust
-      const bt = ctex(8, 64, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,230,160,0.55)'); g.addColorStop(1, 'rgba(255,230,160,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }, 0, 0, true);
-      const dir = new THREE.Vector3().subVectors(sun.target.position, sun.position).normalize(); const beam = new THREE.Group(); beam.position.set(wx + 0.1, 1.9, 0);
-      for (let i = 0; i < 3; i++) { const q = new THREE.Mesh(new THREE.PlaneGeometry(i === 1 ? 1.9 : 2.7, 6), new THREE.MeshBasicMaterial({ map: bt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, opacity: 0.17 })); q.position.y = -3; q.rotation.y = i === 1 ? Math.PI / 2 : 0; const h = new THREE.Group(); h.add(q); h.rotation.y = 0; beam.add(h); }
-      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().multiplyScalar(-1).negate()); S.add(beam);
-      const N = 90, dp = new Float32Array(N * 3); this.dustBase = []; for (let i = 0; i < N; i++) { const t = R.range(0.5, 4.6); const px = wx + 0.3 + dir.x * t + R.range(-0.8, 0.8), py = 1.9 + dir.y * t + R.range(-0.8, 0.8), pz = dir.z * t + R.range(-1.2, 1.2); dp[i * 3] = px; dp[i * 3 + 1] = Math.max(0.2, py); dp[i * 3 + 2] = pz; this.dustBase.push([R.range(0, 6.28), R.range(0.1, 0.3)]); }
-      const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(dp, 3)); this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: '#fff0c0', size: 0.035, transparent: true, opacity: 0.8, depthWrite: false })); S.add(this.dust); this.dust0 = dp.slice();
+      // --- sun shafts (soft on every edge) + dust; direction, strength and visibility follow the time of day (see applyTime)
+      const bt = ctex(32, 64, (x, w, h) => { const im = x.createImageData(w, h); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const u = (i + 0.5) / w * 2 - 1, v = j / (h - 1); const al = Math.pow(1 - Math.abs(u), 1.6) * Math.pow(1 - v, 1.3) * Math.min(1, v * 6 + 0.25); const k = (j * w + i) * 4; im.data[k] = 255; im.data[k + 1] = 232; im.data[k + 2] = 170; im.data[k + 3] = Math.round(255 * al * 0.8); } x.putImageData(im, 0, 0); }, 0, 0, true);
+      this.beam = new THREE.Group(); this.beam.position.set(wx + 0.1, 1.9, 0); this.beamMats = [];
+      for (let i = 0; i < 3; i++) { const mt = new THREE.MeshBasicMaterial({ map: bt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, opacity: 0.2 }); this.beamMats.push(mt); const q = new THREE.Mesh(new THREE.PlaneGeometry(i === 1 ? 1.7 : 2.6, 7.5), mt); q.position.y = -3.75; q.rotation.y = i === 1 ? Math.PI / 2 : 0; const h = new THREE.Group(); h.add(q); h.rotation.y = i === 2 ? 0.0 : 0; this.beam.add(h); }
+      S.add(this.beam);
+      const N = 90, dp = new Float32Array(N * 3); this.dustBase = []; this.dustJit = []; for (let i = 0; i < N; i++) { this.dustBase.push([R.range(0, 6.28), R.range(0.1, 0.3)]); this.dustJit.push([R.range(0.5, 4.6), R.range(-0.8, 0.8), R.range(-0.8, 0.8), R.range(-1.2, 1.2)]); }
+      const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(dp, 3)); this.dustMat = new THREE.PointsMaterial({ color: '#fff0c0', size: 0.035, transparent: true, opacity: 0.8, depthWrite: false }); this.dust = new THREE.Points(dg, this.dustMat); S.add(this.dust); this.dust0 = dp.slice();
       // --- spreading desk (west)
       const sd = new THREE.Group(); S.add(sd); const dx0 = -3.85;
       cube(sd, 1.0, 0.07, 2.3, dx0, 0.8, 0, wood); for (const [lx, lz] of [[-0.42, -1.05], [0.42, -1.05], [-0.42, 1.05], [0.42, 1.05]]) cube(sd, 0.08, 0.77, 0.08, dx0 + lx, 0.385, lz, darkWood);
       cube(sd, 0.9, 0.2, 2.1, dx0, 0.66, 0, darkWood); for (const zz of [-0.55, 0.55]) { cube(sd, 0.02, 0.14, 0.7, dx0 + 0.46, 0.66, zz, wood); cube(sd, 0.03, 0.04, 0.16, dx0 + 0.47, 0.66, zz, brass); }
       this.addCol(dx0 - 0.55, dx0 + 0.55, -1.2, 1.2);
-      // spreading board
-      const bd = new THREE.Group(); bd.position.set(dx0 + 0.05, 0.84, 0.15); bd.rotation.x = 0; sd.add(bd);
-      cube(bd, 0.22, 0.03, 0.62, 0, 0.0, 0, lam('#b49060')); cube(bd, 0.09, 0.03, 0.4, -0.2 + 0.015, 0.0, 0, lam('#9a7848')); cube(bd, 0.09, 0.03, 0.4, 0.2 - 0.015, 0.0, 0, lam('#9a7848')); cube(bd, 0.03, 0.04, 0.55, 0, 0.01, 0, lam('#2a1a0e'));
-      cube(bd, 0.5, 0.02, 0.62, 0, 0, 0, lam('#caa66c'));
-      cube(bd, 0.12, 0.034, 0.64, 0, 0.004, 0, lam('#1c120a')); cube(bd, 0.2, 0.035, 0.62, -0.17, 0.003, 0, lam('#c29a5c')); cube(bd, 0.2, 0.035, 0.62, 0.17, 0.003, 0, lam('#c29a5c'));
+      // spreading board: base plate, two slats with a groove between them, specimen lying across the groove
+      const bd = new THREE.Group(); bd.position.set(dx0 + 0.02, 0.835, 0.2); sd.add(bd);
+      cube(bd, 0.46, 0.02, 0.62, 0, 0.01, 0, lam('#6a4a28')); cube(bd, 0.19, 0.03, 0.6, -0.135, 0.035, 0, lam('#c29a5c')); cube(bd, 0.19, 0.03, 0.6, 0.135, 0.035, 0, lam('#c29a5c'));
       const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const st = new THREE.CanvasTexture(Art.specimen(sample)); st.magFilter = st.minFilter = THREE.NearestFilter;
-      const sm = mesh(new THREE.PlaneGeometry(0.46, 0.23), new THREE.MeshLambertMaterial({ map: st, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }), 0, 0.025, 0, { cast: false }); sm.rotation.x = -Math.PI / 2; sm.rotation.z = Math.PI / 2; bd.add(sm);
-      for (const zz of [-0.2, -0.08, 0.08, 0.2]) { cube(bd, 0.004, 0.025, 0.004, 0.04, 0.03, zz, metalM, { cast: false }); cube(bd, 0.002, 0.002, 0.14, 0.0, 0.04, zz * 0.2, lam('#efe6c8'), { cast: false }); }
-      // jar, lamp, notebook, magnifier
-      cyl(sd, 0.05, 0.05, 0.12, dx0 + 0.25, 0.9, -0.75, lam('#a8d0d8', { transparent: true, opacity: 0.55 }), 10); cyl(sd, 0.052, 0.052, 0.02, dx0 + 0.25, 0.97, -0.75, metalM, 10);
-      cube(sd, 0.28, 0.02, 0.2, dx0 + 0.15, 0.84, 0.82, lam('#e8dcb0')); cube(sd, 0.005, 0.022, 0.2, dx0 + 0.15, 0.845, 0.82, lam('#3a2a1a')); cube(sd, 0.2, 0.004, 0.003, dx0 + 0.07, 0.855, 0.8, lam('#3a2a1a'), { cast: false }); cube(sd, 0.2, 0.004, 0.003, dx0 + 0.07, 0.855, 0.84, lam('#3a2a1a'), { cast: false });
-      cyl(sd, 0.1, 0.12, 0.03, dx0 - 0.3, 0.855, -0.7, lam('#2a2a30'), 12); cube(sd, 0.02, 0.5, 0.02, dx0 - 0.3, 1.1, -0.7, metalM); cube(sd, 0.3, 0.02, 0.02, dx0 - 0.18, 1.34, -0.7, metalM);
+      const sm = mesh(new THREE.PlaneGeometry(0.4, 0.2), new THREE.MeshLambertMaterial({ map: st, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }), 0, 0.0515, 0, { cast: false }); sm.rotation.x = -Math.PI / 2; sm.rotation.z = Math.PI / 2; bd.add(sm);
+      for (const zz of [-0.17, -0.06, 0.07, 0.18]) { cube(bd, 0.004, 0.03, 0.004, 0.05, 0.065, zz, metalM, { cast: false }); cube(bd, 0.12, 0.002, 0.012, 0.0, 0.0535, zz * 1.0, lam('#efe6c8'), { cast: false }); }
+      // jar with a lid, standing on the desk
+      cyl(sd, 0.05, 0.05, 0.12, dx0 + 0.25, 0.895, -0.75, lam('#a8d0d8', { transparent: true, opacity: 0.55 }), 10); cyl(sd, 0.053, 0.053, 0.02, dx0 + 0.25, 0.965, -0.75, metalM, 10);
+      // open field journal lying flat: leather cover, two page blocks, spine, ruled lines, a pen
+      const jx = dx0 + 0.18, jz = 0.88;
+      cube(sd, 0.3, 0.01, 0.22, jx, 0.84, jz, lam('#5a2a1c')); cube(sd, 0.135, 0.014, 0.195, jx - 0.075, 0.852, jz, lam('#efe6c8')); cube(sd, 0.135, 0.014, 0.195, jx + 0.075, 0.852, jz, lam('#efe6c8')); cube(sd, 0.006, 0.016, 0.2, jx, 0.853, jz, lam('#3a2a1a'));
+      for (let i = 0; i < 5; i++) { cube(sd, 0.1, 0.002, 0.003, jx - 0.075, 0.8605, jz - 0.07 + i * 0.035, lam('#6a5a4a'), { cast: false }); if (i < 3) cube(sd, 0.1, 0.002, 0.003, jx + 0.075, 0.8605, jz - 0.07 + i * 0.035, lam('#6a5a4a'), { cast: false }); }
+      const pen = cyl(sd, 0.006, 0.006, 0.16, jx + 0.2, 0.845, jz - 0.02, lam('#1a1a24'), 6); pen.rotation.z = Math.PI / 2; pen.rotation.y = 0.5;
+      // magnifier lying flat: ring, glass and a handle along one line
+      const mgx = dx0 + 0.3, mgz = 0.5, mg = new THREE.Group(); mg.position.set(mgx, 0.847, mgz); sd.add(mg);
+      const lensRing = mesh(new THREE.TorusGeometry(0.07, 0.009, 6, 18), lam('#caa040'), 0, 0, 0, { cast: false }); lensRing.rotation.x = Math.PI / 2; mg.add(lensRing);
+      const lens = mesh(new THREE.CircleGeometry(0.066, 18), bas('#cfe8ff', { transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }), 0, 0.001, 0, { cast: false, recv: false }); lens.rotation.x = -Math.PI / 2; mg.add(lens);
+      const hd2 = cyl(mg, 0.008, 0.011, 0.15, 0, 0, 0.145, darkWood, 6, { cast: false }); hd2.rotation.x = Math.PI / 2;
+      // desk lamp
+      cyl(sd, 0.1, 0.12, 0.03, dx0 - 0.3, 0.85, -0.7, lam('#2a2a30'), 12); cube(sd, 0.02, 0.5, 0.02, dx0 - 0.3, 1.1, -0.7, metalM); cube(sd, 0.3, 0.02, 0.02, dx0 - 0.18, 1.34, -0.7, metalM);
       const shade = cyl(sd, 0.03, 0.12, 0.14, dx0, 1.28, -0.7, lam('#2a6a4a'), 12); this.lampBulb = mesh(new THREE.SphereGeometry(0.03, 8, 6), bas('#fff0b0'), dx0, 1.2, -0.7, { cast: false, recv: false }); sd.add(this.lampBulb);
-      const mag = mesh(new THREE.TorusGeometry(0.07, 0.01, 6, 14), lam('#caa040'), dx0 + 0.3, 0.9, 0.55, { cast: false }); mag.rotation.x = Math.PI / 2 - 0.2; sd.add(mag); cube(sd, 0.015, 0.01, 0.12, dx0 + 0.3, 0.86, 0.68, darkWood);
+      // lectern with the collection journal (E opens it)
+      const lc = new THREE.Group(); lc.position.set(2.3, 0, -2.4); S.add(lc);
+      cube(lc, 0.52, 0.95, 0.34, 0, 0.475, 0, darkWood); cube(lc, 0.6, 0.05, 0.4, 0, 0.0, 0.0, darkWood).position.y = 0.025;
+      const slant = new THREE.Group(); slant.position.set(0, 1.0, 0); slant.rotation.x = 0.38; lc.add(slant);
+      cube(slant, 0.62, 0.04, 0.46, 0, 0, 0, wood); cube(slant, 0.62, 0.05, 0.03, 0, 0.03, 0.22, wood);
+      cube(slant, 0.5, 0.02, 0.34, 0, 0.03, -0.02, lam('#6a1c1c')); cube(slant, 0.23, 0.022, 0.31, -0.12, 0.048, -0.02, lam('#efe6c8')); cube(slant, 0.23, 0.022, 0.31, 0.12, 0.048, -0.02, lam('#efe6c8')); cube(slant, 0.008, 0.026, 0.32, 0, 0.05, -0.02, lam('#3a2a1a'));
+      for (let i = 0; i < 6; i++) { cube(slant, 0.18, 0.002, 0.004, -0.12, 0.0605, -0.15 + i * 0.05, lam('#6a5a4a'), { cast: false }); cube(slant, 0.18, 0.002, 0.004, 0.12, 0.0605, -0.15 + i * 0.05, lam('#6a5a4a'), { cast: false }); }
+      const plq = mesh(new THREE.PlaneGeometry(0.34, 0.1), bas('#ffffff', { map: signTex('Коллекция', 110, 24, '#2a1a0e', '#f0d890', null, false) }), 0, 0.62, 0.176, { cast: false, recv: false }); lc.add(plq);
+      this.addCol(2.3 - 0.4, 2.3 + 0.4, -2.4 - 0.3, -2.4 + 0.3);
       // chair
       const ch = new THREE.Group(); ch.position.set(dx0 + 1.1, 0, 0.1); ch.rotation.y = 0.2; S.add(ch);
       cube(ch, 0.46, 0.05, 0.46, 0, 0.46, 0, lam('#6a2a22')); for (const [a, b] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) cube(ch, 0.04, 0.44, 0.04, a, 0.22, b, darkWood);
@@ -204,12 +223,16 @@ const Cabinet = (() => {
       const plant = (x, z, kind, sc = 1, seed = 1) => {
         const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(sc); S.add(g); const rr = new Rng(seed);
         const pot = lam('#b0623a'), potDark = lam('#8a4a2a');
-        cyl(g, 0.17, 0.12, 0.3, 0, 0.15, 0, pot, 14); cyl(g, 0.2, 0.2, 0.05, 0, 0.32, 0, potDark, 14); cyl(g, 0.15, 0.15, 0.02, 0, 0.335, 0, lam('#2a1c12'), 14); cyl(g, 0.15, 0.15, 0.025, 0, 0.012, 0, potDark, 14);
+        // one lathed clay pot (outer wall, rim, inner wall) + a soil disc sitting below the rim, so no surfaces share a plane
+        const prof = [[0.001, 0], [0.105, 0], [0.115, 0.012], [0.165, 0.27], [0.185, 0.28], [0.19, 0.30], [0.183, 0.318], [0.168, 0.318], [0.162, 0.30], [0.158, 0.27], [0.001, 0.27]].map(([r, y]) => new THREE.Vector2(r, y));
+        const potM = new THREE.Mesh(new THREE.LatheGeometry(prof, 16), new THREE.MeshLambertMaterial({ color: '#b0623a', side: THREE.DoubleSide })); potM.castShadow = true; potM.receiveShadow = true; g.add(potM);
+        const soil = new THREE.Mesh(new THREE.CircleGeometry(0.158, 16), lam('#2a1c12')); soil.rotation.x = -Math.PI / 2; soil.position.y = 0.31; g.add(soil);
+        const saucer = cyl(g, 0.15, 0.17, 0.025, 0, 0.0125, 0, potDark, 16); saucer.position.y = -0.0005; potM.position.y = 0.025;
         const leafMat = (c) => new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide });
         const greens = kind === 'ficus' ? ['#2a6a34', '#337a3c', '#245a30', '#3a8644'] : ['#3a8a3c', '#4a9a44', '#2e7a38', '#58a84c'];
         if (kind === 'ficus') {
           // a trunk with leaves on short stalks; each leaf has its own height and azimuth (golden angle) and hangs outward, so nothing crosses
-          const trunk = cyl(g, 0.02, 0.032, 0.95, 0.0, 0.8, 0, lam('#5a4028'), 6);
+          const trunk = cyl(g, 0.02, 0.032, 0.95, 0.0, 0.78, 0, lam('#5a4028'), 6);
           for (let k = 0; k < 16; k++) {
             const t = k / 15, az = k * 2.39996, h = 0.5 + t * 0.78, reach = 0.05 + (1 - Math.abs(t - 0.4)) * 0.07;
             const st = cyl(g, 0.006, 0.008, reach + 0.06, Math.sin(az) * (reach + 0.06) / 2, h + 0.01, Math.cos(az) * (reach + 0.06) / 2, lam('#4a6a30'), 4); st.rotation.set(Math.cos(az) * Math.PI / 2 * 0.93, 0, -Math.sin(az) * Math.PI / 2 * 0.93);
@@ -221,7 +244,7 @@ const Cabinet = (() => {
           // dracaena rosette: two rings of blades at evenly spaced azimuths, outer ring flatter and offset by half a step, so the blades fan out without crossing
           for (let ring = 0; ring < 2; ring++) for (let k = 0; k < 7; k++) {
             const az = (k + ring * 0.5) / 7 * Math.PI * 2, tilt = ring ? 0.95 : 0.38; const lf = new THREE.Mesh(LEAFG.blade, leafMat(greens[(k + ring) % 4])); lf.castShadow = true;
-            lf.position.set(Math.sin(az) * 0.035, 0.34 + ring * 0.01, Math.cos(az) * 0.035); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, ring ? 0.8 : 1.0, 1); g.add(lf);
+            lf.position.set(Math.sin(az) * 0.035, 0.31 + ring * 0.01, Math.cos(az) * 0.035); lf.rotation.set(tilt, az, 0, 'YXZ'); lf.scale.set(1, ring ? 0.8 : 1.0, 1); g.add(lf);
           }
         }
         this.addCol(x - 0.28, x + 0.28, z - 0.28, z + 0.28);
@@ -234,6 +257,7 @@ const Cabinet = (() => {
       // --- window sill light spot marker none; interactions
       this.stations = [
         { id: 'spread', x: -3.0, z: 0.1, r: 1.6, label: () => { const n = Save.rawList().length; return n ? `E — расправить бабочку (ждут: ${n})` : 'E — расправилка (нет бабочек — наловите новых)'; } },
+        { id: 'journal', x: 2.3, z: -1.75, r: 1.3, label: () => `E — открыть коллекцию (${collText()})` },
         { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская коробок (коробок: ${Save.data.boxes.length})` },
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
@@ -282,6 +306,39 @@ const Cabinet = (() => {
       // drawers indicator: count of boxes inside on the desk label
     }
 
+    // ------------------------------------------------------------ time of day: the sky, the sun, the moon and the lamps follow the clock
+    realHour() { if (this.hourOverride !== undefined) return this.hourOverride; const d = new Date(); return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600; }
+    setHour(h) { this.hourOverride = h; this.applyTime(h); }
+    applyTime(h) {
+      this.hour = h; const a = Math.PI * (h - 5.5) / 15, elev = Math.sin(a), dayK = smooth(-0.12, 0.25, elev);
+      const sv = new THREE.Vector3(Math.cos(a), Math.max(elev, 0.02) * 0.8 + 0.02, -0.12).normalize();     // from the room towards the sun
+      this.sun.position.copy(this.sun.target.position).addScaledVector(sv, 16);
+      this.sun.intensity = 1.5 * smooth(0.0, 0.18, elev); this.sun.color.set(mixHex('#ff8a40', '#fff0cc', smooth(0, 0.55, elev)));
+      this.moonL.intensity = 0.4 * (1 - dayK);
+      this.hemi.intensity = 0.3 + 0.34 * dayK; this.hemi.color.set(mixHex('#3a4a7a', '#ffeacc', dayK)); this.hemi.groundColor.set(mixHex('#14181e', '#4a3624', dayK));
+      this.pend.intensity = 0.4 + 0.65 * (1 - dayK); this.l1.intensity = 0.25 + 0.4 * (1 - dayK); this.l2.intensity = 0.25 + 0.38 * (1 - dayK);
+      // shafts only when the sun is low enough in the west to shine through the window
+      const enter = clamp((-sv.x - 0.12) * 2.2) * smooth(0.02, 0.2, elev); this.beam.visible = enter > 0.02; this.dust.visible = enter > 0.02; this.dustMat.opacity = 0.8 * enter;
+      this.beamMats.forEach(m => { m.opacity = 0.2 * enter; m.color.set(mixHex('#ff9a50', '#ffe8b0', smooth(0, 0.5, elev))); });
+      const dir = sv.clone().negate(); this.beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir);
+      const dp = this.dust0; for (let i = 0; i < this.dustJit.length; i++) { const j = this.dustJit[i]; dp[i * 3] = -HX + 0.3 + dir.x * j[0] + j[1]; dp[i * 3 + 1] = Math.max(0.2, 1.9 + dir.y * j[0] + j[2]); dp[i * 3 + 2] = dir.z * j[0] + j[3]; }
+      this.drawSky(h, elev, dayK, sv, a);
+    }
+    drawSky(h, elev, dayK, sv, a) {
+      const x = this.skyCv.getContext('2d'), W = 256, H = 128; const tw = Math.max(0, 1 - Math.abs(elev - 0.03) / 0.22);
+      const top = mixHex(mixHex('#04081a', '#4a90e0', dayK), '#5a5a9a', tw * 0.35), bot = mixHex(mixHex('#101c38', '#c8e6f6', dayK), '#ff8a50', tw * 0.8);
+      const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, top); g.addColorStop(1, bot); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      const sr = new Rng(11);
+      if (dayK < 0.7) { x.fillStyle = `rgba(255,255,255,${(1 - dayK) * 0.9})`; for (let i = 0; i < 60; i++) { const px = sr.int(0, W - 1), py = sr.int(0, 80); x.fillRect(px, py, 1, 1); } }
+      if (elev < 0.15) { const mx = 188, my = 30; x.fillStyle = `rgba(200,220,255,${0.25 * (1 - dayK)})`; x.beginPath(); x.arc(mx, my, 14, 0, 6.3); x.fill(); x.fillStyle = '#eef2ff'; x.beginPath(); x.arc(mx, my, 8, 0, 6.3); x.fill(); x.fillStyle = '#c8d4f0'; x.fillRect(mx - 3, my - 2, 2, 2); x.fillRect(mx + 2, my + 2, 2, 2); }
+      if (sv.x < -0.05 && elev > -0.05) { const sx = 60 + clamp((a - Math.PI / 2) / (Math.PI / 2)) * 130, sy = 104 - Math.max(0, elev) * 96; x.fillStyle = `rgba(255,200,120,0.35)`; x.beginPath(); x.arc(sx, sy, 16, 0, 6.3); x.fill(); x.fillStyle = mixHex('#ff8a40', '#fff4c8', smooth(0, 0.5, elev)); x.beginPath(); x.arc(sx, sy, 8, 0, 6.3); x.fill(); }
+      const cl = mixHex(mixHex('#2a3450', '#ffffff', dayK), '#ffb080', tw * 0.7); x.fillStyle = cl; x.globalAlpha = 0.5 + 0.4 * dayK; [[12, 14, 26], [70, 8, 30], [100, 22, 20], [190, 12, 28]].forEach(([a2, b2, l]) => { x.fillRect(a2, b2, l, 3); x.fillRect(a2 + 4, b2 - 2, l - 10, 3); }); x.globalAlpha = 1;
+      const t1 = mixHex('#0a1410', '#4a7a3a', dayK * 0.9 + tw * 0.1), t2 = mixHex('#0e1c16', '#6a9a48', dayK * 0.9 + tw * 0.1);
+      x.fillStyle = t1; for (let i = 0; i < W; i += 6) { const hh = 12 + ((i * 13) % 14); x.fillRect(i, H - hh, 7, hh); } x.fillStyle = t2; for (let i = 3; i < W; i += 9) { const hh = 6 + ((i * 7) % 8); x.fillRect(i, H - hh, 8, hh); }
+      if (elev < 0) { x.fillStyle = '#ffd890'; for (let i = 0; i < 5; i++) x.fillRect(20 + i * 47 + (i % 2) * 6, H - 6 - (i % 3) * 3, 2, 2); }   // lit windows far away at night
+      this.skyTex.needsUpdate = true;
+    }
+
     // ------------------------------------------------------------ per-frame
     nearest() {
       const P = this.player; let best = null, bs = 9; const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
@@ -306,6 +363,7 @@ const Cabinet = (() => {
       this.animate(dt);
     }
     animate(dt) {
+      if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;
@@ -316,6 +374,7 @@ const Cabinet = (() => {
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'spread') { if (!Save.rawList().length) { Snd.sfx.deny(); this.toast('Нет неразобранных бабочек: наловите их в экспедиции', 3); return; } Snd.sfx.page(); this.open('pick'); }
+      else if (s.id === 'journal') { Snd.sfx.page(); this.open('journal'); }
       else if (s.id === 'bench') { Snd.sfx.page(); this.open('bench'); }
       else if (s.id === 'desk') { Snd.sfx.page(); Boxes.place.open('desk'); this.open('place'); }
       else if (s.id === 'wall') { Snd.sfx.page(); Boxes.place.open('wall'); this.open('place'); }
@@ -323,7 +382,7 @@ const Cabinet = (() => {
     }
     key(e) {
       const ov = this.ov;
-      if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
+      if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'Tab') { Snd.sfx.page(); this.open('journal'); } else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }
       if (ov === 'spread') {
@@ -332,19 +391,21 @@ const Cabinet = (() => {
         else if (e.code === 'Escape' && G.phase !== 'result') { G.phase = 'none'; this.ov = 'pick'; }
         return;
       }
+      if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
       if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'pick') this.close(); }
     }
     click(x, y) {
       const ov = this.ov;
       if (ov === 'pick') { const r = Spread.pick.click(x, y); if (r && r.act === 'close') this.close(); else if (r && r.act === 'begin') { Snd.sfx.click(); Spread.G.begin(r.spec); this.ov = 'spread'; } }
       else if (ov === 'spread') { if (Spread.G.click(x, y) === 'done') { this.ov = Save.rawList().length ? 'pick' : null; if (!this.ov) this.close(); else Spread.pick.open(); } else if (Spread.G.phase === 'work') { /* mouse is used for the needle; clicks do nothing */ } }
+      else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'bench') { const r = Boxes.bench.click(x, y); if (r === 'close') this.close(); }
       else if (ov === 'place') { const r = Boxes.place.click(x, y); if (r === 'close') this.close(); else if (r === 'changed') this.refresh(); }
       else if (ov === 'pause') { const id = Cab.pauseClick(x, y); this.pauseAct(id); }
       else if (ov === 'help') this.closeHelp();
     }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
-    wheel(dy) { if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
       if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
@@ -362,6 +423,7 @@ const Cabinet = (() => {
       const ov = this.ov;
       if (ov === 'pick') return Spread.pick.draw(ctx, t, m);
       if (ov === 'spread') { Spread.G.update(dt, m); Spread.G.tick(dt); return Spread.G.draw(ctx, t, m); }
+      if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       if (ov === 'bench') return Boxes.bench.draw(ctx, t, m);
       if (ov === 'place') return Boxes.place.draw(ctx, t, m);
       this.hud(ctx, t);

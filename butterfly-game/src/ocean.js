@@ -87,6 +87,8 @@ const Ocean = (() => {
       const roof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 8), mDark); roof.position.y = 14.4; g.add(roof);
       beamLight = new THREE.SpotLight('#fff0c0', 4, 90, 0.2, 0.4, 1); beamLight.position.set(0, 13.1, 0); const tgt = new THREE.Object3D(); tgt.position.set(0, 11, -20); g.add(beamLight, tgt); beamLight.target = tgt;
       const pivot = new THREE.Group(); g.add(pivot); world.lighthouse = { g, pivot, tgt };
+      beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 34, 14, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.075, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      beam.geometry.translate(0, -17, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); pivot.add(beam);
       add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
     // glowing fungi — perches for the butterflies
     { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;

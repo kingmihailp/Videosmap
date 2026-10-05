@@ -23,7 +23,7 @@ LH = {8: 11, 10: 14, 14: 19, 22: 30}
 HAND = {   # char: (rows, y offset from baseline, advance)
     "→": (["..#..", "...#.", "#####", "...#.", "..#.."], -6, 7), "←": (["..#..", ".#...", "#####", ".#...", "..#.."], -6, 7),
     "♥": ([".#.#.", "#####", "#####", ".###.", "..#.."], -6, 7), "✓": (["....#", "...#.", "#.#..", ".#..."], -5, 7),
-    "≈": ([".#.#.", "#.#.#", ".....", ".#.#.", "#.#.#"], -6, 7), "★": (["..#..", "#####", ".###.", ".#.#.", "#...#"], -6, 7),
+"★": (["..#..", "#####", ".###.", ".#.#.", "#...#"], -6, 7),
     "▪": (["###", "###", "###"], -4, 5), "✕": (["#...#", ".#.#.", "..#..", ".#.#.", "#...#"], -6, 7),
 }
 
@@ -33,6 +33,12 @@ CMAPS = [TTFont(F_LAT).getBestCmap(), TTFont(F_CYR).getBestCmap()]
 
 def base_glyph(ch):
     """1-bit bitmap of one glyph at the native grid: (PIL 'L' image or None, advance, xoff, yoff)."""
+    if ch == "≈":
+        return base_glyph("~")
+    if ch in ("й", "Й"):   # the font draws this letter with both a breve and two dots: rebuild it as и/И + a one-row breve
+        im, adv, xo, yo = base_glyph("и" if ch == "й" else "И"); out = Image.new("L", (im.width, im.height + 2), 0)
+        out.paste(im, (0, 2)); out.putpixel((1, 0), 255); out.putpixel((2, 0), 255)
+        return out, adv, xo, yo - 2
     if ch in HAND:
         rows, yo, adv = HAND[ch]; w = max(len(r) for r in rows); im = Image.new("L", (w, len(rows)), 0)
         for y, r in enumerate(rows):

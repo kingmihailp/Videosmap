@@ -41,7 +41,7 @@ const Screens = (() => {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
         { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${collText()}`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'journal', label: `Коллекция  ${Save.total()}`, x, y: 168, w, h: 16, size: 8 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
@@ -55,8 +55,6 @@ const Screens = (() => {
       T.draw(ctx, 'Flora0world', lx, 16, { size: 22, align: 'c', color: '#b8f090', outline: '#0c2a1a', shadow: '#061810' });
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
-      T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, BIOME_BY_ID.ocean.secret ? `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…` : `9 биомов · ${SPECIES.length} видов · тайна океана раскрыта`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
