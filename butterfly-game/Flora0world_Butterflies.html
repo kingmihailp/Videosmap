@@ -60,6 +60,8 @@ const BIOMES = [
     climate: 'континентальный, лето', desc: 'Высокотравная прерия с ваточником и эхинацеей, вдоль ручья — тополя и ивы.' },
   { id: 'japan', name: 'Горные леса Японии', place: 'Нагано, Хонсю', lat: 36.3, lon: 138.0, alt: '900 м',
     climate: 'умеренный муссонный', desc: 'Клёны, криптомерии и бамбук на склонах сатояма, тихий ручей и цветы на светлых полянах.' },
+  { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 15,
+    climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
 ];
 
 // beh = behaviour template (see game.js BEH): swallow / pierid / nymph / blue / morph / heli / owl / bird / emperor
@@ -325,6 +327,22 @@ const BEH = {
   owl:     { speed: 1.5, flap: 4.8, glide: 0.25, erratic: 0.15, h: [0.4, 1.6], wary: 3.6, perch: 0.8 },
   bird:    { speed: 2.5, flap: 4.6, glide: 0.55, erratic: 0.1,  h: [2.4, 6.2], wary: 7.0, perch: 0.25 },
   emperor: { speed: 3.3, flap: 7.0, glide: 0.4,  erratic: 0.2,  h: [1.8, 5.5], wary: 6.2, perch: 0.3 },
+  // --- the secret ocean: every one of these has a special rule (see Fly.special in play.js)
+  screech: { speed: 3.4, flap: 15, glide: 0.0, erratic: 0.8, h: [0.5, 2.4], wary: 7, perch: 0.0, special: 'screech' },
+  dread:   { speed: 1.1, flap: 3.4, glide: 0.6, erratic: 0.15, h: [0.4, 1.8], wary: 2.2, perch: 0.2, special: 'dread' },
+  seek:    { speed: 2.8, flap: 6, glide: 0.2, erratic: 0.1, h: [0.5, 1.8], wary: 0, perch: 0, special: 'seek' },
+  grumble: { speed: 0.9, flap: 3, glide: 0.4, erratic: 0.1, h: [0.3, 1.1], wary: 3.2, perch: 0.6, special: 'grumble' },
+  rush:    { speed: 2, flap: 11, glide: 0, erratic: 0.1, h: [0.8, 1.8], wary: 0, perch: 0, special: 'rush' },
+  ambush:  { speed: 2, flap: 11, glide: 0, erratic: 0.1, h: [0.8, 1.8], wary: 0, perch: 0, special: 'ambush' },
+  eyes:    { speed: 1.5, flap: 5, glide: 0.3, erratic: 0.1, h: [0.6, 1.8], wary: 0, perch: 0, special: 'eyes' },
+  figure:  { speed: 1.2, flap: 4, glide: 0.5, erratic: 0.1, h: [0.5, 1.3], wary: 6, perch: 0.5, special: 'figure' },
+  halt:    { speed: 3, flap: 9, glide: 0.1, erratic: 0.3, h: [0.6, 2.2], wary: 5, perch: 0.2, special: 'halt' },
+  timothy: { speed: 1.4, flap: 14, glide: 0, erratic: 0.5, h: [0.1, 0.6], wary: 2.6, perch: 0.9, special: 'timothy' },
+  glitch:  { speed: 2.2, flap: 9, glide: 0.1, erratic: 0.6, h: [0.5, 2.2], wary: 4.5, perch: 0.2, special: 'glitch' },
+  jeff:    { speed: 1.8, flap: 6.5, glide: 0.3, erratic: 0.2, h: [0.6, 2.0], wary: 4.2, perch: 0.5 },
+  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7ad8ff' },
+  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffc050' },
+  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#d070ff' },
 };
 
 const SPECIES_BY_ID = {};
@@ -616,6 +634,65 @@ rebuildSpeciesIndex();
   }
   rebuildSpeciesIndex();
 })();
+
+// ===== species_ocean.js =====
+// ---------------------------------------------------------------- the secret ocean: butterflies inspired by the entities of a certain hotel
+// Fictional, glow in the dark. Behaviour rules are in BEH (data.js) and Fly.special (play.js).
+(() => {
+  const A = (t, f, h, o) => Object.assign({ t, f, h }, o || {});
+  const sp = (w, list) => list.map(([u, v, r, c]) => [w, u, v, r, c]);
+  const W = '#f6f6f6', K = '#07070c';
+  const R = [
+    ['Nocturna screechia', 'Бабочка-Скрич', 'Screech moth', 18, 26, 2, 'screech',
+      A('round', ['#0a0a18', '#161630'], ['#0a0a18', '#161630'], { edge: ['#000', 2], eye: [['f', .62, .42, 5.2, W, K], ['h', .5, .55, 3.4, W, K]], band: ['h', .78, .94, '#e8e8f0'] }),
+      'Темнота: не любит, когда на неё светят', 'Только открытый океан', 'шорох в темноте', 'Если погасить фонарь, она подлетает совсем близко. Включите свет — и она тут же исчезнет. Поймать её можно только в темноте.'],
+    ['Umbra dreadii', 'Бабочка-Дред', 'Dread moth', 60, 78, 2, 'dread',
+      A('long', ['#0c1230', '#2a3a8a'], ['#0c1230', '#1c2a6a'], { edge: ['#05081a', 2], sheen: ['#5a7aff', .5], sp: [...sp('f', [[.45, .45, 1.6, '#7ae8ff'], [.62, .38, 1.2, '#7ae8ff']]), ...sp('h', [[.5, .5, 1.4, '#7ae8ff']])] }),
+      'Невидима, пока на неё не упал свет фонаря', 'Только открытый океан', 'страх', 'Её видно лишь в луче фонаря или когда она совсем рядом. Двигается медленно и беззвучно.'],
+    ['Oculus seekia', 'Бабочка-Сик', 'Seek moth', 58, 74, 3, 'seek',
+      A('birdwing', ['#05050a', '#1a1a24'], ['#05050a', '#0e0e18'], { edge: ['#000', 2], eye: [['f', .3, .4, 2.2, W, '#c01020'], ['f', .55, .55, 2.6, W, '#c01020'], ['f', .75, .3, 2, W, '#c01020'], ['h', .35, .6, 2.4, W, '#c01020'], ['h', .62, .5, 2.2, W, '#c01020']] }),
+      'Подкрадывается, когда на неё не смотрят', 'Только открытый океан', 'ваш затылок', 'Замирает, если смотреть на неё. Стоит отвернуться — подползает ближе. Ловите, пока она застыла.'],
+    ['Grumbla pinguis', 'Бабочка-Грамбл', 'Grumble moth', 55, 70, 1, 'grumble',
+      A('round', ['#5a2a4a', '#8a4a7a'], ['#4a2040', '#7a3a68'], { edge: ['#1a0a18', 3], band: ['f', .5, .75, '#e8d8e0'], sp: sp('h', [[.4, .55, 3, '#e8e0e8'], [.6, .55, 3, '#e8e0e8']]) }),
+      'Тяжёлая, низко над землёй', 'Только открытый океан', 'ворчание', 'Толстая и неповоротливая. Ворчит, когда вы рядом, — слышно ещё до того, как увидите.'],
+    ['Cursor rushia', 'Бабочка-Раш', 'Rush moth', 40, 56, 3, 'rush',
+      A('long', ['#0a0a0c', '#2a2a32'], ['#0a0a0c', '#1c1c22'], { edge: ['#000', 1], eye: [['f', .55, .45, 3.2, W, K]], band: ['fh', .8, .95, '#9a9aa8'] }),
+      'Мелькает из темноты на огромной скорости', 'Только открытый океан', 'тишина перед бурей', 'Сначала мигает свет и стихают звуки — потом она проносится мимо. Ловите после пролёта, когда она устала.'],
+    ['Insidia ambushia', 'Бабочка-Эмбуш', 'Ambush moth', 40, 56, 3, 'ambush',
+      A('long', ['#052a10', '#2aff6a'], ['#052a10', '#1ad858'], { edge: ['#021408', 1], eye: [['f', .55, .45, 3.2, '#d8ffe0', '#02200a']], band: ['fh', .78, .94, '#8affa8'] }),
+      'Пролетает туда-обратно несколько раз подряд', 'Только открытый океан', 'ваше терпение', 'Как Раш, но возвращается до трёх раз. Каждый пролёт — новая возможность.'],
+    ['Visus oculatus', 'Бабочка-Глаза', 'Eyes moth', 42, 58, 2, 'eyes',
+      A('round', ['#14080e', '#2a1018'], ['#14080e', '#2a1018'], { edge: ['#000', 2], eye: [['f', .65, .5, 6.2, '#ff5a7a', '#200008'], ['h', .5, .55, 4.4, '#ff5a7a', '#200008']] }),
+      'Прячется от прямого взгляда', 'Только открытый океан', 'тьма', 'Исчезает, если смотреть прямо на неё. Подбирайтесь краем зрения, не глядя в упор.'],
+    ['Figura caeca', 'Бабочка-Фигура', 'Figure moth', 62, 78, 2, 'figure',
+      A('round', ['#6a4a3a', '#8a6a58'], ['#5a3a2e', '#7a5a48'], { edge: ['#2a1a14', 2], veins: '#c8b8a8', sheen: ['#b8a090', .3] }),
+      'Слепая: реагирует только на шум', 'Только открытый океан', 'шаги', 'Не видит, но слышит. Подкрадывайтесь с Ctrl — бегущих она чует за много метров.'],
+    ['Interrupta haltia', 'Бабочка-Хальт', 'Halt moth', 40, 54, 2, 'halt',
+      A('std', ['#081a3a', '#58a8ff'], ['#081a3a', '#3a78d8'], { edge: ['#020a1c', 2], band: ['fh', .45, .62, '#c8e8ff'], sp: sp('f', [[.8, .3, 1.5, W]]) }),
+      'Замирает на месте в луче фонаря', 'Только открытый океан', 'холодный свет', 'Попав в луч света, застывает в воздухе. Посветите — и взмахните сачком.'],
+    ['Minima timothea', 'Бабочка-Тимоти', 'Timothy moth', 12, 18, 1, 'timothy',
+      A('blue', ['#8a6a4a', '#b8987a'], ['#8a6a4a', '#a8886a'], { edge: ['#3a281a', 1], dots: '#f0e4d0', sp: sp('f', [[.5, .4, 2, '#f0e4d0']]) }),
+      'Сидит на земле среди грибов', 'Только открытый океан', 'крошки', 'Крохотная; прячется под грибами и убегает от каждого шороха.'],
+    ['Glitchia mutabilis', 'Бабочка-Глитч', 'Glitch moth', 30, 44, 3, 'glitch',
+      A('std', ['#ff30c8', '#30fff0'], ['#30fff0', '#ff30c8'], { edge: ['#101020', 1], checker: ['#ff30c8', '#30e8ff'], dots: W }),
+      'Перескакивает с места на место', 'Только открытый океан', 'ошибки', 'Мерцает и телепортируется на пару метров. Лучше ловить сразу после прыжка.'],
+    ['Mercator jeffia', 'Бабочка-Джефф', 'Jeff moth', 38, 50, 2, 'jeff',
+      A('round', ['#e8d890', '#f8e8a0'], ['#d8c070', '#e8d088'], { edge: ['#4a3a14', 2], band: ['f', .5, .62, '#3a6a3a'], sp: sp('f', [[.3, .5, 2, '#c8a030'], [.7, .45, 2, '#c8a030']]) }),
+      'Парит неспешно, поблёскивая золотом', 'Только открытый океан', 'монеты', 'Торговка: не боится света, но ловкая. Блестит, как золотая монета.'],
+    ['Lux ductrix', 'Путеводная бабочка', 'Guiding moth', 36, 48, 2, 'guiding',
+      A('std', ['#d8f4ff', '#58b8f0'], ['#d8f4ff', '#6ac8ff'], { edge: ['#1a4a7a', 1], dots: W, sheen: ['#ffffff', .6], sp: [...sp('f', [[.5, .5, 3, W]]), ...sp('h', [[.5, .5, 2, W]])] }),
+      'Летит впереди вас, показывая путь', 'Только открытый океан', 'надежда', 'Голубое сияние. Поймаете — минуту будет работать стрелка к ближайшей ещё не пойманной бабочке.'],
+    ['Lux curiosa', 'Любопытная бабочка', 'Curious moth', 36, 48, 2, 'curious',
+      A('std', ['#fff0b0', '#ffa830'], ['#fff0b0', '#ff9020'], { edge: ['#7a4a10', 1], dots: '#fff8d8', sheen: ['#ffffff', .5], sp: [...sp('f', [[.5, .5, 3, W]]), ...sp('h', [[.5, .5, 2, W]])] }),
+      'Кружит вокруг вас, не отходя далеко', 'Только открытый океан', 'любопытство', 'Тёплый оранжевый огонёк. Поймаете — на 30 секунд все бабочки на острове подсветятся.'],
+    ['Mutator chromatis', 'Бабочка-модификатор', 'Modifier moth', 36, 52, 3, 'modifier',
+      A('round', ['#b030ff', '#ff40d8'], ['#6020d8', '#d040ff'], { edge: ['#1a0838', 1], dots: '#ffe0ff', sheen: ['#ffffff', .6], checker: ['#a030f0', '#ff50d0'], sp: sp('f', [[.5, .5, 2.4, W]]) }),
+      'Мерцает всеми цветами, ускользает', 'Только открытый океан', 'случайность', 'Фиолетовый переливающийся огонёк. Поймаете — получите случайный модификатор ночи на полтора минуты.'],
+  ];
+  R.forEach(([la, ru, en, lo, hi, rar, beh, art, hab, range, host, fact]) => SPECIES.push({ id: la.toLowerCase().replace(/[^a-z]+/g, '_'), la, ru, en, fam: 'Ночные', biome: 'ocean', mm: [lo, hi], hab, range, host, fact, look: hab, rar, beh, art, glow: true, mystery: true }));
+  rebuildSpeciesIndex();
+})();
+const REAL = SPECIES.filter(s => !s.mystery).length;
 
 // ===== util.js =====
 // ---------------------------------------------------------------- utilities
@@ -962,7 +1039,7 @@ const Art = (() => {
   const antMat = new THREE.MeshBasicMaterial({ color: 0x120e0a });
 
   function makeButterfly(sp) {
-    const span = ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF; // metres (exaggerated)
+    const span = ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF * (sp.glow ? 2.4 : 1); // metres (exaggerated; night creatures are drawn larger)
     const half = span / 2 / 0.9;
     const mat = new THREE.MeshBasicMaterial({ map: wingTexture(sp), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
     const geo = new THREE.PlaneGeometry(half, half); geo.rotateX(-Math.PI / 2); geo.translate(half / 2, 0, 0);
@@ -1052,6 +1129,14 @@ const Snd = (() => {
     thud() { if (!ac) return; const t = now(); osc('sine', 120, t, 0.16, 0.25, null, 55); noiseBurst(t, 0.06, 700, 300, 0.12, 'lowpass', 0.7); },
     grade(q) { if (!ac) return; const t = now(); const n = q >= 95 ? 7 : q >= 85 ? 5 : q >= 70 ? 4 : q >= 50 ? 3 : 2; const sc = [0, 4, 7, 12, 16, 19, 24]; for (let i = 0; i < n; i++) bell(midi(60 + sc[i] + (q < 50 ? -5 : 0)), t + i * 0.11, 0.17, 1.8); },
     door() { if (!ac) return; const t = now(); noiseBurst(t, 0.3, 300, 120, 0.18, 'lowpass', 0.7); osc('sine', 90, t, 0.25, 0.15, null, 60); },
+    flash() { if (!ac) return; const t = now(); osc('square', 1400, t, 0.03, 0.06); noiseBurst(t, 0.04, 2400, 1200, 0.05, 'bandpass', 2); },
+    thunder() { if (!ac) return; const t = now(); noiseBurst(t, 2.6, 380, 60, 0.7, 'lowpass', 0.6); noiseBurst(t + 0.25, 1.8, 200, 50, 0.4, 'lowpass', 0.5); osc('sine', 52, t, 1.8, 0.35, null, 30); },
+    grumble(d) { if (!ac) return; const t = now(), v = clamp(0.28 - d * 0.02, 0.04, 0.28); const o = osc('sawtooth', 78, t, 0.9, v, null, 46); const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 260; try { o.disconnect(); o.connect(f); f.connect(sfxG); } catch (e) {} noiseBurst(t, 0.6, 300, 120, v * 0.5, 'lowpass', 0.8); },
+    glitch() { if (!ac) return; const t = now(); for (let i = 0; i < 6; i++) osc('square', 200 + Math.random() * 1800, t + i * 0.03, 0.03, 0.05); },
+    rushWarn(amb) { if (!ac) return; const t = now(); osc('sawtooth', 70, t, 1.4, 0.2, null, amb ? 400 : 240); noiseBurst(t + 0.6, 0.9, 400, 4000, 0.3, 'bandpass', 1.2); for (let i = 0; i < 5; i++) osc('square', 90, t + i * 0.28, 0.08, 0.12); },
+    eyes() { if (!ac) return; const t = now(); osc('sine', 300, t, 0.5, 0.18, null, 90); noiseBurst(t, 0.25, 1800, 400, 0.12, 'bandpass', 2); },
+    reward() { if (!ac) return; const t = now(); [0, 4, 7, 11, 14].forEach((n, i) => bell(midi(72 + n), t + i * 0.09, 0.16, 1.6)); },
+    modifier() { if (!ac) return; const t = now(); for (let i = 0; i < 8; i++) osc('triangle', midi(60 + ((i * 5) % 12) * 1 + (i % 2) * 7), t + i * 0.06, 0.14, 0.1); noiseBurst(t, 0.5, 5000, 800, 0.08, 'bandpass', 1.5); },
     deny() { if (!ac) return; const t = now(); osc('square', 180, t, 0.12, 0.08); osc('square', 140, t + 0.1, 0.16, 0.08); },
   };
 
@@ -1065,15 +1150,20 @@ const Snd = (() => {
     savanna:    { wind: 0.55, bird: 'dove', insect: ['cricket', 3800, 0.04], base: 50, scale: [0, 2, 5, 7, 10], mus: 0.8 },
     prairie:    { wind: 0.65, bird: 'lark', insect: ['cricket', 4000, 0.05], base: 55, scale: [0, 2, 4, 7, 9], mus: 0.9 },
     cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
+    ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {
     if (!ac) return; stopAmbient(); const cfg = AMB[kind] || AMB.meadow; ambKind = kind; amb = { cfg, nodes: [] };
     const t = now();
     // wind
-    if (cfg.wind) { const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6; }
-    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.35 * cfg.wind; lfo.connect(lg); lg.connect(wg.gain); wg.gain.value = 0.28 * cfg.wind; w.connect(wf); wf.connect(wg); wg.connect(ambG); w.start(); lfo.start(); amb.nodes.push(w, lfo);
+    if (cfg.wind) { const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6;
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.35 * cfg.wind; lfo.connect(lg); lg.connect(wg.gain); wg.gain.value = 0.28 * cfg.wind; w.connect(wf); wf.connect(wg); wg.connect(ambG); w.start(); lfo.start(); amb.nodes.push(w, lfo); }
     if (cfg.water) { const s = noiseSrc(true), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9; g.gain.value = 0.07; s.connect(f); f.connect(g); g.connect(ambG); s.start(); amb.nodes.push(s); }
+    if (cfg.rain) {
+      const r1 = noiseSrc(true), rf = ac.createBiquadFilter(), rg = ac.createGain(); rf.type = 'highpass'; rf.frequency.value = 2200; rg.gain.value = 0.18; r1.connect(rf); rf.connect(rg); rg.connect(ambG); r1.start(); amb.nodes.push(r1);
+      const r2 = noiseSrc(true), rf2 = ac.createBiquadFilter(), rg2 = ac.createGain(), l2 = ac.createOscillator(), lg2 = ac.createGain(); rf2.type = 'lowpass'; rf2.frequency.value = 280; rg2.gain.value = 0.3; l2.frequency.value = 0.09; lg2.gain.value = 0.12; l2.connect(lg2); lg2.connect(rg2.gain); r2.connect(rf2); rf2.connect(rg2); rg2.connect(ambG); r2.start(); l2.start(); amb.nodes.push(r2, l2);
+    }
     if (cfg.insect) { // constant insect bed
       const [kind2, fq, vol] = cfg.insect; const o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), amg = ac.createGain();
       o.frequency.value = fq; am.frequency.value = kind2 === 'cicada' ? 38 : 9; amg.gain.value = vol * 0.5; g.gain.value = vol * 0.5; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(ambG); o.start(); am.start(); amb.nodes.push(o, am);
@@ -1098,6 +1188,7 @@ const Snd = (() => {
     else if (c.bird === 'dove') { [0, 0.28, 0.5].forEach((d, i) => osc('sine', 420 - i * 20, t + d, 0.22, 0.06, ambG)); }
     else if (c.bird === 'lark') { [0, 0.18, 0.34, 0.56, 0.7].forEach((d, i) => osc('sine', [1700, 2100, 1900, 2400, 2100][i], t + d, 0.15, 0.06, ambG)); }
     if (c.frog && Math.random() < 0.6) { for (let i = 0; i < 3; i++) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'square'; o.frequency.value = 170 + Math.random() * 60; env(g, t + i * 0.13, 0.01, 0.1, 0.03); const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 600; o.connect(f); f.connect(g); g.connect(ambG); o.start(t + i * 0.13); o.stop(t + i * 0.13 + 0.14); } }
+    if (c.eerie && Math.random() < 0.28) { const f0 = 110 * Math.pow(2, (Math.random() * 7 | 0) / 12); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * (Math.random() < 0.5 ? 0.94 : 1.06), t + 3); env(g, t, 1.2, 3, 0.07); o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 3.5); }
     if (c.bell && Math.random() < 0.35) { bell(midi(76 + (Math.random() * 3 | 0) * 2), t, 0.035, 2.2, ambG); }
   }
   function music(t) {
@@ -1966,6 +2057,139 @@ const World = (() => {
   return { build, ENV, PLAY_R, randomSeed, TREES };
 })();
 
+// ===== ocean.js =====
+// ---------------------------------------------------------------- the secret place: a tiny island in the open ocean, night, storm
+// Same interface as World.build (scene, heightAt, inWater, flowers, colliders, update, ...) plus a flashlight-friendly dark look.
+const Ocean = (() => {
+  const V3 = THREE.Vector3, R_PLAY = 40;
+  function ctex(w, h, fn, nearest = true) {
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; fn(x, w, h);
+    const t = new THREE.CanvasTexture(cv); if (nearest) t.magFilter = t.minFilter = THREE.NearestFilter; return t;
+  }
+  function build(biome, seedStr) {
+    seedStr = seedStr || World.randomSeed();
+    const seed = strSeed('ocean:' + seedStr), rng = new Rng(seed), noise = new Noise2(seed ^ 0x77ab), ISL = 44;
+    const scene = new THREE.Scene(); const fogCol = new THREE.Color('#04080f'); scene.background = fogCol.clone(); const fog = new THREE.FogExp2(fogCol, 0.03); scene.fog = fog;
+    const world = { biome, env: { amb: 'ocean' }, scene, seedStr, flowers: [], baits: [], colliders: [], R: R_PLAY, spawnYaw: rng.range(0, 6.28), updaters: [], waters: [], hasFlash: true, mod: { storm: 1, bright: 0 }, flash: 0, grassMesh: { count: 1 }, sun: { castShadow: false }, landmarks: ['lighthouse', 'doors'] };
+
+    // ---------------- relief: one low island, sea level at y = 0
+    const edgeR = (x, z) => ISL * (0.84 + 0.3 * (noise.fbm(x * 0.045 + 3, z * 0.045 + 9, 3) - 0.5) * 1.4);
+    const heightAt = (x, z) => {
+      const r = Math.hypot(x, z), d = edgeR(x, z) - r; const inl = smooth(0, 14, d);
+      return -0.7 + 2.1 * smooth(-3, 9, d) + (noise.fbm(x * 0.11 + 5, z * 0.11 + 1, 3) - 0.5) * 1.1 * inl + smooth(22, 0, r) * 0.7;
+    };
+    world.heightAt = heightAt;
+    world.slopeAt = (x, z) => Math.hypot(heightAt(x + 1, z) - heightAt(x - 1, z), heightAt(x, z + 1) - heightAt(x, z - 1)) / 2;
+    world.inWater = (x, z, m = 0) => heightAt(x, z) < 0.12 + m * 0.15; world.sdf = (x, z) => heightAt(x, z) - 0.12;
+
+    // ---------------- lights: almost nothing, the flashlight does the work
+    const hemi = new THREE.HemisphereLight('#2a3a5c', '#06080e', 0.55); scene.add(hemi);
+    const moon = new THREE.DirectionalLight('#6a86c0', 0.55); moon.position.set(-30, 60, 40); scene.add(moon);
+    const mmat = new THREE.SpriteMaterial({ map: ctex(32, 32, (x) => { const g = x.createRadialGradient(16, 16, 2, 16, 16, 15); g.addColorStop(0, 'rgba(235,240,255,0.95)'); g.addColorStop(0.35, 'rgba(180,200,240,0.5)'); g.addColorStop(1, 'rgba(120,150,210,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); }, false), transparent: true, fog: false, depthWrite: false, opacity: 0.55 });
+    const moonS = new THREE.Sprite(mmat); moonS.scale.set(70, 70, 1); scene.add(moonS);
+
+    // ---------------- terrain
+    const SZ = 140, SEG = 140; const tg = new THREE.PlaneGeometry(SZ, SZ, SEG, SEG); tg.rotateX(-Math.PI / 2); const tp = tg.attributes.position, col = new Float32Array(tp.count * 3);
+    for (let i = 0; i < tp.count; i++) {
+      const x = tp.getX(i), z = tp.getZ(i), h = heightAt(x, z); tp.setY(i, h); const n = noise.at(x * 0.5, z * 0.5), n2 = noise.fbm(x * 0.06 + 20, z * 0.06, 3);
+      let c;
+      if (h < 0.35) c = hex2rgb('#2c2a24'); else if (h < 0.7) c = hex2rgb(n2 > 0.5 ? '#3a3a30' : '#34342c'); else c = hex2rgb(n2 > 0.55 ? '#1c3024' : '#243a2a');
+      if (world.slopeAt(x, z) > 0.8) c = hex2rgb('#3a3c44'); const k = 0.82 + n * 0.3; col[i * 3] = c[0] / 255 * k; col[i * 3 + 1] = c[1] / 255 * k; col[i * 3 + 2] = c[2] / 255 * k;
+    }
+    tg.setAttribute('color', new THREE.BufferAttribute(col, 3)); tg.computeVertexNormals();
+    scene.add(new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+
+    // ---------------- ocean: rolling grid that follows the player (waves are a function of world position, so it never swims)
+    const OC = 84, CELL = 3.2; const og = new THREE.PlaneGeometry(OC * CELL, OC * CELL, OC, OC); og.rotateX(-Math.PI / 2);
+    const sea = new THREE.Mesh(og, new THREE.MeshPhongMaterial({ color: '#07202e', specular: '#7aa8c0', shininess: 70, flatShading: true })); sea.frustumCulled = false; scene.add(sea);
+    const opos = og.attributes.position; const baseXZ = Float32Array.from(opos.array);
+    const wave = (x, z, t, a) => (Math.sin(x * 0.13 + t * 0.9) * 0.2 + Math.sin(z * 0.11 - t * 0.7) * 0.17 + Math.sin((x + z) * 0.23 + t * 1.4) * 0.08) * a;
+
+    // ---------------- rain
+    const NR = 1100, rg = new THREE.BufferGeometry(), rp = new Float32Array(NR * 6), rd = [];
+    for (let i = 0; i < NR; i++) rd.push({ x: rng.range(-16, 16), y: rng.range(0, 14), z: rng.range(-16, 16) });
+    rg.setAttribute('position', new THREE.BufferAttribute(rp, 3)); const rain = new THREE.LineSegments(rg, new THREE.LineBasicMaterial({ color: '#a8c4e4', transparent: true, opacity: 0.55, fog: false })); rain.frustumCulled = false; scene.add(rain);
+
+    // ---------------- dressing
+    const mDark = new THREE.MeshLambertMaterial({ color: '#2a2c34' }), mWood = new THREE.MeshLambertMaterial({ color: '#4a3a2c' }), mWoodD = new THREE.MeshLambertMaterial({ color: '#2e241c' });
+    const placed = [{ x: 0, z: 0, r: 5 }];
+    const scatter = (n, r, rmin, rmax, hmin = 0.7) => {
+      const out = []; for (let tries = 0; tries < 400 && out.length < n; tries++) {
+        const a = rng.range(0, 6.283), d = rng.range(rmin, rmax), x = Math.cos(a) * d, z = Math.sin(a) * d; if (heightAt(x, z) < hmin) continue;
+        if (placed.some(p => Math.hypot(p.x - x, p.z - z) < p.r + r)) continue; placed.push({ x, z, r }); out.push({ x, z, y: heightAt(x, z) });
+      } return out;
+    };
+    const add = (m, x, y, z, ry = 0, cast = false) => { m.position.set(x, y, z); m.rotation.y = ry; scene.add(m); return m; };
+    // rocks
+    scatter(16, 2.2, 8, 40, 0.3).forEach(c => { const g = new THREE.IcosahedronGeometry(rng.range(0.8, 2.0), 1); const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setXYZ(i, p.getX(i) * (0.9 + rng.next() * 0.35), p.getY(i) * (0.7 + rng.next() * 0.3), p.getZ(i) * (0.9 + rng.next() * 0.35)); g.computeVertexNormals(); const m = add(new THREE.Mesh(g, mDark), c.x, c.y + 0.2, c.z, rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: g.boundingSphere ? 1.1 : 1.1 }); });
+    // dead trees
+    scatter(7, 2.5, 10, 36, 0.8).forEach(c => {
+      const g = new THREE.Group(); const H = rng.range(3.2, 5);
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.24, H, 6), mWoodD); tr.position.y = H / 2; tr.rotation.z = rng.range(-0.18, 0.18); g.add(tr);
+      for (let i = 0; i < 5; i++) { const L = rng.range(1, 2.2), b = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.08, L, 5), mWoodD); const y = H * rng.range(0.45, 0.95), a = rng.range(0, 6.28); b.position.set(Math.cos(a) * L * 0.4, y + L * 0.3, Math.sin(a) * L * 0.4); b.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9); g.add(b); }
+      add(g, c.x, c.y, c.z, rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.45 });
+    });
+    // doors standing in the open — each with a room number
+    const doorTex = n => ctex(32, 56, (x, w, h) => { x.fillStyle = '#5a3820'; x.fillRect(0, 0, w, h); x.fillStyle = '#6e4a2c'; x.fillRect(3, 3, w - 6, 22); x.fillRect(3, 29, w - 6, 24); x.fillStyle = '#3a2412'; x.fillRect(3, 3, w - 6, 1); x.fillRect(3, 29, w - 6, 1); x.fillStyle = '#c8a040'; x.fillRect(5, 9, 22, 8); x.fillStyle = '#1a1008'; T.draw(x, String(n).padStart(3, '0'), 16, 9, { size: 8, align: 'c', color: '#2a1808' }); x.fillStyle = '#d8b050'; x.fillRect(25, 30, 3, 3); }, true);
+    scatter(7, 2.4, 7, 36, 0.8).forEach((c, i) => {
+      const g = new THREE.Group(); const dm = new THREE.MeshLambertMaterial({ map: doorTex(rng.int(1, 100) + i * 3), emissive: '#2a2010', emissiveIntensity: 0.4 });
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.1, 0.08), [mWoodD, mWoodD, mWoodD, mWoodD, dm, dm]); slab.position.y = 1.1; g.add(slab);
+      for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.3, 0.16), mWood); p.position.set(s * 0.62, 1.15, 0); g.add(p); } const top = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.12, 0.16), mWood); top.position.y = 2.3; g.add(top);
+      add(g, c.x, c.y, c.z, rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.7 });
+    });
+    // wreck on the beach
+    { const c = scatter(1, 5, 28, 40, 0.3)[0]; if (c) { const g = new THREE.Group(); const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.2, 8, 8, 1, true, 0, Math.PI), mWood); hull.rotation.set(0, 0, Math.PI / 2); hull.rotation.order = 'ZYX'; hull.rotation.x = Math.PI; hull.scale.y = 1; g.add(hull); for (let i = -3; i <= 3; i++) { const rib = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.07, 5, 10, Math.PI), mWoodD); rib.position.x = i * 1.1; rib.rotation.y = Math.PI / 2; rib.rotation.z = 0; g.add(rib); } add(g, c.x, c.y + 0.6, c.z, rng.range(0, 6)); g.rotation.z = rng.range(-0.15, 0.15); world.colliders.push({ x: c.x, z: c.z, r: 2.0 }); } }
+    // lighthouse with a sweeping beam
+    let beam = null, beamLight = null, lampMesh = null;
+    { const c = scatter(1, 5, 14, 32, 0.9)[0] || { x: -14, z: -10, y: heightAt(-14, -10) }; const g = new THREE.Group();
+      const stripes = ctex(8, 32, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#c8c8c0' : '#9a2a2a'; x.fillRect(0, i * 4, w, 4); } });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 12, 10), new THREE.MeshLambertMaterial({ map: stripes })); body.position.y = 6; g.add(body);
+      const deck = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.2, 0.4, 10), mDark); deck.position.y = 12.2; g.add(deck);
+      lampMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.4, 8), new THREE.MeshBasicMaterial({ color: '#fff4c0' })); lampMesh.position.y = 13.1; g.add(lampMesh);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 8), mDark); roof.position.y = 14.4; g.add(roof);
+      beamLight = new THREE.SpotLight('#fff0c0', 4, 90, 0.2, 0.4, 1); beamLight.position.set(0, 13.1, 0); const tgt = new THREE.Object3D(); tgt.position.set(0, 11, -20); g.add(beamLight, tgt); beamLight.target = tgt;
+      beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 30, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.045, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      beam.geometry.translate(0, -15, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); const pivot = new THREE.Group(); pivot.position.set(0, 0, 0); pivot.add(beam); g.add(pivot); beam.userData.pivot = pivot; world.lighthouse = { g, pivot, tgt };
+      add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
+    // glowing fungi — perches for the butterflies
+    { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;
+      for (let tries = 0; tries < 2000 && k < NF; tries++) { const a = rng.range(0, 6.283), d = Math.sqrt(rng.next()) * 38, x = Math.cos(a) * d, z = Math.sin(a) * d, y = heightAt(x, z); if (y < 0.55) continue;
+        m4.makeScale(1, 0.7, 1); m4.setPosition(x, y + 0.3, z); caps.setMatrixAt(k, m4); caps.setColorAt(k, pal[k % 4]); m4.makeScale(1, 1, 1); m4.setPosition(x, y + 0.14, z); stalk.setMatrixAt(k, m4); world.flowers.push({ x, y: y + 0.32, z, taken: false }); k++; }
+      caps.count = k; stalk.count = k; caps.instanceColor.needsUpdate = true; scene.add(caps, stalk); }
+    // buoys in the water
+    const buoys = []; for (let i = 0; i < 6; i++) { const a = rng.range(0, 6.283), d = rng.range(52, 90); const m = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), new THREE.MeshBasicMaterial({ color: '#c02a2a' })); m.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); scene.add(m); buoys.push(m); }
+
+    // ---------------- per-frame
+    let nextBolt = rng.range(5, 12), boltT = 0, boltAmp = 0, thunderAt = -1;
+    world.update = (dt, t, focus) => {
+      const storm = world.mod.storm; const amp = 1 + (storm - 1) * 0.8;
+      // sea follows the player in whole cells
+      const ox = Math.round(focus.x / CELL) * CELL, oz = Math.round(focus.z / CELL) * CELL; sea.position.set(ox, 0, oz);
+      for (let i = 0; i < opos.count; i++) { const x = baseXZ[i * 3] + ox, z = baseXZ[i * 3 + 2] + oz; opos.setY(i, wave(x, z, t, amp) - 0.04); }
+      opos.needsUpdate = true; og.computeVertexNormals();
+      // rain
+      const a = rg.attributes.position.array, fall = 20 * dt;
+      for (let i = 0; i < NR; i++) { const d = rd[i]; d.y -= fall; d.x -= 2.2 * dt; if (d.y < 0) { d.y += 14; d.x = rng.range(-16, 16); d.z = rng.range(-16, 16); }
+        const px = focus.x + d.x, pz = focus.z + d.z; a[i * 6] = px; a[i * 6 + 1] = focus.y - 1.6 + d.y; a[i * 6 + 2] = pz; a[i * 6 + 3] = px - 0.1; a[i * 6 + 4] = focus.y - 1.6 + d.y + 0.65; a[i * 6 + 5] = pz; }
+      rg.attributes.position.needsUpdate = true;
+      // lightning
+      nextBolt -= dt; if (nextBolt <= 0) { nextBolt = rng.range(9, 22) / storm; boltT = 0.5; boltAmp = rng.range(0.7, 1); thunderAt = t + rng.range(0.5, 2.4); }
+      if (thunderAt > 0 && t >= thunderAt) { thunderAt = -1; Snd.sfx.thunder(); }
+      let fl = 0; if (boltT > 0) { boltT -= dt; fl = boltAmp * (boltT > 0.35 ? 1 : boltT > 0.28 ? 0.1 : boltT > 0.2 ? 0.8 : boltT / 0.25); } world.flash = fl;
+      const br = world.mod.bright; hemi.intensity = 0.55 + br * 0.5 + fl * 2.6; moon.intensity = 0.55 + br * 0.45 + fl * 1.8;
+      fog.density = 0.03 * (1 - br * 0.45) * (1 - fl * 0.5); fogCol.set('#04080f').lerp(new THREE.Color('#5a6a90'), fl * 0.6 + br * 0.12); scene.background.copy(fogCol); fog.color.copy(fogCol);
+      moonS.position.set(focus.x - 120, 140, focus.z - 180);
+      // lighthouse sweep
+      if (world.lighthouse) { const ang = t * 0.5; world.lighthouse.pivot.rotation.y = ang; world.lighthouse.tgt.position.set(-Math.sin(ang) * 20, 12.4, -Math.cos(ang) * 20); lampMesh.material.color.setScalar(0.85 + 0.15 * Math.sin(t * 3)); }
+      buoys.forEach((b, i) => { b.position.y = wave(b.position.x, b.position.z, t, amp) + 0.05; b.material.color.set(Math.sin(t * 2 + i) > 0.6 ? '#ff5a4a' : '#701a1a'); });
+      world.updaters.forEach(f => f(dt, t, focus));
+    };
+    world.dispose = () => { scene.traverse(o => { if (o.geometry) o.geometry.dispose(); }); };
+    return world;
+  }
+  return { build };
+})();
+
 // ===== play.js =====
 // ---------------------------------------------------------------- gameplay: player, net, butterflies, HUD
 const SW = 480, SH = 270;
@@ -1989,7 +2213,7 @@ const UIK = {
 
 // ---------------------------------------------------------------- butterfly agent
 const FLY = 0, PERCH = 1, FLEE = 2, CAUGHT = 3;
-const _v = new THREE.Vector3();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _v2 = new THREE.Vector3();
 const SHADOW_GEO = new THREE.CircleGeometry(0.5, 10);
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
 
@@ -1999,6 +2223,9 @@ class Fly {
     this.span = this.mesh.userData.span; this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.tgt = new THREE.Vector3();
     this.state = FLY; this.t = 0; this.ph = Math.random() * 6.28; this.yaw = Math.random() * 6.28; this.bank = 0; this.pitch = 0; this.flower = null; this.glideT = 0; this.alive = true;
     this.speedK = 0.85 + Math.random() * 0.3; this.sway = Math.random() * 6.28;
+    this.kind = this.beh.special || null; this.gt = 1 + Math.random() * 2; this.gs = Math.random() * 2; this.gf = 0; this.cool = 0; this.rs = { ph: 'hide', t: 2 + Math.random() * 6 };
+    if (this.beh.light) { this.light = new THREE.PointLight(this.beh.light, 1.4, 13, 1.5); this.mesh.add(this.light); }
+    if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
     this.place(nearPlayer);
     this.play.world.scene.add(this.mesh);
     this.shadow = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT); this.shadow.rotation.x = -Math.PI / 2; this.play.world.scene.add(this.shadow);
@@ -2019,6 +2246,7 @@ class Fly {
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
     const w = this.play.world, b = this.beh; this.releaseFlower(); this.perchTarget = false;
+    if (this.kind === 'screech') { const pl = this.play.player, a = Math.random() * 6.28, d = 1.8 + Math.random() * 2.6; this.tgt.set(pl.pos.x + Math.cos(a) * d, pl.pos.y - 0.6 + Math.random() * 1.2, pl.pos.z + Math.sin(a) * d); return; }
     const wantsBait = (this.sp.beh === 'owl' || this.sp.beh === 'bird' || this.sp.beh === 'emperor' || this.sp.beh === 'morph') && w.baits.length && Math.random() < 0.55;
     if (wantsBait) { const bt = w.baits[(Math.random() * w.baits.length) | 0]; this.tgt.set(bt.x + (Math.random() - 0.5) * 0.7, bt.y + 0.05, bt.z + (Math.random() - 0.5) * 0.7); this.perchTarget = true; return; }
     if (Math.random() < b.perch && w.flowers.length) {
@@ -2052,7 +2280,8 @@ class Fly {
     this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1);
     const dx = this.pos.x - pl.pos.x, dz = this.pos.z - pl.pos.z, dist = Math.hypot(dx, dz, this.pos.y - pl.pos.y);
     // ---- senses
-    const scareBase = b.wary * (0.3 + 0.7 * pl.noise);
+    if (this.kind && this.special(this.kind, dt, t, dx, dz, dist)) return;
+    const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
       this.t -= dt;
       if (dist < scareBase * 0.62 || (p.netBusy() && dist < 2.8 && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
@@ -2067,7 +2296,7 @@ class Fly {
       const open = b.flutterPerch ? 0.35 + 0.35 * Math.abs(Math.sin(this.ph * 1.2)) : 0.75 + 0.5 * Math.sin(this.ph * 0.18 + this.sway);
       Art.setFlap(this.mesh, open); this.bank = damp(this.bank, 0, 6, dt); this.pitch = damp(this.pitch, -0.12, 5, dt);
     } else {
-      let speed = b.speed * this.speedK;
+      let speed = b.speed * this.speedK * p.speedMul();
       if (this.state === FLEE) {
         this.t -= dt; speed *= 1.7; desired.copy(this.fleeDir).multiplyScalar(speed); desired.y = 0.5 + Math.sin(t * 5 + this.sway) * 0.7;
         if (this.t <= 0) { this.state = FLY; this.pickTarget(pl.pos); }
@@ -2093,31 +2322,90 @@ class Fly {
       const sp2 = Math.hypot(this.vel.x, this.vel.z); if (sp2 > 0.15) { const ty = Math.atan2(-this.vel.x, -this.vel.z); let d = ty - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); this.bank = damp(this.bank, clamp(-d * 0.9, -0.7, 0.7), 5, dt); this.yaw += d * Math.min(1, dt * 6); }
       this.pitch = damp(this.pitch, clamp(this.vel.y * -0.25, -0.4, 0.4), 6, dt);
     }
-    // ---- world constraints
-    const gy = w.heightAt(this.pos.x, this.pos.z); if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
-    const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); }
+    this.post(false);
+  }
+  post(skipBounds) {
+    const p = this.play, w = p.world;
+    const gy = w.heightAt(this.pos.x, this.pos.z);
+ if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
+    if (!skipBounds) { const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); } }
     if (this.state !== PERCH) for (const c of w.colliders) { const cx = this.pos.x - c.x, cz = this.pos.z - c.z; const d2 = cx * cx + cz * cz, mr = c.r + 0.25; if (d2 < mr * mr && this.pos.y < gy + 4 + c.r * 5) { const d = Math.sqrt(d2) || 0.01; this.pos.x += cx / d * (mr - d); this.pos.z += cz / d * (mr - d); } }
     this.mesh.position.copy(this.pos); this.mesh.rotation.set(this.pitch, this.yaw, this.bank);
     if (this.state === PERCH) this.mesh.rotation.set(-0.1, this.yaw, 0);
     this.updateShadow(gy);
   }
-  updateShadow(gy) { const h = Math.max(0, this.pos.y - gy); const s = this.span * (0.75 - Math.min(0.4, h * 0.06)); this.shadow.position.set(this.pos.x, gy + 0.03, this.pos.z); this.shadow.scale.set(s, s, 1); this.shadow.material = SHADOW_MAT; this.shadow.visible = h < 7; }
+
+  face(dt) { const sp2 = Math.hypot(this.vel.x, this.vel.z); if (sp2 > 0.15) { const ty = Math.atan2(-this.vel.x, -this.vel.z); let d = ty - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); this.bank = damp(this.bank, clamp(-d * 0.9, -0.7, 0.7), 5, dt); this.yaw += d * Math.min(1, dt * 6); } this.pitch = damp(this.pitch, clamp(this.vel.y * -0.25, -0.4, 0.4), 6, dt); }
+  steer(dt, tx, ty, tz, spd, k = 3) { _w.set(tx - this.pos.x, ty - this.pos.y, tz - this.pos.z); const L = _w.length(); if (L > 0.02) _w.multiplyScalar(spd * this.play.speedMul() / L * Math.min(1, L * 0.6)); this.vel.lerp(_w, Math.min(1, dt * k)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); }
+  // special rules of the secret-ocean butterflies. Returns true when the butterfly has moved itself this frame.
+  special(kind, dt, t, dx, dz, dist) {
+    const p = this.play, w = p.world, pl = p.player, ground = w.heightAt(this.pos.x, this.pos.z);
+    if (kind === 'dread') { this.mesh.visible = dist < 3.4 || p.lit(this.pos); return false; }
+    if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
+    if (kind === 'modifier') { const m = this.mesh.userData.R.children[0].material, h = (t * 0.35 + this.sway) % 1; m.color.setHSL(h, 0.9, 0.62); if (this.light) this.light.color.setHSL(h, 1, 0.6); return false; }
+    if (kind === 'glitch') {
+      this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
+      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
+        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
+      return false;
+    }
+    if (kind === 'halt') { if (p.lit(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
+    if (kind === 'screech') { if (p.lit(this.pos) && dist < 30 && !(this.state === FLEE && this.t > 0.6)) { this.startFlee(_v.set(dx, 0, dz)); this.t = 1.6; } return false; }
+    if (kind === 'seek') {
+      const seen = p.looked(this.pos, 0.8) && (dist < 10 || p.lit(this.pos)); const ty = pl.pos.y - 0.5 + Math.sin(t) * 0.2;
+      if (seen) { this.vel.multiplyScalar(Math.max(0, 1 - dt * 14)); Art.setFlap(this.mesh, 0.18); this.frozen = true; }
+      else { this.frozen = false; if (dist > 2.3) this.steer(dt, pl.pos.x, ty, pl.pos.z, 2.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t * 0.9) * 2, ty, pl.pos.z + Math.sin(t * 0.9) * 2, 1.2); }
+      this.post(false); return true;
+    }
+    if (kind === 'eyes') {
+      this.cool -= dt;
+      if (this.cool <= 0 && p.looked(this.pos, 0.972) && dist < 18) { const a = pl.yaw + (Math.random() - 0.5) * 1.6, nx = pl.pos.x + Math.sin(a) * 9, nz = pl.pos.z + Math.cos(a) * 9; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 1.2; Snd.sfx.eyes(); } }
+      if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.7, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.8);
+      this.post(false); return true;
+    }
+    if (kind === 'rush' || kind === 'ambush') {
+      const S = this.rs; S.t -= dt;
+      if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 12 : 9.5); } return true; }
+      if (S.ph === 'dash') {
+        this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
+        if (S.dist > 58) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
+        this.post(true); return true;
+      }
+      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
+    }
+    if (kind === 'guiding') {
+      let tg = null, bd = 1e9; for (const f of p.flies) { if (f === this || f.state === CAUGHT || Save.has(f.sp.id) || f.kind === 'guiding') continue; const d = f.pos.distanceTo(pl.pos); if (d < bd) { bd = d; tg = f; } }
+      let tx = pl.pos.x + Math.cos(t * 0.6) * 2, tz = pl.pos.z + Math.sin(t * 0.6) * 2;
+      if (tg) { const ux = tg.pos.x - pl.pos.x, uz = tg.pos.z - pl.pos.z, L = Math.hypot(ux, uz) || 1, k = Math.min(5, L); tx = pl.pos.x + ux / L * k; tz = pl.pos.z + uz / L * k; }
+      this.steer(dt, tx, ground + 1.9 + Math.sin(t * 1.3) * 0.3, tz, dist > 11 ? 3.4 : 1.9); this.post(false); return true;
+    }
+    if (kind === 'curious') {
+      this.ca = (this.ca || 0) + dt * 0.8; const R0 = pl.speedNow < 0.4 ? 1.9 : 3.4;
+      if (p.netBusy() && dist < 3.4 && Math.random() < dt * 3) { this.vel.set(dx, 0.5, dz).normalize().multiplyScalar(5); }
+      this.steer(dt, pl.pos.x + Math.cos(this.ca) * R0, pl.pos.y - 0.3 + Math.sin(this.ca * 1.7) * 0.5, pl.pos.z + Math.sin(this.ca) * R0, 2.6); this.post(false); return true;
+    }
+    return false;
+  }
+  updateShadow(gy) { const h = Math.max(0, this.pos.y - gy); const s = this.span * (0.75 - Math.min(0.4, h * 0.06)); this.shadow.position.set(this.pos.x, gy + 0.03, this.pos.z); this.shadow.scale.set(s, s, 1); this.shadow.material = SHADOW_MAT; this.shadow.visible = h < 7 && !this.play.world.hasFlash && this.mesh.visible; }
   catchIt() { this.releaseFlower(); this.state = CAUGHT; this.t = 0.7; }
 }
 
 // ---------------------------------------------------------------- the play session
 class Play {
   constructor(biome, seed) {
-    this.biome = biome; this.world = World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
+    this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
     const sx = 0, sz = 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y;
+    this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
+    if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false };
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
-    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'));
+    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9);
     this.pool.forEach(sp => { const n = sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
@@ -2125,6 +2413,15 @@ class Play {
   }
   applyQuality() { const low = Save.data.settings.quality === 'low'; const g = this.world.grassMesh; if (!this.grassFull) this.grassFull = g.count; g.count = Math.floor(this.grassFull * (low ? 0.55 : 1)); this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
+  lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > 34) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > 0.93; }
+  looked(pos, cos) { _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); return d < 45 && d > 0.2 && _v2.normalize().dot(this.fwd) > cos; }
+  toggleFlash() { if (!this.flash) return false; this.flashOn = !this.flashOn; Snd.sfx.flash(); return true; }
+  speedMul() { return this.mod && this.mod.id === 'fast' ? 1.45 : 1; }
+  calmMul() { return this.mod && this.mod.id === 'calm' ? 0.5 : 1; }
+  applyMod(id) {
+    const names = { fast: 'Лихорадка: бабочки быстрее', calm: 'Штиль: бабочки не такие пугливые', bright: 'Лунная ночь: светлее и меньше тумана', storm: 'Шторм: сильнее ливень и молнии' };
+    this.mod = { id, t: 90, name: names[id] }; this.world.mod.storm = id === 'storm' ? 2.2 : 1; this.world.mod.bright = id === 'bright' ? 1 : 0; return names[id];
+  }
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
 
   // ---------------------------------------------------------------- net model
@@ -2193,6 +2490,10 @@ class Play {
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
     this.respawns.push({ sp, t: sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34 });
+    const spc = f.beh.special;
+    if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
+    else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
+    else if (spc === 'modifier') { const nm = this.applyMod(['fast', 'calm', 'bright', 'storm'][(Math.random() * 4) | 0]); this.toast('Модификатор: ' + nm, 5, true); Snd.sfx.modifier(); }
     if (this.biome.species.every(s => this.caughtHere.has(s.id) || Save.has(s.id)) && !this.completeShown && this.biome.species.every(s => Save.has(s.id))) { this.completeShown = true; setTimeout(() => { Snd.sfx.complete(); this.toast('Все виды этого биома собраны!', 5, true); }, 1100); }
   }
 
@@ -2225,6 +2526,10 @@ class Play {
     P.pos.y = P.y + Math.sin(P.bob) * 0.035 * Math.min(1, speedNow / 3);
     this.camera.position.copy(P.pos); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
     this.camera.fov = damp(this.camera.fov, sprint && speedNow > 3 ? 74 : 70, 6, dt); this.camera.updateProjectionMatrix();
+    this.fwd.set(0, 0, -1).applyEuler(this.camera.rotation);
+    if (this.flash) { this.flickT = Math.max(0, this.flickT - dt); let I = this.flashOn ? 2.8 : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01; }
+    this.guideT = Math.max(0, this.guideT - dt); this.revealT = Math.max(0, this.revealT - dt);
+    if (this.mod) { this.mod.t -= dt; if (this.mod.t <= 0) { this.mod = null; this.world.mod.storm = 1; this.world.mod.bright = 0; this.toast('Модификатор закончился', 2.5); } }
     // swing
     if (inp.fire) { this.swing(); inp.fire = false; }
     this.updateNet(dt);
@@ -2254,30 +2559,36 @@ class Play {
     const g = ctx.createRadialGradient(SW / 2, SH / 2, SH * 0.45, SW / 2, SH / 2, SW * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.28)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
     // biome plate
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
-    T.draw(ctx, b.name, 12, 9, { size: 8, color: c.gold }); T.draw(ctx, `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
+    T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
     // species checklist
-    const n = this.pool.length; const px = SW - 6 - n * 32; UIK.panel(ctx, px - 4, 6, n * 32 + 2, 44, { fill: 'rgba(16,32,28,0.82)' });
+    const n = this.pool.length, tw = b.secret ? 21 : 32, th = b.secret ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, b.secret ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
     this.pool.forEach((sp, i) => {
-      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * 32;
-      ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, 30, 15);
-      T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim });
-      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, 28, 1); }
+      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * tw;
+      if (b.secret && !has) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(x + 1, 10, tw - 3, th); T.draw(ctx, '?', x + tw / 2 - 1, 11, { size: 8, align: 'c', color: c.dim }); }
+      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!b.secret) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
+      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, tw - 3, 1); }
     });
-    T.draw(ctx, `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, 40, { size: 8, align: 'r', color: c.text });
+    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, b.secret ? 28 : 40, { size: 8, align: 'r', color: c.text });
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
     // controls hint
-    const hint = 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
-    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; UIK.panel(ctx, SW / 2 - 200, SH - 44, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, SH - 41, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
+    const hint = this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
+    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
     // crosshair
     const cx = SW / 2, cy = SH / 2; const hot = this.reticle > 0; ctx.fillStyle = hot ? c.green : 'rgba(255,255,255,0.85)';
     if (hot) { const r = 6 - this.reticle * 2 + Math.sin(this.t * 14) * 0.5; ctx.fillRect(cx - r - 3, cy, 3, 1); ctx.fillRect(cx + r + 1, cy, 3, 1); ctx.fillRect(cx, cy - r - 3, 1, 3); ctx.fillRect(cx, cy + r + 1, 1, 3); }
     ctx.fillRect(cx, cy, 1, 1); ctx.fillRect(cx - 1, cy, 3, 1); ctx.fillRect(cx, cy - 1, 1, 3);
-    // sense arrows
-    if (this.sense) this.drawSense(ctx);
+    // flashlight, modifier, reveal markers, sense arrows
+    if (this.flash) {
+      UIK.panel(ctx, 6, SH - 48, 92, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ [F]', 11, SH - 44, { size: 8, color: c.dim }); ctx.fillStyle = this.flashOn ? '#ffe9a0' : '#3a3a3a'; ctx.fillRect(80, SH - 43, 12, 8); ctx.fillStyle = this.flashOn ? '#fff8d8' : '#1a1a1a'; ctx.fillRect(81, SH - 42, 10, 3);
+      if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
+    }
+    if (this.mod) { const tx = `${this.mod.name} · ${Math.ceil(this.mod.t)} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 34, w2, 16, { fill: 'rgba(40,16,56,0.88)', border: '#d070ff' }); T.draw(ctx, tx, SW / 2, 38, { size: 8, align: 'c', color: '#f0c8ff' }); }
+    if (this.revealT > 0) this.flies.forEach(f => { if (f.state === CAUGHT) return; const q = f.pos.clone().project(this.camera); if (q.z > 1) return; const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (sx < 4 || sx > SW - 4 || sy < 4 || sy > SH - 4) return; ctx.fillStyle = `rgba(255,190,80,${0.5 + 0.5 * Math.sin(this.t * 6)})`; ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 9, 3, 3); ctx.fillRect(Math.round(sx), Math.round(sy) - 6, 1, 3); });
+    if (this.sense || this.guideT > 0) this.drawSense(ctx);
     // sparkles
     for (const s of this.sparks) { ctx.fillStyle = s.c; ctx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2); }
     // toasts
@@ -2286,7 +2597,7 @@ class Play {
     this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
   }
   drawSense(ctx) {
-    let best = null, bd = 1e9; for (const f of this.flies) { if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
+    let best = null, bd = 1e9; const pref = this.guideT > 0; for (const f of this.flies) { if (f.state === CAUGHT || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
     if (!best) return; const q = best.pos.clone().project(this.camera); const behind = q.z > 1; let sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (behind) { sx = SW - sx; sy = SH - 30; }
     const m = 14; const inside = sx > m && sx < SW - m && sy > m && sy < SH - m && !behind; sx = clamp(sx, m, SW - m); sy = clamp(sy, m + 30, SH - m - 22);
     const a = Math.atan2(sy - SH / 2, sx - SW / 2); const pulse = 0.6 + 0.4 * Math.sin(this.t * 5);
@@ -2321,8 +2632,8 @@ const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
 const Screens = (() => {
   const c = UIK.col;
-  const short = { russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
-  const biomeCol = { russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -2358,7 +2669,7 @@ const Screens = (() => {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
         { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}/${SPECIES.length}`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'journal', label: `Коллекция  ${Save.total()}/${REAL}+???`, x, y: 168, w, h: 16, size: 8 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
@@ -2373,7 +2684,7 @@ const Screens = (() => {
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, `8 биомов · ${SPECIES.length} реальных видов · найди их места обитания`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
+      T.draw(ctx, `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -2413,7 +2724,7 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${SPECIES.length}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 82, y: MAPY + MAP_H * MS + 14, w: 72, h: 24, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${REAL}+???`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
@@ -2445,14 +2756,16 @@ const Screens = (() => {
       const b = BIOMES[this.sel >= 0 ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
       const py0 = MAPY + MAP_H * MS + 10; UIK.panel(ctx, 8, py0, SW - 16, SH - py0 - 6, { fill: 'rgba(16,32,28,0.92)' });
       const iy = py0 + 4;
-      if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–8 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
+      if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–9 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
       else {
         T.draw(ctx, b.name, 14, iy, { size: 10, color: biomeCol[b.id] });
+        if (b.secret) { T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°S ${Math.abs(b.lon).toFixed(1)}°W`, 14, iy + 13, { size: 8, color: c.dim }); T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 }); for (let k = 0; k < 18; k++) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); T.draw(ctx, '?', 286 + (k % 9) * 22, iy + Math.floor(k / 9) * 11 + 1, { size: 8, align: 'c', color: Math.random() < 0.02 ? c.red : '#4a6a60' }); } T.draw(ctx, `поймано ${Save.biomeCount(b)} из ???`, 276, iy + 45, { size: 8, color: c.text }); T.draw(ctx, fit(b.climate, 116), 276, iy + 56, { size: 8, color: c.red }); } else {
         T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°${b.lat >= 0 ? 'N' : 'S'} ${Math.abs(b.lon).toFixed(1)}°${b.lon >= 0 ? 'E' : 'W'}`, 14, iy + 13, { size: 8, color: c.dim });
         T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 });
         b.species.forEach((sp, k) => { const has = Save.has(sp.id); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has, '#587868'), 276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); });
         T.draw(ctx, `поймано ${Save.biomeCount(b)} из ${b.species.length}`, 276, iy + 45, { size: 8, color: c.text });
-        T.draw(ctx, `${b.alt} · ${b.climate}`, 276, iy + 56, { size: 8, color: c.dim });
+        T.draw(ctx, fit(`${b.alt} · ${b.climate}`, 116), 276, iy + 56, { size: 8, color: c.dim });
+        }
       }
       this.btns.forEach(bt => UIK.btn(ctx, bt, UIK.hit(bt, m.x, m.y))); UIK.btn(ctx, this.go, !this.go.disabled && UIK.hit(this.go, m.x, m.y));
     },
@@ -2468,7 +2781,7 @@ const Screens = (() => {
   const journal = {
     tab: 0, sel: 0, btns: [], slots: [], tabs: [],
     layout() {
-      this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 58, y: 22, w: 56, h: 15 }));
+      this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 53, y: 22, w: 51, h: 15 }));
       this.slots = []; const b = BIOMES[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
@@ -2477,7 +2790,7 @@ const Screens = (() => {
     draw(ctx, t, m) {
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${SPECIES.length}`, 216, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${REAL}+???`, 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
@@ -2513,7 +2826,7 @@ const Screens = (() => {
       } else {
         T.draw(ctx, '??? ???', tx, y, { size: 10, color: ink }); y += 13; T.draw(ctx, 'Вид ещё не найден', tx, y, { size: 8, color: dim }); y += 13;
         left = Math.floor((bottom - y) / lh);
-        take(`Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
+        take(b.secret ? 'Где искать: ???. Что-то мерцает в темноте…' : `Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
       }
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
@@ -2549,7 +2862,7 @@ const Screens = (() => {
       UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
       T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
@@ -3493,13 +3806,13 @@ const Cabinet = (() => {
   addEventListener('keydown', e => {
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     inp.keys.add(e.code);
-    if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
+    if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
-        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
+        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
@@ -3507,11 +3820,11 @@ const Cabinet = (() => {
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
-      else if (e.code >= 'Digit1' && e.code <= 'Digit8') { S.wmap.sel = +e.code.slice(5) - 1; Snd.sfx.pin(); }
+      else if (e.code >= 'Digit1' && e.code <= 'Digit9') { S.wmap.sel = +e.code.slice(5) - 1; Snd.sfx.pin(); }
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
-      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + 7) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % 8; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
+      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
     }
   });
   ui.addEventListener('mousedown', e => {

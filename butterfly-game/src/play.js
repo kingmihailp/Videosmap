@@ -20,7 +20,7 @@ const UIK = {
 
 // ---------------------------------------------------------------- butterfly agent
 const FLY = 0, PERCH = 1, FLEE = 2, CAUGHT = 3;
-const _v = new THREE.Vector3();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _v2 = new THREE.Vector3();
 const SHADOW_GEO = new THREE.CircleGeometry(0.5, 10);
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
 
@@ -30,6 +30,9 @@ class Fly {
     this.span = this.mesh.userData.span; this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.tgt = new THREE.Vector3();
     this.state = FLY; this.t = 0; this.ph = Math.random() * 6.28; this.yaw = Math.random() * 6.28; this.bank = 0; this.pitch = 0; this.flower = null; this.glideT = 0; this.alive = true;
     this.speedK = 0.85 + Math.random() * 0.3; this.sway = Math.random() * 6.28;
+    this.kind = this.beh.special || null; this.gt = 1 + Math.random() * 2; this.gs = Math.random() * 2; this.gf = 0; this.cool = 0; this.rs = { ph: 'hide', t: 2 + Math.random() * 6 };
+    if (this.beh.light) { this.light = new THREE.PointLight(this.beh.light, 1.4, 13, 1.5); this.mesh.add(this.light); }
+    if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
     this.place(nearPlayer);
     this.play.world.scene.add(this.mesh);
     this.shadow = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT); this.shadow.rotation.x = -Math.PI / 2; this.play.world.scene.add(this.shadow);
@@ -50,6 +53,7 @@ class Fly {
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
     const w = this.play.world, b = this.beh; this.releaseFlower(); this.perchTarget = false;
+    if (this.kind === 'screech') { const pl = this.play.player, a = Math.random() * 6.28, d = 1.8 + Math.random() * 2.6; this.tgt.set(pl.pos.x + Math.cos(a) * d, pl.pos.y - 0.6 + Math.random() * 1.2, pl.pos.z + Math.sin(a) * d); return; }
     const wantsBait = (this.sp.beh === 'owl' || this.sp.beh === 'bird' || this.sp.beh === 'emperor' || this.sp.beh === 'morph') && w.baits.length && Math.random() < 0.55;
     if (wantsBait) { const bt = w.baits[(Math.random() * w.baits.length) | 0]; this.tgt.set(bt.x + (Math.random() - 0.5) * 0.7, bt.y + 0.05, bt.z + (Math.random() - 0.5) * 0.7); this.perchTarget = true; return; }
     if (Math.random() < b.perch && w.flowers.length) {
@@ -83,7 +87,8 @@ class Fly {
     this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1);
     const dx = this.pos.x - pl.pos.x, dz = this.pos.z - pl.pos.z, dist = Math.hypot(dx, dz, this.pos.y - pl.pos.y);
     // ---- senses
-    const scareBase = b.wary * (0.3 + 0.7 * pl.noise);
+    if (this.kind && this.special(this.kind, dt, t, dx, dz, dist)) return;
+    const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
       this.t -= dt;
       if (dist < scareBase * 0.62 || (p.netBusy() && dist < 2.8 && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
@@ -98,7 +103,7 @@ class Fly {
       const open = b.flutterPerch ? 0.35 + 0.35 * Math.abs(Math.sin(this.ph * 1.2)) : 0.75 + 0.5 * Math.sin(this.ph * 0.18 + this.sway);
       Art.setFlap(this.mesh, open); this.bank = damp(this.bank, 0, 6, dt); this.pitch = damp(this.pitch, -0.12, 5, dt);
     } else {
-      let speed = b.speed * this.speedK;
+      let speed = b.speed * this.speedK * p.speedMul();
       if (this.state === FLEE) {
         this.t -= dt; speed *= 1.7; desired.copy(this.fleeDir).multiplyScalar(speed); desired.y = 0.5 + Math.sin(t * 5 + this.sway) * 0.7;
         if (this.t <= 0) { this.state = FLY; this.pickTarget(pl.pos); }
@@ -124,31 +129,90 @@ class Fly {
       const sp2 = Math.hypot(this.vel.x, this.vel.z); if (sp2 > 0.15) { const ty = Math.atan2(-this.vel.x, -this.vel.z); let d = ty - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); this.bank = damp(this.bank, clamp(-d * 0.9, -0.7, 0.7), 5, dt); this.yaw += d * Math.min(1, dt * 6); }
       this.pitch = damp(this.pitch, clamp(this.vel.y * -0.25, -0.4, 0.4), 6, dt);
     }
-    // ---- world constraints
-    const gy = w.heightAt(this.pos.x, this.pos.z); if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
-    const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); }
+    this.post(false);
+  }
+  post(skipBounds) {
+    const p = this.play, w = p.world;
+    const gy = w.heightAt(this.pos.x, this.pos.z);
+ if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
+    if (!skipBounds) { const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); } }
     if (this.state !== PERCH) for (const c of w.colliders) { const cx = this.pos.x - c.x, cz = this.pos.z - c.z; const d2 = cx * cx + cz * cz, mr = c.r + 0.25; if (d2 < mr * mr && this.pos.y < gy + 4 + c.r * 5) { const d = Math.sqrt(d2) || 0.01; this.pos.x += cx / d * (mr - d); this.pos.z += cz / d * (mr - d); } }
     this.mesh.position.copy(this.pos); this.mesh.rotation.set(this.pitch, this.yaw, this.bank);
     if (this.state === PERCH) this.mesh.rotation.set(-0.1, this.yaw, 0);
     this.updateShadow(gy);
   }
-  updateShadow(gy) { const h = Math.max(0, this.pos.y - gy); const s = this.span * (0.75 - Math.min(0.4, h * 0.06)); this.shadow.position.set(this.pos.x, gy + 0.03, this.pos.z); this.shadow.scale.set(s, s, 1); this.shadow.material = SHADOW_MAT; this.shadow.visible = h < 7; }
+
+  face(dt) { const sp2 = Math.hypot(this.vel.x, this.vel.z); if (sp2 > 0.15) { const ty = Math.atan2(-this.vel.x, -this.vel.z); let d = ty - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); this.bank = damp(this.bank, clamp(-d * 0.9, -0.7, 0.7), 5, dt); this.yaw += d * Math.min(1, dt * 6); } this.pitch = damp(this.pitch, clamp(this.vel.y * -0.25, -0.4, 0.4), 6, dt); }
+  steer(dt, tx, ty, tz, spd, k = 3) { _w.set(tx - this.pos.x, ty - this.pos.y, tz - this.pos.z); const L = _w.length(); if (L > 0.02) _w.multiplyScalar(spd * this.play.speedMul() / L * Math.min(1, L * 0.6)); this.vel.lerp(_w, Math.min(1, dt * k)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); }
+  // special rules of the secret-ocean butterflies. Returns true when the butterfly has moved itself this frame.
+  special(kind, dt, t, dx, dz, dist) {
+    const p = this.play, w = p.world, pl = p.player, ground = w.heightAt(this.pos.x, this.pos.z);
+    if (kind === 'dread') { this.mesh.visible = dist < 3.4 || p.lit(this.pos); return false; }
+    if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
+    if (kind === 'modifier') { const m = this.mesh.userData.R.children[0].material, h = (t * 0.35 + this.sway) % 1; m.color.setHSL(h, 0.9, 0.62); if (this.light) this.light.color.setHSL(h, 1, 0.6); return false; }
+    if (kind === 'glitch') {
+      this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
+      if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 1.4 + Math.random() * 1.8; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
+        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
+      return false;
+    }
+    if (kind === 'halt') { if (p.lit(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
+    if (kind === 'screech') { if (p.lit(this.pos) && dist < 30 && !(this.state === FLEE && this.t > 0.6)) { this.startFlee(_v.set(dx, 0, dz)); this.t = 1.6; } return false; }
+    if (kind === 'seek') {
+      const seen = p.looked(this.pos, 0.8) && (dist < 10 || p.lit(this.pos)); const ty = pl.pos.y - 0.5 + Math.sin(t) * 0.2;
+      if (seen) { this.vel.multiplyScalar(Math.max(0, 1 - dt * 14)); Art.setFlap(this.mesh, 0.18); this.frozen = true; }
+      else { this.frozen = false; if (dist > 2.3) this.steer(dt, pl.pos.x, ty, pl.pos.z, 2.9, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t * 0.9) * 2, ty, pl.pos.z + Math.sin(t * 0.9) * 2, 1.2); }
+      this.post(false); return true;
+    }
+    if (kind === 'eyes') {
+      this.cool -= dt;
+      if (this.cool <= 0 && p.looked(this.pos, 0.972) && dist < 18) { const a = pl.yaw + (Math.random() - 0.5) * 1.6, nx = pl.pos.x + Math.sin(a) * 9, nz = pl.pos.z + Math.cos(a) * 9; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 1.2; Snd.sfx.eyes(); } }
+      if (dist > 3.4) this.steer(dt, pl.pos.x, pl.pos.y - 0.4, pl.pos.z, 1.7, 2.5); else this.steer(dt, pl.pos.x + Math.cos(t) * 3, pl.pos.y - 0.3, pl.pos.z + Math.sin(t) * 3, 0.8);
+      this.post(false); return true;
+    }
+    if (kind === 'rush' || kind === 'ambush') {
+      const S = this.rs; S.t -= dt;
+      if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 12 : 9.5); } return true; }
+      if (S.ph === 'dash') {
+        this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
+        if (S.dist > 58) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
+        this.post(true); return true;
+      }
+      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
+    }
+    if (kind === 'guiding') {
+      let tg = null, bd = 1e9; for (const f of p.flies) { if (f === this || f.state === CAUGHT || Save.has(f.sp.id) || f.kind === 'guiding') continue; const d = f.pos.distanceTo(pl.pos); if (d < bd) { bd = d; tg = f; } }
+      let tx = pl.pos.x + Math.cos(t * 0.6) * 2, tz = pl.pos.z + Math.sin(t * 0.6) * 2;
+      if (tg) { const ux = tg.pos.x - pl.pos.x, uz = tg.pos.z - pl.pos.z, L = Math.hypot(ux, uz) || 1, k = Math.min(5, L); tx = pl.pos.x + ux / L * k; tz = pl.pos.z + uz / L * k; }
+      this.steer(dt, tx, ground + 1.9 + Math.sin(t * 1.3) * 0.3, tz, dist > 11 ? 3.4 : 1.9); this.post(false); return true;
+    }
+    if (kind === 'curious') {
+      this.ca = (this.ca || 0) + dt * 0.8; const R0 = pl.speedNow < 0.4 ? 1.9 : 3.4;
+      if (p.netBusy() && dist < 3.4 && Math.random() < dt * 3) { this.vel.set(dx, 0.5, dz).normalize().multiplyScalar(5); }
+      this.steer(dt, pl.pos.x + Math.cos(this.ca) * R0, pl.pos.y - 0.3 + Math.sin(this.ca * 1.7) * 0.5, pl.pos.z + Math.sin(this.ca) * R0, 2.6); this.post(false); return true;
+    }
+    return false;
+  }
+  updateShadow(gy) { const h = Math.max(0, this.pos.y - gy); const s = this.span * (0.75 - Math.min(0.4, h * 0.06)); this.shadow.position.set(this.pos.x, gy + 0.03, this.pos.z); this.shadow.scale.set(s, s, 1); this.shadow.material = SHADOW_MAT; this.shadow.visible = h < 7 && !this.play.world.hasFlash && this.mesh.visible; }
   catchIt() { this.releaseFlower(); this.state = CAUGHT; this.t = 0.7; }
 }
 
 // ---------------------------------------------------------------- the play session
 class Play {
   constructor(biome, seed) {
-    this.biome = biome; this.world = World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
+    this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
     const sx = 0, sz = 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y;
+    this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
+    if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false };
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
-    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'));
+    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9);
     this.pool.forEach(sp => { const n = sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
@@ -156,6 +220,15 @@ class Play {
   }
   applyQuality() { const low = Save.data.settings.quality === 'low'; const g = this.world.grassMesh; if (!this.grassFull) this.grassFull = g.count; g.count = Math.floor(this.grassFull * (low ? 0.55 : 1)); this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
+  lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > 34) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > 0.93; }
+  looked(pos, cos) { _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); return d < 45 && d > 0.2 && _v2.normalize().dot(this.fwd) > cos; }
+  toggleFlash() { if (!this.flash) return false; this.flashOn = !this.flashOn; Snd.sfx.flash(); return true; }
+  speedMul() { return this.mod && this.mod.id === 'fast' ? 1.45 : 1; }
+  calmMul() { return this.mod && this.mod.id === 'calm' ? 0.5 : 1; }
+  applyMod(id) {
+    const names = { fast: 'Лихорадка: бабочки быстрее', calm: 'Штиль: бабочки не такие пугливые', bright: 'Лунная ночь: светлее и меньше тумана', storm: 'Шторм: сильнее ливень и молнии' };
+    this.mod = { id, t: 90, name: names[id] }; this.world.mod.storm = id === 'storm' ? 2.2 : 1; this.world.mod.bright = id === 'bright' ? 1 : 0; return names[id];
+  }
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
 
   // ---------------------------------------------------------------- net model
@@ -224,6 +297,10 @@ class Play {
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
     this.respawns.push({ sp, t: sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34 });
+    const spc = f.beh.special;
+    if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
+    else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
+    else if (spc === 'modifier') { const nm = this.applyMod(['fast', 'calm', 'bright', 'storm'][(Math.random() * 4) | 0]); this.toast('Модификатор: ' + nm, 5, true); Snd.sfx.modifier(); }
     if (this.biome.species.every(s => this.caughtHere.has(s.id) || Save.has(s.id)) && !this.completeShown && this.biome.species.every(s => Save.has(s.id))) { this.completeShown = true; setTimeout(() => { Snd.sfx.complete(); this.toast('Все виды этого биома собраны!', 5, true); }, 1100); }
   }
 
@@ -256,6 +333,10 @@ class Play {
     P.pos.y = P.y + Math.sin(P.bob) * 0.035 * Math.min(1, speedNow / 3);
     this.camera.position.copy(P.pos); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
     this.camera.fov = damp(this.camera.fov, sprint && speedNow > 3 ? 74 : 70, 6, dt); this.camera.updateProjectionMatrix();
+    this.fwd.set(0, 0, -1).applyEuler(this.camera.rotation);
+    if (this.flash) { this.flickT = Math.max(0, this.flickT - dt); let I = this.flashOn ? 2.8 : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01; }
+    this.guideT = Math.max(0, this.guideT - dt); this.revealT = Math.max(0, this.revealT - dt);
+    if (this.mod) { this.mod.t -= dt; if (this.mod.t <= 0) { this.mod = null; this.world.mod.storm = 1; this.world.mod.bright = 0; this.toast('Модификатор закончился', 2.5); } }
     // swing
     if (inp.fire) { this.swing(); inp.fire = false; }
     this.updateNet(dt);
@@ -285,30 +366,36 @@ class Play {
     const g = ctx.createRadialGradient(SW / 2, SH / 2, SH * 0.45, SW / 2, SH / 2, SW * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.28)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
     // biome plate
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
-    T.draw(ctx, b.name, 12, 9, { size: 8, color: c.gold }); T.draw(ctx, `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
+    T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
     // species checklist
-    const n = this.pool.length; const px = SW - 6 - n * 32; UIK.panel(ctx, px - 4, 6, n * 32 + 2, 44, { fill: 'rgba(16,32,28,0.82)' });
+    const n = this.pool.length, tw = b.secret ? 21 : 32, th = b.secret ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, b.secret ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
     this.pool.forEach((sp, i) => {
-      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * 32;
-      ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, 30, 15);
-      T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim });
-      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, 28, 1); }
+      const has = Save.has(sp.id); const here = this.caughtHere.has(sp.id); const x = px + i * tw;
+      if (b.secret && !has) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(x + 1, 10, tw - 3, th); T.draw(ctx, '?', x + tw / 2 - 1, 11, { size: 8, align: 'c', color: c.dim }); }
+      else { ctx.drawImage(Art.specimen(sp, !has, '#587868'), x, 9, tw - 2, th); if (!b.secret) T.draw(ctx, has ? '✓' : '?', x + 15, 25, { size: 8, align: 'c', color: has ? c.green : c.dim }); }
+      if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, tw - 3, 1); }
     });
-    T.draw(ctx, `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, 40, { size: 8, align: 'r', color: c.text });
+    T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, b.secret ? 28 : 40, { size: 8, align: 'r', color: c.text });
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
     // controls hint
-    const hint = 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
-    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; UIK.panel(ctx, SW / 2 - 200, SH - 44, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, SH - 41, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
+    const hint = this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
+    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
     // crosshair
     const cx = SW / 2, cy = SH / 2; const hot = this.reticle > 0; ctx.fillStyle = hot ? c.green : 'rgba(255,255,255,0.85)';
     if (hot) { const r = 6 - this.reticle * 2 + Math.sin(this.t * 14) * 0.5; ctx.fillRect(cx - r - 3, cy, 3, 1); ctx.fillRect(cx + r + 1, cy, 3, 1); ctx.fillRect(cx, cy - r - 3, 1, 3); ctx.fillRect(cx, cy + r + 1, 1, 3); }
     ctx.fillRect(cx, cy, 1, 1); ctx.fillRect(cx - 1, cy, 3, 1); ctx.fillRect(cx, cy - 1, 1, 3);
-    // sense arrows
-    if (this.sense) this.drawSense(ctx);
+    // flashlight, modifier, reveal markers, sense arrows
+    if (this.flash) {
+      UIK.panel(ctx, 6, SH - 48, 92, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ [F]', 11, SH - 44, { size: 8, color: c.dim }); ctx.fillStyle = this.flashOn ? '#ffe9a0' : '#3a3a3a'; ctx.fillRect(80, SH - 43, 12, 8); ctx.fillStyle = this.flashOn ? '#fff8d8' : '#1a1a1a'; ctx.fillRect(81, SH - 42, 10, 3);
+      if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
+    }
+    if (this.mod) { const tx = `${this.mod.name} · ${Math.ceil(this.mod.t)} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 34, w2, 16, { fill: 'rgba(40,16,56,0.88)', border: '#d070ff' }); T.draw(ctx, tx, SW / 2, 38, { size: 8, align: 'c', color: '#f0c8ff' }); }
+    if (this.revealT > 0) this.flies.forEach(f => { if (f.state === CAUGHT) return; const q = f.pos.clone().project(this.camera); if (q.z > 1) return; const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (sx < 4 || sx > SW - 4 || sy < 4 || sy > SH - 4) return; ctx.fillStyle = `rgba(255,190,80,${0.5 + 0.5 * Math.sin(this.t * 6)})`; ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 9, 3, 3); ctx.fillRect(Math.round(sx), Math.round(sy) - 6, 1, 3); });
+    if (this.sense || this.guideT > 0) this.drawSense(ctx);
     // sparkles
     for (const s of this.sparks) { ctx.fillStyle = s.c; ctx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2); }
     // toasts
@@ -317,7 +404,7 @@ class Play {
     this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
   }
   drawSense(ctx) {
-    let best = null, bd = 1e9; for (const f of this.flies) { if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
+    let best = null, bd = 1e9; const pref = this.guideT > 0; for (const f of this.flies) { if (f.state === CAUGHT || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
     if (!best) return; const q = best.pos.clone().project(this.camera); const behind = q.z > 1; let sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (behind) { sx = SW - sx; sy = SH - 30; }
     const m = 14; const inside = sx > m && sx < SW - m && sy > m && sy < SH - m && !behind; sx = clamp(sx, m, SW - m); sy = clamp(sy, m + 30, SH - m - 22);
     const a = Math.atan2(sy - SH / 2, sx - SW / 2); const pulse = 0.6 + 0.4 * Math.sin(this.t * 5);

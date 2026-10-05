@@ -171,7 +171,7 @@ const Art = (() => {
   const antMat = new THREE.MeshBasicMaterial({ color: 0x120e0a });
 
   function makeButterfly(sp) {
-    const span = ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF; // metres (exaggerated)
+    const span = ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF * (sp.glow ? 2.4 : 1); // metres (exaggerated; night creatures are drawn larger)
     const half = span / 2 / 0.9;
     const mat = new THREE.MeshBasicMaterial({ map: wingTexture(sp), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
     const geo = new THREE.PlaneGeometry(half, half); geo.rotateX(-Math.PI / 2); geo.translate(half / 2, 0, 0);

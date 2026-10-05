@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
 const Screens = (() => {
   const c = UIK.col;
-  const short = { russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
-  const biomeCol = { russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -38,7 +38,7 @@ const Screens = (() => {
       const x = SW / 2 - 70, w = 140; const s = Save.data.settings;
       this.btns = [
         { id: 'play', label: 'Играть', x, y: 144, w, h: 20, size: 10 },
-        { id: 'journal', label: `Коллекция  ${Save.total()}/${SPECIES.length}`, x, y: 168, w, h: 16, size: 8 },
+        { id: 'journal', label: `Коллекция  ${Save.total()}/${REAL}+???`, x, y: 168, w, h: 16, size: 8 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 188, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 208, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 208, w: 68, h: 16 },
@@ -53,7 +53,7 @@ const Screens = (() => {
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       T.draw(ctx, 'пиксельная энтомологическая игра: ловим бабочек по всему миру', SW / 2, 104, { size: 8, align: 'c', color: c.text, shadow: '#000' });
-      T.draw(ctx, `8 биомов · ${SPECIES.length} реальных видов · найди их места обитания`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
+      T.draw(ctx, `8 биомов · ${REAL} реальных видов · и одно место, которого нет на карте…`, SW / 2, 116, { size: 8, align: 'c', color: c.dim, shadow: '#000' });
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -93,7 +93,7 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${SPECIES.length}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 82, y: MAPY + MAP_H * MS + 14, w: 72, h: 24, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'journal', label: `Коллекция ${Save.total()}/${REAL}+???`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
@@ -125,14 +125,16 @@ const Screens = (() => {
       const b = BIOMES[this.sel >= 0 ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
       const py0 = MAPY + MAP_H * MS + 10; UIK.panel(ctx, 8, py0, SW - 16, SH - py0 - 6, { fill: 'rgba(16,32,28,0.92)' });
       const iy = py0 + 4;
-      if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–8 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
+      if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–9 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
       else {
         T.draw(ctx, b.name, 14, iy, { size: 10, color: biomeCol[b.id] });
+        if (b.secret) { T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°S ${Math.abs(b.lon).toFixed(1)}°W`, 14, iy + 13, { size: 8, color: c.dim }); T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 }); for (let k = 0; k < 18; k++) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); T.draw(ctx, '?', 286 + (k % 9) * 22, iy + Math.floor(k / 9) * 11 + 1, { size: 8, align: 'c', color: Math.random() < 0.02 ? c.red : '#4a6a60' }); } T.draw(ctx, `поймано ${Save.biomeCount(b)} из ???`, 276, iy + 45, { size: 8, color: c.text }); T.draw(ctx, fit(b.climate, 116), 276, iy + 56, { size: 8, color: c.red }); } else {
         T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°${b.lat >= 0 ? 'N' : 'S'} ${Math.abs(b.lon).toFixed(1)}°${b.lon >= 0 ? 'E' : 'W'}`, 14, iy + 13, { size: 8, color: c.dim });
         T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 });
         b.species.forEach((sp, k) => { const has = Save.has(sp.id); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has, '#587868'), 276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); });
         T.draw(ctx, `поймано ${Save.biomeCount(b)} из ${b.species.length}`, 276, iy + 45, { size: 8, color: c.text });
-        T.draw(ctx, `${b.alt} · ${b.climate}`, 276, iy + 56, { size: 8, color: c.dim });
+        T.draw(ctx, fit(`${b.alt} · ${b.climate}`, 116), 276, iy + 56, { size: 8, color: c.dim });
+        }
       }
       this.btns.forEach(bt => UIK.btn(ctx, bt, UIK.hit(bt, m.x, m.y))); UIK.btn(ctx, this.go, !this.go.disabled && UIK.hit(this.go, m.x, m.y));
     },
@@ -148,7 +150,7 @@ const Screens = (() => {
   const journal = {
     tab: 0, sel: 0, btns: [], slots: [], tabs: [],
     layout() {
-      this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 58, y: 22, w: 56, h: 15 }));
+      this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 53, y: 22, w: 51, h: 15 }));
       this.slots = []; const b = BIOMES[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
@@ -157,7 +159,7 @@ const Screens = (() => {
     draw(ctx, t, m) {
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${SPECIES.length}`, 216, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${Save.total()} / ${REAL}+???`, 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
@@ -193,7 +195,7 @@ const Screens = (() => {
       } else {
         T.draw(ctx, '??? ???', tx, y, { size: 10, color: ink }); y += 13; T.draw(ctx, 'Вид ещё не найден', tx, y, { size: 8, color: dim }); y += 13;
         left = Math.floor((bottom - y) / lh);
-        take(`Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
+        take(b.secret ? 'Где искать: ???. Что-то мерцает в темноте…' : `Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
       }
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
@@ -229,7 +231,7 @@ const Screens = (() => {
       UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
       T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };

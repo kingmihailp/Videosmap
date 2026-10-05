@@ -23,6 +23,8 @@ const BIOMES = [
     climate: 'континентальный, лето', desc: 'Высокотравная прерия с ваточником и эхинацеей, вдоль ручья — тополя и ивы.' },
   { id: 'japan', name: 'Горные леса Японии', place: 'Нагано, Хонсю', lat: 36.3, lon: 138.0, alt: '900 м',
     climate: 'умеренный муссонный', desc: 'Клёны, криптомерии и бамбук на склонах сатояма, тихий ручей и цветы на светлых полянах.' },
+  { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 15,
+    climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
 ];
 
 // beh = behaviour template (see game.js BEH): swallow / pierid / nymph / blue / morph / heli / owl / bird / emperor
@@ -288,6 +290,22 @@ const BEH = {
   owl:     { speed: 1.5, flap: 4.8, glide: 0.25, erratic: 0.15, h: [0.4, 1.6], wary: 3.6, perch: 0.8 },
   bird:    { speed: 2.5, flap: 4.6, glide: 0.55, erratic: 0.1,  h: [2.4, 6.2], wary: 7.0, perch: 0.25 },
   emperor: { speed: 3.3, flap: 7.0, glide: 0.4,  erratic: 0.2,  h: [1.8, 5.5], wary: 6.2, perch: 0.3 },
+  // --- the secret ocean: every one of these has a special rule (see Fly.special in play.js)
+  screech: { speed: 3.4, flap: 15, glide: 0.0, erratic: 0.8, h: [0.5, 2.4], wary: 7, perch: 0.0, special: 'screech' },
+  dread:   { speed: 1.1, flap: 3.4, glide: 0.6, erratic: 0.15, h: [0.4, 1.8], wary: 2.2, perch: 0.2, special: 'dread' },
+  seek:    { speed: 2.8, flap: 6, glide: 0.2, erratic: 0.1, h: [0.5, 1.8], wary: 0, perch: 0, special: 'seek' },
+  grumble: { speed: 0.9, flap: 3, glide: 0.4, erratic: 0.1, h: [0.3, 1.1], wary: 3.2, perch: 0.6, special: 'grumble' },
+  rush:    { speed: 2, flap: 11, glide: 0, erratic: 0.1, h: [0.8, 1.8], wary: 0, perch: 0, special: 'rush' },
+  ambush:  { speed: 2, flap: 11, glide: 0, erratic: 0.1, h: [0.8, 1.8], wary: 0, perch: 0, special: 'ambush' },
+  eyes:    { speed: 1.5, flap: 5, glide: 0.3, erratic: 0.1, h: [0.6, 1.8], wary: 0, perch: 0, special: 'eyes' },
+  figure:  { speed: 1.2, flap: 4, glide: 0.5, erratic: 0.1, h: [0.5, 1.3], wary: 6, perch: 0.5, special: 'figure' },
+  halt:    { speed: 3, flap: 9, glide: 0.1, erratic: 0.3, h: [0.6, 2.2], wary: 5, perch: 0.2, special: 'halt' },
+  timothy: { speed: 1.4, flap: 14, glide: 0, erratic: 0.5, h: [0.1, 0.6], wary: 2.6, perch: 0.9, special: 'timothy' },
+  glitch:  { speed: 2.2, flap: 9, glide: 0.1, erratic: 0.6, h: [0.5, 2.2], wary: 4.5, perch: 0.2, special: 'glitch' },
+  jeff:    { speed: 1.8, flap: 6.5, glide: 0.3, erratic: 0.2, h: [0.6, 2.0], wary: 4.2, perch: 0.5 },
+  guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7ad8ff' },
+  curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffc050' },
+  modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#d070ff' },
 };
 
 const SPECIES_BY_ID = {};
