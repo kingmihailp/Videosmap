@@ -43,8 +43,15 @@
   function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
   addEventListener('resize', fit); fit();
   function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
-  function lock() { if (App.noLock) { App.locked = true; return; } try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-  function unlock() { if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
+  // Esc releases the pointer lock and the browser refuses an immediate re-lock; so closing the menu with Esc keeps retrying for a couple of seconds
+  // (the game runs meanwhile) and never falls back into the pause menu by itself
+  function lock() { if (App.noLock) { App.locked = true; return; } App.lockWant = performance.now(); tryLock(0); }
+  function tryLock(n) {
+    if (App.locked) { App.lockWant = 0; return; }
+    try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    clearTimeout(App.lockTimer); App.lockTimer = setTimeout(() => { if (App.lockWant && !App.locked) { if (n < 10) tryLock(n + 1); else App.lockWant = 0; } }, 300);
+  }
+  function unlock() { App.lockWant = 0; if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
   function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); if (Net.on) Net.leave(); }
   App.toTitle = () => { leave(); App.screen = 'title'; };
@@ -92,11 +99,11 @@
   // ---------------- input
   document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
   document.addEventListener('pointerlockchange', () => {
-    App.locked = document.pointerLockElement === ui;
-    if (!App.locked && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
-    if (!App.locked && App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause';
+    App.locked = document.pointerLockElement === ui; if (App.locked) App.lockWant = 0;
+    if (!App.locked && !App.lockWant && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
+    if (!App.locked && !App.lockWant && App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause';
   });
-  document.addEventListener('pointerlockerror', () => { if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
+  document.addEventListener('pointerlockerror', () => { if (App.lockWant) return; if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
   document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } if (document.hidden && App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; unlock(); } });
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => inp.keys.delete(e.code));
@@ -162,14 +169,14 @@
     const sc = App.screen;
     if (sc === 'play' && App.play) {
       const p = App.play;
-      const running = !App.overlay && (App.locked || App.noLock);
+      const running = !App.overlay && (App.locked || App.noLock || App.lockWant);
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
-      if (!cb.ov && (App.locked || App.noLock)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
+      if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
       if (!full) { renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
       cb.draw(ctx, t, mouse, dt);
