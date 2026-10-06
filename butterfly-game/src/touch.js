@@ -17,11 +17,11 @@
   #tc .st{position:absolute;display:none;width:calc(var(--s)*1.9);height:calc(var(--s)*1.9);margin:calc(var(--s)*-.95) 0 0 calc(var(--s)*-.95);border-radius:50%;border:2px solid rgba(242,232,200,.5);background:rgba(8,18,16,.25)}
   #tc .kn{position:absolute;left:50%;top:50%;width:calc(var(--s)*.8);height:calc(var(--s)*.8);margin:calc(var(--s)*-.4) 0 0 calc(var(--s)*-.4);border-radius:50%;background:rgba(242,232,200,.55)}
   #rot{position:fixed;inset:0;z-index:9;background:#04080a;color:#f2e8c8;display:none;align-items:center;justify-content:center;text-align:center;font:16px monospace;padding:24px}
-  #kb{position:fixed;left:-300px;top:0;width:10px;height:10px;opacity:0}`;
+  #kb{position:fixed;left:50%;bottom:0;width:60px;height:24px;font-size:16px;opacity:.02;border:0;padding:0;z-index:4;pointer-events:none}`;
   document.head.appendChild(st);
   const root = document.createElement('div'); root.id = 'tc'; document.body.appendChild(root);
   const rot = document.createElement('div'); rot.id = 'rot'; rot.innerHTML = '<div>Поверни телефон горизонтально<br><br>↻ 📱</div>'; document.body.appendChild(rot);
-  const kb = document.createElement('input'); kb.id = 'kb'; kb.autocapitalize = 'off'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.value = ' '; document.body.appendChild(kb);
+  const kb = document.createElement('input'); kb.id = 'kb'; kb.autocapitalize = 'off'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.value = ' '; kb.setAttribute('inputmode', 'text'); kb.setAttribute('enterkeyhint', 'done'); document.body.appendChild(kb);
   const S = () => Math.max(44, Math.min(70, Math.round(Math.min(innerWidth, innerHeight) * 0.15)));
 
   const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; window.dispatchEvent(new KeyboardEvent('keydown', o)); window.dispatchEvent(new KeyboardEvent('keyup', o)); };
@@ -36,6 +36,7 @@
   mk('🦋', { right: g, bottom: g }, () => App.screen === 'play' && moving(), () => { inp.fire = true; }, 'big');
   mk('E', { right: `calc(var(--s)*1.45 + ${g})`, bottom: `calc(var(--s)*1.45 + ${g})` }, moving, () => key('KeyE', 'e'));
   mk('📖', { right: g, top: `calc(var(--s)*1.3 + ${g})` }, moving, () => key('Tab'));
+  const crouch = mk('⬇', { right: g, top: `calc(var(--s)*2.6 + ${g})` }, () => moving() && App.screen === 'play', () => { if (inp.keys.has('KeyC')) inp.keys.delete('KeyC'); else inp.keys.add('KeyC'); });
   mk('☰', { right: g, top: g }, moving, () => key('KeyP', 'p'));
   mk('🔦', { left: g, top: `calc(var(--s)*3.3 + ${g})` }, () => moving() && App.screen === 'play' && App.play.flash, () => key('KeyF', 'f'));
   mk('👁', { left: g, top: `calc(var(--s)*2 + ${g})` }, () => moving() && App.screen === 'play', () => key('KeyH', 'h'));
@@ -81,7 +82,7 @@
   ui.addEventListener('touchend', end, { passive: false }); ui.addEventListener('touchcancel', end, { passive: false });
 
   // ---- on-screen text input (multiplayer address / name): a tap on the form focuses a hidden input, typed characters become key events
-  ui.addEventListener('click', () => { if (App.screen === 'mp') setTimeout(() => { kb.focus({ preventScroll: true }); }, 0); else if (document.activeElement === kb) kb.blur(); });
+  ui.addEventListener('click', () => { if (App.screen === 'mp' && !(window.Net && Net.on)) { kb.blur(); kb.value = ' '; kb.focus({ preventScroll: true }); try { kb.setSelectionRange(1, 1); } catch (er) {} } else if (document.activeElement === kb) kb.blur(); });   // focus inside the tap itself (needed to raise the keyboard); blur first so it comes back after being hidden
   kb.addEventListener('input', () => {
     const v = kb.value; kb.value = ' ';
     if (!v.length) { key('Backspace'); return; }
@@ -95,6 +96,8 @@
     root.style.setProperty('--s', S() + 'px');
     for (const o of btns) o.b.style.display = o.show() ? 'flex' : 'none';
     if (!moving() && mv) endMove();
+    if (!(moving() && App.screen === 'play')) inp.keys.delete('KeyC');
+    crouch.style.background = inp.keys.has('KeyC') ? 'rgba(232,200,112,.6)' : '';
     rot.style.display = innerHeight > innerWidth * 1.05 ? 'flex' : 'none';
   }
   App.tcState = () => ({ mv, lk });

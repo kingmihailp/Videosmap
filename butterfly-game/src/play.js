@@ -486,7 +486,7 @@ class Play {
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
-    const hint = window.F0W && F0W.touch ? 'Слева стик — ходьба   Справа палец — осмотр   Тап — взмах' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
+    const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
     if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
     // crosshair
     const cx = SW / 2, cy = SH / 2; const hot = this.reticle > 0; ctx.fillStyle = hot ? c.green : 'rgba(255,255,255,0.85)';
