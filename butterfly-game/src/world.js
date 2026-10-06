@@ -151,10 +151,11 @@ const World = (() => {
   // ------------------------------------------------------------ trees
   const TREES = {
     birch(r) {
-      const parts = []; const H = r.range(6, 8.6); const top = trunk(parts, r, H, 0.17, 0.07, r.range(-0.05, 0.05), ['#eceadc', '#d8d6c8', 0, H]);
+      const parts = []; const H = r.range(6, 8.6); const Ht = H * 0.8 - 0.3;       // the trunk ends INSIDE the crown (it used to poke out of the top of the foliage)
+      const top = trunk(parts, r, Ht, 0.17, 0.08, r.range(-0.05, 0.05), ['#eceadc', '#d8d6c8', 0, Ht]);
       // dark bark marks: thin flat patches lying ON the trunk surface (they follow the leaning trunk and never stick out)
       for (let i = 0; i < 9; i++) {
-        const y = 0.6 + i * (H - 2.2) / 8 + r.range(-0.15, 0.15), t = y / H, k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1));
+        const y = 0.6 + i * (Ht - 1.5) / 8 + r.range(-0.15, 0.15), t = y / Ht, k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1));
         const cx = lerp(A.x, B.x, u), cz = lerp(A.z, B.z, u), rad = lerp(top.r0, top.r1, t) * 0.8, a = r.range(0, 6.28), w = rad * r.range(1.1, 2.0);
         parts.push({ g: new THREE.BoxGeometry(w, 0.05 + r.next() * 0.06, 0.03), m: M(cx + Math.cos(a) * rad, y, cz + Math.sin(a) * rad, 0, Math.PI / 2 - a, 0), c: '#34332e', j: 0 });
       }

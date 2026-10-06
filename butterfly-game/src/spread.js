@@ -11,7 +11,7 @@ const Cab2 = {
 };
 
 // small card for a specimen: butterfly picture, name, line with date or quality
-function specCard(ctx, x, y, w, h, spec, hover, sel) {
+function specCard(ctx, x, y, w, h, spec, hover, sel, count) {
   const c = UIK.col; const sp = SPECIES_BY_ID[spec.sp];
   UIK.panel(ctx, x, y, w, h, { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
   Art.drawPose(ctx, sp, spec.pose || Art.RAW, x + w / 2, y + 22, 1);
@@ -20,6 +20,9 @@ function specCard(ctx, x, y, w, h, spec, hover, sel) {
   T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: c.text });
   if (spec.q !== null) { const g = Grade(spec.q); T.draw(ctx, spec.q + '% ' + g.name.split(' ')[0], x + w / 2, y + h - 11, { size: 8, align: 'c', color: g.col }); }
   else T.draw(ctx, fmtDate(spec.date), x + w / 2, y + h - 11, { size: 8, align: 'c', color: c.dim });
+  if (count > 1) {                                   // a stack of identical (unspread) specimens
+    const tx = '×' + count, tw = T.width(tx, 8) + 8; UIK.panel(ctx, x + w - tw - 3, y + 3, tw, 12, { fill: 'rgba(8,20,16,0.92)', border: c.gold, shadow: false }); T.draw(ctx, tx, x + w - tw / 2 - 3, y + 5, { size: 8, align: 'c', color: c.gold });
+  }
 }
 
 const Spread = (() => {
@@ -36,8 +39,10 @@ const Spread = (() => {
     page: 0, hover: -1, cards: [], btns: [], list: [],
     open() { this.page = 0; },
     layout() {
-      this.list = Save.rawList(); const per = 12; const pages = Math.max(1, Math.ceil(this.list.length / per)); this.page = Math.min(this.page, pages - 1);
-      this.cards = this.list.slice(this.page * per, this.page * per + per).map((s, i) => ({ s, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
+      this.list = Save.rawList(); const per = 12;
+      const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
+      const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
+      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
       this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];
       this.pages = pages;
     },
@@ -45,7 +50,7 @@ const Spread = (() => {
       this.layout(); Cab2.backdrop(ctx);
       T.draw(ctx, 'Что расправим?', SW / 2, 10, { size: 14, align: 'c', color: c.gold, shadow: '#000' });
       T.draw(ctx, this.list.length ? 'выберите пойманную бабочку — ей потребуются точные движения' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 27, { size: 8, align: 'c', color: c.dim });
-      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false); });
+      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false, cd.n); });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       T.draw(ctx, `${this.page + 1} / ${this.pages}`, 240, 250, { size: 8, align: 'c', color: c.text });
       T.draw(ctx, `всего необработанных: ${this.list.length}`, SW - 12, 250, { size: 8, align: 'r', color: c.dim });

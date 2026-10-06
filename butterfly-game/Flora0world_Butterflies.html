@@ -1871,10 +1871,11 @@ const World = (() => {
   // ------------------------------------------------------------ trees
   const TREES = {
     birch(r) {
-      const parts = []; const H = r.range(6, 8.6); const top = trunk(parts, r, H, 0.17, 0.07, r.range(-0.05, 0.05), ['#eceadc', '#d8d6c8', 0, H]);
+      const parts = []; const H = r.range(6, 8.6); const Ht = H * 0.8 - 0.3;       // the trunk ends INSIDE the crown (it used to poke out of the top of the foliage)
+      const top = trunk(parts, r, Ht, 0.17, 0.08, r.range(-0.05, 0.05), ['#eceadc', '#d8d6c8', 0, Ht]);
       // dark bark marks: thin flat patches lying ON the trunk surface (they follow the leaning trunk and never stick out)
       for (let i = 0; i < 9; i++) {
-        const y = 0.6 + i * (H - 2.2) / 8 + r.range(-0.15, 0.15), t = y / H, k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1));
+        const y = 0.6 + i * (Ht - 1.5) / 8 + r.range(-0.15, 0.15), t = y / Ht, k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1));
         const cx = lerp(A.x, B.x, u), cz = lerp(A.z, B.z, u), rad = lerp(top.r0, top.r1, t) * 0.8, a = r.range(0, 6.28), w = rad * r.range(1.1, 2.0);
         parts.push({ g: new THREE.BoxGeometry(w, 0.05 + r.next() * 0.06, 0.03), m: M(cx + Math.cos(a) * rad, y, cz + Math.sin(a) * rad, 0, Math.PI / 2 - a, 0), c: '#34332e', j: 0 });
       }
@@ -3521,6 +3522,21 @@ const Screens = (() => {
         T.draw(ctx, String(i + 1), p.x, p.y - 12 + bob, { size: 8, align: 'c', color: '#10201c' });
         if (hov || sel) T.draw(ctx, short[b.id], p.x, p.y + 2, { size: 8, align: 'c', color: '#2a1608', outline: '#f4e8c0' });
       });
+      // other players: small figures next to the pin of the place they are in, a roster in the corner, names when a pin is hovered
+      if (Net.on && Net.list && Net.list.length) {
+        const by = {}; for (const pl of Net.list) (by[pl.loc || '_'] = by[pl.loc || '_'] || []).push(pl);
+        const col = n => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsl(${h % 360},55%,42%)`; };
+        const person = (x, y, pl) => { x = Math.round(x); y = Math.round(y); ctx.fillStyle = '#1a0e06'; ctx.fillRect(x - 1, y - 1, 7, 12); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(x + 1, y, 3, 3); ctx.fillStyle = col(pl.name); ctx.fillRect(x, y + 3, 5, 5); ctx.fillStyle = '#2a2a34'; ctx.fillRect(x + 1, y + 8, 1, 2); ctx.fillRect(x + 3, y + 8, 1, 2); if (pl.id === Net.id) { ctx.fillStyle = c.gold; ctx.fillRect(x - 1, y + 11, 7, 1); } };
+        BIOMES.forEach((b, i) => {
+          const L = by[b.id]; if (!L) return; const p = pinPos(b); L.slice(0, 4).forEach((pl, k) => person(p.x + 8 + k * 8, p.y - 12, pl));
+          if (L.length > 4) T.draw(ctx, '+' + (L.length - 4), p.x + 8 + 4 * 8, p.y - 10, { size: 8, color: '#2a1608', outline: '#f4e8c0' });
+          if (i === this.hover) { const w = Math.max(...L.map(pl => T.width(pl.name + (pl.id === Net.id ? ' (вы)' : ''), 8))) + 10, h = L.length * 10 + 6, x = clamp(p.x + 8, 4, SW - w - 4), y = Math.max(MAPY + 2, p.y - 18 - h); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(16,32,28,0.95)', border: c.gold }); L.forEach((pl, k) => T.draw(ctx, pl.name + (pl.id === Net.id ? ' (вы)' : ''), x + 5, y + 4 + k * 10, { size: 8, color: pl.id === Net.id ? c.gold : '#fff' })); }
+        });
+        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc && short[pl.loc] ? short[pl.loc] : 'на карте';
+        const rows = Net.list.slice(0, 8).map(pl => [pl.name + (pl.id === Net.id ? ' (вы)' : ''), where(pl), pl.id === Net.id]); const w1 = Math.max(...rows.map(r => T.width(r[0], 8))), w2 = Math.max(...rows.map(r => T.width(r[1], 8))), pw = w1 + w2 + 24, ph = rows.length * 10 + 18;
+        const px = MAPX + MAP_W * MS - pw - 6, py = MAPY + MAP_H * MS - ph - 6; UIK.panel(ctx, px, py, pw, ph, { fill: 'rgba(16,32,28,0.88)', border: c.line, shadow: false });
+        T.draw(ctx, `Онлайн: ${Net.list.length}`, px + 6, py + 4, { size: 8, color: c.green }); rows.forEach((r, k) => { T.draw(ctx, r[0], px + 6, py + 16 + k * 10, { size: 8, color: r[2] ? c.gold : '#fff' }); T.draw(ctx, r[1], px + pw - 6, py + 16 + k * 10, { size: 8, align: 'r', color: c.dim }); });
+      }
       // info panel
       const b = BIOMES[this.sel >= 0 ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
       const py0 = MAPY + MAP_H * MS + 10; UIK.panel(ctx, 8, py0, SW - 16, SH - py0 - 6, { fill: 'rgba(16,32,28,0.92)' });
@@ -3758,7 +3774,7 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
 // ===== spread.js =====
@@ -3775,7 +3791,7 @@ const Cab2 = {
 };
 
 // small card for a specimen: butterfly picture, name, line with date or quality
-function specCard(ctx, x, y, w, h, spec, hover, sel) {
+function specCard(ctx, x, y, w, h, spec, hover, sel, count) {
   const c = UIK.col; const sp = SPECIES_BY_ID[spec.sp];
   UIK.panel(ctx, x, y, w, h, { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
   Art.drawPose(ctx, sp, spec.pose || Art.RAW, x + w / 2, y + 22, 1);
@@ -3784,6 +3800,9 @@ function specCard(ctx, x, y, w, h, spec, hover, sel) {
   T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: c.text });
   if (spec.q !== null) { const g = Grade(spec.q); T.draw(ctx, spec.q + '% ' + g.name.split(' ')[0], x + w / 2, y + h - 11, { size: 8, align: 'c', color: g.col }); }
   else T.draw(ctx, fmtDate(spec.date), x + w / 2, y + h - 11, { size: 8, align: 'c', color: c.dim });
+  if (count > 1) {                                   // a stack of identical (unspread) specimens
+    const tx = '×' + count, tw = T.width(tx, 8) + 8; UIK.panel(ctx, x + w - tw - 3, y + 3, tw, 12, { fill: 'rgba(8,20,16,0.92)', border: c.gold, shadow: false }); T.draw(ctx, tx, x + w - tw / 2 - 3, y + 5, { size: 8, align: 'c', color: c.gold });
+  }
 }
 
 const Spread = (() => {
@@ -3800,8 +3819,10 @@ const Spread = (() => {
     page: 0, hover: -1, cards: [], btns: [], list: [],
     open() { this.page = 0; },
     layout() {
-      this.list = Save.rawList(); const per = 12; const pages = Math.max(1, Math.ceil(this.list.length / per)); this.page = Math.min(this.page, pages - 1);
-      this.cards = this.list.slice(this.page * per, this.page * per + per).map((s, i) => ({ s, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
+      this.list = Save.rawList(); const per = 12;
+      const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
+      const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
+      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
       this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];
       this.pages = pages;
     },
@@ -3809,7 +3830,7 @@ const Spread = (() => {
       this.layout(); Cab2.backdrop(ctx);
       T.draw(ctx, 'Что расправим?', SW / 2, 10, { size: 14, align: 'c', color: c.gold, shadow: '#000' });
       T.draw(ctx, this.list.length ? 'выберите пойманную бабочку — ей потребуются точные движения' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 27, { size: 8, align: 'c', color: c.dim });
-      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false); });
+      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false, cd.n); });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       T.draw(ctx, `${this.page + 1} / ${this.pages}`, 240, 250, { size: 8, align: 'c', color: c.text });
       T.draw(ctx, `всего необработанных: ${this.list.length}`, SW - 12, 250, { size: 8, align: 'r', color: c.dim });

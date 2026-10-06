@@ -181,3 +181,8 @@ The cabinet / market / house pause menus have the same «Настройки» an
 - A biome that nobody is in gets a **new seed** (new landscape, new butterflies) every time a player walks into it; later joiners get the same landscape. The cabinet and the market keep theirs.
 - The butterflies of a location are simulated by its host. The host keeps simulating (and sending) under the pause menu / journal / help, and if the host stays silent for 6 s (hidden tab, frozen client) the server hands the lead to the next player (`host` message); the old host becomes a follower again. A new host fills an empty location with a fresh population.
 - Server change: `joinLoc` re-seeds empty biomes, watchdog in `server.js`. Test: `tools/test/mp_host.js`.
+
+## Misc
+- World map (online): figures next to a pin show who is in that place, hovering a pin lists their names, a corner panel lists everybody and where they are (cabinet / market / map).
+- Spreading desk: unspread specimens of one species are stacked into one card with a «×N» badge; aberrants are separate cards (identical aberration codes stack together).
+- Birch trunks now end inside the crown.

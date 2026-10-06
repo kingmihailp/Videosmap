@@ -184,6 +184,21 @@ const Screens = (() => {
         T.draw(ctx, String(i + 1), p.x, p.y - 12 + bob, { size: 8, align: 'c', color: '#10201c' });
         if (hov || sel) T.draw(ctx, short[b.id], p.x, p.y + 2, { size: 8, align: 'c', color: '#2a1608', outline: '#f4e8c0' });
       });
+      // other players: small figures next to the pin of the place they are in, a roster in the corner, names when a pin is hovered
+      if (Net.on && Net.list && Net.list.length) {
+        const by = {}; for (const pl of Net.list) (by[pl.loc || '_'] = by[pl.loc || '_'] || []).push(pl);
+        const col = n => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsl(${h % 360},55%,42%)`; };
+        const person = (x, y, pl) => { x = Math.round(x); y = Math.round(y); ctx.fillStyle = '#1a0e06'; ctx.fillRect(x - 1, y - 1, 7, 12); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(x + 1, y, 3, 3); ctx.fillStyle = col(pl.name); ctx.fillRect(x, y + 3, 5, 5); ctx.fillStyle = '#2a2a34'; ctx.fillRect(x + 1, y + 8, 1, 2); ctx.fillRect(x + 3, y + 8, 1, 2); if (pl.id === Net.id) { ctx.fillStyle = c.gold; ctx.fillRect(x - 1, y + 11, 7, 1); } };
+        BIOMES.forEach((b, i) => {
+          const L = by[b.id]; if (!L) return; const p = pinPos(b); L.slice(0, 4).forEach((pl, k) => person(p.x + 8 + k * 8, p.y - 12, pl));
+          if (L.length > 4) T.draw(ctx, '+' + (L.length - 4), p.x + 8 + 4 * 8, p.y - 10, { size: 8, color: '#2a1608', outline: '#f4e8c0' });
+          if (i === this.hover) { const w = Math.max(...L.map(pl => T.width(pl.name + (pl.id === Net.id ? ' (вы)' : ''), 8))) + 10, h = L.length * 10 + 6, x = clamp(p.x + 8, 4, SW - w - 4), y = Math.max(MAPY + 2, p.y - 18 - h); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(16,32,28,0.95)', border: c.gold }); L.forEach((pl, k) => T.draw(ctx, pl.name + (pl.id === Net.id ? ' (вы)' : ''), x + 5, y + 4 + k * 10, { size: 8, color: pl.id === Net.id ? c.gold : '#fff' })); }
+        });
+        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc && short[pl.loc] ? short[pl.loc] : 'на карте';
+        const rows = Net.list.slice(0, 8).map(pl => [pl.name + (pl.id === Net.id ? ' (вы)' : ''), where(pl), pl.id === Net.id]); const w1 = Math.max(...rows.map(r => T.width(r[0], 8))), w2 = Math.max(...rows.map(r => T.width(r[1], 8))), pw = w1 + w2 + 24, ph = rows.length * 10 + 18;
+        const px = MAPX + MAP_W * MS - pw - 6, py = MAPY + MAP_H * MS - ph - 6; UIK.panel(ctx, px, py, pw, ph, { fill: 'rgba(16,32,28,0.88)', border: c.line, shadow: false });
+        T.draw(ctx, `Онлайн: ${Net.list.length}`, px + 6, py + 4, { size: 8, color: c.green }); rows.forEach((r, k) => { T.draw(ctx, r[0], px + 6, py + 16 + k * 10, { size: 8, color: r[2] ? c.gold : '#fff' }); T.draw(ctx, r[1], px + pw - 6, py + 16 + k * 10, { size: 8, align: 'r', color: c.dim }); });
+      }
       // info panel
       const b = BIOMES[this.sel >= 0 ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
       const py0 = MAPY + MAP_H * MS + 10; UIK.panel(ctx, 8, py0, SW - 16, SH - py0 - 6, { fill: 'rgba(16,32,28,0.92)' });
@@ -421,5 +436,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
