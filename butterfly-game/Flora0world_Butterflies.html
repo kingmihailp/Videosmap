@@ -1525,7 +1525,7 @@ const Chalet = (() => {
       for (let t = -along / 2 - 0.2; t < along / 2 + 0.2; t += 0.55) { const bw = rng.range(0.5, 0.65), bh = rng.range(1.4, 1.9), px = side < 2 ? t + 0.27 : x, pz = side < 2 ? z : t + 0.27; B.box(side < 2 ? bw : 0.6, bh, side < 2 ? 0.6 : bw, px, 0.5 - bh / 2 + rng.range(-0.05, 0.05), pz, pick(STONE), 0, rng.range(-0.05, 0.05), 0, 0.12); }
     }
     // the dark inside (seen through holes in the roof, windows and the doorway)
-    B.box(W - 0.45, EAVE + 0.9, D - 0.45, 0, (EAVE + 0.9) / 2 + 0.1, 0, '#0a0806', 0, 0, 0, 0);
+    B.box(W - 0.45, EAVE - 0.25, D - 0.45, 0, (EAVE - 0.25) / 2 + 0.1, 0, '#0a0806', 0, 0, 0, 0);
     B.box(W - 0.6, 0.12, D - 0.6, 0, 0.45, 0, '#2a2018', 0, 0, 0, 0.1);                                                                    // rotten floor
     // ---------------------------------------------------------------- log walls with openings
     const wall = (axis, sgn, openings) => {
@@ -1551,24 +1551,35 @@ const Chalet = (() => {
     // loft window frames in the gable ends
     for (const sx of [-1, 1]) { const px = sx * (W / 2 + 0.07); B.box(0.1, 0.1, 1.0, px, EAVE + 1.0, 0, DARK); B.box(0.1, 0.1, 1.0, px, EAVE + 1.9, 0, DARK); B.box(0.1, 0.9, 0.1, px, EAVE + 1.45, -0.5, DARK); B.box(0.1, 0.9, 0.1, px, EAVE + 1.45, 0.5, DARK); }
     // ---------------------------------------------------------------- roof: shingle rows with holes, rafters, a collapsed patch, moss
-    const run = D / 2 + 0.95, yE = EAVE - 0.4, rise = EAVE + RISE - yE, slopeLen = Math.hypot(run, rise), th = Math.atan2(rise, run), nR = 12, nSeg = 8, segL = (W + 2.2) / nSeg;
+    const run = D / 2 + 0.95, yE = EAVE - 0.4, rise = EAVE + RISE - yE, slopeLen = Math.hypot(run, rise), th = Math.atan2(rise, run), nR = 17, nSeg = 15, segL = (W + 2.2) / nSeg, rowL = slopeLen / nR;
     for (const s of [1, -1]) {
+      // chaotic holes: irregular outlines (angular noise), overlapping, in random places of the slope
+      const holes = []; for (let h = 0; h < (s === 1 ? 7 : 6); h++) holes.push({ x: rng.range(-3.9, 3.9), l: rng.range(0.12, 0.92) * slopeLen, rx: rng.range(0.3, 1.2), rl: rng.range(0.28, 0.9), n: rng.range(0, 6.28) });
+      const inHole = (x, l) => holes.some(h => { const dx = (x - h.x) / h.rx, dl = (l - h.l) / h.rl, a = Math.atan2(dl, dx), nz = 1 + 0.32 * Math.sin(a * 3 + h.n) + 0.2 * Math.sin(a * 7 + h.n * 2); return dx * dx + dl * dl < nz * nz * 0.9; });
+      const at = (x, l) => { const t = l / slopeLen; return [x, yE + rise * t + 0.03, s * run * (1 - t)]; };
       for (let i = 0; i < nR; i++) {
-        const t = (i + 0.5) / nR, zc = s * (run * (1 - t)), yc = yE + rise * t + 0.03, rowW = slopeLen / nR * 1.22;
+        const t = (i + 0.5) / nR, l = t * slopeLen, zc = s * (run * (1 - t)), yc = yE + rise * t + 0.03;
         for (let k = 0; k < nSeg; k++) {
-          const x0 = -(W + 2.2) / 2 + k * segL, xc = x0 + segL / 2; const collapse = s === 1 && xc > 1.2 && xc < 3.0 && t > 0.4; if (collapse) continue;      // a big collapsed part of the front slope
-          if (rng.chance(0.06 + 0.2 * t + (i % 3 === 0 ? 0.04 : 0))) continue;
-          const moss = rng.chance(0.12); B.box(segL * 1.03, 0.05, rowW, xc, yc + rng.range(-0.02, 0.02), zc, moss ? pick(MOSS) : pick(SHING), s * th + rng.range(-0.03, 0.03), 0, rng.range(-0.025, 0.025), 0.1);
+          const xc = -(W + 2.2) / 2 + k * segL + segL / 2; if (inHole(xc, l) || rng.chance(0.03 + 0.04 * t)) continue;
+          const moss = rng.chance(0.12); B.box(segL * 1.04, 0.05, rowL * 1.25, xc, yc + rng.range(-0.025, 0.025), zc, moss ? pick(MOSS) : pick(SHING), s * th + rng.range(-0.04, 0.04), 0, rng.range(-0.03, 0.03), 0.1);
         }
       }
-      for (let x = -(W + 2.0) / 2; x <= (W + 2.0) / 2 + 0.01; x += 0.78) { if (rng.chance(0.05)) continue; B.box(0.11, 0.13, slopeLen, x, yE + rise / 2 - 0.08, s * run / 2, DARK, s * th, 0, 0, 0.1); }      // rafters under the shingles (visible through the holes)
+      for (let x = -(W + 2.0) / 2; x <= (W + 2.0) / 2 + 0.01; x += 0.78) { if (inHole(x, slopeLen * 0.5) && rng.chance(0.55)) continue; if (rng.chance(0.05)) continue; B.box(0.11, 0.13, slopeLen, x, yE + rise / 2 - 0.08, s * run / 2, DARK, s * th, 0, 0, 0.1); }
       for (const t of [0.3, 0.55, 0.8]) B.box(W + 2.1, 0.09, 0.09, 0, yE + rise * t - 0.12, s * run * (1 - t), DARK, 0, 0, 0);                      // purlins
       B.box(W + 2.4, 0.07, 0.34, 0, yE + 0.02, s * (run + 0.02), '#3a2e26', s * th, 0, 0);                                                         // eave board
+      // boards hanging from the edges of the holes (by one nail), swinging down at random angles; broken rafters poking out
+      for (const h of holes) {
+        const nb = rng.int(2, 5); for (let j = 0; j < nb; j++) {
+          const a = rng.range(0, 6.28), P = at(h.x + Math.cos(a) * h.rx * 0.9, clamp(h.l + Math.sin(a) * h.rl * 0.9, 0.2, slopeLen - 0.2)), L = rng.range(0.8, 1.9), tilt = rng.range(0.1, 0.8) * (rng.chance(0.5) ? 1 : -1), roll = rng.range(-0.35, 0.35);
+          B.box(0.04, 0.04, 0.09, P[0], P[1] + 0.05, P[2], IRON);
+          B.box(rng.range(0.14, 0.24), L, 0.05, P[0] + Math.sin(roll) * L / 2, P[1] - Math.cos(tilt) * L / 2 * 0.95, P[2] + Math.sin(tilt) * L / 2 * s * 0.0 + rng.range(-0.1, 0.1), pick(rng.chance(0.5) ? SHING : LOGS), tilt, 0, roll, 0.12);
+        }
+        for (let j = 0; j < 2; j++) { const P = at(h.x + rng.range(-h.rx, h.rx) * 0.6, clamp(h.l + rng.range(-h.rl, h.rl) * 0.6, 0.2, slopeLen - 0.2)); B.box(0.11, 0.13, rng.range(0.5, 1.3), P[0], P[1] - 0.05, P[2], DARK, s * th + rng.range(-0.7, 0.7), rng.range(-0.3, 0.3), rng.range(-0.2, 0.2)); }
+      }
+      for (let j = 0; j < 7; j++) { const x = rng.range(-W / 2 - 0.8, W / 2 + 0.8), L = rng.range(0.7, 1.5); B.box(0.2, 0.05, L, x, yE - 0.12 - L * 0.22, s * (run + L * 0.4), pick(SHING), s * (th + rng.range(0.7, 1.3)), 0, rng.range(-0.15, 0.15), 0.1); }     // eave boards drooping over the edge
     }
     B.box(W + 2.3, 0.22, 0.22, 0, EAVE + RISE + 0.08, 0, '#3a322a', 0, 0, rng.range(-0.01, 0.01));                                                   // ridge beam
     for (let x = -3.4; x <= 3.5; x += 0.55) if (rng.chance(0.85)) B.box(0.34, 0.1, 0.34, x, EAVE + RISE + 0.22, 0, pick(SHING), 0, rng.range(-0.3, 0.3), 0);   // ridge cap
-    // broken rafters sticking up from the hole
-    for (let i = 0; i < 4; i++) B.box(0.11, 0.12, rng.range(0.8, 1.9), 1.4 + i * 0.5, EAVE + 1.4 + rng.range(0, 0.6), 0.9 + rng.range(0, 0.5), DARK, rng.range(0.3, 0.8), 0, rng.range(-0.2, 0.2));
     // ---------------------------------------------------------------- chimney (partly collapsed) and a rusty weathervane
     { const cx = -1.9, cz = -0.9, top = EAVE + RISE + 1.3; for (let y = 2.5; y < top; y += 0.28) { const broken = y > top - 0.9; for (const [dx, dz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3], [0, 0]]) { if (broken && rng.chance(0.4)) continue; B.box(0.45, 0.27, 0.45, cx + dx, y, cz + dz, pick(STONE), 0, rng.range(-0.15, 0.15), 0, 0.14); } } B.box(0.5, 0.2, 0.5, 2.1, 0.5, -0.9, pick(STONE)); B.box(0.5, 0.2, 0.5, 2.5, 0.35, -0.2, pick(STONE)); }
     { const vx = 2.6, vy = EAVE + RISE + 0.2; B.box(0.04, 0.9, 0.04, vx, vy + 0.45, 0, IRON); B.box(0.8, 0.04, 0.04, vx, vy + 0.95, 0, RUST, 0, 0.5, 0); B.tri([vx + 0.35, vy + 0.95, 0.15], [vx + 0.35, vy + 0.95, -0.15], [vx + 0.6, vy + 0.95, 0], RUST); }
