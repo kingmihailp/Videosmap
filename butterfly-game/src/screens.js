@@ -155,13 +155,13 @@ const Screens = (() => {
   const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
-    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 78, h: 16 }, { id: 'market', label: 'Рынок', x: 160, y: 8, w: 62, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
+    layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 62, h: 16 }, { id: 'market', label: 'Рынок', x: 142, y: 8, w: 52, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
     draw(ctx, t, m) {
       this.layout(); if (!mapCanvas) mapCanvas = buildMapCanvas();
       ctx.fillStyle = '#10201c'; ctx.fillRect(0, 0, SW, SH);
       // wooden desk
       for (let i = 0; i < 24; i++) { ctx.fillStyle = i % 2 ? '#2e2018' : '#34261c'; ctx.fillRect(i * 20, 0, 20, SH); } ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, SW, SH);
-      T.draw(ctx, 'Выбери место для ловли', SW / 2, 10, { size: 10, align: 'c', color: c.gold, shadow: '#000' });
+      T.draw(ctx, 'Выбери место для ловли', 266, 11, { size: 8, align: 'c', color: c.gold, shadow: '#000' });
       // parchment frame
       UIK.panel(ctx, MAPX - 8, MAPY - 6, MAP_W * MS + 16, MAP_H * MS + 12, { fill: c.parch, border: '#5a3a1c' }); ctx.strokeStyle = '#8a6a3a'; ctx.strokeRect(MAPX - 5.5, MAPY - 3.5, MAP_W * MS + 11, MAP_H * MS + 6);
       ctx.imageSmoothingEnabled = false; ctx.drawImage(mapCanvas, MAPX, MAPY, MAP_W * MS, MAP_H * MS);
