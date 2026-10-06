@@ -158,3 +158,9 @@ cd server && npm install && node server.js [порт]   # по умолчани�
 - Ready exe: GitHub → Actions → "Windows exe" → artifact `Flora0world-Butterflies-exe` (built automatically on each push that changes the game).
 - Or build locally on Windows: install Node.js, run `desktop\Собрать exe.bat` → `desktop\dist\Flora0world-Butterflies.exe` (portable, no installer).
 - The icon is drawn by `tools/make_icon.py`. In the app the multiplayer address must be typed manually (`host:port`).
+
+## Phones / tablets (touch controls)
+`src/touch.js` turns on automatically on touch screens (or with `#touch` in the URL): left thumb = floating stick (push to the edge = run), right thumb drag = look, tap = swing the net,
+buttons: ☰ pause, 📖 journal, E interact, 👁 scent, 🔦 torch, ПРОБЕЛ (spreading board), ✕ back. Menus are tapped; lists scroll by dragging; the multiplayer fields open the on-screen keyboard.
+Play in landscape. How to get the game on a phone: run `node server/server.js` on the PC and open `http://<PC-LAN-IP>:3000` on the phone (same Wi-Fi) — this also gives multiplayer;
+or host the single HTML file anywhere over https (then the multiplayer server must be wss://). Test: `tools/test/touch.js`, `touch2.js`.
