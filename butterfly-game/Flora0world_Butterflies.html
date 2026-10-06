@@ -4096,7 +4096,9 @@ const Cabinet = (() => {
       const gap = 0.24; const widths = Boxes.WALL.map(s => Boxes.pxSize(s).w / PPM); const total = widths.reduce((a, b) => a + b, 0) + gap * 5; let x = -total / 2;
       Boxes.WALL.forEach((cls, i) => {
         const wd = widths[i], cx = x + wd / 2; x += wd + gap; const occ = Boxes.boxesAt('wall', i)[0]; const cy = 1.95;
-        if (occ) { const { m, W, H } = mk(occ, false); m.position.set(cx, cy, -HZ + 0.045); D.add(m); cube(D, 0.02, 0.02, 0.02, cx, cy + H / 2 + 0.09, -HZ + 0.02, lam('#c8a040'), { cast: false }); cube(D, 0.005, 0.16, 0.005, cx - W * 0.25, cy + H / 2 + 0.01, -HZ + 0.05, lam('#14100c'), { cast: false }); cube(D, 0.005, 0.16, 0.005, cx + W * 0.25, cy + H / 2 + 0.01, -HZ + 0.05, lam('#14100c'), { cast: false }); }
+        if (occ) { const { m, W, H } = mk(occ, false); m.position.set(cx, cy, -HZ + 0.045); D.add(m); const ny = cy + H / 2 + 0.1, top = cy + H / 2; cube(D, 0.026, 0.026, 0.02, cx, ny, -HZ + 0.02, lam('#c8a040'), { cast: false });
+          for (const sx of [-1, 1]) { const ax = cx + sx * W * 0.28, dx = cx - ax, dy = ny - top, L = Math.hypot(dx, dy); const str = cube(D, 0.006, L, 0.006, ax + dx / 2, top + dy / 2, -HZ + 0.032, lam('#14100c'), { cast: false }); str.rotation.z = Math.atan2(-dx, dy); }   // two cords run from the frame's top corners up to the nail (a "V")
+        }
         else { // empty slot: a small brass nail and a faint outline
           const hh = Boxes.pxSize(cls).h / PPM; const tex = ctex(64, 48, (g, w2, h2) => { g.strokeStyle = 'rgba(200,170,90,0.55)'; g.setLineDash([3, 3]); g.strokeRect(2.5, 2.5, w2 - 5, h2 - 5); T.draw(g, cls, w2 / 2, h2 / 2 - 4, { size: 8, align: 'c', color: 'rgba(200,170,90,0.7)' }); }, 0, 0, true);
           const q = mesh(new THREE.PlaneGeometry(wd, hh), bas('#ffffff', { map: tex, transparent: true, depthWrite: false }), cx, cy, -HZ + 0.015, { cast: false, recv: false }); D.add(q); cube(D, 0.03, 0.03, 0.02, cx, cy + hh / 2 - 0.05, -HZ + 0.02, lam('#c8a040'), { cast: false });
