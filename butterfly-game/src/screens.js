@@ -304,28 +304,44 @@ const Screens = (() => {
   const pause = {
     btns: [],
     layout(play) {
-      const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 131, w: 88, h: 16 },
-        { id: 'keys', label: 'Клавиши', x: x + 92, y: 131, w: 88, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
-        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 188, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 207, w: 180, h: 16 },
-        { id: 'cardpos', label: 'Карточка улова: положение и размер', x, y: 226, w: 180, h: 16 },
+      const x = SW / 2 - 90; this.btns = [
+        { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 104, w: 180, h: 16 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 124, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 144, w: 180, h: 16 },
+        { id: 'settings', label: 'Настройки', x, y: 164, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 184, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 204, w: 180, h: 16 },
+        { id: 'title', label: 'Выход в главное меню', x, y: 224, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
       this.layout(play); ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH);
-      UIK.panel(ctx, SW / 2 - 106, 30, 212, 234, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
-      T.draw(ctx, 'Пауза', SW / 2, 36, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 55, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, SW / 2 - 106, 38, 212, 222, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 246, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // ------------------------------------------------------------------ SETTINGS (modal over any pause menu)
+  const settings = {
+    btns: [],
+    layout() {
+      const s = Save.data.settings, x = SW / 2 - 90, inPlay = !!(window.F0W && F0W.screen === 'play' && F0W.play); let y = 76; const out = [];
+      out.push({ id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y, w: 88, h: 16 }); y += 22;
+      if (inPlay) { out.push({ id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y, w: 180, h: 16 }); y += 22; }
+      out.push({ id: 'keys', label: 'Клавиши управления', x, y, w: 180, h: 16 }); y += 22;
+      if (inPlay) { out.push({ id: 'card', label: 'Карточка улова: положение и размер', x, y, w: 180, h: 16 }); y += 22; }
+      out.push({ id: 'back', label: 'Назад', x, y: y + 6, w: 180, h: 20, size: 10 }); this.btns = out; this.h = y + 34 - 52;
+    },
+    draw(ctx, t, m) {
+      this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.93)'; ctx.fillRect(0, 0, SW, SH);
+      UIK.panel(ctx, SW / 2 - 106, 52, 212, this.h, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
+      T.draw(ctx, 'Настройки', SW / 2, 58, { size: 14, align: 'c', color: c.gold });
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
   // ------------------------------------------------------------------ KEY BINDINGS
   const keysScr = {
@@ -405,5 +421,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();

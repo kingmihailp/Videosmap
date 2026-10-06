@@ -3633,28 +3633,44 @@ const Screens = (() => {
   const pause = {
     btns: [],
     layout(play) {
-      const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 131, w: 88, h: 16 },
-        { id: 'keys', label: 'Клавиши', x: x + 92, y: 131, w: 88, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
-        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 188, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 207, w: 180, h: 16 },
-        { id: 'cardpos', label: 'Карточка улова: положение и размер', x, y: 226, w: 180, h: 16 },
+      const x = SW / 2 - 90; this.btns = [
+        { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 104, w: 180, h: 16 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 124, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 144, w: 180, h: 16 },
+        { id: 'settings', label: 'Настройки', x, y: 164, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 184, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 204, w: 180, h: 16 },
+        { id: 'title', label: 'Выход в главное меню', x, y: 224, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
       this.layout(play); ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH);
-      UIK.panel(ctx, SW / 2 - 106, 30, 212, 234, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
-      T.draw(ctx, 'Пауза', SW / 2, 36, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 55, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, SW / 2 - 106, 38, 212, 222, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 246, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // ------------------------------------------------------------------ SETTINGS (modal over any pause menu)
+  const settings = {
+    btns: [],
+    layout() {
+      const s = Save.data.settings, x = SW / 2 - 90, inPlay = !!(window.F0W && F0W.screen === 'play' && F0W.play); let y = 76; const out = [];
+      out.push({ id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y, w: 88, h: 16 }); y += 22;
+      if (inPlay) { out.push({ id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y, w: 180, h: 16 }); y += 22; }
+      out.push({ id: 'keys', label: 'Клавиши управления', x, y, w: 180, h: 16 }); y += 22;
+      if (inPlay) { out.push({ id: 'card', label: 'Карточка улова: положение и размер', x, y, w: 180, h: 16 }); y += 22; }
+      out.push({ id: 'back', label: 'Назад', x, y: y + 6, w: 180, h: 20, size: 10 }); this.btns = out; this.h = y + 34 - 52;
+    },
+    draw(ctx, t, m) {
+      this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.93)'; ctx.fillRect(0, 0, SW, SH);
+      UIK.panel(ctx, SW / 2 - 106, 52, 212, this.h, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
+      T.draw(ctx, 'Настройки', SW / 2, 58, { size: 14, align: 'c', color: c.gold });
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
   // ------------------------------------------------------------------ KEY BINDINGS
   const keysScr = {
@@ -3734,7 +3750,7 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
 // ===== spread.js =====
@@ -4606,13 +4622,13 @@ const Cabinet = (() => {
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
     static pauseButtons() {
       const s = Save.data.settings; const x = SW / 2 - 90; return [
         { id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 124, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 124, w: 88, h: 16 },
-        { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 190, w: 180, h: 16 }];
+        { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 },
+        { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }];
     }
     static pauseClick(x, y) { const b = Cab.pauseButtons().find(b => UIK.hit(b, x, y)); return b ? b.id : null; }
 
@@ -5115,10 +5131,10 @@ const Market = (() => {
     }
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
-    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 124, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 124, w: 88, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 190, w: 180, h: 16 }]; }
+    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
 
     // ------------------------------------------------------------ selling
@@ -5285,10 +5301,10 @@ const StubRoom = (() => {
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
     }
-    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 84, w: 180, h: 20, size: 10 }, { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 112, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 112, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на улицу', x, y: 136, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 158, w: 180, h: 16 }]; }
+    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 84, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 112, w: 180, h: 16 }, { id: 'exit', label: 'Выйти на улицу', x, y: 136, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 158, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
-      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'sound') this.hooks.toggle('sound'); else if (b.id === 'music') this.hooks.toggle('music'); else if (b.id === 'exit') { Snd.hush(false); this.hooks.exitRoom(); } else if (b.id === 'title') this.hooks.title();
+      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'exit') { Snd.hush(false); this.hooks.exitRoom(); } else if (b.id === 'title') this.hooks.title();
     }
     wheel() {}
     draw(ctx, t, m) {
@@ -5356,7 +5372,7 @@ const StubRoom = (() => {
   function tryLock(n) {
     if (App.locked) { App.lockWant = 0; return; }
     try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
-    clearTimeout(App.lockTimer); App.lockTimer = setTimeout(() => { if (App.lockWant && !App.locked) { if (n < 10) tryLock(n + 1); else App.lockWant = 0; } }, 300);
+    clearTimeout(App.lockTimer); App.lockTimer = setTimeout(() => { if (App.lockWant && !App.locked) { if (n < 10) tryLock(n + 1); else { App.lockWant = 0; App.needClick = true; App.noReopen = performance.now() + 1500; } } }, 300);
   }
   function unlock() { App.lockWant = 0; if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
@@ -5406,27 +5422,52 @@ const StubRoom = (() => {
   function resume() { App.overlay = null; lock(); }
   function toggleSetting(k) { Save.data.settings[k] = !Save.data.settings[k]; Save.write(); Snd.applySettings(); Snd.sfx.click(); }
 
+  // ---------------- settings modal (opened from the pause menus) and key bindings
+  App.modal = null;
+  function openSettings() { App.modal = 'settings'; }
+  cabHooks.settings = openSettings;
+  function modalKey(e) {
+    e.preventDefault();
+    if (App.modal === 'keys') { if (S.keys.key(e)) { App.modal = 'settings'; Save.write(); } return; }
+    if (e.code === 'Escape' && !e.repeat) { App.modal = null; Snd.sfx.click(); }
+  }
+  function modalClick(x, y) {
+    if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
+    const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
+    if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
+    else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
+    else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.modal = 'keys'; }
+    else if (id === 'card' && App.play) { App.modal = null; App.overlay = 'cardpos'; }
+    else if (id === 'back') App.modal = null;
+  }
   // ---------------- input
   document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  // The Esc that closes the pause menu is also the key that makes the browser drop a pointer lock it has just granted again: that lost lock must
+  // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
+  const escGuard = () => performance.now() - (App.escT || 0) < 1000;
+  function lockLost() {
+    if (App.screen === 'play' && !App.overlay) { App.overlay = 'pause'; App.pauseT = performance.now(); }
+    if (App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; App.pauseT = performance.now(); }
+  }
   document.addEventListener('pointerlockchange', () => {
-    App.locked = document.pointerLockElement === ui; if (App.locked) App.lockWant = 0;
-    if (!App.locked && !App.lockWant && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
-    if (!App.locked && !App.lockWant && App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause';
+    App.locked = document.pointerLockElement === ui; if (App.locked) { App.lockWant = 0; App.needClick = false; }
+    if (!App.locked && !App.lockWant) { if (escGuard()) { lock(); return; } lockLost(); }
   });
-  document.addEventListener('pointerlockerror', () => { if (App.lockWant) return; if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
+  document.addEventListener('pointerlockerror', () => { if (App.lockWant || escGuard() || performance.now() < (App.noReopen || 0)) return; lockLost(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } if (document.hidden && App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; unlock(); } });
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     inp.keys.add(e.code);
+    if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
+    if (App.modal) { modalKey(e); return; }
     if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
     if (sc === 'keys') { e.preventDefault(); if (S.keys.key(e)) { App.screen = 'title'; Save.write(); } return; }
     if (sc === 'mp') { if (['Backspace', 'Tab', 'Space', 'ArrowDown', 'ArrowUp'].includes(e.code)) e.preventDefault(); mpAct(S.mp.key(e)); return; }
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
-      if (App.overlay === 'keys') { e.preventDefault(); if (S.keys.key(e)) App.overlay = 'pause'; return; }
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
         if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
@@ -5447,14 +5488,14 @@ const StubRoom = (() => {
   });
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
+    if (App.modal) { modalClick(x, y); return; }
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
-      if (App.overlay === 'keys') { if (S.keys.click(x, y)) App.overlay = 'pause'; return; }
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'cardpos') App.overlay = 'cardpos'; else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.overlay = 'keys'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -5490,7 +5531,7 @@ const StubRoom = (() => {
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'keys') { S.keys.draw(ctx, t, mouse); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
@@ -5507,6 +5548,8 @@ const StubRoom = (() => {
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
+    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse);
+    if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
   }
   // dismiss title help overlay on any key/click

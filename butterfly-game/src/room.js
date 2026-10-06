@@ -66,10 +66,10 @@ const StubRoom = (() => {
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
     }
-    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 84, w: 180, h: 20, size: 10 }, { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 112, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 112, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на улицу', x, y: 136, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 158, w: 180, h: 16 }]; }
+    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 84, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 112, w: 180, h: 16 }, { id: 'exit', label: 'Выйти на улицу', x, y: 136, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 158, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
-      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'sound') this.hooks.toggle('sound'); else if (b.id === 'music') this.hooks.toggle('music'); else if (b.id === 'exit') { Snd.hush(false); this.hooks.exitRoom(); } else if (b.id === 'title') this.hooks.title();
+      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'exit') { Snd.hush(false); this.hooks.exitRoom(); } else if (b.id === 'title') this.hooks.title();
     }
     wheel() {}
     draw(ctx, t, m) {

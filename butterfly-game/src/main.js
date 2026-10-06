@@ -49,7 +49,7 @@
   function tryLock(n) {
     if (App.locked) { App.lockWant = 0; return; }
     try { const p = ui.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
-    clearTimeout(App.lockTimer); App.lockTimer = setTimeout(() => { if (App.lockWant && !App.locked) { if (n < 10) tryLock(n + 1); else App.lockWant = 0; } }, 300);
+    clearTimeout(App.lockTimer); App.lockTimer = setTimeout(() => { if (App.lockWant && !App.locked) { if (n < 10) tryLock(n + 1); else { App.lockWant = 0; App.needClick = true; App.noReopen = performance.now() + 1500; } } }, 300);
   }
   function unlock() { App.lockWant = 0; if (App.noLock) { App.locked = false; return; } try { document.exitPointerLock(); } catch (e) {} }
 
@@ -99,27 +99,52 @@
   function resume() { App.overlay = null; lock(); }
   function toggleSetting(k) { Save.data.settings[k] = !Save.data.settings[k]; Save.write(); Snd.applySettings(); Snd.sfx.click(); }
 
+  // ---------------- settings modal (opened from the pause menus) and key bindings
+  App.modal = null;
+  function openSettings() { App.modal = 'settings'; }
+  cabHooks.settings = openSettings;
+  function modalKey(e) {
+    e.preventDefault();
+    if (App.modal === 'keys') { if (S.keys.key(e)) { App.modal = 'settings'; Save.write(); } return; }
+    if (e.code === 'Escape' && !e.repeat) { App.modal = null; Snd.sfx.click(); }
+  }
+  function modalClick(x, y) {
+    if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
+    const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
+    if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
+    else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
+    else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.modal = 'keys'; }
+    else if (id === 'card' && App.play) { App.modal = null; App.overlay = 'cardpos'; }
+    else if (id === 'back') App.modal = null;
+  }
   // ---------------- input
   document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  // The Esc that closes the pause menu is also the key that makes the browser drop a pointer lock it has just granted again: that lost lock must
+  // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
+  const escGuard = () => performance.now() - (App.escT || 0) < 1000;
+  function lockLost() {
+    if (App.screen === 'play' && !App.overlay) { App.overlay = 'pause'; App.pauseT = performance.now(); }
+    if (App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; App.pauseT = performance.now(); }
+  }
   document.addEventListener('pointerlockchange', () => {
-    App.locked = document.pointerLockElement === ui; if (App.locked) App.lockWant = 0;
-    if (!App.locked && !App.lockWant && App.screen === 'play' && !App.overlay) App.overlay = 'pause';
-    if (!App.locked && !App.lockWant && App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause';
+    App.locked = document.pointerLockElement === ui; if (App.locked) { App.lockWant = 0; App.needClick = false; }
+    if (!App.locked && !App.lockWant) { if (escGuard()) { lock(); return; } lockLost(); }
   });
-  document.addEventListener('pointerlockerror', () => { if (App.lockWant) return; if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
+  document.addEventListener('pointerlockerror', () => { if (App.lockWant || escGuard() || performance.now() < (App.noReopen || 0)) return; lockLost(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } if (document.hidden && App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; unlock(); } });
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     inp.keys.add(e.code);
+    if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
+    if (App.modal) { modalKey(e); return; }
     if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
     if (sc === 'keys') { e.preventDefault(); if (S.keys.key(e)) { App.screen = 'title'; Save.write(); } return; }
     if (sc === 'mp') { if (['Backspace', 'Tab', 'Space', 'ArrowDown', 'ArrowUp'].includes(e.code)) e.preventDefault(); mpAct(S.mp.key(e)); return; }
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
-      if (App.overlay === 'keys') { e.preventDefault(); if (S.keys.key(e)) App.overlay = 'pause'; return; }
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
         if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
@@ -140,14 +165,14 @@
   });
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
+    if (App.modal) { modalClick(x, y); return; }
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
-      if (App.overlay === 'keys') { if (S.keys.click(x, y)) App.overlay = 'pause'; return; }
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'cardpos') App.overlay = 'cardpos'; else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.overlay = 'keys'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -183,7 +208,7 @@
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'keys') { S.keys.draw(ctx, t, mouse); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
@@ -200,6 +225,8 @@
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
+    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse);
+    if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
   }
   // dismiss title help overlay on any key/click

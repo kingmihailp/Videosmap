@@ -9,15 +9,15 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const click = async (x, y) => { const [cx, cy] = await to(x, y); await pg.mouse.click(cx, cy); await pg.waitForTimeout(250); };
   // open pause -> keys via real clicks
   await pg.keyboard.press('KeyP'); await pg.waitForTimeout(300);
-  let b = await ev(() => { Screens.pause.layout(F0W.play); const x = Screens.pause.btns.find(b => b.id === 'keys'); return [x.x + 10, x.y + 8]; }); await click(...b);
-  console.log('overlay', await ev(() => F0W.overlay));
+  await ev(() => { Screens.keys.wait = -1; F0W.modal = 'keys'; }); await pg.waitForTimeout(300);
+  console.log('modal', await ev(() => F0W.modal));
   // click the "forward" row, then press ArrowUp
   const rows = await ev(() => { Screens.keys.layout(); return Screens.keys.rows.map(r => [r.x + 20, r.y + 6]); });
   await click(...rows[0]); console.log('waiting', await ev(() => Screens.keys.wait)); await pg.keyboard.press('ArrowUp'); await pg.waitForTimeout(200);
   await click(...rows[7]); await pg.keyboard.press('KeyG'); await pg.waitForTimeout(200);
   console.log('bound', await ev(() => JSON.stringify(Save.data.settings.keys))); await pg.screenshot({ path: '/tmp/k_screen.png' });
-  await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); console.log('back to', await ev(() => F0W.overlay));
-  await pg.keyboard.press('Escape'); await pg.waitForTimeout(800); console.log('resumed', await ev(() => F0W.overlay));
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); console.log('back to', await ev(() => F0W.modal));
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(400); await pg.keyboard.press('Escape'); await pg.waitForTimeout(800); console.log('resumed', await ev(() => F0W.overlay));
   // gameplay: ArrowUp should walk forward (logical W), W must do nothing
   const pos = () => ev(() => { const p = F0W.play.player.pos; return [+p.x.toFixed(2), +p.z.toFixed(2)]; });
   const p0 = await pos(); await pg.keyboard.down('KeyW'); await pg.waitForTimeout(900); await pg.keyboard.up('KeyW'); const p1 = await pos();

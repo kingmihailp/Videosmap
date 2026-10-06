@@ -455,10 +455,10 @@ const Market = (() => {
     }
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
-    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 124, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 124, w: 88, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 190, w: 180, h: 16 }]; }
+    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
 
     // ------------------------------------------------------------ selling

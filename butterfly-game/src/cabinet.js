@@ -428,13 +428,13 @@ const Cabinet = (() => {
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
     static pauseButtons() {
       const s = Save.data.settings; const x = SW / 2 - 90; return [
         { id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 124, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 124, w: 88, h: 16 },
-        { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 190, w: 180, h: 16 }];
+        { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 },
+        { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }];
     }
     static pauseClick(x, y) { const b = Cab.pauseButtons().find(b => UIK.hit(b, x, y)); return b ? b.id : null; }
 

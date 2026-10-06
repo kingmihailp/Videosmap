@@ -172,3 +172,7 @@ The "caught a butterfly" card now sits at the top left, below the online-players
 Title screen → «Клавиши управления», or Pause → «Клавиши»: click an action, press the new key (a key already used by another action is swapped with it; Esc cancels, Enter/Esc cannot be assigned).
 Defaults: W/A/S/D, Shift = run, Ctrl or C = sneak, Space (and the left mouse button) = swing, E = interact, Tab = journal, H = scent, F = torch, P = pause.
 Implementation: `src/keys.js` translates the chosen physical key into the default code in a capture-phase listener (gameplay only), and rewrites key names in on-screen texts. Saved in `settings.keys`. Test: `tools/test/keys.js`.
+
+## Pause menu
+Pause (Esc / P): Продолжить · Журнал · Кабинет · Управление · **Настройки** (звук, музыка, качество, клавиши управления, положение карточки улова) · новая местность · другое место · **Выход в главное меню**.
+The cabinet / market / house pause menus have the same «Настройки» and «Выход в главное меню». Esc inside Настройки closes only Настройки; the next Esc closes the menu. If the browser drops the pointer lock together with the Esc that closed the menu, the game re-takes it instead of reopening the menu (`App.escT`, `App.pauseT` in `src/main.js`). Test: `tools/test/pause_menu.js`.
