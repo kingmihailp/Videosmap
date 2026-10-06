@@ -108,7 +108,7 @@ const Market = (() => {
       this.hooks = hooks; this.ov = null; this.t = 0; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#9ac4ea'); this.scene.fog = new THREE.Fog('#9ac4ea', 38, 110);
       this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 600); this.scene.add(this.camera);
       this.player = { pos: new THREE.Vector3(-23.5, 0, 0.5), yaw: -Math.PI / 2 + 0.05, pitch: -0.04, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
-      this.colliders = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null; this.walkers = []; this.vendors = []; this.flutter = []; this.glowMats = []; this.lights = []; this.sell = null;
+      this.colliders = []; this.circles = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null; this.walkers = []; this.vendors = []; this.flutter = []; this.glowMats = []; this.lights = []; this.sell = null;
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
       this.build(); this.applyTime(this.realHour());
       Snd.startAmbient('market'); this.toast('Рынок насекомых', 3);
@@ -117,6 +117,8 @@ const Market = (() => {
     }
     toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
     addCol(x0, x1, z0, z1) { this.colliders.push({ x0, x1, z0, z1 }); }
+    addCircle(x, z, r) { this.circles.push({ x, z, r }); }
+    circAt(x, z, ry, lx, lz, r) { const c = Math.cos(ry), s = Math.sin(ry); this.addCircle(x + lx * c + lz * s, z - lx * s + lz * c, r); }   // a circle given in the local frame of a stall
     // footprint of a stall at (x, z) with yaw ry (multiples of 90 deg) and local size w x d
     fp(x, z, w, d, ry, pad = 0.15) { const q = Math.abs(Math.round(ry / (Math.PI / 2))) % 2; const hw = (q ? d : w) / 2 + pad, hd = (q ? w : d) / 2 + pad; this.addCol(x - hw, x + hw, z - hd, z + hd); }
 
@@ -185,18 +187,18 @@ const Market = (() => {
       // east plaza: the big fountain
       const fx = 24, fz = 0; B.cyl(2.5, 2.7, 0.6, fx, 0.3, fz, '#9a948a', 20); B.geo(new THREE.TorusGeometry(2.55, 0.12, 6, 28), B.mat(fx, 0.62, fz, Math.PI / 2, 0, 0), '#aaa49a'); B.cyl(0.3, 0.45, 1.4, fx, 1.1, fz, '#a8a29a', 10); B.cyl(1.25, 0.5, 0.18, fx, 1.78, fz, '#9a948a', 14); B.cyl(0.18, 0.28, 0.8, fx, 2.2, fz, '#a8a29a', 8); B.cyl(0.8, 0.2, 0.14, fx, 2.65, fz, '#9a948a', 12);
       const wm = new THREE.Mesh(new THREE.CircleGeometry(2.38, 24).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: ctex(64, 64, (x, w, h) => { x.fillStyle = '#4a8ab8'; x.fillRect(0, 0, w, h); for (let i = 0; i < 90; i++) { x.fillStyle = rng.chance(0.5) ? '#6aa8d0' : '#3a78a8'; x.fillRect(rng.int(0, 61), rng.int(0, 63), rng.int(2, 6), 1); } }, 3, 3), transparent: true, opacity: 0.92 })); wm.position.set(fx, 0.64, fz); S.add(wm); this.water = wm; this.waterTex = wm.material.map;
-      this.addCol(fx - 2.8, fx + 2.8, fz - 2.8, fz + 2.8);
+      this.addCircle(fx, fz, 2.75);
       // benches and trees around the east plaza
       for (const [bx, bz, ry] of [[24, -6.9, Math.PI], [24, 6.9, 0]]) this.bench(bx, bz, ry);
       for (const [tx, tz] of [[29.7, -4.0], [29.7, 4.0], [18.6, -6.6], [18.6, 6.6]]) tree(tx, tz, 1.1);
       // north plaza (end of the second alley): a stone well, trees, benches
       const wx = 14, wz = -24; B.cyl(1.1, 1.15, 1.0, wx, 0.5, wz, '#8a847a', 12); B.cyl(0.8, 0.8, 0.1, wx, 1.0, wz, '#2a4a6a', 12); B.box(0.18, 2.4, 0.18, wx - 1.0, 2.2, wz, DWOOD); B.box(0.18, 2.4, 0.18, wx + 1.0, 2.2, wz, DWOOD); B.box(2.4, 0.16, 0.2, wx, 3.4, wz, DWOOD); B.cyl(0.1, 0.1, 2.0, wx, 3.1, wz, WOOD, 6, 0, 0, Math.PI / 2);
-      B.geo(gableGeo(2.8, 2.0, 0.9, 0.2, true), B.mat(wx, 3.45, wz), '#b5503a'); this.addCol(wx - 1.3, wx + 1.3, wz - 1.3, wz + 1.3); B.cyl(0.03, 0.03, 1.1, wx, 2.55, wz, '#8a6a3a', 5); B.cyl(0.25, 0.22, 0.3, wx, 1.85, wz, '#6a4a2a', 8);
+      B.geo(gableGeo(2.8, 2.0, 0.9, 0.2, true), B.mat(wx, 3.45, wz), '#b5503a'); this.addCircle(wx, wz, 1.2); B.cyl(0.03, 0.03, 1.1, wx, 2.55, wz, '#8a6a3a', 5); B.cyl(0.25, 0.22, 0.3, wx, 1.85, wz, '#6a4a2a', 8);
       for (const [tx, tz] of [[10.6, -27], [17.6, -27], [10.2, -21], [18, -21]]) tree(tx, tz, 1.15); for (const [bx, bz, ry] of [[14, -28.2, Math.PI], [9.3, -24, Math.PI / 2], [18.7, -24, -Math.PI / 2]]) this.bench(bx, bz, ry);
       // south plaza: a big tree and tea tables
       tree(2, 27.5, 1.6, 'birch'); tree(-2.2, 30.8, 1.2); tree(6.2, 30.8, 1.2); for (const [bx, bz, ry] of [[2, 23.4, Math.PI], [-2.2, 27.6, Math.PI / 2], [6.2, 27.6, -Math.PI / 2]]) this.bench(bx, bz, ry);
       // west garden at the end of the first alley: trees, a lily pond
-      B.cyl(2.2, 2.3, 0.4, -14, 0.2, -28, '#8a847a', 16); const pw = new THREE.Mesh(new THREE.CircleGeometry(2.0, 16).rotateX(-Math.PI / 2), lam('#3a7a98')); pw.position.set(-14, 0.42, -28); S.add(pw); for (let i = 0; i < 6; i++) { const a = rng.range(0, 6.28), r = rng.range(0.3, 1.7); B.cyl(0.22, 0.22, 0.02, -14 + Math.cos(a) * r, 0.44, -28 + Math.sin(a) * r, '#4a9a4a', 7); } this.addCol(-16.4, -11.6, -30.4, -25.6);
+      B.cyl(2.2, 2.3, 0.4, -14, 0.2, -28, '#8a847a', 16); const pw = new THREE.Mesh(new THREE.CircleGeometry(2.0, 16).rotateX(-Math.PI / 2), lam('#3a7a98')); pw.position.set(-14, 0.42, -28); S.add(pw); for (let i = 0; i < 6; i++) { const a = rng.range(0, 6.28), r = rng.range(0.3, 1.7); B.cyl(0.22, 0.22, 0.02, -14 + Math.cos(a) * r, 0.44, -28 + Math.sin(a) * r, '#4a9a4a', 7); } this.addCircle(-14, -28, 2.35);
       for (const [tx, tz] of [[-17.8, -30], [-10.2, -30], [-17.8, -25.8], [-10.2, -25.8]]) tree(tx, tz, 1.05); this.bench(-14, -24.5, 0);
       // tea garden at the end of the short alley
       tree(-25.0, 17.8, 1.0); this.bench(-19.2, 17.8, -Math.PI / 2);
@@ -231,27 +233,30 @@ const Market = (() => {
     stallTable(x, z, ry, o = {}) {
       const w = o.w || 3.2, d = 1.3, ci = o.ci || 0, kind = o.goods || 'boxes'; this.fp(x, z, w, d + 0.6, ry);
       const g = this.at(x, z, ry, g => {
-        const B = this.B; B.box(w, 0.88, d, 0, 0.44, 0, LWOOD); B.box(w + 0.12, 0.07, d + 0.12, 0, 0.92, 0, WOOD); B.box(w - 0.1, 0.5, 0.04, 0, 0.5, d / 2 + 0.01, '#6a4a2c');
+        const B = this.B, cd = 0.78, zc = d / 2 - cd / 2; B.box(w, 0.88, cd, 0, 0.44, zc, LWOOD); B.box(w + 0.12, 0.07, cd + 0.08, 0, 0.92, zc + 0.02, WOOD); B.box(w - 0.1, 0.5, 0.04, 0, 0.5, d / 2 + 0.01, '#6a4a2c');
         for (const sx of [-1, 1]) { B.cyl(0.05, 0.06, 2.55, sx * (w / 2 - 0.02), 1.28, -d / 2 - 0.08, DWOOD, 6); B.cyl(0.05, 0.06, 2.15, sx * (w / 2 - 0.02), 1.08, d / 2 + 0.55, DWOOD, 6); }
         this.awning(w + 0.2, d + 0.8, 2.55, 2.17, -d / 2 - 0.1, ci);
         B.box(w, 1.5, 0.08, 0, 1.7, -d / 2 - 0.1, '#6a4a2c', 0, 0, 0, 0.1);                    // back board
-        if (kind === 'boxes') { this.boxes(g, Math.max(2, Math.round(w / 0.85)), w - 0.2, -w / 2 + 0.1, 0.98, 0.0, -0.55, w - 0.2); for (let i = 0; i < 2; i++) this.frame(g, 0.6, 0.45, this.boxTexFor(3, 2), -w / 4 + i * w / 2, 1.85, -d / 2 - 0.04, 0); this.frame(g, 0.5, 0.4, this.boxTexFor(2, 2), 0, 1.8, -d / 2 - 0.04, 0); }
-        else this.goods(kind, g, w - 0.4, 0.96, 0.05);
+        if (kind === 'boxes') { this.boxes(g, Math.max(2, Math.round(w / 0.85)), w - 0.2, -w / 2 + 0.1, 0.98, 0.27, -0.55, w - 0.2); for (let i = 0; i < 2; i++) this.frame(g, 0.6, 0.45, this.boxTexFor(3, 2), -w / 4 + i * w / 2, 1.85, -d / 2 - 0.04, 0); this.frame(g, 0.5, 0.4, this.boxTexFor(2, 2), 0, 1.8, -d / 2 - 0.04, 0); }
+        else this.goods(kind, g, w - 0.4, 0.96, 0.27);
         if (o.sign) { const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.4), new THREE.MeshLambertMaterial({ map: signTex(o.sign, 96, 26, '#3a2414', '#f0d890', '#c8a040') })); sg.position.set(0, 1.96, d / 2 + 0.74); g.add(sg); }
         this.crates(g, w / 2 + 0.55, -0.1, 3);
-        this.vendor(g, 0, -d / 2 + 0.1, kind, o.sign);
+        this.vendor(g, 0, -0.5, kind, o.sign);
         for (const sx of [-1, 1]) { B.box(0.3, 0.04, 0.04, sx * (w / 2 + 0.1), 2.13, d / 2 + 0.55, DWOOD); this.lamp(sx * (w / 2 + 0.22), 1.867, d / 2 + 0.55, 0.11, null, 0.1); }
       });
     }
     stallRound(x, z, ry, o = {}) {
-      const ci = o.ci || 1; this.fp(x, z, 2.8, 3.4, ry);
+      const ci = o.ci || 1;
+      this.circAt(x, z, ry, 0, 0.35, 1.2); this.circAt(x, z, ry, 0, -0.8, 0.32);          // the counter + the space behind it, and the umbrella pole
       this.at(x, z, ry, g => {
-        // the round counter is in front, the vendor stands behind it and the umbrella pole stands behind the vendor
-        const B = this.B, CZ = 0.35, VZ = -0.55, PZ = -1.05;
-        B.cyl(1.0, 1.05, 0.9, 0, 0.45, CZ, LWOOD, 14); B.cyl(1.12, 1.12, 0.07, 0, 0.93, CZ, WOOD, 14); B.cyl(0.07, 0.08, 3.0, 0, 1.5, PZ, DWOOD, 8);
-        const cl = CLOTH[ci % CLOTH.length], N = 10, R = 2.3; for (let i = 0; i < N; i++) { const gm = new THREE.ConeGeometry(R, 0.9, 1, 1, true, i * 2 * Math.PI / N, 2 * Math.PI / N); B.geo(gm, B.mat(0, 3.05, PZ + 0.0), cl[i % 2], 0.02); }
+        // a semicircular counter in front; the vendor stands behind its straight edge (nothing solid where their legs are), the umbrella pole behind the vendor
+        const B = this.B, CZ = 0.35, VZ = -0.15, PZ = -0.85, H = Math.PI;
+        B.geo(new THREE.CylinderGeometry(1.0, 1.05, 0.9, 16, 1, false, -H / 2, H), B.mat(0, 0.45, CZ), LWOOD); B.box(2.1, 0.9, 0.05, 0, 0.45, CZ, '#6a4a2c');
+        B.geo(new THREE.CylinderGeometry(1.12, 1.12, 0.07, 16, 1, false, -H / 2, H), B.mat(0, 0.93, CZ), WOOD); B.box(2.24, 0.07, 0.05, 0, 0.93, CZ, WOOD);
+        B.cyl(0.07, 0.08, 3.0, 0, 1.5, PZ, DWOOD, 8);
+        const cl = CLOTH[ci % CLOTH.length], N = 10, R = 2.3; for (let i = 0; i < N; i++) { const gm = new THREE.ConeGeometry(R, 0.9, 1, 1, true, i * 2 * Math.PI / N, 2 * Math.PI / N); B.geo(gm, B.mat(0, 3.05, PZ), cl[i % 2], 0.02); }
         for (let i = 0; i < N; i++) { const a = (i + 0.5) * 2 * Math.PI / N; B.box(0.55, 0.2, 0.03, Math.sin(a) * (R - 0.03), 2.55, PZ + Math.cos(a) * (R - 0.03), cl[i % 2], 0.0, a, 0); }
-        for (let i = 0; i < 6; i++) { const a = -Math.PI * 0.62 + i * Math.PI * 0.248; this.frame(g, 0.5, 0.375, this.boxTexFor(2, 2), Math.sin(a) * 0.72, 1.12, CZ + Math.cos(a) * 0.72, -0.5, a); }
+        for (let i = 0; i < 5; i++) { const a = -Math.PI * 0.42 + i * Math.PI * 0.21; this.frame(g, 0.5, 0.375, this.boxTexFor(2, 2), Math.sin(a) * 0.72, 1.12, CZ + Math.cos(a) * 0.72, -0.5, a); }
         this.lamp(0.55, 2.2, CZ + 0.5, 0.12, null, 0.37); this.lamp(-0.55, 2.2, CZ + 0.5, 0.12, null, 0.37); B.cyl(0.04, 0.04, 0.2, 0, 3.55, PZ, BRASS, 6);
         this.vendor(g, 0, VZ, 'boxes', o.sign || 'Коллекции');
       });
@@ -302,20 +307,20 @@ const Market = (() => {
     stallMerchant(x, z, ry) {
       const w = 5.6, d = 1.9; this.fp(x, z, w, d + 0.4, ry, 0.1); this.merchantPos = { x, z, ry };
       const g = this.at(x, z, ry, g => {
-        const B = this.B; B.box(w, 0.9, d, 0, 0.45, 0, '#6a3a22'); B.box(w + 0.16, 0.08, d + 0.16, 0, 0.94, 0, DWOOD); B.box(w - 0.3, 0.5, 0.04, 0, 0.5, d / 2 + 0.01, '#8a5030');
+        const B = this.B; B.box(w, 0.9, 0.95, 0, 0.45, 0.48, '#6a3a22'); B.box(w + 0.16, 0.08, 1.05, 0, 0.94, 0.48, DWOOD); B.box(w - 0.3, 0.5, 0.04, 0, 0.5, d / 2 + 0.01, '#8a5030');
         // glass display case on top of the counter (front half)
         B.box(w - 0.4, 0.04, 0.9, 0, 0.99, 0.45, '#cfe6ff', 0, 0, 0, 0); B.box(0.04, 0.34, 0.9, -w / 2 + 0.2, 1.17, 0.45, DWOOD); B.box(0.04, 0.34, 0.9, w / 2 - 0.2, 1.17, 0.45, DWOOD); B.box(w - 0.4, 0.04, 0.04, 0, 1.34, 0.9, DWOOD);
-        for (let i = 0; i < 5; i++) this.frame(g, 0.8, 0.58, this.boxTexFor(3, 2), -w / 2 + 0.7 + i * 1.05, 1.18, 0.45, -1.3);
+        for (let i = 0; i < 4; i++) this.frame(g, 0.8, 0.58, this.boxTexFor(3, 2), -1.58 + i * 1.05, 1.18, 0.45, -1.3);
         for (const sx of [-1, 1]) { B.cyl(0.07, 0.08, 3.2, sx * (w / 2 + 0.05), 1.6, -d / 2 - 0.1, DWOOD, 6); B.cyl(0.07, 0.08, 2.6, sx * (w / 2 + 0.05), 1.3, d / 2 + 0.8, DWOOD, 6); }
         this.awning(w + 0.4, d + 1.0, 3.2, 2.6, -d / 2 - 0.1, 0, 0.5); B.box(w, 2.2, 0.1, 0, 1.9, -d / 2 - 0.12, '#4a2c18');
         for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) this.frame(g, 0.9, 0.62, this.boxTexFor(3, 2), -w / 2 + 0.85 + i * 1.3, 1.45 + r * 0.75, -d / 2 - 0.05, 0);
         const sg = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.7), new THREE.MeshLambertMaterial({ map: signTex('СКУПКА БАБОЧЕК\nПлатим монетами', 136, 30, '#5a1a1a', '#ffe8a0', '#e8c060') })); sg.position.set(0, 2.25, d / 2 + 0.98); g.add(sg);
         const pb = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.1), new THREE.MeshLambertMaterial({ map: signTex('Цены:\nобычные 5-45\nредкие 15-45\nаберрант x6\nокеан 150+', 60, 74, '#1e2a22', '#f0f0dc', '#8a6a3a') })); pb.position.set(w / 2 - 0.1, 1.3, d / 2 + 0.55); pb.rotation.y = -0.3; g.add(pb); B.box(0.05, 0.9, 0.05, w / 2 - 0.1, 0.45, d / 2 + 0.52, WOOD);
-        for (let i = 0; i < 3; i++) { for (let k = 0; k < 4 + i; k++) B.cyl(0.07, 0.07, 0.025, -w / 2 + 0.5 + i * 0.2, 0.99 + k * 0.026 - 0.0, -0.15, BRASS, 8); }   // coin stacks (behind the glass)
-        B.cyl(0.18, 0.2, 0.08, -0.6, 1.0, -0.4, IRON, 8); B.cyl(0.02, 0.02, 0.45, -0.6, 1.25, -0.4, IRON, 5); B.box(0.5, 0.025, 0.04, -0.6, 1.48, -0.4, IRON); for (const sx of [-1, 1]) B.cyl(0.08, 0.06, 0.03, -0.6 + sx * 0.24, 1.34, -0.4, BRASS, 8);   // scales
-        B.sph(0.16, 1.5, 1.1, -0.4, '#6a4a2a', 1, 1.15, 1); for (const sx of [-1, 1]) { B.box(0.5, 0.05, 0.05, sx * (w / 2 + 0.3), 2.55, d / 2 + 0.8, DWOOD); this.lamp(sx * (w / 2 + 0.5), 2.2, d / 2 + 0.8, 0.16, '#ffd870', 0.12); }
+        for (let i = 0; i < 3; i++) { for (let k = 0; k < 4 + i; k++) B.cyl(0.07, 0.07, 0.025, -2.45 + i * 0.2, 0.99 + k * 0.026 + 0.015, 0.45, BRASS, 8); }   // coin stacks on the counter
+        B.cyl(0.18, 0.2, 0.08, 2.4, 1.03, 0.5, IRON, 8); B.cyl(0.02, 0.02, 0.45, 2.4, 1.28, 0.5, IRON, 5); B.box(0.5, 0.025, 0.04, 2.4, 1.5, 0.5, IRON); for (const sx of [-1, 1]) B.cyl(0.08, 0.06, 0.03, 2.4 + sx * 0.24, 1.36, 0.5, BRASS, 8);   // scales
+        B.sph(0.16, 2.0, 1.15, 0.7, '#6a4a2a', 1, 1.15, 1); for (const sx of [-1, 1]) { B.box(0.5, 0.05, 0.05, sx * (w / 2 + 0.3), 2.55, d / 2 + 0.8, DWOOD); this.lamp(sx * (w / 2 + 0.5), 2.2, d / 2 + 0.8, 0.16, '#ffd870', 0.12); }
         this.crates(g, -w / 2 - 0.5, 0, 3); this.crates(g, w / 2 + 0.6, 0.0, 3);
-        const m = person({ body: '#7a2a3a', pants: '#2a2630', apron: '#e8e0d0', hat: 'top', skin: '#e0b890' }); m.position.set(0.9, 0, -0.55); m.rotation.y = Math.PI; m.userData.base = m.position.y; g.add(m); this.merchant = m; const ns = nameSprite('Торговец бабочками', '#ffe8a0'); ns.position.set(0.9, 2.55, -0.55); g.add(ns);
+        const m = person({ body: '#7a2a3a', pants: '#2a2630', apron: '#e8e0d0', hat: 'top', skin: '#e0b890' }); m.position.set(0.9, 0, -0.45); m.rotation.y = Math.PI; m.userData.base = m.position.y; g.add(m); this.merchant = m; const ns = nameSprite('Торговец бабочками', '#ffe8a0'); ns.position.set(0.9, 2.55, -0.45); g.add(ns);
       });
       this.stations.push({ id: 'sell', x: x + Math.sin(ry) * 1.6 + 0.0, z: z + Math.cos(ry) * 1.6, r: 2.4, label: () => 'E — продать бабочек торговцу' });
     }
@@ -349,7 +354,7 @@ const Market = (() => {
       // east plaza: round stalls around the fountain
       for (const [sx, sz] of [[26.7, 5.1], [26.7, -5.1], [21.3, 5.1], [21.3, -5.1]]) this.stallRound(sx, sz, Math.atan2(24 - sx, 0 - sz) + Math.PI * 0, { ci: Math.abs(Math.round(sx + sz)) % 7, sign: 'Бабочки' });
     }
-    teaTable(x, z) { const B = this.B, ci = this.rng.int(0, CLOTH.length - 1), cl = CLOTH[ci]; B.cyl(0.55, 0.55, 0.05, x, 0.76, z, WOOD, 12); B.cyl(0.06, 0.08, 0.76, x, 0.38, z, DWOOD, 6); B.cyl(0.06, 0.06, 2.4, x, 1.2, z, DWOOD, 6); for (let i = 0; i < 8; i++) B.geo(new THREE.ConeGeometry(1.3, 0.5, 1, 1, true, i * Math.PI / 4, Math.PI / 4), B.mat(x, 2.35, z), cl[i % 2], 0.02); for (const [dx, dz] of [[0.85, 0], [-0.85, 0]]) { B.cyl(0.2, 0.2, 0.05, x + dx, 0.45, z + dz, LWOOD, 8); B.cyl(0.03, 0.03, 0.45, x + dx, 0.22, z + dz, DWOOD, 5); } B.cyl(0.07, 0.05, 0.1, x, 0.84, z, '#f0f0e8', 8); this.addCol(x - 0.7, x + 0.7, z - 0.7, z + 0.7); }
+    teaTable(x, z) { const B = this.B, ci = this.rng.int(0, CLOTH.length - 1), cl = CLOTH[ci]; B.cyl(0.55, 0.55, 0.05, x, 0.76, z, WOOD, 12); B.cyl(0.06, 0.08, 0.76, x, 0.38, z, DWOOD, 6); B.cyl(0.06, 0.06, 2.4, x, 1.2, z, DWOOD, 6); for (let i = 0; i < 8; i++) B.geo(new THREE.ConeGeometry(1.3, 0.5, 1, 1, true, i * Math.PI / 4, Math.PI / 4), B.mat(x, 2.35, z), cl[i % 2], 0.02); for (const [dx, dz] of [[0.85, 0], [-0.85, 0]]) { B.cyl(0.2, 0.2, 0.05, x + dx, 0.45, z + dz, LWOOD, 8); B.cyl(0.03, 0.03, 0.45, x + dx, 0.22, z + dz, DWOOD, 5); } B.cyl(0.07, 0.05, 0.1, x, 0.84, z, '#f0f0e8', 8); this.addCircle(x, z, 0.62); }
 
     buildDecor() {
       const B = this.B, G = this.G, S = this.scene, rng = this.rng;
@@ -412,6 +417,7 @@ const Market = (() => {
       P.vel.x = damp(P.vel.x, (fx * -mz + rx * mx) * spd, 12, dt); P.vel.y = damp(P.vel.y, (fz * -mz + rz * mx) * spd, 12, dt);
       let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt; const pr = 0.3;
       for (const k of this.colliders) { if (nx > k.x0 - pr && nx < k.x1 + pr && nz > k.z0 - pr && nz < k.z1 + pr) { const l = nx - (k.x0 - pr), r = (k.x1 + pr) - nx, tp = nz - (k.z0 - pr), bt = (k.z1 + pr) - nz; const m = Math.min(l, r, tp, bt); if (m === l) nx = k.x0 - pr; else if (m === r) nx = k.x1 + pr; else if (m === tp) nz = k.z0 - pr; else nz = k.z1 + pr; } }
+      for (let it = 0; it < 2; it++) for (const k of this.circles) { const dx = nx - k.x, dz = nz - k.z, d = Math.hypot(dx, dz), R = k.r + pr; if (d < R) { if (d < 1e-4) { nx = k.x + R; } else { nx = k.x + dx / d * R; nz = k.z + dz / d * R; } } }
       nx = clamp(nx, BOUND.x0, BOUND.x1); nz = clamp(nz, BOUND.z0, BOUND.z1);
       const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002; P.bob += moved * 2.2; P.stepD += moved;
       if (P.stepD > 0.8) { P.stepD = 0; Snd.sfx.step('stone'); }
