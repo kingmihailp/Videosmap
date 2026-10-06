@@ -1378,13 +1378,26 @@ const NetParts = (() => {
     r_plastic: { slot: 'r', ru: 'Обруч из пластика', price: 1600, fx: { speed: 0.3 }, vis: { hoop: '#38c8e8', th: 1.5 }, desc: 'Почти невесомый обруч — взмах очень быстрый.' },
     h_long: { slot: 'h', ru: 'Удлинённая ручка', price: 800, fx: { radius: 0.1 }, vis: { len: 1.5 }, desc: 'Длинная ручка достаёт дальше.' },
     h_plastic: { slot: 'h', ru: 'Ручка из пластика', price: 950, fx: { speed: 0.15 }, vis: { handle: '#e8508c', grip: '#a82a5c' }, desc: 'Лёгкая ручка быстрее разгоняется.' },
+    // second batch
+    h_bamboo: { slot: 'h', ru: 'Ручка из бамбука', price: 500, fx: { speed: 0.1, radius: 0.04 }, vis: { handle: '#c8b060', grip: '#6a5a28', len: 1.1 }, desc: 'Лёгкий и упругий бамбук: чуть быстрее и чуть дальше.' },
+    h_tele: { slot: 'h', ru: 'Телескопическая ручка', price: 1400, fx: { radius: 0.18 }, vis: { len: 1.7, th: 0.9, handle: '#a8b0b8', grip: '#383c44' }, desc: 'Выдвигается почти вдвое — достаёт самых осторожных.' },
+    h_carbon: { slot: 'h', ru: 'Ручка из карбона', price: 1600, fx: { speed: 0.22 }, vis: { handle: '#2c2e36', grip: '#14161a' }, desc: 'Жёсткий карбон почти не гнётся — взмах очень быстрый.' },
+    h_ebony: { slot: 'h', ru: 'Ручка из эбенового дерева', price: 1900, fx: { quiet: 0.2, ab: 0.003 }, vis: { handle: '#3a2418', grip: '#1a100a' }, desc: 'Тёмное дерево гасит звук взмаха; иногда приносит редкую удачу.' },
+    h_gem: { slot: 'h', ru: 'Ручка с самоцветом', price: 2100, fx: { dbl: 0.08 }, vis: { handle: '#7a5ac8', grip: '#e8c840' }, desc: 'С шансом 8% пойманная бабочка достаётся вам дважды.' },
+    r_titan: { slot: 'r', ru: 'Обруч из титана', price: 1500, fx: { speed: 0.2, radius: 0.05 }, vis: { hoop: '#7a8aa0', th: 1.6 }, desc: 'Лёгкий и прочный: быстрый взмах и чуть шире захват.' },
+    r_double: { slot: 'r', ru: 'Двойной обруч', price: 1700, fx: { radius: 0.22 }, vis: { hoop: '#c8d0d8', th: 1.2, R: 1.5 }, desc: 'Очень широкий обруч — почти не промахнуться.' },
+    r_carbon: { slot: 'r', ru: 'Обруч из углепластика', price: 1300, fx: { speed: 0.18, quiet: 0.15 }, vis: { hoop: '#2a2c34', th: 1.5 }, desc: 'Быстрый и тихий: бабочки меньше пугаются.' },
+    r_silver: { slot: 'r', ru: 'Обруч из серебра', price: 2000, fx: { ab: 0.004 }, vis: { hoop: '#e8ecf0', th: 1.3 }, desc: 'Серебро притягивает редкие формы: +0,4% шанс аберранта.' },
+    m_web: { slot: 'm', ru: 'Сетка из паутинного шёлка', price: 900, fx: { quiet: 0.25, speed: 0.08 }, vis: { mesh: '#f0f4f8', wire: '#aab4c0', op: 0.35 }, desc: 'Невесомая сетка рассекает воздух почти беззвучно.' },
+    m_deep: { slot: 'm', ru: 'Глубокая сетка', price: 1200, fx: { radius: 0.08, dbl: 0.05 }, vis: { bag: 1.7, mesh: '#c8dcd0' }, desc: 'Глубокий мешок: иногда в него попадает вторая бабочка (5%).' },
+    m_gold: { slot: 'm', ru: 'Позолоченная сетка', price: 1800, fx: { coin: 8 }, vis: { mesh: '#ffe9a0', wire: '#d8a830', op: 0.5 }, desc: 'За каждую пойманную бабочку — 8 монет от благодарных коллекционеров.' },
     h_chrome: { slot: 'h', ru: 'Ручка из хрома', price: 2400, fx: { ab: 0.005 }, vis: { handle: '#dce8f0', grip: '#8a98a8' }, desc: 'Блестящий хром: пойманная бабочка с шансом 0,5% окажется аберрантом.' },
   };
   const BASIC = { uid: 0, h: 'h_basic', r: 'r_basic', m: 'm_basic' };
   const SHOP = Object.keys(PARTS).filter(k => PARTS[k].price > 0);
   const isBasic = id => PARTS[id] && PARTS[id].price === 0;
   const parts = cfg => [PARTS[cfg.h] || PARTS.h_basic, PARTS[cfg.r] || PARTS.r_basic, PARTS[cfg.m] || PARTS.m_basic];
-  function stats(cfg) { let sp = 0, rd = 0, ab = 0; for (const p of parts(cfg || BASIC)) { sp += p.fx.speed || 0; rd += p.fx.radius || 0; ab += p.fx.ab || 0; } return { speed: 1 + sp, radius: 1 + rd, ab }; }
+  function stats(cfg) { let sp = 0, rd = 0, ab = 0, q = 0, db = 0, co = 0; for (const p of parts(cfg || BASIC)) { sp += p.fx.speed || 0; rd += p.fx.radius || 0; ab += p.fx.ab || 0; q += p.fx.quiet || 0; db += p.fx.dbl || 0; co += p.fx.coin || 0; } return { speed: 1 + sp, radius: 1 + rd, ab, quiet: Math.min(0.6, q), dbl: db, coin: co }; }
   function vis(cfg) {
     const v = { handle: '#9a6a38', grip: '#2a2018', len: 1, th: 1, hoop: '#eef2f4', R: 1, hth: 1, mesh: '#d4e8e0', wire: '#6f9088', op: 0.4, bag: 1 };
     for (const p of parts(cfg || BASIC)) { const q = p.vis; for (const k in q) { if (k === 'th') { if (p.slot === 'r') v.hth = q.th; else v.th = q.th; } else v[k] = q[k]; } }
@@ -1392,8 +1405,9 @@ const NetParts = (() => {
   }
   const code = cfg => (cfg && (!isBasic(cfg.h) || !isBasic(cfg.r) || !isBasic(cfg.m))) ? `${cfg.h}.${cfg.r}.${cfg.m}` : '';
   function parse(s) { if (!s || typeof s !== 'string') return BASIC; const a = s.split('.'); if (a.length !== 3) return BASIC; const [h, r, m] = a; return (PARTS[h] && PARTS[h].slot === 'h' && PARTS[r] && PARTS[r].slot === 'r' && PARTS[m] && PARTS[m].slot === 'm') ? { uid: -1, h, r, m } : BASIC; }
-  const fxLines = fx => { const o = []; if (fx.speed) o.push(`+${Math.round(fx.speed * 100)}% скорость взмаха`); if (fx.radius) o.push(`+${Math.round(fx.radius * 100)}% радиус ловли`); if (fx.ab) o.push(`+${(fx.ab * 100).toFixed(1).replace('.', ',')}% шанс аберранта`); return o; };
-  const statLines = cfg => { const s = stats(cfg), o = []; o.push(s.speed > 1 ? `Скорость взмаха: +${Math.round((s.speed - 1) * 100)}%` : 'Скорость взмаха: обычная'); o.push(s.radius > 1 ? `Радиус ловли: +${Math.round((s.radius - 1) * 100)}%` : 'Радиус ловли: обычный'); o.push(s.ab > 0 ? `Шанс аберранта: +${(s.ab * 100).toFixed(1).replace('.', ',')}%` : 'Шанс аберранта: обычный'); return o; };
+  const fxLines = fx => { const o = []; if (fx.speed) o.push(`+${Math.round(fx.speed * 100)}% скорость взмаха`); if (fx.radius) o.push(`+${Math.round(fx.radius * 100)}% радиус ловли`); if (fx.ab) o.push(`+${(fx.ab * 100).toFixed(1).replace('.', ',')}% шанс аберранта`); if (fx.quiet) o.push(`-${Math.round(fx.quiet * 100)}% шум взмаха`); if (fx.dbl) o.push(`${Math.round(fx.dbl * 100)}% шанс двойного улова`); if (fx.coin) o.push(`+${fx.coin} монет за бабочку`); return o; };
+  const fxShort = fx => fxLines(fx).map(s => s.replace('скорость взмаха', 'скор.').replace('радиус ловли', 'радиус').replace('шанс аберранта', 'аберрант').replace('шанс двойного улова', 'двойной улов').replace('шум взмаха', 'шум').replace(' монет за бабочку', ' монет/улов')).join(' · ');
+  const statLines = cfg => { const s = stats(cfg), o = []; o.push(s.speed > 1 ? `Скорость взмаха: +${Math.round((s.speed - 1) * 100)}%` : 'Скорость взмаха: обычная'); o.push(s.radius > 1 ? `Радиус ловли: +${Math.round((s.radius - 1) * 100)}%` : 'Радиус ловли: обычный'); o.push(s.ab > 0 ? `Шанс аберранта: +${(s.ab * 100).toFixed(1).replace('.', ',')}%` : 'Шанс аберранта: обычный'); if (s.quiet) o.push(`Шум взмаха: -${Math.round(s.quiet * 100)}%`); if (s.dbl) o.push(`Двойной улов: ${Math.round(s.dbl * 100)}%`); if (s.coin) o.push(`Монеты за улов: +${s.coin}`); return o; };
   const name = (cfg, i) => cfg.uid === 0 ? 'Обычный сачок' : `Сачок №${i + 1}`;
 
   // 2D picture of a net (pixel lines), used by the workbench and the shop
@@ -1407,7 +1421,7 @@ const NetParts = (() => {
     const th = Math.max(1, Math.round(V.th * 1.5)); ctx.fillStyle = V.handle; line(ctx, gx, gy, ex, ey, th); ctx.fillStyle = V.grip; line(ctx, gx, gy, gx + d.x * POLE * 0.3, gy + d.y * POLE * 0.3, th + 1);
     ctx.fillStyle = V.hoop; const hr = Math.max(1, Math.round(V.hth * 1.3)); ring.forEach((p, i) => { const q = ring[(i + 1) % ring.length]; line(ctx, p.x, p.y, q.x, q.y, hr); });
   }
-  return { SLOTS, PARTS, BASIC, SHOP, isBasic, stats, vis, code, parse, fxLines, statLines, name, draw2D };
+  return { SLOTS, PARTS, BASIC, SHOP, isBasic, stats, vis, code, parse, fxLines, fxShort, statLines, name, draw2D };
 })();
 
 // inventory / assembly / equipment (everything here is personal, like coins)
@@ -3214,7 +3228,7 @@ class Play {
   hoopWorld(out) { this.hoop.updateWorldMatrix(true, false); return out.setFromMatrixPosition(this.hoop.matrixWorld); }
   netBusy() { return this.net.phase >= 0 && this.net.phase < 0.6; }
   swing() {
-    if (this.net.phase >= 0 || this.net.cd > 0) return; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7; Snd.sfx.swing();
+    if (this.net.phase >= 0 || this.net.cd > 0) return; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7 * (1 - this.netStats.quiet); Snd.sfx.swing();
     this.hoopWorld(_v); // butterflies near the target may bolt
     for (const f of this.flies) { if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); if (d < 3.6) { const p = f.state === PERCH ? 0.3 + (f.beh.wary - 3) * 0.04 : 0.18; if (Math.random() < p) f.startFlee(new THREE.Vector3(f.pos.x - this.player.pos.x, 0, f.pos.z - this.player.pos.z)); } }
   }
@@ -3246,7 +3260,9 @@ class Play {
   }
   onCatch(f) {
     f.catchIt(); const sp = Aberr.roll(f.sp, this.netStats.ab);     // silk mesh / chrome handle: a small chance that the catch is an aberration
-    const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
+    const first = Save.add(sp.id, this.biome.id); const twin = Math.random() < this.netStats.dbl; if (twin) Save.add(sp.id, this.biome.id);     // gem handle / deep mesh: a second one
+    if (this.netStats.coin) { Save.data.coins = (Save.data.coins || 0) + this.netStats.coin; Save.write(); } if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
+    if (twin) this.toast('Двойной улов!', 2.5);
     Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
@@ -4222,8 +4238,7 @@ const Boxes = (() => {
       UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
       NetParts.draw2D(ctx, cur, 166, 42, 148, 126);
       T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
-      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, s, 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
-      [cur.h, cur.r, cur.m].forEach((id, k) => T.draw(ctx, fitStr(NetParts.PARTS[id].ru, 150), 164, 207 + k * 10 - 0, { size: 8, color: c.dim }));
+      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, fitStr(s, 154), 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
       // right: the parts
       UIK.panel(ctx, 326, 32, 150, 208, { fill: '#10201c', border: c.line, shadow: false });
       T.draw(ctx, isNew ? 'Выберите детали' : 'Детали сачка', 401, 36, { size: 8, align: 'c', color: c.text });
@@ -5345,7 +5360,7 @@ const Market = (() => {
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }
       if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
-      if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); return; }
+      if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
     click(x, y) {
@@ -5423,41 +5438,47 @@ const Market = (() => {
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
     // ------------------------------------------------------------ the net seller: parts for nets
-    shopOpen() { this.shop = { sel: 0, msg: 'Всё для настоящего сачка! Собрать его можно на верстаке в кабинете.', msgT: 5, flash: 0, last: 0 }; }
-    shopMove(d) { const S = this.shop; if (!S) return; S.sel = clamp(S.sel + d, 0, NetParts.SHOP.length - 1); Snd.sfx.page(); }
+    shopOpen() { this.shop = { tab: 0, sel: 0, msg: 'Всё для настоящего сачка! Собрать его можно на верстаке в кабинете.', msgT: 5, flash: 0, last: 0 }; }
+    shopList() { const slot = NetParts.SLOTS[this.shop.tab].id; return NetParts.SHOP.filter(id => NetParts.PARTS[id].slot === slot).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); }
+    shopMove(d) { const S = this.shop; if (!S) return; S.sel = clamp(S.sel + d, 0, this.shopList().length - 1); Snd.sfx.page(); }
+    shopTab(t) { const S = this.shop; S.tab = (t + 3) % 3; S.sel = 0; Snd.sfx.page(); }
     shopLayout() {
-      const rows = NetParts.SHOP.map((id, k) => ({ id, k, x: 8, y: 44 + k * 23, w: 226, h: 21 }));
-      return { rows, buy: { id: 'buy', label: 'Купить', x: 244, y: 224, w: 110, h: 18 }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 } };
+      const rows = this.shopList().map((id, k) => ({ id, k, x: 8, y: 60 + k * 24, w: 226, h: 22 })), tabs = NetParts.SLOTS.map((sl, i) => ({ id: 'tab' + i, i, label: ['Ручки', 'Обручи', 'Сетки'][i], x: 8 + i * 76, y: 40, w: 72, h: 15 }));
+      return { rows, tabs, buy: { id: 'buy', label: 'Купить', x: 244, y: 224, w: 110, h: 18 }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 } };
     }
     shopBuy() {
-      const S = this.shop, id = NetParts.SHOP[S.sel], p = NetParts.PARTS[id];
+      const S = this.shop, id = this.shopList()[S.sel], p = NetParts.PARTS[id]; if (!p) return;
       if (Save.buyPart(id)) { S.msg = ['Отличный выбор!', 'Берите, не пожалеете.', 'Хорошая деталь — служит годами.'][(Math.random() * 3) | 0]; S.last = -p.price; S.flash = 0.8; Snd.sfx.coin(); }
       else { S.msg = 'Не хватает монет. Продайте бабочек скупщику — тот, что под красным навесом.'; Snd.sfx.deny(); } S.msgT = 5;
     }
     shopClick(x, y) {
       const S = this.shop, L = this.shopLayout(); if (UIK.hit(L.closeBtn, x, y)) { Snd.sfx.page(); this.close(); return; }
+      const tb = L.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.shopTab(tb.i); return; }
       const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { if (S.sel !== r.k) { S.sel = r.k; Snd.sfx.click(); } else this.shopBuy(); return; }
       if (UIK.hit(L.buy, x, y)) this.shopBuy();
     }
     drawShop(ctx, t, m, dt) {
-      const S = this.shop; S.msgT = Math.max(0, S.msgT - dt); S.flash = Math.max(0, S.flash - dt); const L = this.shopLayout(), id = NetParts.SHOP[S.sel], p = NetParts.PARTS[id];
+      const S = this.shop; S.msgT = Math.max(0, S.msgT - dt); S.flash = Math.max(0, S.flash - dt); const L = this.shopLayout(), list = this.shopList(), id = list[S.sel], p = NetParts.PARTS[id];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Детали для сачков', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите деталь и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim });
+      T.draw(ctx, 'Детали для сачков', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите деталь и нажмите «Купить» (или щёлкните дважды). Tab — следующая вкладка', 8, 20, { size: 8, color: c.dim });
       this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
-      UIK.panel(ctx, 6, 40, 230, 224, { fill: '#2a2018', border: '#5a4430', shadow: false });
+      L.tabs.forEach(tb => { const on = tb.i === S.tab; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : UIK.hit(tb, m.x, m.y) ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, tb.label, tb.x + tb.w / 2, tb.y + 4, { size: 8, align: 'c', color: on ? '#ffe9a0' : '#b8a888' }); });
+      UIK.panel(ctx, 6, 56, 230, 208, { fill: '#2a2018', border: '#5a4430', shadow: false });
       L.rows.forEach(r => {
         const q = NetParts.PARTS[r.id], on = r.k === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        const own = Save.partCount(r.id); T.draw(ctx, fitTxt(q.ru, 150), r.x + 5, r.y + 2, { size: 8, color: '#f0e8d0' }); T.draw(ctx, (NetParts.fxLines(q.fx)[0] || '').replace('шанс аберранта', 'аберрант'), r.x + 5, r.y + 11, { size: 8, color: '#9ac88a' });
-        this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 3); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: c.gold }); if (own) T.draw(ctx, `есть: ${own}`, r.x + r.w - 6, r.y + 11, { size: 8, align: 'r', color: c.dim });
+        const own = Save.partCount(r.id); T.draw(ctx, fitTxt(q.ru, 150), r.x + 5, r.y + 3, { size: 8, color: '#f0e8d0' }); T.draw(ctx, fitTxt(NetParts.fxShort(q.fx), own ? 150 : 214), r.x + 5, r.y + 12, { size: 8, color: '#9ac88a' });
+        this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 3); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: c.gold }); if (own) T.draw(ctx, `есть: ${own}`, r.x + r.w - 6, r.y + 12, { size: 8, align: 'r', color: c.dim });
       });
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#8a6a3a'; ctx.fillRect(246, 46, 36, 42); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(254, 50, 20, 18); ctx.fillStyle = '#5a7a3a'; ctx.fillRect(252, 44, 24, 8); ctx.fillRect(250, 50, 28, 3);
       T.para(ctx, S.msg, 288, 46, 182, { size: 8, color: '#2a1a0c', lh: 10 });
       UIK.panel(ctx, 240, 98, 234, 122, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
-      const base = Object.assign({}, NetParts.BASIC); base[p.slot] = id; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 80, 80); NetParts.draw2D(ctx, base, 246, 104, 76, 76);
-      T.draw(ctx, fitTxt(p.ru, 140), 330, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, NetParts.SLOTS.find(s => s.id === p.slot).ru, 330, 114, { size: 8, color: '#8a2a1a' });
-      NetParts.fxLines(p.fx).forEach((s, k) => T.draw(ctx, s, 330, 128 + k * 11, { size: 8, color: '#2a6a1a' }));
-      T.para(ctx, p.desc, 246, 188, 222, { size: 8, color: '#4a3a20', lh: 10 });
-      UIK.btn(ctx, L.buy, Save.data.coins >= p.price && UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, `есть: ${Save.partCount(id)}`, 364, 228, { size: 8, color: c.dim });
+      if (p) {
+        const base = Object.assign({}, NetParts.BASIC); base[p.slot] = id; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 80, 80); NetParts.draw2D(ctx, base, 246, 104, 76, 76);
+        T.draw(ctx, fitTxt(p.ru, 140), 330, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, NetParts.SLOTS.find(s => s.id === p.slot).ru, 330, 114, { size: 8, color: '#8a2a1a' });
+        NetParts.fxLines(p.fx).forEach((s, k) => T.draw(ctx, s, 330, 128 + k * 11, { size: 8, color: '#2a6a1a' }));
+        T.para(ctx, p.desc, 246, 188, 222, { size: 8, color: '#4a3a20', lh: 10 });
+        UIK.btn(ctx, L.buy, Save.data.coins >= p.price && UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, `есть: ${Save.partCount(id)}`, 364, 228, { size: 8, color: c.dim });
+      }
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, String(S.last), SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ff9070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
     drawCoin(ctx, x, y) { ctx.fillStyle = '#8a5a10'; ctx.fillRect(x + 1, y, 5, 7); ctx.fillRect(x, y + 1, 7, 5); ctx.fillStyle = '#f0c040'; ctx.fillRect(x + 1, y + 1, 5, 5); ctx.fillStyle = '#fff0a0'; ctx.fillRect(x + 2, y + 1, 2, 1); ctx.fillStyle = '#c89020'; ctx.fillRect(x + 3, y + 2, 1, 3); }

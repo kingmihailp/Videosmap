@@ -112,8 +112,7 @@ const Boxes = (() => {
       UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
       NetParts.draw2D(ctx, cur, 166, 42, 148, 126);
       T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
-      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, s, 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
-      [cur.h, cur.r, cur.m].forEach((id, k) => T.draw(ctx, fitStr(NetParts.PARTS[id].ru, 150), 164, 207 + k * 10 - 0, { size: 8, color: c.dim }));
+      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, fitStr(s, 154), 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
       // right: the parts
       UIK.panel(ctx, 326, 32, 150, 208, { fill: '#10201c', border: c.line, shadow: false });
       T.draw(ctx, isNew ? 'Выберите детали' : 'Детали сачка', 401, 36, { size: 8, align: 'c', color: c.text });

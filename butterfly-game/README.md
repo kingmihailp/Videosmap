@@ -210,3 +210,9 @@ A net has three parts — **handle, hoop, mesh** (`src/nets.js`). Effects of the
 - **Assemble / take apart / equip** at the workbench in the entomologist's cabinet — the new «Сачки» tab (nets can only be changed in the cabinet). The plain net (basic parts) is always available.
 - The equipped net is shown in first person and on other players (`nt` field of the `pos` message; **the server relays it, so `server.js` changed**), and changes live when a player swaps nets in the cabinet.
 - Parts, nets and the equipped net are personal (saved with the coins). Tests: `tools/test/nets.js`, `mp_nets.js`.
+
+### More net parts (second batch, all 500+ coins)
+Handles: Ручка из бамбука (500: +10% speed, +4% radius) · Телескопическая (1400: +18% radius) · Из карбона (1600: +22% speed) · Из эбенового дерева (1900: −20% swing noise, +0.3% aberration) · С самоцветом (2100: 8% double catch).
+Hoops: Из углепластика (1300: +18% speed, −15% noise) · Из титана (1500: +20% speed, +5% radius) · Двойной (1700: +22% radius) · Из серебра (2000: +0.4% aberration).
+Meshes: Паутинный шёлк (900: −25% noise, +8% speed) · Глубокая (1200: +8% radius, 5% double catch) · Позолоченная (1800: +8 coins per catch).
+New effect kinds: **quiet** (less swing noise, so butterflies are scared less), **dbl** (a second specimen of the same butterfly), **coin** (coins per catch). The shop has tabs Ручки / Обручи / Сетки (Tab or ←/→ switch them). Test: `tools/test/nets2.js`.

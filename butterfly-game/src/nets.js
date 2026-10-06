@@ -15,13 +15,26 @@ const NetParts = (() => {
     r_plastic: { slot: 'r', ru: 'Обруч из пластика', price: 1600, fx: { speed: 0.3 }, vis: { hoop: '#38c8e8', th: 1.5 }, desc: 'Почти невесомый обруч — взмах очень быстрый.' },
     h_long: { slot: 'h', ru: 'Удлинённая ручка', price: 800, fx: { radius: 0.1 }, vis: { len: 1.5 }, desc: 'Длинная ручка достаёт дальше.' },
     h_plastic: { slot: 'h', ru: 'Ручка из пластика', price: 950, fx: { speed: 0.15 }, vis: { handle: '#e8508c', grip: '#a82a5c' }, desc: 'Лёгкая ручка быстрее разгоняется.' },
+    // second batch
+    h_bamboo: { slot: 'h', ru: 'Ручка из бамбука', price: 500, fx: { speed: 0.1, radius: 0.04 }, vis: { handle: '#c8b060', grip: '#6a5a28', len: 1.1 }, desc: 'Лёгкий и упругий бамбук: чуть быстрее и чуть дальше.' },
+    h_tele: { slot: 'h', ru: 'Телескопическая ручка', price: 1400, fx: { radius: 0.18 }, vis: { len: 1.7, th: 0.9, handle: '#a8b0b8', grip: '#383c44' }, desc: 'Выдвигается почти вдвое — достаёт самых осторожных.' },
+    h_carbon: { slot: 'h', ru: 'Ручка из карбона', price: 1600, fx: { speed: 0.22 }, vis: { handle: '#2c2e36', grip: '#14161a' }, desc: 'Жёсткий карбон почти не гнётся — взмах очень быстрый.' },
+    h_ebony: { slot: 'h', ru: 'Ручка из эбенового дерева', price: 1900, fx: { quiet: 0.2, ab: 0.003 }, vis: { handle: '#3a2418', grip: '#1a100a' }, desc: 'Тёмное дерево гасит звук взмаха; иногда приносит редкую удачу.' },
+    h_gem: { slot: 'h', ru: 'Ручка с самоцветом', price: 2100, fx: { dbl: 0.08 }, vis: { handle: '#7a5ac8', grip: '#e8c840' }, desc: 'С шансом 8% пойманная бабочка достаётся вам дважды.' },
+    r_titan: { slot: 'r', ru: 'Обруч из титана', price: 1500, fx: { speed: 0.2, radius: 0.05 }, vis: { hoop: '#7a8aa0', th: 1.6 }, desc: 'Лёгкий и прочный: быстрый взмах и чуть шире захват.' },
+    r_double: { slot: 'r', ru: 'Двойной обруч', price: 1700, fx: { radius: 0.22 }, vis: { hoop: '#c8d0d8', th: 1.2, R: 1.5 }, desc: 'Очень широкий обруч — почти не промахнуться.' },
+    r_carbon: { slot: 'r', ru: 'Обруч из углепластика', price: 1300, fx: { speed: 0.18, quiet: 0.15 }, vis: { hoop: '#2a2c34', th: 1.5 }, desc: 'Быстрый и тихий: бабочки меньше пугаются.' },
+    r_silver: { slot: 'r', ru: 'Обруч из серебра', price: 2000, fx: { ab: 0.004 }, vis: { hoop: '#e8ecf0', th: 1.3 }, desc: 'Серебро притягивает редкие формы: +0,4% шанс аберранта.' },
+    m_web: { slot: 'm', ru: 'Сетка из паутинного шёлка', price: 900, fx: { quiet: 0.25, speed: 0.08 }, vis: { mesh: '#f0f4f8', wire: '#aab4c0', op: 0.35 }, desc: 'Невесомая сетка рассекает воздух почти беззвучно.' },
+    m_deep: { slot: 'm', ru: 'Глубокая сетка', price: 1200, fx: { radius: 0.08, dbl: 0.05 }, vis: { bag: 1.7, mesh: '#c8dcd0' }, desc: 'Глубокий мешок: иногда в него попадает вторая бабочка (5%).' },
+    m_gold: { slot: 'm', ru: 'Позолоченная сетка', price: 1800, fx: { coin: 8 }, vis: { mesh: '#ffe9a0', wire: '#d8a830', op: 0.5 }, desc: 'За каждую пойманную бабочку — 8 монет от благодарных коллекционеров.' },
     h_chrome: { slot: 'h', ru: 'Ручка из хрома', price: 2400, fx: { ab: 0.005 }, vis: { handle: '#dce8f0', grip: '#8a98a8' }, desc: 'Блестящий хром: пойманная бабочка с шансом 0,5% окажется аберрантом.' },
   };
   const BASIC = { uid: 0, h: 'h_basic', r: 'r_basic', m: 'm_basic' };
   const SHOP = Object.keys(PARTS).filter(k => PARTS[k].price > 0);
   const isBasic = id => PARTS[id] && PARTS[id].price === 0;
   const parts = cfg => [PARTS[cfg.h] || PARTS.h_basic, PARTS[cfg.r] || PARTS.r_basic, PARTS[cfg.m] || PARTS.m_basic];
-  function stats(cfg) { let sp = 0, rd = 0, ab = 0; for (const p of parts(cfg || BASIC)) { sp += p.fx.speed || 0; rd += p.fx.radius || 0; ab += p.fx.ab || 0; } return { speed: 1 + sp, radius: 1 + rd, ab }; }
+  function stats(cfg) { let sp = 0, rd = 0, ab = 0, q = 0, db = 0, co = 0; for (const p of parts(cfg || BASIC)) { sp += p.fx.speed || 0; rd += p.fx.radius || 0; ab += p.fx.ab || 0; q += p.fx.quiet || 0; db += p.fx.dbl || 0; co += p.fx.coin || 0; } return { speed: 1 + sp, radius: 1 + rd, ab, quiet: Math.min(0.6, q), dbl: db, coin: co }; }
   function vis(cfg) {
     const v = { handle: '#9a6a38', grip: '#2a2018', len: 1, th: 1, hoop: '#eef2f4', R: 1, hth: 1, mesh: '#d4e8e0', wire: '#6f9088', op: 0.4, bag: 1 };
     for (const p of parts(cfg || BASIC)) { const q = p.vis; for (const k in q) { if (k === 'th') { if (p.slot === 'r') v.hth = q.th; else v.th = q.th; } else v[k] = q[k]; } }
@@ -29,8 +42,9 @@ const NetParts = (() => {
   }
   const code = cfg => (cfg && (!isBasic(cfg.h) || !isBasic(cfg.r) || !isBasic(cfg.m))) ? `${cfg.h}.${cfg.r}.${cfg.m}` : '';
   function parse(s) { if (!s || typeof s !== 'string') return BASIC; const a = s.split('.'); if (a.length !== 3) return BASIC; const [h, r, m] = a; return (PARTS[h] && PARTS[h].slot === 'h' && PARTS[r] && PARTS[r].slot === 'r' && PARTS[m] && PARTS[m].slot === 'm') ? { uid: -1, h, r, m } : BASIC; }
-  const fxLines = fx => { const o = []; if (fx.speed) o.push(`+${Math.round(fx.speed * 100)}% скорость взмаха`); if (fx.radius) o.push(`+${Math.round(fx.radius * 100)}% радиус ловли`); if (fx.ab) o.push(`+${(fx.ab * 100).toFixed(1).replace('.', ',')}% шанс аберранта`); return o; };
-  const statLines = cfg => { const s = stats(cfg), o = []; o.push(s.speed > 1 ? `Скорость взмаха: +${Math.round((s.speed - 1) * 100)}%` : 'Скорость взмаха: обычная'); o.push(s.radius > 1 ? `Радиус ловли: +${Math.round((s.radius - 1) * 100)}%` : 'Радиус ловли: обычный'); o.push(s.ab > 0 ? `Шанс аберранта: +${(s.ab * 100).toFixed(1).replace('.', ',')}%` : 'Шанс аберранта: обычный'); return o; };
+  const fxLines = fx => { const o = []; if (fx.speed) o.push(`+${Math.round(fx.speed * 100)}% скорость взмаха`); if (fx.radius) o.push(`+${Math.round(fx.radius * 100)}% радиус ловли`); if (fx.ab) o.push(`+${(fx.ab * 100).toFixed(1).replace('.', ',')}% шанс аберранта`); if (fx.quiet) o.push(`-${Math.round(fx.quiet * 100)}% шум взмаха`); if (fx.dbl) o.push(`${Math.round(fx.dbl * 100)}% шанс двойного улова`); if (fx.coin) o.push(`+${fx.coin} монет за бабочку`); return o; };
+  const fxShort = fx => fxLines(fx).map(s => s.replace('скорость взмаха', 'скор.').replace('радиус ловли', 'радиус').replace('шанс аберранта', 'аберрант').replace('шанс двойного улова', 'двойной улов').replace('шум взмаха', 'шум').replace(' монет за бабочку', ' монет/улов')).join(' · ');
+  const statLines = cfg => { const s = stats(cfg), o = []; o.push(s.speed > 1 ? `Скорость взмаха: +${Math.round((s.speed - 1) * 100)}%` : 'Скорость взмаха: обычная'); o.push(s.radius > 1 ? `Радиус ловли: +${Math.round((s.radius - 1) * 100)}%` : 'Радиус ловли: обычный'); o.push(s.ab > 0 ? `Шанс аберранта: +${(s.ab * 100).toFixed(1).replace('.', ',')}%` : 'Шанс аберранта: обычный'); if (s.quiet) o.push(`Шум взмаха: -${Math.round(s.quiet * 100)}%`); if (s.dbl) o.push(`Двойной улов: ${Math.round(s.dbl * 100)}%`); if (s.coin) o.push(`Монеты за улов: +${s.coin}`); return o; };
   const name = (cfg, i) => cfg.uid === 0 ? 'Обычный сачок' : `Сачок №${i + 1}`;
 
   // 2D picture of a net (pixel lines), used by the workbench and the shop
@@ -44,7 +58,7 @@ const NetParts = (() => {
     const th = Math.max(1, Math.round(V.th * 1.5)); ctx.fillStyle = V.handle; line(ctx, gx, gy, ex, ey, th); ctx.fillStyle = V.grip; line(ctx, gx, gy, gx + d.x * POLE * 0.3, gy + d.y * POLE * 0.3, th + 1);
     ctx.fillStyle = V.hoop; const hr = Math.max(1, Math.round(V.hth * 1.3)); ring.forEach((p, i) => { const q = ring[(i + 1) % ring.length]; line(ctx, p.x, p.y, q.x, q.y, hr); });
   }
-  return { SLOTS, PARTS, BASIC, SHOP, isBasic, stats, vis, code, parse, fxLines, statLines, name, draw2D };
+  return { SLOTS, PARTS, BASIC, SHOP, isBasic, stats, vis, code, parse, fxLines, fxShort, statLines, name, draw2D };
 })();
 
 // inventory / assembly / equipment (everything here is personal, like coins)
