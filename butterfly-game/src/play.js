@@ -241,7 +241,7 @@ class Play {
     this.helperT = 40;
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
-    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
+    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
@@ -323,7 +323,7 @@ class Play {
   netCaught(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
     if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
-    if (this.isHost && sp) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (BEH[sp.beh].light ? 3 : 1) });
+    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
     if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
   }
   sendNet(dt) {
@@ -386,7 +386,7 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    if (!this.mp || this.isHost) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) });
+    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
@@ -443,7 +443,7 @@ class Play {
     const ghosts = this.hasMod('ghosts');
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; } f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
-    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, r.sp, false)); this.respawns.splice(i, 1); } }
+    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, Aberr.roll(r.sp), false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?
     this.reticle = 0; const fwd = new THREE.Vector3(0, 0, -1).applyEuler(this.camera.rotation);
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
@@ -519,9 +519,9 @@ class Play {
     ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
     ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
-    T.draw(ctx, cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.first ? c.gold : c.green });
-    T.draw(ctx, cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
-    T.draw(ctx, cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
+    T.draw(ctx, cd.sp.ab ? 'АБЕРРАНТ!  ab. ' + cd.sp.ab.name : cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.sp.ab ? '#ff9ae8' : cd.first ? c.gold : c.green });
+    T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ru, 120) : cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
+    T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
     ctx.globalAlpha = 1;
@@ -534,4 +534,5 @@ Play.pickPool = (biome, rng, size = 9, shared = false) => {
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
+const fitStr = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);

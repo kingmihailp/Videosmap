@@ -56,7 +56,7 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  data: { caught: {}, aberr: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
@@ -82,11 +82,15 @@ const Save = {
   nextUid() { return this.mp ? this.mpIdx * 1000000 + (++this.mpCnt) : this.data.uid++; },
   _op(op) { if (this.mp) Net.sendOp(op); },
   has(id) { return !!this.data.caught[id]; },
-  count(id) { return this.data.caught[id] ? this.data.caught[id].count : 0; },
+  aberrants(baseId) { return (this.data.aberr && this.data.aberr[baseId]) || []; },
+  aberrTotal() { let n = 0; for (const k in (this.data.aberr || {})) n += this.data.aberr[k].length; return n; },
+  count(id) { const a = Aberr.parse(id); if (a) id = a.base; return this.data.caught[id] ? this.data.caught[id].count : 0; },
   add(id, biomeId) {
-    const first = !this.data.caught[id];
-    if (first) this.data.caught[id] = { count: 0, first: Date.now(), place: biomeId };
-    this.data.caught[id].count++;
+    const ab = Aberr.parse(id), key = ab ? ab.base : id;   // an aberrant also counts as a catch of its species; its own record lives in data.aberr
+    let first = !this.data.caught[key];
+    if (first) this.data.caught[key] = { count: 0, first: Date.now(), place: biomeId };
+    this.data.caught[key].count++;
+    if (ab) { const A = this.data.aberr || (this.data.aberr = {}); (A[key] || (A[key] = [])).push({ code: ab.code, first: Date.now(), place: biomeId }); first = true; }
     const sp = this.data.specimens, spec = { uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null };
     if (this.mp) spec.by = Net.name;
     sp.push(spec); this._op({ k: 'addSpec', spec });

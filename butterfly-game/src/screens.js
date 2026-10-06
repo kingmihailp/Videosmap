@@ -219,9 +219,11 @@ const Screens = (() => {
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
     },
     draw(ctx, t, m) {
+      if (this.ab && this.ab.tab !== this.tab) this.ab = null;
+      if (this.ab) return this.drawAb(ctx, t, m);
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText(), 200, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
@@ -232,6 +234,7 @@ const Screens = (() => {
         ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.5; ctx.fillStyle = '#000'; ctx.fillRect(s.x + 12, s.y + 44, 78, 2); ctx.globalAlpha = 1;
         ctx.drawImage(Art.specimen(s.sp, !has), s.x + 11, s.y + 5, 80, 40);
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
+        if (has && Save.aberrants(s.sp.id).length) { ctx.fillStyle = '#c0309a'; ctx.fillRect(s.x + s.w - 9, s.y + 5, 1, 5); ctx.fillRect(s.x + s.w - 11, s.y + 7, 5, 1); ctx.fillStyle = '#ff9ae8'; ctx.fillRect(s.x + s.w - 9, s.y + 7, 1, 1); }
         ctx.fillStyle = '#f2ead0'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 14); ctx.fillStyle = '#8a7650'; ctx.fillRect(s.x + 4, s.y + 63, s.w - 8, 1);
         T.draw(ctx, has ? fit(s.sp.ru, s.w - 12) : '??? Не найдено', s.x + s.w / 2, s.y + 52, { size: 8, align: 'c', color: has ? '#2a1a0c' : '#8a7a5a' });
       });
@@ -248,7 +251,8 @@ const Screens = (() => {
       T.draw(ctx, 'Семейство', sx + 4, 72, { size: 8, color: dim }); T.draw(ctx, sp.fam, sx + 4, 81, { size: 8, color: ink });
       T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 50 + i * 8, py = 94; ctx.fillStyle = on ? '#d8a020' : '#cdbf94'; ctx.fillRect(px + 2, py, 3, 7); ctx.fillRect(px, py + 2, 7, 3); ctx.fillRect(px + 1, py + 1, 5, 5); }
       T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 106, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 115, { size: 8, color: ink });
-      let y = 136; const bottom = 262, lh = 9; let left = 0;
+      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
+      if (abl.length) { this.abBtn = { id: 'ab', label: `Аберранты (${abl.length})`, x: x0 + 8, y: 244, w: w0 - 16, h: 15 }; UIK.btn(ctx, this.abBtn, UIK.hit(this.abBtn, m.x, m.y)); }
       const take = (str, want, reserve, col, fx = tx) => { const lines = T.wrap(str, tw, 8); const n = Math.max(1, Math.min(lines.length, want, left - reserve)); if (left <= 0) return; for (let i = 0; i < n; i++) { let l = lines[i]; if (i === n - 1 && n < lines.length) l = fit(l + ' ' + lines[i + 1], tw); T.draw(ctx, l, tx, y, { size: 8, color: col }); y += lh; left--; } y += 1; };
       if (has) {
         T.draw(ctx, sp.ru, tx, y, { size: 10, color: ink }); y += 12; T.draw(ctx, fit(sp.la + ' · ' + sp.en, tw), tx, y, { size: 8, color: '#8a2a1a' }); y += 12;
@@ -262,9 +266,32 @@ const Screens = (() => {
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
     },
-    turn(d) { const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
+    escape() { if (this.ab) { this.ab = null; Snd.sfx.page(); return true; } return false; },
+    drawAb(ctx, t, m) {
+      const ab = this.ab, base = SPECIES_BY_ID[ab.base], list = Save.aberrants(ab.base).slice().reverse(), PER = 6; ab.pages = Math.max(1, Math.ceil(list.length / PER)); ab.page = clamp(ab.page, 0, ab.pages - 1);
+      ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
+      T.draw(ctx, 'Аберранты: ' + base.ru, 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${list.length} найдено · ${base.la}`, 8, 19, { size: 8, color: c.dim });
+      this.abBtns = [{ id: 'abback', label: '← К виду', x: SW - 164, y: 4, w: 78, h: 15 }, { id: 'abprev', label: '←', x: 168, y: 4, w: 22, h: 15, disabled: ab.page === 0 }, { id: 'abnext', label: '→', x: 256, y: 4, w: 22, h: 15, disabled: ab.page >= ab.pages - 1 }];
+      this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
+      this.abBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y)); T.draw(ctx, `стр. ${ab.page + 1}/${ab.pages}`, 223, 7, { size: 8, align: 'c', color: c.text });
+      // the regular form for comparison
+      UIK.panel(ctx, 8, 34, 464, 40, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#c8a870'; ctx.fillRect(12, 36, 84, 36); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(base), 14, 34, 80, 40);
+      T.draw(ctx, 'Обычная форма вида', 104, 40, { size: 8, color: '#2a1a0c' }); T.draw(ctx, `Размах ${base.mm[0]}–${base.mm[1]} мм · ${base.fam}`, 104, 52, { size: 8, color: '#6a5030' });
+      T.draw(ctx, 'Аберранты — редкие отклонения окраски, рисунка и размера', 104, 63, { size: 8, color: '#8a2a1a' });
+      list.slice(ab.page * PER, ab.page * PER + PER).forEach((rec, i) => {
+        const sp = SPECIES_BY_ID[base.id + '~' + rec.code]; if (!sp) return; const x = 8 + (i % 2) * 235, y = 80 + Math.floor(i / 2) * 61, w = 229, h = 58, hv = UIK.hit({ x, y, w, h }, m.x, m.y);
+        UIK.panel(ctx, x, y, w, h, { fill: hv ? '#f0e6c0' : '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#c8a870'; ctx.fillRect(x + 3, y + 3, 84, 44); ctx.drawImage(Art.specimen(sp), x + 5, y + 5, 80, 40);
+        T.draw(ctx, `ab. ${sp.ab.name}`, x + 92, y + 4, { size: 8, color: '#8a2a1a' }); T.draw(ctx, '#' + rec.code, x + w - 6, y + 4, { size: 8, align: 'r', color: '#6a5030' });
+        const lines = T.wrap(sp.ab.desc.join(', '), w - 98, 8); lines.slice(0, 3).forEach((l, k) => T.draw(ctx, l, x + 92, y + 15 + k * 9, { size: 8, color: '#2a1a0c' }));
+        T.draw(ctx, `${sp.mm[0]}–${sp.mm[1]} мм`, x + 5, y + 48, { size: 8, color: '#6a5030' }); T.draw(ctx, `${fmtDate(rec.first)} · ${short[rec.place] || ''}`, x + w - 6, y + 47, { size: 8, align: 'r', color: '#6a5030' });
+      });
+      if (!list.length) T.draw(ctx, 'Пока ни одного аберранта', SW / 2, 150, { size: 8, align: 'c', color: c.dim });
+    },
+    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
+      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: BIOMES[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
       const tb = this.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.tab = tb.i; this.sel = 0; Snd.sfx.page(); return 'tab'; }
       const s = this.slots.find(s => UIK.hit(s, x, y)); if (s) { this.sel = s.k; Snd.sfx.click(); return 'slot'; }

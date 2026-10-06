@@ -308,7 +308,7 @@ const BEH = {
   modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#ff7272' },
 };
 
-const SPECIES_BY_ID = {};
+let SPECIES_BY_ID = {};
 const BIOME_BY_ID = {};
 function rebuildSpeciesIndex() {
   SPECIES.forEach(s => { SPECIES_BY_ID[s.id] = s; });

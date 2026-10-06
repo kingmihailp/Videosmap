@@ -345,7 +345,7 @@ const BEH = {
   modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#ff7272' },
 };
 
-const SPECIES_BY_ID = {};
+let SPECIES_BY_ID = {};
 const BIOME_BY_ID = {};
 function rebuildSpeciesIndex() {
   SPECIES.forEach(s => { SPECIES_BY_ID[s.id] = s; });
@@ -762,7 +762,7 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  data: { caught: {}, aberr: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
@@ -788,11 +788,15 @@ const Save = {
   nextUid() { return this.mp ? this.mpIdx * 1000000 + (++this.mpCnt) : this.data.uid++; },
   _op(op) { if (this.mp) Net.sendOp(op); },
   has(id) { return !!this.data.caught[id]; },
-  count(id) { return this.data.caught[id] ? this.data.caught[id].count : 0; },
+  aberrants(baseId) { return (this.data.aberr && this.data.aberr[baseId]) || []; },
+  aberrTotal() { let n = 0; for (const k in (this.data.aberr || {})) n += this.data.aberr[k].length; return n; },
+  count(id) { const a = Aberr.parse(id); if (a) id = a.base; return this.data.caught[id] ? this.data.caught[id].count : 0; },
   add(id, biomeId) {
-    const first = !this.data.caught[id];
-    if (first) this.data.caught[id] = { count: 0, first: Date.now(), place: biomeId };
-    this.data.caught[id].count++;
+    const ab = Aberr.parse(id), key = ab ? ab.base : id;   // an aberrant also counts as a catch of its species; its own record lives in data.aberr
+    let first = !this.data.caught[key];
+    if (first) this.data.caught[key] = { count: 0, first: Date.now(), place: biomeId };
+    this.data.caught[key].count++;
+    if (ab) { const A = this.data.aberr || (this.data.aberr = {}); (A[key] || (A[key] = [])).push({ code: ab.code, first: Date.now(), place: biomeId }); first = true; }
     const sp = this.data.specimens, spec = { uid: this.nextUid(), sp: id, biome: biomeId, date: Date.now(), q: null, pose: null, box: null };
     if (this.mp) spec.by = Net.name;
     sp.push(spec); this._op({ k: 'addSpec', spec });
@@ -1117,6 +1121,114 @@ const Art = (() => {
 
   return { wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
 })();
+
+// ===== aberr.js =====
+// ---------------------------------------------------------------- aberrations: rare, procedurally generated colour / pattern / size variants of every real species
+// An aberrant is a species-like object derived from its base species and a short code (the seed): id = "<base id>~<CODE>".
+// Everything is a pure function of (base species, code), so any client (or an old save) can rebuild it from the id alone.
+// Deviations are deliberately bounded: hue moves by at most ~22 degrees, lightness / saturation by modest factors, so a peacock
+// stays red (another shade of red or bordeaux), a blue stays blue, a white stays whitish -- but the change is always visible.
+const Aberr = (() => {
+  const SEP = '~', CODE_RE = /^[0-9A-Z]{4,6}$/, ALPHA = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const AB_CHANCE = 0.035;                         // chance that a freshly spawned butterfly of a real species is an aberrant
+  const made = new Map();
+
+  function toHsl(c) { const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0; if (mx !== mn) { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; } return [h, s, l]; }
+  function fromHsl(h, s, l) { h = ((h % 360) + 360) % 360 / 360; const f = (p, q, t) => { t = (t + 1) % 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; if (s === 0) { const v = l * 255; return rgb2hex(v, v, v); } const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; return rgb2hex(f(p, q, h + 1 / 3) * 255, f(p, q, h) * 255, f(p, q, h - 1 / 3) * 255); }
+
+  // the genome of one aberration (all values bounded)
+  function genome(base, rng) {
+    const r = x => rng.range(x[0], x[1]);
+    const mode = rng.pick(['shift', 'shift', 'shift', 'dark', 'dark', 'pale', 'pale', 'vivid']);
+    const g = { mode, hs: (rng.chance(0.5) ? 1 : -1) * (mode === 'shift' ? r([8, 18]) : r([0, 7])), hs2: r([-4, 4]), lf: r([0.68, 0.84]), pl: r([0.2, 0.42]), vv: r([0.18, 0.38]), tintHue: rng.pick([34, 44, 24, 205, 218, 330]), tintS: r([0.1, 0.2]) };
+    const a = base.art, nSp = (a.sp || []).length, nEye = (a.eye || []).length;
+    g.spotK = (nSp + nEye > 0 && rng.chance(0.6)) ? r([0.7, 1.34]) : 1;
+    g.drop = nSp >= 3 && rng.chance(0.22) ? rng.int(0, nSp - 1) : -1;
+    g.dots = rng.chance(0.4) ? rng.int(2, 4) : 0; g.dotSeed = rng.int(1, 1e6);
+    g.edge = a.edge && rng.chance(0.38) ? (a.edge[1] >= 3 ? -1 : (rng.chance(0.5) ? 1 : -1)) : 0;
+    g.shiftBand = (a.band || a.bars) && rng.chance(0.4) ? r([-0.05, 0.05]) : 0; g.barsN = a.bars && rng.chance(0.4) ? (rng.chance(0.5) ? 1 : -1) : 0;
+    g.size = r([0.9, 1.12]); if (Math.abs(g.size - 1) < 0.04) g.size = g.size < 1 ? 0.93 : 1.07;
+    g.sheenK = a.sheen ? r([0.7, 1.3]) : 1;
+    return g;
+  }
+
+  function recolor(hex, role, g) {                 // role: 'main' | 'acc' | 'dark'
+    const w = role === 'acc' ? 0.7 : 1; const [h0, s0, l0] = toHsl(hex2rgb(hex)); let h = h0, s = s0, l = l0;
+    if (l0 < 0.16) {                                // near-black: a visible gloss (brownish / bluish black), so black-and-white species still change
+      h = g.tintHue; s = 0.27; l = l0 + (g.mode === 'pale' ? 0.09 : 0.065) * (0.6 + 0.4 * w);
+    } else if (s0 >= 0.14 && l0 < 0.93) {           // chromatic: hue moves a little, the rest is a bounded tone change
+      h = h0 + (g.hs + g.hs2) * w;
+      if (g.mode === 'dark') { l = l0 * lerp(1, g.lf, w); s = s0 * (l0 > 0.7 ? 0.62 : 0.92); }
+      else if (g.mode === 'pale') { l = l0 + (1 - l0) * g.pl * w; s = s0 * (1 - 0.22 * w); }
+      else if (g.mode === 'vivid') { s = Math.min(1, s0 * (1 + g.vv * w)); l = l0 * 0.97; }
+      else { s = clamp(s0 * (1 + 0.05 * (g.hs > 0 ? 1 : -1)), 0, 1); }
+    } else if (l0 > 0.8) {                          // whites: a cream / cool tint, or smoky grey
+      if (g.mode === 'dark') { l = l0 * lerp(1, g.lf, w); }
+      else { h = g.tintHue; s = (g.mode === 'pale' ? 0.28 : 0.4) * (0.6 + 0.4 * w); l = Math.min(l0, g.mode === 'pale' ? 0.9 : 0.86); }
+    } else {                                        // mid greys / browns
+      if (g.mode === 'dark') l = l0 * lerp(1, g.lf, w); else if (g.mode === 'pale') l = l0 + (1 - l0) * 0.28 * w; else { h = g.tintHue; s = Math.max(s0, 0.3 * w); }
+    }
+    let out = fromHsl(h, clamp(s, 0, 1), clamp(l, 0.03, 0.97));
+    if (role !== 'dark') {                          // safeguard: a main colour must always visibly change (nudge the lightness, never the hue)
+      const o = hex2rgb(hex), min = role === 'acc' ? 34 : 46; for (let k = 0; k < 3; k++) { const n = hex2rgb(out); if (Math.abs(o[0] - n[0]) + Math.abs(o[1] - n[1]) + Math.abs(o[2] - n[2]) >= min) break; l = clamp(l + (l < 0.5 ? 0.06 : -0.06), 0.03, 0.97); out = fromHsl(h, clamp(s, 0, 1), l); }
+    }
+    return out;
+  }
+
+  function mutateArt(base, g) {
+    const a = JSON.parse(JSON.stringify(base.art)), M = c => recolor(c, 'main', g), A = c => recolor(c, 'acc', g), D = c => recolor(c, 'dark', g);
+    a.f = a.f.map(M); a.h = a.h.map(M);
+    if (a.edge) { a.edge[0] = D(a.edge[0]); a.edge[1] = clamp(a.edge[1] + g.edge, 1, 4); }
+    if (a.dots) a.dots = A(a.dots); if (a.veins) a.veins = D(a.veins); if (typeof a.tail === 'string') a.tail = D(a.tail);
+    if (a.bars) { a.bars[0] = D(a.bars[0]); a.bars[1] = Math.max(2, a.bars[1] + g.barsN); }
+    if (a.band) { a.band[3] = M(a.band[3]); a.band[1] = clamp(a.band[1] + g.shiftBand, 0, 0.95); a.band[2] = clamp(a.band[2] + g.shiftBand, 0.05, 1); }
+    if (a.tip) a.tip[0] = M(a.tip[0]); if (a.sheen) { a.sheen[0] = M(a.sheen[0]); a.sheen[1] = a.sheen[1] * g.sheenK; }
+    if (a.checker) a.checker = a.checker.map(M); if (a.rays) a.rays[1] = A(a.rays[1]); if (a.arc) a.arc[1] = A(a.arc[1]); if (a.wedges) a.wedges[0] = A(a.wedges[0]);
+    if (a.patch) { a.patch[4] = A(a.patch[4]); a.patch[3] *= g.spotK; }
+    if (a.sp) { a.sp.forEach(s => { s[4] = A(s[4]); s[3] *= g.spotK; }); if (g.drop >= 0 && a.sp.length >= 3) a.sp.splice(g.drop, 1); }
+    if (a.eye) a.eye.forEach(e => { e[4] = A(e[4]); e[3] *= g.spotK; });
+    if (g.dots) {                                   // a few extra small spots, dark on a bright wing and pale on a dark one
+      const r = new Rng(g.dotSeed), light = toHsl(hex2rgb(a.f[0]))[2] > 0.5, col = light ? '#1c140c' : '#f2e8c8'; a.sp = a.sp || [];
+      for (let i = 0; i < g.dots; i++) a.sp.push([r.chance(0.5) ? 'f' : 'h', r.range(0.3, 0.88), r.range(0.2, 0.8), r.range(0.8, 1.25), col]);
+    }
+    return a;
+  }
+
+  function describe(base, g) {
+    const d = [], nm = [];
+    if (g.mode === 'dark') { d.push('тёмная форма (меланизм)'); nm.push('nigrescens'); } else if (g.mode === 'pale') { d.push('бледная форма'); nm.push('pallida'); } else if (g.mode === 'vivid') { d.push('насыщенная окраска'); nm.push('saturata'); } else { d.push('сдвинутый оттенок'); nm.push('discolor'); }
+    if (g.spotK > 1.12) { d.push('крупные пятна'); nm.push('maxima'); } else if (g.spotK < 0.88) { d.push('мелкие пятна'); nm.push('parva'); }
+    if (g.drop >= 0) { d.push('нет одного пятна'); nm.push('defecta'); }
+    if (g.dots) { d.push('лишние точки'); nm.push('punctata'); }
+    if (g.edge > 0) { d.push('широкая кайма'); nm.push('marginata'); } else if (g.edge < 0) { d.push('узкая кайма'); nm.push('angusta'); }
+    if (g.shiftBand || g.barsN) d.push('смещённый рисунок');
+    const pc = Math.round((g.size - 1) * 100); d.push(pc > 0 ? `крупнее на ${pc}%` : `мельче на ${-pc}%`);
+    return { desc: d, name: nm.slice(0, 2).join('-') };
+  }
+
+  function make(base, code) {
+    const id = base.id + SEP + code; let sp = made.get(id); if (sp) return sp;
+    const g = genome(base, new Rng(strSeed(id))), info = describe(base, g);
+    sp = Object.assign({}, base, {
+      id, base: base.id, rar: 3, art: mutateArt(base, g),
+      ru: base.ru + ' · аберрант', la: base.la + ' ab. ' + info.name, en: base.en + ' (aberration)',
+      mm: base.mm.map(v => Math.round(v * g.size)), fact: 'Аберрант: редкое отклонение окраски, рисунка или размера от обычной формы вида.',
+      ab: { code, name: info.name, desc: info.desc, size: g.size },
+    });
+    made.set(id, sp); return sp;
+  }
+
+  const parse = id => { if (typeof id !== 'string') return null; const i = id.indexOf(SEP); if (i < 1) return null; const code = id.slice(i + 1); return CODE_RE.test(code) ? { base: id.slice(0, i), code } : null; };
+  const eligible = sp => !!sp && !sp.base && !sp.mystery && sp.biome !== 'ocean' && !(BEH[sp.beh] && BEH[sp.beh].light);
+  const randomCode = () => { let s = ''; for (let i = 0; i < 5; i++) s += ALPHA[Math.floor(Math.random() * ALPHA.length)]; return s; };
+  const get = id => { const p = parse(id); if (!p) return undefined; const base = RAW_BY_ID[p.base]; return eligible(base) ? make(base, p.code) : undefined; };
+  const roll = (sp, p = AB_CHANCE) => (eligible(sp) && Math.random() < p) ? make(sp, randomCode()) : sp;
+  return { make, parse, get, roll, eligible, randomCode, AB_CHANCE, genome };
+})();
+
+// every lookup by species id also understands aberration ids ("<base>~CODE")
+const RAW_BY_ID = SPECIES_BY_ID;
+SPECIES_BY_ID = new Proxy(RAW_BY_ID, { get(t, k) { return typeof k === 'string' && k.indexOf('~') > 0 ? Aberr.get(k) : t[k]; } });
 
 // ===== audio.js =====
 // ---------------------------------------------------------------- procedural audio (WebAudio, no files)
@@ -2609,7 +2721,7 @@ class Play {
     this.helperT = 40;
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
-    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, sp, i === 0)); });
+    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); });
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
@@ -2691,7 +2803,7 @@ class Play {
   netCaught(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
     if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
-    if (this.isHost && sp) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (BEH[sp.beh].light ? 3 : 1) });
+    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
     if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
   }
   sendNet(dt) {
@@ -2754,7 +2866,7 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    if (!this.mp || this.isHost) this.respawns.push({ sp, t: (sp.rar === 1 ? 14 : sp.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) });
+    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
@@ -2811,7 +2923,7 @@ class Play {
     const ghosts = this.hasMod('ghosts');
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; } f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
-    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, r.sp, false)); this.respawns.splice(i, 1); } }
+    for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, Aberr.roll(r.sp), false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?
     this.reticle = 0; const fwd = new THREE.Vector3(0, 0, -1).applyEuler(this.camera.rotation);
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
@@ -2887,9 +2999,9 @@ class Play {
     ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
     ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
-    T.draw(ctx, cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.first ? c.gold : c.green });
-    T.draw(ctx, cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
-    T.draw(ctx, cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
+    T.draw(ctx, cd.sp.ab ? 'АБЕРРАНТ!  ab. ' + cd.sp.ab.name : cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.sp.ab ? '#ff9ae8' : cd.first ? c.gold : c.green });
+    T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ru, 120) : cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
+    T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
     ctx.globalAlpha = 1;
@@ -2902,6 +3014,7 @@ Play.pickPool = (biome, rng, size = 9, shared = false) => {
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
+const fitStr = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 
 // ===== screens.js =====
@@ -3126,9 +3239,11 @@ const Screens = (() => {
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
     },
     draw(ctx, t, m) {
+      if (this.ab && this.ab.tab !== this.tab) this.ab = null;
+      if (this.ab) return this.drawAb(ctx, t, m);
       this.layout(); const b = BIOMES[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText(), 200, 7, { size: 8, color: c.text });
+      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
       this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
@@ -3139,6 +3254,7 @@ const Screens = (() => {
         ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.5; ctx.fillStyle = '#000'; ctx.fillRect(s.x + 12, s.y + 44, 78, 2); ctx.globalAlpha = 1;
         ctx.drawImage(Art.specimen(s.sp, !has), s.x + 11, s.y + 5, 80, 40);
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
+        if (has && Save.aberrants(s.sp.id).length) { ctx.fillStyle = '#c0309a'; ctx.fillRect(s.x + s.w - 9, s.y + 5, 1, 5); ctx.fillRect(s.x + s.w - 11, s.y + 7, 5, 1); ctx.fillStyle = '#ff9ae8'; ctx.fillRect(s.x + s.w - 9, s.y + 7, 1, 1); }
         ctx.fillStyle = '#f2ead0'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 14); ctx.fillStyle = '#8a7650'; ctx.fillRect(s.x + 4, s.y + 63, s.w - 8, 1);
         T.draw(ctx, has ? fit(s.sp.ru, s.w - 12) : '??? Не найдено', s.x + s.w / 2, s.y + 52, { size: 8, align: 'c', color: has ? '#2a1a0c' : '#8a7a5a' });
       });
@@ -3155,7 +3271,8 @@ const Screens = (() => {
       T.draw(ctx, 'Семейство', sx + 4, 72, { size: 8, color: dim }); T.draw(ctx, sp.fam, sx + 4, 81, { size: 8, color: ink });
       T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 50 + i * 8, py = 94; ctx.fillStyle = on ? '#d8a020' : '#cdbf94'; ctx.fillRect(px + 2, py, 3, 7); ctx.fillRect(px, py + 2, 7, 3); ctx.fillRect(px + 1, py + 1, 5, 5); }
       T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 106, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 115, { size: 8, color: ink });
-      let y = 136; const bottom = 262, lh = 9; let left = 0;
+      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
+      if (abl.length) { this.abBtn = { id: 'ab', label: `Аберранты (${abl.length})`, x: x0 + 8, y: 244, w: w0 - 16, h: 15 }; UIK.btn(ctx, this.abBtn, UIK.hit(this.abBtn, m.x, m.y)); }
       const take = (str, want, reserve, col, fx = tx) => { const lines = T.wrap(str, tw, 8); const n = Math.max(1, Math.min(lines.length, want, left - reserve)); if (left <= 0) return; for (let i = 0; i < n; i++) { let l = lines[i]; if (i === n - 1 && n < lines.length) l = fit(l + ' ' + lines[i + 1], tw); T.draw(ctx, l, tx, y, { size: 8, color: col }); y += lh; left--; } y += 1; };
       if (has) {
         T.draw(ctx, sp.ru, tx, y, { size: 10, color: ink }); y += 12; T.draw(ctx, fit(sp.la + ' · ' + sp.en, tw), tx, y, { size: 8, color: '#8a2a1a' }); y += 12;
@@ -3169,9 +3286,32 @@ const Screens = (() => {
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
     },
-    turn(d) { const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
+    escape() { if (this.ab) { this.ab = null; Snd.sfx.page(); return true; } return false; },
+    drawAb(ctx, t, m) {
+      const ab = this.ab, base = SPECIES_BY_ID[ab.base], list = Save.aberrants(ab.base).slice().reverse(), PER = 6; ab.pages = Math.max(1, Math.ceil(list.length / PER)); ab.page = clamp(ab.page, 0, ab.pages - 1);
+      ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
+      T.draw(ctx, 'Аберранты: ' + base.ru, 8, 6, { size: 10, color: c.gold }); T.draw(ctx, `${list.length} найдено · ${base.la}`, 8, 19, { size: 8, color: c.dim });
+      this.abBtns = [{ id: 'abback', label: '← К виду', x: SW - 164, y: 4, w: 78, h: 15 }, { id: 'abprev', label: '←', x: 168, y: 4, w: 22, h: 15, disabled: ab.page === 0 }, { id: 'abnext', label: '→', x: 256, y: 4, w: 22, h: 15, disabled: ab.page >= ab.pages - 1 }];
+      this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
+      this.abBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y)); T.draw(ctx, `стр. ${ab.page + 1}/${ab.pages}`, 223, 7, { size: 8, align: 'c', color: c.text });
+      // the regular form for comparison
+      UIK.panel(ctx, 8, 34, 464, 40, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#c8a870'; ctx.fillRect(12, 36, 84, 36); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(base), 14, 34, 80, 40);
+      T.draw(ctx, 'Обычная форма вида', 104, 40, { size: 8, color: '#2a1a0c' }); T.draw(ctx, `Размах ${base.mm[0]}–${base.mm[1]} мм · ${base.fam}`, 104, 52, { size: 8, color: '#6a5030' });
+      T.draw(ctx, 'Аберранты — редкие отклонения окраски, рисунка и размера', 104, 63, { size: 8, color: '#8a2a1a' });
+      list.slice(ab.page * PER, ab.page * PER + PER).forEach((rec, i) => {
+        const sp = SPECIES_BY_ID[base.id + '~' + rec.code]; if (!sp) return; const x = 8 + (i % 2) * 235, y = 80 + Math.floor(i / 2) * 61, w = 229, h = 58, hv = UIK.hit({ x, y, w, h }, m.x, m.y);
+        UIK.panel(ctx, x, y, w, h, { fill: hv ? '#f0e6c0' : '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#c8a870'; ctx.fillRect(x + 3, y + 3, 84, 44); ctx.drawImage(Art.specimen(sp), x + 5, y + 5, 80, 40);
+        T.draw(ctx, `ab. ${sp.ab.name}`, x + 92, y + 4, { size: 8, color: '#8a2a1a' }); T.draw(ctx, '#' + rec.code, x + w - 6, y + 4, { size: 8, align: 'r', color: '#6a5030' });
+        const lines = T.wrap(sp.ab.desc.join(', '), w - 98, 8); lines.slice(0, 3).forEach((l, k) => T.draw(ctx, l, x + 92, y + 15 + k * 9, { size: 8, color: '#2a1a0c' }));
+        T.draw(ctx, `${sp.mm[0]}–${sp.mm[1]} мм`, x + 5, y + 48, { size: 8, color: '#6a5030' }); T.draw(ctx, `${fmtDate(rec.first)} · ${short[rec.place] || ''}`, x + w - 6, y + 47, { size: 8, align: 'r', color: '#6a5030' });
+      });
+      if (!list.length) T.draw(ctx, 'Пока ни одного аберранта', SW / 2, 150, { size: 8, align: 'c', color: c.dim });
+    },
+    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
+      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: BIOMES[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
       const tb = this.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.tab = tb.i; this.sel = 0; Snd.sfx.page(); return 'tab'; }
       const s = this.slots.find(s => UIK.hit(s, x, y)); if (s) { this.sel = s.k; Snd.sfx.click(); return 'slot'; }
@@ -4073,7 +4213,7 @@ const Cabinet = (() => {
         else if (e.code === 'Escape' && G.phase !== 'result') { G.phase = 'none'; this.ov = 'pick'; }
         return;
       }
-      if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
+      if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
       if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'pick') this.close(); }
     }
     click(x, y) {
@@ -4249,7 +4389,7 @@ const Cabinet = (() => {
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
-        if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
+        if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
@@ -4261,7 +4401,7 @@ const Cabinet = (() => {
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
-      if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
+      if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
     }
   });
   ui.addEventListener('mousedown', e => {

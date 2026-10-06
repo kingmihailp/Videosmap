@@ -38,7 +38,7 @@ function fits(b, t, i) {
 // returns true when the operation is valid and has been applied
 function applyOp(op) {
   switch (op.k) {
-    case 'addSpec': { const s = op.spec; if (!s || spec(s.uid) || !s.sp) return false; state.specimens.push({ uid: s.uid, sp: s.sp, biome: s.biome, date: s.date, q: null, pose: null, box: null, by: String(s.by || '').slice(0, MAX_NAME) }); if (state.specimens.length > 600) { const i = state.specimens.findIndex(x => x.q === null && !x.box); if (i >= 0) state.specimens.splice(i, 1); } return true; }
+    case 'addSpec': { const s = op.spec; if (!s || spec(s.uid) || !s.sp || String(s.sp).length > 64) return false; state.specimens.push({ uid: s.uid, sp: s.sp, biome: s.biome, date: s.date, q: null, pose: null, box: null, by: String(s.by || '').slice(0, MAX_NAME) }); if (state.specimens.length > 600) { const i = state.specimens.findIndex(x => x.q === null && !x.box); if (i >= 0) state.specimens.splice(i, 1); } return true; }
     case 'spread': { const s = spec(op.uid); if (!s || s.q !== null || !(op.q >= 1 && op.q <= 100) || !op.pose) return false; s.q = op.q; s.pose = op.pose; return true; }
     case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 60) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
     case 'delBox': { const b = box(op.uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = spec(u); if (s) s.box = null; }); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }
