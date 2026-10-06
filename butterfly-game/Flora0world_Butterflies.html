@@ -4356,9 +4356,9 @@ const Market = (() => {
     build(material, shadows = true) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(this.P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(this.N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(this.C, 3)); g.computeBoundingSphere(); const m = new THREE.Mesh(g, material); m.castShadow = shadows; m.receiveShadow = shadows; m.frustumCulled = false; return m; }
   }
   const BOXG = new THREE.BoxGeometry(1, 1, 1);
-  function gableGeo(w, d, h, ov = 0.25, alongX = true) {   // a gable roof: ridge along x (alongX) or z
+  function gableGeo(w, d, h, ov = 0.25, alongX = true, ovR = ov) {   // a gable roof: ridge along x (alongX) or z
     const W = alongX ? w : d, D = alongX ? d : w; const hw = W / 2 + (alongX ? ov : 0), hd = D / 2 + (alongX ? 0 : 0), ex = alongX ? 0 : ov;
-    const a = D / 2 + ov, b = W / 2 + ov; const P = [], idx = [];
+    const a = D / 2 + ov, b = W / 2 + ovR; const P = [], idx = [];
     // ridge runs along local x: eaves at z=+-a, ridge at y=h
     const v = [[-b, 0, -a], [b, 0, -a], [b, h, 0], [-b, h, 0], [-b, 0, a], [b, 0, a]];
     const tris = [[0, 1, 2], [0, 2, 3], [5, 4, 3], [5, 3, 2], [4, 0, 3], [1, 5, 2]];
@@ -4464,7 +4464,7 @@ const Market = (() => {
     // ---- houses on the 4 m grid around the streets
     buildHouses() {
       const S = this.scene, B = this.B, rng = this.rng; this.facade = PALS.map(p => ({ g: facadeTex(p, true), u: facadeTex(p, false) })); this.emG = facadeTex(PALS[0], true, true); this.emU = facadeTex(PALS[0], false, true);
-      this.winMats = [];
+      this.winMats = []; this.cells = new Map();
       const sides = (cells, ht) => { const g = new THREE.BoxGeometry(4, ht, 4); const uv = g.attributes.uv; const fl = ht / 3.2; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * fl); g.attributes.uv.needsUpdate = true; return g; };
       for (let gx = -36; gx < 40; gx += 4) for (let gz = -36; gz < 36; gz += 4) {
         const cx = gx + 2, cz = gz + 2, d = streetDist(cx, cz); if (d < 1.99 || d > 9) continue;
@@ -4472,13 +4472,19 @@ const Market = (() => {
         const gMat = lam('#ffffff', { map: this.facade[pi].g, emissiveMap: this.emG, emissive: '#ffffff', emissiveIntensity: 0 }), uMat = lam('#ffffff', { map: this.facade[pi].u, emissiveMap: this.emU, emissive: '#ffffff', emissiveIntensity: 0 }); this.winMats.push(gMat, uMat);
         const ground = new THREE.Mesh(new THREE.BoxGeometry(4, 3.2, 4), gMat); ground.position.set(cx, 1.6, cz); ground.castShadow = ground.receiveShadow = true; S.add(ground);
         const up = new THREE.Mesh(sides(0, ht - 3.2), uMat); up.position.set(cx, 3.2 + (ht - 3.2) / 2, cz); up.castShadow = up.receiveShadow = true; S.add(up);
-        const along = rng.chance(0.5); B.geo(gableGeo(4, 4, 2.0 + rng.range(0, 0.5), 0.3, along), B.mat(cx, ht, cz), pal.roof, 0.1);
+        this.cells.set(gx + ',' + gz, ht); const along = this.ridgeAlongX(cx, cz); B.geo(gableGeo(4, 4, 2.2, 0.3, along, 0), B.mat(cx, ht, cz), pal.roof, 0.05);
         if (rng.chance(0.6)) { const rh = 2.6, chx = along ? cx + rng.range(-1, 1) : cx, chz = along ? cz : cz + rng.range(-1, 1); B.box(0.5, rh + 0.4, 0.5, chx, ht + (rh + 0.4) / 2, chz, '#8a5a48'); B.box(0.62, 0.12, 0.62, chx, ht + rh + 0.4, chz, '#5a4a40'); }
         this.addCol(cx - 2, cx + 2, cz - 2, cz + 2);
       }
       // an outer wall hides the void behind the houses
       const wallM = lam('#6a5a4a'); [[0, -35.5, 150, 1], [0, 35.5, 150, 1], [-35.5, 0, 1, 150], [39.5, 0, 1, 150]].forEach(([x, z, w, d]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 16, d), wallM); m.position.set(x, 8, z); S.add(m); });
     }
+    // the ridge of a house runs parallel to the nearest street, so a whole row of roofs lines up
+    ridgeAlongX(cx, cz) {
+      let best = 1e9, alongX = true; for (const [x0, x1, z0, z1] of RECTS) { const d = Math.hypot(Math.max(x0 - cx, 0, cx - x1), Math.max(z0 - cz, 0, cz - z1)); if (d < best - 0.01) { best = d; alongX = (x1 - x0) >= (z1 - z0); } }
+      for (const [px, pz, r] of CIRCS) { const d = Math.max(0, Math.hypot(cx - px, cz - pz) - r); if (d < best - 0.01) { best = d; alongX = Math.abs(cz - pz) > Math.abs(cx - px); } } return alongX;
+    }
+    hasWall(x, z) { return this.cells.has(Math.floor(x / 4) * 4 + ',' + Math.floor(z / 4) * 4); }
     // ---- the western gate, the door to the cabinet, signs over the entrances
     buildGate() {
       const B = this.B, S = this.scene; const gx = -27.2;
@@ -4563,14 +4569,16 @@ const Market = (() => {
       });
     }
     stallRound(x, z, ry, o = {}) {
-      const ci = o.ci || 1; this.fp(x, z, 2.6, 2.6, 0);
+      const ci = o.ci || 1; this.fp(x, z, 2.8, 3.4, ry);
       this.at(x, z, ry, g => {
-        const B = this.B; B.cyl(1.05, 1.1, 0.9, 0, 0.45, 0, LWOOD, 14); B.cyl(1.2, 1.2, 0.07, 0, 0.93, 0, WOOD, 14); B.cyl(0.07, 0.08, 2.8, 0, 1.4, 0, DWOOD, 8);
-        const cl = CLOTH[ci % CLOTH.length], N = 10; for (let i = 0; i < N; i++) { const gm = new THREE.ConeGeometry(2.2, 0.9, 1, 1, true, i * 2 * Math.PI / N, 2 * Math.PI / N); B.geo(gm, B.mat(0, 2.85, 0), cl[i % 2], 0.02); }
-        for (let i = 0; i < N; i++) { const a = (i + 0.5) * 2 * Math.PI / N; B.box(0.5, 0.2, 0.03, Math.sin(a) * 2.1, 2.35, Math.cos(a) * 2.1, cl[i % 2], 0.0, a, 0); }
-        for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + 0.3; const bw = 0.5, tex = this.boxTexFor(2, 2); this.frame(g, bw, bw * 48 / 64, tex, Math.sin(a) * 0.72, 1.12, Math.cos(a) * 0.72, -0.5, a); }
-        this.lamp(0, 2.1, 0.1, 0.13); B.cyl(0.04, 0.04, 0.2, 0, 3.4, 0, BRASS, 6);
-        this.vendor(g, 0, 0.0, 'boxes', o.sign || 'Коллекции');
+        // the round counter is in front, the vendor stands behind it and the umbrella pole stands behind the vendor
+        const B = this.B, CZ = 0.35, VZ = -0.55, PZ = -1.05;
+        B.cyl(1.0, 1.05, 0.9, 0, 0.45, CZ, LWOOD, 14); B.cyl(1.12, 1.12, 0.07, 0, 0.93, CZ, WOOD, 14); B.cyl(0.07, 0.08, 3.0, 0, 1.5, PZ, DWOOD, 8);
+        const cl = CLOTH[ci % CLOTH.length], N = 10, R = 2.3; for (let i = 0; i < N; i++) { const gm = new THREE.ConeGeometry(R, 0.9, 1, 1, true, i * 2 * Math.PI / N, 2 * Math.PI / N); B.geo(gm, B.mat(0, 3.05, PZ + 0.0), cl[i % 2], 0.02); }
+        for (let i = 0; i < N; i++) { const a = (i + 0.5) * 2 * Math.PI / N; B.box(0.55, 0.2, 0.03, Math.sin(a) * (R - 0.03), 2.55, PZ + Math.cos(a) * (R - 0.03), cl[i % 2], 0.0, a, 0); }
+        for (let i = 0; i < 6; i++) { const a = -Math.PI * 0.62 + i * Math.PI * 0.248; this.frame(g, 0.5, 0.375, this.boxTexFor(2, 2), Math.sin(a) * 0.72, 1.12, CZ + Math.cos(a) * 0.72, -0.5, a); }
+        this.lamp(0.5, 2.3, CZ + 0.5, 0.12, null, 0.35); this.lamp(-0.5, 2.3, CZ + 0.5, 0.12, null, 0.35); B.cyl(0.04, 0.04, 0.2, 0, 3.55, PZ, BRASS, 6);
+        this.vendor(g, 0, VZ, 'boxes', o.sign || 'Коллекции');
       });
     }
     stallKiosk(x, z, ry, o = {}) {
@@ -4579,11 +4587,11 @@ const Market = (() => {
         const B = this.B, pal = PALS[(o.pal || 0) % PALS.length]; B.box(w, 0.9, d, 0, 0.45, 0, WOOD); B.box(w, 1.3, d, 0, 2.05 - 0.05, 0, pal.wall); B.box(w + 0.1, 0.1, d + 0.1, 0, 1.3, 0, DWOOD);
         B.box(w - 0.3, 0.9, 0.06, 0, 1.75, d / 2 + 0.02, '#1e1812');                          // the serving hatch (dark inside)
         B.box(w + 0.2, 0.08, 0.8, 0, 1.0, d / 2 + 0.32, LWOOD); B.box(0.08, 0.9, 0.08, -w / 2 + 0.12, 1.75, d / 2 + 0.02, DWOOD); B.box(0.08, 0.9, 0.08, w / 2 - 0.12, 1.75, d / 2 + 0.02, DWOOD);
-        B.geo(gableGeo(w, d, 1.0, 0.3, true), B.mat(0, 2.7, 0), pal.roof, 0.08); this.awning(w - 0.2, 1.0, 2.5, 2.1, d / 2 - 0.02, ci);
+        B.geo(gableGeo(w, d, 1.0, 0.3, true), B.mat(0, 2.7, 0), pal.roof, 0.08); this.awning(w - 0.2, 1.15, 2.5, 1.95, d / 2 - 0.02, ci, 0.3); for (const sx of [-1, 1]) B.cyl(0.04, 0.05, 1.95, sx * (w / 2 - 0.12), 0.98, d / 2 + 1.1, DWOOD, 6); for (const sx of [-1, 1]) B.box(0.05, 0.05, 0.4, sx * 0.7, 2.7, d / 2 + 0.2, DWOOD);
         this.boxes(g, 3, w - 0.5, -w / 2 + 0.25, 1.05, d / 2 + 0.34, -0.45, w - 0.5); for (let i = 0; i < 3; i++) this.frame(g, 0.7, 0.5, this.boxTexFor(3, 2), -1.0 + i * 1.0, 1.7, d / 2 - 0.02, 0);
         const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.45), new THREE.MeshLambertMaterial({ map: signTex(o.sign || 'Коллекционные виды', 112, 28, '#243a30', '#f0d890', '#c8a040') })); sg.position.set(0, 2.8, d / 2 + 0.34); g.add(sg);
         this.vendor(g, 0, d / 2 - 0.5, 'boxes', o.sign);
-        this.crates(g, w / 2 + 0.6, d / 2, 3); this.lamp(-w / 2 + 0.1, 2.25, d / 2 + 0.7, 0.12);
+        this.crates(g, w / 2 + 0.6, d / 2, 3); this.lamp(-w / 2 + 0.4, 1.8, d / 2 + 0.75, 0.11, null, 0.18); this.lamp(w / 2 - 0.4, 1.8, d / 2 + 0.75, 0.11, null, 0.18);
       });
     }
     stallCart(x, z, ry, o = {}) {
@@ -4661,12 +4669,18 @@ const Market = (() => {
 
     buildDecor() {
       const B = this.B, G = this.G, S = this.scene, rng = this.rng;
-      // cloth sails and lantern strings above the main street
-      for (let i = 0; i < 7; i++) { const x = -24 + i * 8 + rng.range(-1, 1), cl = rng.pick(CLOTH), y = 5.3 + rng.range(-0.3, 0.3); for (let k = 0; k < 10; k++) { const t = (k + 0.5) / 10, sag = Math.sin(t * Math.PI) * 0.35; B.box(2.4 + rng.range(0, 0.8), 0.03, 0.82, x, y - sag, -3.6 + t * 7.2, cl[k % 2], 0, 0, 0, 0.02); } }
-      for (let i = 0; i < 12; i++) { const x = -26 + i * 4.7; B.rope([x, 4.4, -4.0], [x, 4.4, 4.0], 0.5, '#2a1c10', 0.025, 10); for (let k = 0; k < 5; k++) { const t = (k + 0.5) / 5; this.lamp(x, 4.4 - Math.sin(t * Math.PI) * 0.5 - 0.35, -4.0 + t * 8.0, 0.16, null, 0.3); } }
-      for (let i = 0; i < 8; i++) { const x = -26 + i * 7 + 1.5, col = rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0']); const a = [x, 5.0, -4.0], b = [x + 4.5, 5.0, 4.0]; B.rope(a, b, 0.7, '#2a1c10', 0.02, 14); for (let k = 1; k < 14; k++) { const t = k / 14, px = lerp(a[0], b[0], t), py = lerp(a[1], b[1], t) - 0.7 * Math.sin(t * Math.PI), pz = lerp(a[2], b[2], t); B.tri([px - 0.12, py, pz - 0.05], [px + 0.12, py, pz + 0.05], [px, py - 0.3, pz], rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0', '#f2e8d0'])); } }
-      // hanging banners with butterflies on the house walls
-      const bs = SPECIES.filter(s => s.biome !== 'ocean'); for (let i = 0; i < 14; i++) { const north = i % 2 === 0, x = -26 + Math.floor(i / 2) * 8 + 1.2 + (north ? 0 : 3), z = north ? -4.08 : 4.08; const sp = bs[(i * 37 + 5) % bs.length]; const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 1.6), new THREE.MeshLambertMaterial({ map: bannerTex(sp, ['#3a2a5a', '#2a4a5a', '#5a2a2a', '#2a5a3a'][i % 4]), side: THREE.DoubleSide })); m.position.set(x, 3.6, z + (north ? 0.06 : -0.06)); if (!north) m.rotation.y = Math.PI; S.add(m); B.box(1.0, 0.07, 0.07, x, 4.45, z + (north ? 0.08 : -0.08), DWOOD); }
+      // cloth sails, lantern strings and pennants: only between two real house walls (never across alley mouths or the open plazas)
+      const walls2 = (x, a, b) => this.hasWall(x, a) && this.hasWall(x, b);
+      for (let i = 0; i < 7; i++) { const x = -24 + i * 8 + rng.range(-1, 1), cl = rng.pick(CLOTH), y = 5.3 + rng.range(-0.3, 0.3); if (!walls2(x - 1.4, -4.6, 4.6) || !walls2(x + 1.4, -4.6, 4.6)) continue; for (let k = 0; k < 10; k++) { const t = (k + 0.5) / 10, sag = Math.sin(t * Math.PI) * 0.35; B.box(2.4 + rng.range(0, 0.8), 0.03, 0.82, x, y - sag, -3.6 + t * 7.2, cl[k % 2], 0, 0, 0, 0.02); } B.box(2.6, 0.06, 0.1, x, y + 0.02, -3.98, DWOOD); B.box(2.6, 0.06, 0.1, x, y + 0.02, 3.98, DWOOD); }
+      for (let i = 0; i < 12; i++) { const x = -26 + i * 4.7; if (!walls2(x, -4.6, 4.6)) continue; B.rope([x, 4.4, -4.0], [x, 4.4, 4.0], 0.5, '#2a1c10', 0.025, 10); for (let k = 0; k < 5; k++) { const t = (k + 0.5) / 5; this.lamp(x, 4.4 - Math.sin(t * Math.PI) * 0.5 - 0.35, -4.0 + t * 8.0, 0.16, null, 0.3); } }
+      for (let i = 0; i < 8; i++) { const x = -26 + i * 7 + 1.5, col = rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0']); if (!this.hasWall(x, -4.6) || !this.hasWall(x + 4.5, 4.6)) continue; const a = [x, 5.0, -4.0], b = [x + 4.5, 5.0, 4.0]; B.rope(a, b, 0.7, '#2a1c10', 0.02, 14); for (let k = 1; k < 14; k++) { const t = k / 14, px = lerp(a[0], b[0], t), py = lerp(a[1], b[1], t) - 0.7 * Math.sin(t * Math.PI), pz = lerp(a[2], b[2], t); B.tri([px - 0.12, py, pz - 0.05], [px + 0.12, py, pz + 0.05], [px, py - 0.3, pz], rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0', '#f2e8d0'])); } }
+      // lantern strings across the alleys (wall to wall)
+      const across = (axis, c, a0, a1) => { const p0 = axis === 'x' ? [a0, 4.2, c] : [c, 4.2, a0], p1 = axis === 'x' ? [a1, 4.2, c] : [c, 4.2, a1]; const e0 = axis === 'x' ? [a0 - 0.6, c] : [c, a0 - 0.6], e1 = axis === 'x' ? [a1 + 0.6, c] : [c, a1 + 0.6]; if (!this.hasWall(e0[0], e0[1]) || !this.hasWall(e1[0], e1[1])) return; B.rope(p0, p1, 0.4, '#2a1c10', 0.025, 8); for (let k = 0; k < 3; k++) { const t = (k + 0.5) / 3, x = lerp(p0[0], p1[0], t), z = lerp(p0[2], p1[2], t); this.lamp(x, 4.2 - Math.sin(t * Math.PI) * 0.4 - 0.3, z, 0.15, null, 0.25); } };
+      for (let z = -8; z > -23; z -= 4.5) { across('x', z, -16, -12); across('x', z, 12, 16); } for (let z = 7; z < 22; z += 4.5) across('x', z, 0, 4); for (let z = 7; z < 14; z += 4.5) across('x', z, -24, -20);
+      // the fountain plaza: a string of lanterns between the lamp posts across the fountain
+      B.rope([24, 3.8, -8.2], [24, 3.8, 8.2], 0.9, '#2a1c10', 0.025, 14); for (let k = 0; k < 7; k++) { const t = (k + 0.5) / 7; this.lamp(24, 3.8 - Math.sin(t * Math.PI) * 0.9 - 0.3, lerp(-8.2, 8.2, t), 0.16, null, 0.3); }
+      // hanging banners with butterflies on the house walls (only where the wall exists)
+      const bs = SPECIES.filter(s => s.biome !== 'ocean'); for (let i = 0; i < 14; i++) { const north = i % 2 === 0, x = -26 + Math.floor(i / 2) * 8 + 1.2 + (north ? 0 : 3), z = north ? -4.08 : 4.08; if (!this.hasWall(x - 0.4, north ? -4.6 : 4.6) || !this.hasWall(x + 0.4, north ? -4.6 : 4.6)) continue; const sp = bs[(i * 37 + 5) % bs.length]; const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 1.6), new THREE.MeshLambertMaterial({ map: bannerTex(sp, ['#3a2a5a', '#2a4a5a', '#5a2a2a', '#2a5a3a'][i % 4]), side: THREE.DoubleSide })); m.position.set(x, 3.6, z + (north ? 0.06 : -0.06)); if (!north) m.rotation.y = Math.PI; S.add(m); B.box(1.0, 0.07, 0.07, x, 4.45, z + (north ? 0.08 : -0.08), DWOOD); }
       // lamp posts along the alleys and plazas
       const post = (x, z) => { B.cyl(0.08, 0.1, 3.2, x, 1.6, z, IRON, 6); B.box(0.5, 0.06, 0.5, x, 3.25, z, IRON); this.lamp(x, 3.5, z, 0.22, '#ffd070'); B.box(0.3, 0.08, 0.3, x, 3.88, z, IRON); this.addCol(x - 0.15, x + 0.15, z - 0.15, z + 0.15); this.lampPositions = (this.lampPositions || []).concat([[x, 3.5, z]]); };
       [[-14, -6], [-14, -18.6], [14, -6], [14, -17.8], [2, 6], [2, 11.5], [2, 17.8], [-22, 6], [19, -3], [19, 3], [29, -6], [29, 6], [24, -8.2], [24, 8.2]].forEach(([x, z]) => post(x, z));
@@ -4674,15 +4688,13 @@ const Market = (() => {
       for (let i = 0; i < 40; i++) { const side = rng.chance(0.5) ? -1 : 1, x = -26 + rng.range(0, 52), z = side * rng.range(3.55, 3.85); if (x > -3 && x < 3 && side > 0) continue; const zz = z + (z > 0 ? -0.35 : 0.35); if (this.colliders.some(k => x + 0.8 > k.x0 && x - 0.8 < k.x1 && zz + 0.5 > k.z0 && zz - 0.5 < k.z1)) continue; this.deco(x, z, rng.int(0, 3)); }
       // planters with flowers along the alleys
       for (const [x, z] of [[-15.25, -4.9], [-12.75, -4.9], [12.75, -4.9], [15.25, -4.9], [0.75, 4.9], [3.25, 4.9], [-23.25, 4.9], [-20.75, 4.9]]) this.planter(x, z);
-      // shoppers strolling along the main street
-      for (let i = 0; i < 6; i++) { const p = person({ body: rng.pick(['#8a5a3a', '#4a6a8a', '#7a4a6a', '#5a7a4a', '#9a7a3a']), pants: rng.pick(['#3a3a4a', '#4a3a2a', '#2a3a3a']), hat: rng.pick(['straw', 'cap', null, 'scarf']), hatCol: rng.pick(['#4a5a8a', '#8a3a3a', '#3a7a5a']), skin: rng.pick(['#e8c8a0', '#d8a878', '#b8825a']) }); S.add(p); this.walkers.push({ p, x: rng.range(-22, 20), z: rng.range(-1.1, 1.1), dir: rng.chance(0.5) ? 1 : -1, v: rng.range(0.5, 0.9), ph: rng.range(0, 6), stop: 0 }); }
     }
     deco(x, z, kind) { const B = this.B, rng = this.rng; const zz = z + (z > 0 ? -0.35 : 0.35);
       if (kind === 0) { B.cyl(0.3, 0.3, 0.8, x, 0.4, zz, '#7a5a38', 10); B.cyl(0.305, 0.305, 0.05, x, 0.22, zz, IRON, 10); B.cyl(0.305, 0.305, 0.05, x, 0.6, zz, IRON, 10); this.addCol(x - 0.35, x + 0.35, zz - 0.35, zz + 0.35); }
       else if (kind === 1) { B.sph(0.3, x, 0.28, zz, '#c8b088', 1, 0.9, 0.9); B.sph(0.26, x + 0.35, 0.24, zz + 0.05, '#bca47c', 1, 0.9, 0.9); this.addCol(x - 0.4, x + 0.7, zz - 0.35, zz + 0.35); }
       else if (kind === 2) { B.box(0.55, 0.55, 0.55, x, 0.28, zz, CRATE, 0, rng.range(-0.3, 0.3), 0); B.box(0.45, 0.45, 0.45, x + 0.1, 0.78, zz, '#b88a54', 0, rng.range(-0.3, 0.3), 0); this.addCol(x - 0.4, x + 0.4, zz - 0.4, zz + 0.4); }
       else { B.box(0.9, 0.45, 0.5, x, 0.23, zz, '#c8aa58', 0, rng.range(-0.1, 0.1), 0); B.box(0.8, 0.3, 0.45, x + 0.05, 0.6, zz, '#d8ba68', 0, 0.1, 0); this.addCol(x - 0.5, x + 0.5, zz - 0.3, zz + 0.3); } }
-    planter(x, z) { const B = this.B, rng = this.rng; B.box(1.4, 0.45, 0.5, x, 0.23, z, LWOOD); B.box(1.3, 0.1, 0.4, x, 0.47, z, '#4a3020'); for (let i = 0; i < 9; i++) B.sph(0.065, x + rng.range(-0.6, 0.6), 0.62 + rng.range(0, 0.22), z + rng.range(-0.12, 0.12), rng.pick(['#e84a6a', '#f0c030', '#c070e0', '#f0f0f0', '#ff8a40', '#4a9a3a'])); this.addCol(x - 0.75, x + 0.75, z - 0.3, z + 0.3); }
+    planter(x, z) { const B = this.B, rng = this.rng; B.box(1.2, 0.45, 0.5, x, 0.23, z, LWOOD); B.box(1.1, 0.06, 0.4, x, 0.46, z, '#4a3020'); for (const dx of [-0.35, 0, 0.35]) B.sph(0.27, x + dx, 0.62, z, '#4a9a3a', 1, 0.7, 0.85); for (let i = 0; i < 10; i++) { const fx = x + rng.range(-0.5, 0.5), fz = z + rng.range(-0.1, 0.1), top = 0.62 + 0.19 * Math.sqrt(Math.max(0, 1 - Math.pow(((fx - x) % 0.35) / 0.27, 2))) * 0.9 + 0.02; B.sph(0.06, fx, top + 0.04, fz, rng.pick(['#e84a6a', '#f0c030', '#c070e0', '#f0f0f0', '#ff8a40'])); } this.addCol(x - 0.65, x + 0.65, z - 0.3, z + 0.3); }
     // ---- time of day: the sky dome, the sun, lanterns and lit windows follow the clock
     realHour() { if (this.hourOverride !== undefined) return this.hourOverride; const d = new Date(); return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600; }
     setHour(h) { this.hourOverride = h; this.applyTime(h); }
@@ -4736,7 +4748,6 @@ const Market = (() => {
       if (this.waterTex) { this.waterTex.offset.x = t * 0.03; this.waterTex.offset.y = t * 0.02; }
       for (const v of this.vendors) { v.position.y = Math.sin(t * 1.4 + v.userData.ph) * 0.01; v.userData.head.rotation.y = Math.sin(t * 0.6 + v.userData.ph) * 0.35; v.userData.arms[1].rotation.x = Math.sin(t * 1.1 + v.userData.ph) * 0.06; }
       if (this.merchant) { const m = this.merchant; m.userData.head.rotation.y = Math.sin(t * 0.7) * 0.3; m.userData.arms[0].rotation.x = Math.sin(t * 1.3) * 0.08; m.userData.arms[1].rotation.x = Math.sin(t * 1.3 + 1) * 0.08; }
-      for (const w of this.walkers) { if (w.stop > 0) { w.stop -= dt; w.p.userData.L.forEach(l => { l.rotation.x *= 0.85; }); } else { w.x += w.dir * w.v * dt; w.ph += dt * w.v * 7; if (w.x > 22 || w.x < -23 || Math.random() < dt * 0.01) { if (w.x > 22 || w.x < -23) w.dir *= -1; else w.stop = 1.5 + Math.random() * 3; } w.p.userData.L.forEach((l, i) => { l.rotation.x = Math.sin(w.ph + i * Math.PI) * 0.5; }); w.p.userData.arms.forEach((a, i) => { a.rotation.x = Math.sin(w.ph + (1 - i) * Math.PI) * 0.35; }); } w.p.position.set(w.x, Math.abs(Math.sin(w.ph)) * 0.02, w.z + Math.sin(this.t * 0.2 + w.ph * 0.0) * 0); w.p.rotation.y = w.dir > 0 ? -Math.PI / 2 : Math.PI / 2; }
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0 }); } }
     }
 
