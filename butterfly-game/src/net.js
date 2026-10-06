@@ -36,6 +36,7 @@ const Net = (() => {
       case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
       case 'host': N.host = m.id === N.id; if (N.hooks.host) N.hooks.host(m); break;
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
+      case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
       case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
       case 'chat': N.chat.push(m); if (N.chat.length > 6) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo

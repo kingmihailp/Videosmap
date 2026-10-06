@@ -428,13 +428,13 @@ const Cabinet = (() => {
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'sound') this.hooks.toggle('sound'); else if (id === 'music') this.hooks.toggle('music'); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
     static pauseButtons() {
       const s = Save.data.settings; const x = SW / 2 - 90; return [
         { id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 124, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 124, w: 88, h: 16 },
-        { id: 'map', label: 'В экспедицию (карта мира)', x, y: 146, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 168, w: 180, h: 16 }];
+        { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 190, w: 180, h: 16 }];
     }
     static pauseClick(x, y) { const b = Cab.pauseButtons().find(b => UIK.hit(b, x, y)); return b ? b.id : null; }
 
@@ -463,7 +463,7 @@ const Cabinet = (() => {
       T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.7)', shadow: '#000' });
     }
     drawPause(ctx, m) {
-      ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 38, 212, 160, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 38, 212, 182, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
       T.draw(ctx, 'Пауза', SW / 2, 46, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, 'Кабинет энтомолога', SW / 2, 63, { size: 8, align: 'c', color: c.dim });
       Cab.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
     }

@@ -56,7 +56,7 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, aberr: {}, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  data: { caught: {}, aberr: {}, coins: 0, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
@@ -105,6 +105,15 @@ const Save = {
   spreadList() { return this.data.specimens.filter(s => s.q !== null); },
   freeSpread() { return this.data.specimens.filter(s => s.q !== null && !s.box).sort((a, b) => b.q - a.q); },
   spec(uid) { return this.data.specimens.find(s => s.uid === uid); },
+  // ---- selling to the market merchant (coins are personal; the specimen leaves the shared cabinet)
+  sold: {},
+  sellable(spec) { return !!spec && !spec.box; },
+  sell(uid) {
+    const s = this.spec(uid); if (!this.sellable(s)) return 0; const p = Econ.price(s);
+    this.data.specimens = this.data.specimens.filter(x => x.uid !== uid); this.data.coins = (this.data.coins || 0) + p; this.sold[uid] = p; setTimeout(() => { delete this.sold[uid]; }, 30000);
+    this._op({ k: 'delSpec', uid }); this.write(); return p;
+  },
+  sellRejected(uid) { const p = this.sold[uid]; if (p) { this.data.coins = Math.max(0, (this.data.coins || 0) - p); delete this.sold[uid]; this.write(); } },
   box(uid) { return this.data.boxes.find(b => b.uid === uid); },
   addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style } }); this.write(); return b; },
   removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this._op({ k: 'delBox', uid }); this.write(); return true; },
@@ -119,6 +128,7 @@ const Save = {
     switch (op.k) {
       case 'addSpec': if (!this.spec(op.spec.uid) && SPECIES_BY_ID[op.spec.sp]) D.specimens.push(Object.assign({ q: null, pose: null, box: null }, op.spec, { q: null, pose: null, box: null })); break;
       case 'spread': { const s = this.spec(op.uid); if (s) { s.q = op.q; s.pose = op.pose; } break; }
+      case 'delSpec': D.specimens = D.specimens.filter(x => x.uid !== op.uid); break;
       case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
       case 'delBox': { const b = this.box(op.uid); if (b) { b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
       case 'putIn': { const b = this.box(op.box), s = this.spec(op.spec); if (b && s) { b.items[op.slot] = s.uid; s.box = b.uid; } break; }

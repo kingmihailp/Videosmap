@@ -67,6 +67,7 @@ const Snd = (() => {
     glitch() { if (!ac) return; const t = now(); for (let i = 0; i < 6; i++) osc('square', 200 + Math.random() * 1800, t + i * 0.03, 0.03, 0.05); },
     rushWarn(amb) { if (!ac) return; const t = now(); osc('sawtooth', 70, t, 1.4, 0.2, null, amb ? 400 : 240); noiseBurst(t + 0.6, 0.9, 400, 4000, 0.3, 'bandpass', 1.2); for (let i = 0; i < 5; i++) osc('square', 90, t + i * 0.28, 0.08, 0.12); },
     eyes() { if (!ac) return; const t = now(); osc('sine', 300, t, 0.5, 0.18, null, 90); noiseBurst(t, 0.25, 1800, 400, 0.12, 'bandpass', 2); },
+    coin() { if (!ac) return; const t = now(); osc('square', 1318, t, 0.06, 0.07); osc('square', 1760, t + 0.06, 0.2, 0.07); noiseBurst(t, 0.05, 5000, 9000, 0.05, 'highpass', 1); },
     reward() { if (!ac) return; const t = now(); [0, 4, 7, 11, 14].forEach((n, i) => bell(midi(72 + n), t + i * 0.09, 0.16, 1.6)); },
     modifier() { if (!ac) return; const t = now(); for (let i = 0; i < 8; i++) osc('triangle', midi(60 + ((i * 5) % 12) * 1 + (i % 2) * 7), t + i * 0.06, 0.14, 0.1); noiseBurst(t, 0.5, 5000, 800, 0.08, 'bandpass', 1.5); },
     deny() { if (!ac) return; const t = now(); osc('square', 180, t, 0.12, 0.08); osc('square', 140, t + 0.1, 0.16, 0.08); },
@@ -81,6 +82,7 @@ const Snd = (() => {
     rainforest2:{ wind: 0.2, bird: 'tropic', insect: ['cicada', 5200, 0.07], frog: true, base: 53, scale: [0, 2, 4, 7, 9], mus: 0.8 },
     savanna:    { wind: 0.55, bird: 'dove', insect: ['cricket', 3800, 0.04], base: 50, scale: [0, 2, 5, 7, 10], mus: 0.8 },
     prairie:    { wind: 0.65, bird: 'lark', insect: ['cricket', 4000, 0.05], base: 55, scale: [0, 2, 4, 7, 9], mus: 0.9 },
+    market:     { wind: 0.1, bird: 'sparse', insect: null, bell: true, crowd: true, base: 52, scale: [0, 2, 4, 7, 9], mus: 0.8 },
     cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
@@ -91,6 +93,7 @@ const Snd = (() => {
     // wind
     if (cfg.wind) { const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6;
     const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.35 * cfg.wind; lfo.connect(lg); lg.connect(wg.gain); wg.gain.value = 0.28 * cfg.wind; w.connect(wf); wf.connect(wg); wg.connect(ambG); w.start(); lfo.start(); amb.nodes.push(w, lfo); }
+    if (cfg.crowd) { const s = noiseSrc(true), f = ac.createBiquadFilter(), g = ac.createGain(), l = ac.createOscillator(), lg = ac.createGain(); f.type = 'bandpass'; f.frequency.value = 520; f.Q.value = 0.8; g.gain.value = 0.05; l.frequency.value = 0.21; lg.gain.value = 0.025; l.connect(lg); lg.connect(g.gain); s.connect(f); f.connect(g); g.connect(ambG); s.start(); l.start(); amb.nodes.push(s, l); }
     if (cfg.water) { const s = noiseSrc(true), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.9; g.gain.value = 0.07; s.connect(f); f.connect(g); g.connect(ambG); s.start(); amb.nodes.push(s); }
     if (cfg.rain) {
       const r1 = noiseSrc(true), rf = ac.createBiquadFilter(), rg = ac.createGain(); rf.type = 'highpass'; rf.frequency.value = 2200; rg.gain.value = 0.18; r1.connect(rf); rf.connect(rg); rg.connect(ambG); r1.start(); amb.nodes.push(r1);
@@ -121,6 +124,7 @@ const Snd = (() => {
     else if (c.bird === 'lark') { [0, 0.18, 0.34, 0.56, 0.7].forEach((d, i) => osc('sine', [1700, 2100, 1900, 2400, 2100][i], t + d, 0.15, 0.06, ambG)); }
     if (c.frog && Math.random() < 0.6) { for (let i = 0; i < 3; i++) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'square'; o.frequency.value = 170 + Math.random() * 60; env(g, t + i * 0.13, 0.01, 0.1, 0.03); const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 600; o.connect(f); f.connect(g); g.connect(ambG); o.start(t + i * 0.13); o.stop(t + i * 0.13 + 0.14); } }
     if (c.eerie && Math.random() < 0.28) { const f0 = 110 * Math.pow(2, (Math.random() * 7 | 0) / 12); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * (Math.random() < 0.5 ? 0.94 : 1.06), t + 3); env(g, t, 1.2, 3, 0.07); o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 3.5); }
+    if (c.crowd && Math.random() < 0.5) { const f0 = 180 + Math.random() * 120; for (let i = 0; i < 2 + (Math.random() * 3 | 0); i++) { const o = ac.createOscillator(), g = ac.createGain(), fl = ac.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.value = f0 * (0.9 + Math.random() * 0.4); fl.type = 'bandpass'; fl.frequency.value = 700 + Math.random() * 500; fl.Q.value = 3; const tt = t + i * 0.16 + Math.random() * 0.4; env(g, tt, 0.02, 0.12, 0.012); o.connect(fl); fl.connect(g); g.connect(ambG); o.start(tt); o.stop(tt + 0.2); } }
     if (c.bell && Math.random() < 0.35) { bell(midi(76 + (Math.random() * 3 | 0) * 2), t, 0.035, 2.2, ambG); }
   }
   function music(t) {

@@ -39,6 +39,7 @@ function fits(b, t, i) {
 function applyOp(op) {
   switch (op.k) {
     case 'addSpec': { const s = op.spec; if (!s || spec(s.uid) || !s.sp || String(s.sp).length > 64) return false; state.specimens.push({ uid: s.uid, sp: s.sp, biome: s.biome, date: s.date, q: null, pose: null, box: null, by: String(s.by || '').slice(0, MAX_NAME) }); if (state.specimens.length > 600) { const i = state.specimens.findIndex(x => x.q === null && !x.box); if (i >= 0) state.specimens.splice(i, 1); } return true; }
+    case 'delSpec': { const s = spec(op.uid); if (!s || s.box) return false; state.specimens = state.specimens.filter(x => x.uid !== op.uid); return true; }
     case 'spread': { const s = spec(op.uid); if (!s || s.q !== null || !(op.q >= 1 && op.q <= 100) || !op.pose) return false; s.q = op.q; s.pose = op.pose; return true; }
     case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 60) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
     case 'delBox': { const b = box(op.uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = spec(u); if (s) s.box = null; }); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }
@@ -69,7 +70,7 @@ function leaveLoc(p) {
   if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; }
 }
 function joinLoc(p, name) {
-  leaveLoc(p); if (!name || (name !== 'cabinet' && !BIOMES.includes(name))) { sendPlist(); return; }
+  leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name); p.loc = name; l.ids.add(p.id); if (!l.host) l.host = p.id;
   send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();
@@ -102,7 +103,7 @@ wss.on('connection', ws => {
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
       case 'regen': { const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || l.ids.size !== 1) { send(me, { t: 'regenNo' }); break; } state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
-      case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else send(me, { t: 'resync', cab: cabView() }); break; }
+      case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else { send(me, { t: 'opNo', k: m.op && m.op.k, uid: m.op && m.op.uid }); send(me, { t: 'resync', cab: cabView() }); } break; }
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }
     }
   });

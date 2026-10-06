@@ -49,7 +49,7 @@
   function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); if (Net.on) Net.leave(); }
   App.toTitle = () => { leave(); App.screen = 'title'; };
   App.toMap = () => { leave(); App.screen = 'map'; };
-  const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
+  const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), cabinet: () => go(() => App.toCabinet()), market: () => go(() => App.toMarket()), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
   // multiplayer: ask the server for the shared location first, then build it with the server's seed and role (host simulates the butterflies)
   const netFail = e => { leave(); App.screen = 'title'; App.fade = 0; App.fadeTarget = 0; Screens.mp.msg = 'Сервер: ' + (e && e.message || 'ошибка'); };
   const enterCabinet = () => {
@@ -59,6 +59,11 @@
   App.toCabinet = () => {
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
     if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
+  };
+  const enterMarket = () => { App.cab = new Market(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
+  App.toMarket = () => {
+    leave(); App.screen = 'loading'; App.loadText = 'Идём на рынок насекомых…';
+    if (Net.on) Net.join('market').then(() => setTimeout(enterMarket, 40)).catch(netFail); else setTimeout(enterMarket, 60);
   };
   App.start = (biomeId, seed) => {
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
@@ -138,7 +143,7 @@
     } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
-      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
+      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
   ui.addEventListener('contextmenu', e => e.preventDefault());
@@ -163,7 +168,7 @@
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
-      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal'].includes(cb.ov);
+      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
       if (!full) { renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
