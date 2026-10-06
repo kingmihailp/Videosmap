@@ -37,7 +37,7 @@
   // ---------------- app state
   const App = window.F0W = { screen: 'loading', overlay: null, play: null, time: 0, fade: 1, fadeTarget: 0, fadeCb: null, locked: false, noLock: params.has('nolock'), journalFrom: 'title', loadText: 'Загрузка…', ready: false };
   const inp = { keys: new Set(), dx: 0, dy: 0, fire: false }; App.inp = inp;
-  const mouse = { x: -100, y: -100 };
+  const mouse = { x: -100, y: -100 }; const IDLE_INP = { keys: new Set(), dx: 0, dy: 0, fire: false };
   const S = Screens;
   function toNative(e) { const r = ui.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * SW; mouse.y = (e.clientY - r.top) / r.height * SH; }
   function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
@@ -78,6 +78,7 @@
   App.start = (biomeId, seed, at) => {
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp) => {
+      if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
       App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
@@ -205,7 +206,7 @@
     if (sc === 'play' && App.play) {
       const p = App.play;
       const running = !App.overlay && (App.locked || App.noLock || App.lockWant);
-      if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
+      if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; if (p.mp) p.update(dt, IDLE_INP); }   // online the world goes on under a menu (the host must keep leading the butterflies)
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);

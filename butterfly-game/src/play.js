@@ -241,7 +241,7 @@ class Play {
     this.helperT = 40;
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
-    else if (!mp || mp.host) this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); });
+    else if (!mp || mp.host) this.spawnInitial();
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
@@ -261,6 +261,7 @@ class Play {
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
   }
+  spawnInitial() { this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); }); }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
 
   // ------------------------------------------------------------ multiplayer
@@ -268,7 +269,7 @@ class Play {
     const H = Net.hooks, me = this;
     H.flies = m => me.netFlies(m.list); H.caught = m => me.netCaught(m); H.catchOk = m => me.netCatchOk(m); H.catchNo = m => me.netCatchNo(m);
     H.mod = m => { const d = me.applyMod(m.id); me.toast(`${m.by}: ${PLAY_MODS[m.id].good ? 'хороший' : 'плохой'} модификатор — ${PLAY_MODS[m.id].name}`, 5, true); Snd.sfx.modifier(); };
-    H.host = m => { if (m.id === Net.id && !me.isHost) me.becomeHost(); };
+    H.host = m => { if (m.id === Net.id) { if (!me.isHost) me.becomeHost(m.flies); } else if (me.isHost) me.becomePuppet(m.flies); };
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
     H.regenNo = () => me.toast('Сменить местность можно, только когда вы здесь один', 3);
   }
@@ -309,10 +310,17 @@ class Play {
     }
     const ids = new Set(list.map(e => e[0])); for (const f of this.flies) if (f.puppet && !ids.has(f.id) && !f.pendingCatch && !f.remote && now - f.seen > 1500) f.alive = false;
   }
-  becomeHost() {
+  becomeHost(list) {
     this.isHost = true;
     for (const f of this.flies) if (f.puppet) { f.puppet = false; if (f.state === CAUGHT) continue; f.state = FLY; f.vel.set(0, 0, 0); f.rs = { ph: 'hide', t: 2 + Math.random() * 4 }; f.pickTarget(); }
+    if (list && list.length) { const have = new Set(this.flies.map(f => f.id)), add = list.filter(e => !have.has(e[0])); if (add.length) { const nf = this.nextFid; this.adoptSnapshot(add, false); this.nextFid = Math.max(this.nextFid, nf); } }
+    if (!this.flies.some(f => f.state !== CAUGHT)) this.spawnInitial();     // nothing left to lead (everything was lost): populate the place again
     this.toast('Вы теперь ведёте бабочек в этой локации', 3);
+  }
+  becomePuppet(list) {                                                      // the server gave the lead to someone else (this client was silent too long)
+    this.isHost = false; this.respawns.length = 0; const now = performance.now();
+    for (const f of this.flies) { f.puppet = true; f.seen = now; f.netPos.copy(f.pos); f.netYaw = f.yaw; }
+    if (list && list.length) this.netFlies(list);
   }
   enterDoor() { if (this.entering || !this.world.door) return; this.entering = true; Snd.sfx.mystery(); F0W.enterRoom('chalet', { biome: this.biome.id, seed: this.seed, at: { x: this.world.door.x + Math.sin(this.world.door.yaw) * 0.9, z: this.world.door.z + Math.cos(this.world.door.yaw) * 0.9, yaw: this.world.door.yaw + Math.PI } }); }
   netCatch(f) { f.pendingCatch = true; f.releaseFlower(); f.state = CAUGHT; f.t = 2.0; Net.send('catch', { fid: f.id }); }

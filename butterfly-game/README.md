@@ -176,3 +176,8 @@ Implementation: `src/keys.js` translates the chosen physical key into the defaul
 ## Pause menu
 Pause (Esc / P): Продолжить · Журнал · Кабинет · Управление · **Настройки** (звук, музыка, качество, клавиши управления, положение карточки улова) · новая местность · другое место · **Выход в главное меню**.
 The cabinet / market / house pause menus have the same «Настройки» and «Выход в главное меню». Esc inside Настройки closes only Настройки; the next Esc closes the menu. If the browser drops the pointer lock together with the Esc that closed the menu, the game re-takes it instead of reopening the menu (`App.escT`, `App.pauseT` in `src/main.js`). Test: `tools/test/pause_menu.js`.
+
+## Multiplayer: landscape and butterfly leadership
+- A biome that nobody is in gets a **new seed** (new landscape, new butterflies) every time a player walks into it; later joiners get the same landscape. The cabinet and the market keep theirs.
+- The butterflies of a location are simulated by its host. The host keeps simulating (and sending) under the pause menu / journal / help, and if the host stays silent for 6 s (hidden tab, frozen client) the server hands the lead to the next player (`host` message); the old host becomes a follower again. A new host fills an empty location with a fresh population.
+- Server change: `joinLoc` re-seeds empty biomes, watchdog in `server.js`. Test: `tools/test/mp_host.js`.

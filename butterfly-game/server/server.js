@@ -56,7 +56,7 @@ let nextId = 1;
 const players = new Map();                 // id -> { id, name, ws, loc, idx }
 const locs = new Map();                    // loc -> { ids:Set, host, flies:[], caught:Map(fid -> time), mod }
 const cabView = () => ({ specimens: state.specimens, boxes: state.boxes });
-function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null }; locs.set(name, l); } return l; }
+function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null, lastFlies: 0 }; locs.set(name, l); } return l; }
 const send = (p, o) => { if (p.ws.readyState === 1) p.ws.send(JSON.stringify(o)); };
 const broadcast = (o, except) => { const s = JSON.stringify(o); for (const p of players.values()) if (p.id !== except && p.ws.readyState === 1) p.ws.send(s); };
 const toLoc = (name, o, except) => { const l = locs.get(name); if (!l) return; const s = JSON.stringify(o); for (const id of l.ids) { if (id === except) continue; const p = players.get(id); if (p && p.ws.readyState === 1) p.ws.send(s); } };
@@ -66,12 +66,15 @@ const sendPlist = () => broadcast({ t: 'plist', list: plist() });
 function leaveLoc(p) {
   if (!p.loc) return; const name = p.loc, l = locs.get(name); p.loc = null; if (!l) return;
   l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id });
-  if (l.host === p.id) { l.host = l.ids.values().next().value || 0; if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
+  if (l.host === p.id) { l.host = l.ids.values().next().value || 0; l.lastFlies = Date.now(); if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
   if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; }
 }
 function joinLoc(p, name) {
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
-  const l = getLoc(name); p.loc = name; l.ids.add(p.id); if (!l.host) l.host = p.id;
+  const l = getLoc(name);
+  // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
+  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; }
+  p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now(); }
   send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();
 }
@@ -99,7 +102,7 @@ wss.on('connection', ws => {
     switch (m.t) {
       case 'join': joinLoc(me, m.loc); break;
       case 'pos': if (me.loc) toLoc(me.loc, { t: 'p', id: me.id, x: m.x, y: m.y, z: m.z, yaw: m.yaw, pitch: m.pitch, nz: m.nz, fl: m.fl, sw: m.sw, sp: m.sp, st: m.st }, me.id); break;
-      case 'flies': { const l = me.loc && locs.get(me.loc); if (!l || l.host !== me.id || !Array.isArray(m.list)) break; const now = Date.now(); for (const [k, t] of l.caught) if (now - t > 15000) l.caught.delete(k); l.flies = m.list.filter(f => !l.caught.has(f[0])); toLoc(me.loc, { t: 'flies', list: l.flies }, me.id); break; }
+      case 'flies': { const l = me.loc && locs.get(me.loc); if (!l || l.host !== me.id || !Array.isArray(m.list)) break; l.lastFlies = Date.now(); const now = Date.now(); for (const [k, t] of l.caught) if (now - t > 15000) l.caught.delete(k); l.flies = m.list.filter(f => !l.caught.has(f[0])); toLoc(me.loc, { t: 'flies', list: l.flies }, me.id); break; }
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
       case 'regen': { const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || l.ids.size !== 1) { send(me, { t: 'regenNo' }); break; } state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
@@ -110,6 +113,15 @@ wss.on('connection', ws => {
   ws.on('close', () => { if (!me) return; leaveLoc(me); players.delete(me.id); sendPlist(); console.log('-', me.name, `(${players.size} online)`); });
   ws.on('error', () => {});
 });
+// the host simulates a location's butterflies; if it falls silent (hidden tab, frozen client) while others are there, the next player takes over
+setInterval(() => {
+  const now = Date.now();
+  for (const [name, l] of locs) {
+    if (l.ids.size < 2 || !l.host || now - l.lastFlies < 6000) continue;
+    const ids = [...l.ids]; l.host = ids[(ids.indexOf(l.host) + 1) % ids.length]; l.lastFlies = now;
+    toLoc(name, { t: 'host', id: l.host, flies: l.flies }); console.log('host of', name, '->', players.get(l.host) && players.get(l.host).name, '(previous host silent)');
+  }
+}, 2000);
 setInterval(() => { wss.clients.forEach(ws => { if (!ws.isAlive) return ws.terminate(); ws.isAlive = false; ws.ping(); }); }, 15000);
 server.listen(PORT, () => {
   try { const st = fs.statSync(GAME); console.log(`Game file: ${GAME}  (${Math.round(st.size / 1024)} KB, modified ${st.mtime.toISOString().slice(0, 16).replace('T', ' ')})`); } catch (e) { console.log('WARNING: game file not found: ' + GAME); }
