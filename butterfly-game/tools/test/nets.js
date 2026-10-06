@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const ev = (f, a) => pg.evaluate(f, a);
   const to = (x, y) => ev(([x, y]) => { const r = document.getElementById('ui').getBoundingClientRect(); return [r.left + x / SW * r.width, r.top + y / SH * r.height]; }, [x, y]);
   const click = async (x, y) => { const [cx, cy] = await to(x, y); await pg.mouse.click(cx, cy); await pg.waitForTimeout(250); };
-  await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; Save.data.coins = 1000; });
+  await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; Save.data.coins = 20000; });
   // --- the market shop
   await ev(() => { F0W.toMarket(); }); await pg.waitForTimeout(3500);
   await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; const m = F0W.cab; m.ov = null; m.open('shop'); }); await pg.waitForTimeout(500);

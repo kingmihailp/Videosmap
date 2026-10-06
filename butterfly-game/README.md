@@ -196,15 +196,15 @@ A net has three parts — **handle, hoop, mesh** (`src/nets.js`). Effects of the
 
 | Part | Effect |
 |---|---|
-| Сетка из прочного полотна (60) | +12% swing speed |
-| Увеличенная сетка (70) | +12% catch radius |
-| Сетка из шёлка (220) | +0.5% chance a caught butterfly is an aberration |
-| Обруч из стали (90) | +12% swing speed |
-| Увеличенный обруч (110) | +15% catch radius |
-| Обруч из пластика (160) | +30% swing speed |
-| Удлинённая ручка (80) | +10% catch radius (and a longer pole) |
-| Ручка из пластика (100) | +15% swing speed |
-| Ручка из хрома (240) | +0.5% aberration chance |
+| Сетка из прочного полотна (700) | +12% swing speed |
+| Увеличенная сетка (750) | +12% catch radius |
+| Сетка из шёлка (2200) | +0.5% chance a caught butterfly is an aberration |
+| Обруч из стали (850) | +12% swing speed |
+| Увеличенный обруч (1100) | +15% catch radius |
+| Обруч из пластика (1600) | +30% swing speed |
+| Удлинённая ручка (800) | +10% catch radius (and a longer pole) |
+| Ручка из пластика (950) | +15% swing speed |
+| Ручка из хрома (2400) | +0.5% aberration chance |
 
 - **Buy** the parts from the net seller at the insect market (E at his stall).
 - **Assemble / take apart / equip** at the workbench in the entomologist's cabinet — the new «Сачки» tab (nets can only be changed in the cabinet). The plain net (basic parts) is always available.
