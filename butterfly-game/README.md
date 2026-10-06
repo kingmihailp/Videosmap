@@ -164,3 +164,6 @@ cd server && npm install && node server.js [порт]   # по умолчани�
 buttons: ☰ pause, 📖 journal, E interact, 👁 scent, ⬇ crouch (toggle, = Ctrl), 🔦 torch, ПРОБЕЛ (spreading board), ✕ back. Menus are tapped; lists scroll by dragging; the multiplayer fields open the on-screen keyboard.
 Play in landscape. How to get the game on a phone: run `node server/server.js` on the PC and open `http://<PC-LAN-IP>:3000` on the phone (same Wi-Fi) — this also gives multiplayer;
 or host the single HTML file anywhere over https (then the multiplayer server must be wss://). Test: `tools/test/touch.js`, `touch2.js`.
+
+## Catch card position
+The "caught a butterfly" card now sits at the top left, below the online-players line. Pause menu → «Карточка улова: положение и размер»: drag the card anywhere (mouse or finger), −/+ or the mouse wheel change the size, «Сброс» restores the default. Saved in the settings (`settings.card`).

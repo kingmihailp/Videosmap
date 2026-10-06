@@ -505,7 +505,7 @@ class Play {
     // toasts
     this.toasts.forEach((s, i) => { const a = clamp(s.t / 0.5) * clamp((s.d - s.t) / 0.3); ctx.globalAlpha = a; const w2 = T.width(s.text, s.big ? 10 : 8) + 16; const y = 52 + i * 22; UIK.panel(ctx, SW / 2 - w2 / 2, y, w2, s.big ? 20 : 16, { fill: 'rgba(16,32,28,0.9)', border: s.big ? c.gold : c.line }); T.draw(ctx, s.text, SW / 2, y + (s.big ? 5 : 4), { size: s.big ? 10 : 8, align: 'c', color: s.big ? c.gold : c.text }); ctx.globalAlpha = 1; });
     // catch cards
-    this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
+    if (!(window.F0W && F0W.overlay === 'cardpos')) this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
   }
   drawSense(ctx) {
     let best = null, bd = 1e9; const pref = this.guideT > 0; const nowMs = performance.now(); for (const f of this.flies) { if (f.state === CAUGHT || f.remote || f.pendingCatch || f.hid || (f.puppet && nowMs - f.seen > 1200) || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
@@ -517,8 +517,16 @@ class Play {
     else { ctx.save(); ctx.translate(sx, sy); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -5); ctx.lineTo(-2, 0); ctx.lineTo(-4, 5); ctx.closePath(); ctx.fill(); ctx.restore(); }
     ctx.globalAlpha = 1; T.draw(ctx, `${Math.round(bd)} м`, sx, sy + 11, { size: 8, align: 'c', color: UIK.col.gold, shadow: '#000' });
   }
-  drawCard(ctx, cd, i) {
-    const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const x = SW / 2 - w / 2, y = 6 + i * 66 - (1 - k) * 70 + 72;
+  // position / scale of the catch card (top-left, below the player list by default; the player can move and scale it in the pause menu)
+  cardPos() {
+    const cp = Save.data.settings.card, st = Play.CARD_SCALES; const s = st[clamp(cp && cp.s !== undefined ? cp.s : 2, 0, st.length - 1) | 0];
+    const w = 214 * s, h = 62 * s; let x = cp && cp.x !== undefined ? cp.x : 6, y = cp && cp.y !== undefined ? cp.y : (this.mp ? 46 : 36);
+    return { x: clamp(x, 0, SW - w), y: clamp(y, 0, SH - h), s, w, h };
+  }
+  drawCard(ctx, cd, i, pos) {
+    const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const P = pos || this.cardPos(), up = P.y > SH / 2 ? -1 : 1;
+    const x = 0, y = i * 66 * up - (1 - k) * 70 * up;
+    ctx.save(); ctx.translate(Math.round(P.x), Math.round(P.y)); ctx.scale(P.s, P.s);
     ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
     ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
@@ -527,7 +535,7 @@ class Play {
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 1; ctx.restore();
   }
   dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
 }
@@ -537,5 +545,6 @@ Play.pickPool = (biome, rng, size = 9, shared = false) => {
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
+Play.CARD_SCALES = [0.6, 0.8, 1, 1.25, 1.5, 2];
 const fitStr = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);

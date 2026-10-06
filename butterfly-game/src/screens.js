@@ -304,25 +304,54 @@ const Screens = (() => {
     btns: [],
     layout(play) {
       const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 101, w: 180, h: 16 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 120, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 139, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 158, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 158, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 177, w: 180, h: 16 },
-        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 196, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 215, w: 180, h: 16 },
+        { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 131, w: 180, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
+        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
+        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 188, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 207, w: 180, h: 16 },
+        { id: 'cardpos', label: 'Карточка улова: положение и размер', x, y: 226, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
       this.layout(play); ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH);
-      UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
-      T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, SW / 2 - 106, 30, 212, 234, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      T.draw(ctx, 'Пауза', SW / 2, 36, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 55, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // move / scale the catch card
+  const cardpos = {
+    drag: null, btns: [],
+    draw(ctx, t, m, play) {
+      const st = Play.CARD_SCALES, cs = Save.data.settings.card || (Save.data.settings.card = {}); let P = play.cardPos();
+      if (this.drag) { const w = 214 * P.s, h = 62 * P.s; cs.x = clamp(m.x - this.drag.dx, 0, SW - w); cs.y = clamp(m.y - this.drag.dy, 0, SH - h); P = play.cardPos(); }
+      ctx.fillStyle = 'rgba(4,12,10,0.45)'; ctx.fillRect(0, 0, SW, SH);
+      ctx.strokeStyle = c.green; ctx.setLineDash([3, 3]); ctx.strokeRect(Math.round(P.x) - 2.5, Math.round(P.y) - 2.5, P.w + 5, P.h + 5); ctx.setLineDash([]);
+      const sp = play.pool[0]; play.drawCard(ctx, { sp, first: true, t: 3, d: 6, count: 1 }, 0, P);
+      UIK.panel(ctx, SW / 2 - 150, SH - 70, 300, 30, { fill: 'rgba(16,32,28,0.95)', border: c.gold });
+      T.draw(ctx, 'Перетащи карточку улова в любое место экрана', SW / 2, SH - 66, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Размер: ${Math.round(P.s * 100)}%  (колесо мыши тоже меняет)`, SW / 2, SH - 54, { size: 8, align: 'c', color: c.dim });
+      const y = SH - 34; this.btns = [
+        { id: 'smaller', label: '-', x: SW / 2 - 130, y, w: 30, h: 18, size: 10 }, { id: 'bigger', label: '+', x: SW / 2 - 96, y, w: 30, h: 18, size: 10 },
+        { id: 'reset', label: 'Сброс', x: SW / 2 - 58, y, w: 56, h: 18 }, { id: 'done', label: 'Готово', x: SW / 2 + 6, y, w: 124, h: 18, size: 10 },
+      ];
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    step(play, d) { const cs = Save.data.settings.card || (Save.data.settings.card = {}), P = play.cardPos(), st = Play.CARD_SCALES; let i = st.indexOf(P.s); cs.s = clamp(i + d, 0, st.length - 1); cs.x = P.x; cs.y = P.y; Save.write(); },
+    press(x, y, play) {                                // returns an id when a button was hit, otherwise starts a drag when the card was hit
+      const b = this.btns.find(b => UIK.hit(b, x, y)); if (b) {
+        if (b.id === 'smaller') this.step(play, -1); else if (b.id === 'bigger') this.step(play, 1); else if (b.id === 'reset') { delete Save.data.settings.card; Save.write(); }
+        return b.id;
+      }
+      const P = play.cardPos(); if (x >= P.x && x <= P.x + P.w && y >= P.y && y <= P.y + P.h) this.drag = { dx: x - P.x, dy: y - P.y }; return null;
+    },
+    release() { if (this.drag) { this.drag = null; Save.write(); } },
   };
   const help = {
     draw(ctx, t, m) {
@@ -340,5 +369,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, help, loading, mp, nightBackdrop, biomeCol, short };
 })();

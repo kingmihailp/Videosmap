@@ -53,6 +53,7 @@
     if (!document.fullscreenElement && document.documentElement.requestFullscreen && App.screen !== 'mp') { try { document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (er) {} }).catch(() => {}); } catch (er) {} }
     for (const t of e.changedTouches) {
       const m = moving();
+      if (App.overlay === 'cardpos') { const o = { clientX: t.clientX, clientY: t.clientY, bubbles: true, button: 0 }; document.dispatchEvent(new MouseEvent('mousemove', o)); ui.dispatchEvent(new MouseEvent('mousedown', o)); lk = { id: t.identifier, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: e.timeStamp, m: false, acc: 0, moved: false, card: true }; continue; }
       if (m && t.clientX < innerWidth * 0.45 && !mv) { mv = { id: t.identifier, x: t.clientX, y: t.clientY }; stick.style.left = t.clientX + 'px'; stick.style.top = t.clientY + 'px'; stick.style.display = 'block'; knob.style.transform = ''; }
       else if (!lk) lk = { id: t.identifier, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: e.timeStamp, m, acc: 0, moved: false };
     }
@@ -76,7 +77,7 @@
   const end = e => {
     for (const t of e.changedTouches) {
       if (mv && t.identifier === mv.id) endMove();
-      if (lk && t.identifier === lk.id) { const L = lk; lk = null; if (L.m) { if (!L.moved && e.timeStamp - L.t0 < 350) inp.fire = true; if (e.cancelable) e.preventDefault(); } }   // a tap swings the net (and blocks the emulated click)
+      if (lk && t.identifier === lk.id) { const L = lk; lk = null; if (L.card) { window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); if (e.cancelable) e.preventDefault(); continue; } if (L.m) { if (!L.moved && e.timeStamp - L.t0 < 350) inp.fire = true; if (e.cancelable) e.preventDefault(); } }   // a tap swings the net (and blocks the emulated click)
     }
   };
   ui.addEventListener('touchend', end, { passive: false }); ui.addEventListener('touchcancel', end, { passive: false });

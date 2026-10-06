@@ -3216,7 +3216,7 @@ class Play {
     // toasts
     this.toasts.forEach((s, i) => { const a = clamp(s.t / 0.5) * clamp((s.d - s.t) / 0.3); ctx.globalAlpha = a; const w2 = T.width(s.text, s.big ? 10 : 8) + 16; const y = 52 + i * 22; UIK.panel(ctx, SW / 2 - w2 / 2, y, w2, s.big ? 20 : 16, { fill: 'rgba(16,32,28,0.9)', border: s.big ? c.gold : c.line }); T.draw(ctx, s.text, SW / 2, y + (s.big ? 5 : 4), { size: s.big ? 10 : 8, align: 'c', color: s.big ? c.gold : c.text }); ctx.globalAlpha = 1; });
     // catch cards
-    this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
+    if (!(window.F0W && F0W.overlay === 'cardpos')) this.cards.slice(-2).forEach((cd, i) => this.drawCard(ctx, cd, i));
   }
   drawSense(ctx) {
     let best = null, bd = 1e9; const pref = this.guideT > 0; const nowMs = performance.now(); for (const f of this.flies) { if (f.state === CAUGHT || f.remote || f.pendingCatch || f.hid || (f.puppet && nowMs - f.seen > 1200) || (pref && Save.has(f.sp.id) && !this.flies.every(g => Save.has(g.sp.id)))) continue; const d = f.pos.distanceTo(this.player.pos); if (d < bd) { bd = d; best = f; } }
@@ -3228,8 +3228,16 @@ class Play {
     else { ctx.save(); ctx.translate(sx, sy); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -5); ctx.lineTo(-2, 0); ctx.lineTo(-4, 5); ctx.closePath(); ctx.fill(); ctx.restore(); }
     ctx.globalAlpha = 1; T.draw(ctx, `${Math.round(bd)} м`, sx, sy + 11, { size: 8, align: 'c', color: UIK.col.gold, shadow: '#000' });
   }
-  drawCard(ctx, cd, i) {
-    const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const x = SW / 2 - w / 2, y = 6 + i * 66 - (1 - k) * 70 + 72;
+  // position / scale of the catch card (top-left, below the player list by default; the player can move and scale it in the pause menu)
+  cardPos() {
+    const cp = Save.data.settings.card, st = Play.CARD_SCALES; const s = st[clamp(cp && cp.s !== undefined ? cp.s : 2, 0, st.length - 1) | 0];
+    const w = 214 * s, h = 62 * s; let x = cp && cp.x !== undefined ? cp.x : 6, y = cp && cp.y !== undefined ? cp.y : (this.mp ? 46 : 36);
+    return { x: clamp(x, 0, SW - w), y: clamp(y, 0, SH - h), s, w, h };
+  }
+  drawCard(ctx, cd, i, pos) {
+    const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const P = pos || this.cardPos(), up = P.y > SH / 2 ? -1 : 1;
+    const x = 0, y = i * 66 * up - (1 - k) * 70 * up;
+    ctx.save(); ctx.translate(Math.round(P.x), Math.round(P.y)); ctx.scale(P.s, P.s);
     ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
     ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
@@ -3238,7 +3246,7 @@ class Play {
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 1; ctx.restore();
   }
   dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
 }
@@ -3248,6 +3256,7 @@ Play.pickPool = (biome, rng, size = 9, shared = false) => {
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
+Play.CARD_SCALES = [0.6, 0.8, 1, 1.25, 1.5, 2];
 const fitStr = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 
@@ -3558,25 +3567,54 @@ const Screens = (() => {
     btns: [],
     layout(play) {
       const s = Save.data.settings; const x = SW / 2 - 90; this.btns = [
-        { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
-        { id: 'journal', label: 'Журнал (Tab)', x, y: 101, w: 180, h: 16 },
-        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 120, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 139, w: 180, h: 16 },
-        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 158, w: 88, h: 16 },
-        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 158, w: 88, h: 16 },
-        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 177, w: 180, h: 16 },
-        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 196, w: 180, h: 16 },
-        { id: 'map', label: 'Выбрать другое место', x, y: 215, w: 180, h: 16 },
+        { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
+        { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
+        { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 131, w: 180, h: 16 },
+        { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
+        { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
+        { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
+        { id: 'regen', label: 'Сгенерировать новую местность', x, y: 188, w: 180, h: 16 },
+        { id: 'map', label: 'Выбрать другое место', x, y: 207, w: 180, h: 16 },
+        { id: 'cardpos', label: 'Карточка улова: положение и размер', x, y: 226, w: 180, h: 16 },
       ];
     },
     draw(ctx, t, m, play) {
       this.layout(play); ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH);
-      UIK.panel(ctx, SW / 2 - 106, 38, 212, 218, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
-      T.draw(ctx, 'Пауза', SW / 2, 44, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 63, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, SW / 2 - 106, 30, 212, 234, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+      T.draw(ctx, 'Пауза', SW / 2, 36, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `${play.biome.name} · зерно ${play.seed}`, SW / 2, 55, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 236, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // move / scale the catch card
+  const cardpos = {
+    drag: null, btns: [],
+    draw(ctx, t, m, play) {
+      const st = Play.CARD_SCALES, cs = Save.data.settings.card || (Save.data.settings.card = {}); let P = play.cardPos();
+      if (this.drag) { const w = 214 * P.s, h = 62 * P.s; cs.x = clamp(m.x - this.drag.dx, 0, SW - w); cs.y = clamp(m.y - this.drag.dy, 0, SH - h); P = play.cardPos(); }
+      ctx.fillStyle = 'rgba(4,12,10,0.45)'; ctx.fillRect(0, 0, SW, SH);
+      ctx.strokeStyle = c.green; ctx.setLineDash([3, 3]); ctx.strokeRect(Math.round(P.x) - 2.5, Math.round(P.y) - 2.5, P.w + 5, P.h + 5); ctx.setLineDash([]);
+      const sp = play.pool[0]; play.drawCard(ctx, { sp, first: true, t: 3, d: 6, count: 1 }, 0, P);
+      UIK.panel(ctx, SW / 2 - 150, SH - 70, 300, 30, { fill: 'rgba(16,32,28,0.95)', border: c.gold });
+      T.draw(ctx, 'Перетащи карточку улова в любое место экрана', SW / 2, SH - 66, { size: 8, align: 'c', color: c.text });
+      T.draw(ctx, `Размер: ${Math.round(P.s * 100)}%  (колесо мыши тоже меняет)`, SW / 2, SH - 54, { size: 8, align: 'c', color: c.dim });
+      const y = SH - 34; this.btns = [
+        { id: 'smaller', label: '-', x: SW / 2 - 130, y, w: 30, h: 18, size: 10 }, { id: 'bigger', label: '+', x: SW / 2 - 96, y, w: 30, h: 18, size: 10 },
+        { id: 'reset', label: 'Сброс', x: SW / 2 - 58, y, w: 56, h: 18 }, { id: 'done', label: 'Готово', x: SW / 2 + 6, y, w: 124, h: 18, size: 10 },
+      ];
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    step(play, d) { const cs = Save.data.settings.card || (Save.data.settings.card = {}), P = play.cardPos(), st = Play.CARD_SCALES; let i = st.indexOf(P.s); cs.s = clamp(i + d, 0, st.length - 1); cs.x = P.x; cs.y = P.y; Save.write(); },
+    press(x, y, play) {                                // returns an id when a button was hit, otherwise starts a drag when the card was hit
+      const b = this.btns.find(b => UIK.hit(b, x, y)); if (b) {
+        if (b.id === 'smaller') this.step(play, -1); else if (b.id === 'bigger') this.step(play, 1); else if (b.id === 'reset') { delete Save.data.settings.card; Save.write(); }
+        return b.id;
+      }
+      const P = play.cardPos(); if (x >= P.x && x <= P.x + P.w && y >= P.y && y <= P.y + P.h) this.drag = { dx: x - P.x, dy: y - P.y }; return null;
+    },
+    release() { if (this.drag) { this.drag = null; Save.write(); } },
   };
   const help = {
     draw(ctx, t, m) {
@@ -3594,7 +3632,7 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
 // ===== spread.js =====
@@ -5289,6 +5327,7 @@ const StubRoom = (() => {
       if (App.overlay === 'journal') {
         if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
+      if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
       if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && App.play.doorNear) App.play.enterDoor(); else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
@@ -5307,9 +5346,10 @@ const StubRoom = (() => {
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'cardpos') App.overlay = 'cardpos'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -5323,8 +5363,9 @@ const StubRoom = (() => {
       if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
+  addEventListener('mouseup', () => S.cardpos.release());
   ui.addEventListener('contextmenu', e => e.preventDefault());
-  ui.addEventListener('wheel', e => { if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
+  ui.addEventListener('wheel', e => { if (App.screen === 'play' && App.overlay === 'cardpos') { S.cardpos.step(App.play, e.deltaY < 0 ? 1 : -1); return; } if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
 
   // ---------------- loop
   let last = performance.now();
@@ -5343,7 +5384,7 @@ const StubRoom = (() => {
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
@@ -5427,6 +5468,7 @@ const StubRoom = (() => {
     if (!document.fullscreenElement && document.documentElement.requestFullscreen && App.screen !== 'mp') { try { document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (er) {} }).catch(() => {}); } catch (er) {} }
     for (const t of e.changedTouches) {
       const m = moving();
+      if (App.overlay === 'cardpos') { const o = { clientX: t.clientX, clientY: t.clientY, bubbles: true, button: 0 }; document.dispatchEvent(new MouseEvent('mousemove', o)); ui.dispatchEvent(new MouseEvent('mousedown', o)); lk = { id: t.identifier, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: e.timeStamp, m: false, acc: 0, moved: false, card: true }; continue; }
       if (m && t.clientX < innerWidth * 0.45 && !mv) { mv = { id: t.identifier, x: t.clientX, y: t.clientY }; stick.style.left = t.clientX + 'px'; stick.style.top = t.clientY + 'px'; stick.style.display = 'block'; knob.style.transform = ''; }
       else if (!lk) lk = { id: t.identifier, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, t0: e.timeStamp, m, acc: 0, moved: false };
     }
@@ -5450,7 +5492,7 @@ const StubRoom = (() => {
   const end = e => {
     for (const t of e.changedTouches) {
       if (mv && t.identifier === mv.id) endMove();
-      if (lk && t.identifier === lk.id) { const L = lk; lk = null; if (L.m) { if (!L.moved && e.timeStamp - L.t0 < 350) inp.fire = true; if (e.cancelable) e.preventDefault(); } }   // a tap swings the net (and blocks the emulated click)
+      if (lk && t.identifier === lk.id) { const L = lk; lk = null; if (L.card) { window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); if (e.cancelable) e.preventDefault(); continue; } if (L.m) { if (!L.moved && e.timeStamp - L.t0 < 350) inp.fire = true; if (e.cancelable) e.preventDefault(); } }   // a tap swings the net (and blocks the emulated click)
     }
   };
   ui.addEventListener('touchend', end, { passive: false }); ui.addEventListener('touchcancel', end, { passive: false });
