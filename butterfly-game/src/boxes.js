@@ -74,6 +74,77 @@ const Boxes = (() => {
   }
 
   // ================================================================== WORKBENCH
+
+  // ================================================================== NET WORKSHOP (the «Сачки» tab of the workbench)
+  const nbench = {
+    sel: 0, scroll: 0, draft: { h: 'h_basic', r: 'r_basic', m: 'm_basic' }, msg: '', msgT: 0, btns: [], rows: [], slotBtns: [],
+    list() { return [NetParts.BASIC].concat(Save.netList()); },
+    isNew() { return this.sel >= this.list().length; },
+    cfg() { return this.isNew() ? this.draft : this.list()[this.sel]; },
+    say(t) { this.msg = t; this.msgT = 5; },
+    options(slot) { return Object.keys(NetParts.PARTS).filter(id => NetParts.PARTS[id].slot === slot && (NetParts.isBasic(id) || Save.partCount(id) > 0)).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); },
+    cycle(slot, d) { const o = this.options(slot), k = o.indexOf(this.draft[slot]), n = o.length; this.draft[slot] = o[(k + d + n * 4) % n] || o[0]; Snd.sfx.page(); },
+    layout() {
+      const L = this.list(), vis = 8, total = L.length + 1; this.sel = clamp(this.sel, 0, total - 1); this.scroll = clamp(this.scroll, 0, Math.max(0, total - vis));
+      if (this.sel < this.scroll) this.scroll = this.sel; if (this.sel >= this.scroll + vis) this.scroll = this.sel - vis + 1;
+      this.rows = []; for (let k = 0; k < vis; k++) { const i = this.scroll + k; if (i >= total) break; this.rows.push({ i, x: 8, y: 54 + k * 21, w: 144, h: 19 }); }
+      for (const sl of NetParts.SLOTS) { const o = this.options(sl.id); if (o.indexOf(this.draft[sl.id]) < 0) this.draft[sl.id] = o[0]; }
+      const isNew = this.isNew(), cur = this.cfg(), eq = (Save.data.netEq || 0) === cur.uid;
+      this.slotBtns = []; if (isNew) NetParts.SLOTS.forEach((sl, k) => { const y = 64 + k * 48; this.slotBtns.push({ id: 'prev_' + sl.id, label: '<', x: 330, y: y + 11, w: 16, h: 16, slot: sl.id, d: -1 }, { id: 'next_' + sl.id, label: '>', x: 456, y: y + 11, w: 16, h: 16, slot: sl.id, d: 1 }); });
+      this.btns = [
+        { id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 },
+        isNew ? { id: 'make', label: 'Собрать сачок', x: 330, y: 210, w: 142, h: 18, disabled: ['h', 'r', 'm'].every(k => NetParts.isBasic(this.draft[k])) }
+          : { id: 'equip', label: eq && cur.uid ? 'Снять (взять обычный)' : eq ? 'В руках' : 'Взять в руки', x: 94, y: 248, w: 112, h: 16, disabled: eq && !cur.uid },
+        { id: 'take', label: 'Разобрать', x: 210, y: 248, w: 72, h: 16, disabled: isNew || !cur.uid },
+      ];
+    },
+    draw(ctx, t, m, dt) {
+      this.layout(); this.msgT = Math.max(0, this.msgT - 1 / 60); const L = this.list(), cur = this.cfg(), isNew = this.isNew(), eqU = Save.data.netEq || 0;
+      T.draw(ctx, 'Мастерская сачков', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
+      T.draw(ctx, 'Сачки меняются только в кабинете', SW / 2, 22, { size: 8, align: 'c', color: c.dim });
+      T.draw(ctx, `Ваши сачки (${L.length})`, 8, 40, { size: 8, color: c.dim });
+      this.rows.forEach(r => {
+        const sl = r.i === this.sel, hv = UIK.hit(r, m.x, m.y), isLast = r.i >= L.length; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false });
+        if (isLast) { T.draw(ctx, '+ Собрать новый', r.x + 6, r.y + 5, { size: 8, color: c.green }); return; }
+        const n = L[r.i]; T.draw(ctx, NetParts.name(n, r.i - 1), r.x + 6, r.y + 5, { size: 8, color: c.text }); if (n.uid === eqU) T.draw(ctx, 'в руках', r.x + r.w - 5, r.y + 5, { size: 8, align: 'r', color: c.gold });
+      });
+      // centre: the picture and the numbers
+      UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
+      NetParts.draw2D(ctx, cur, 166, 42, 148, 126);
+      T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
+      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, s, 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
+      [cur.h, cur.r, cur.m].forEach((id, k) => T.draw(ctx, fitStr(NetParts.PARTS[id].ru, 150), 164, 207 + k * 10 - 0, { size: 8, color: c.dim }));
+      // right: the parts
+      UIK.panel(ctx, 326, 32, 150, 208, { fill: '#10201c', border: c.line, shadow: false });
+      T.draw(ctx, isNew ? 'Выберите детали' : 'Детали сачка', 401, 36, { size: 8, align: 'c', color: c.text });
+      NetParts.SLOTS.forEach((sl, k) => {
+        const y = 64 + k * 48, id = isNew ? this.draft[sl.id] : cur[sl.id], p = NetParts.PARTS[id]; T.draw(ctx, sl.ru, 330, y - 12, { size: 8, color: c.dim });
+        const cnt = isNew && !NetParts.isBasic(id) ? ` ×${Save.partCount(id)}` : ''; T.draw(ctx, fitStr(p.ru + cnt, isNew ? 100 : 140), isNew ? 401 : 330, y + (isNew ? 15 : 2), { size: 8, align: isNew ? 'c' : 'l', color: NetParts.isBasic(id) ? c.text : '#fff' });
+        const fl = NetParts.fxLines(p.fx); T.draw(ctx, fl[0] || (isNew ? '' : 'без бонуса'), isNew ? 401 : 330, y + (isNew ? 29 : 13), { size: 8, align: isNew ? 'c' : 'l', color: fl.length ? c.green : c.dim });
+      });
+      this.slotBtns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+      if (isNew) { const free = NetParts.SLOTS.every(sl => this.options(sl.id).length === 1); if (free) T.para(ctx, 'Деталей нет. Купите их у продавца сачков на рынке насекомых.', 330, 196, 140, { size: 8, color: '#6a8a78', lh: 10 }); }
+      this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
+      if (this.msgT > 0) T.draw(ctx, this.msg, 316, 252, { size: 8, align: 'r', color: c.gold });
+      T.draw(ctx, `${Save.data.coins || 0} монет`, SW - 10, 252, { size: 8, align: 'r', color: '#ffe070' });
+    },
+    click(x, y) {
+      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      if (b) {
+        Snd.sfx.click(); if (b.id === 'close') return 'close';
+        const cur = this.cfg();
+        if (b.id === 'make') { const n = Save.assembleNet(this.draft); if (n) { this.sel = this.list().length - 1; this.say('Сачок собран!'); Snd.sfx.thud(); } else Snd.sfx.deny(); }
+        else if (b.id === 'equip') { if (cur.uid && (Save.data.netEq || 0) === cur.uid) { Save.equipNet(0); this.say('В руках обычный сачок'); } else { Save.equipNet(cur.uid); this.say('Сачок взят в руки'); } Snd.sfx.pin(); }
+        else if (b.id === 'take') { if (Save.disassembleNet(cur.uid)) { this.sel = Math.max(0, this.sel - 1); this.say('Сачок разобран: детали вернулись на склад'); Snd.sfx.deny(); } }
+        return 'changed';
+      }
+      const sb = this.slotBtns.find(b => UIK.hit(b, x, y)); if (sb) { this.cycle(sb.slot, sb.d); return null; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.i; Snd.sfx.click(); }
+      return null;
+    },
+    wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
+  };
+
   const bench = {
     sel: 0, style: 0, scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '',
     open() { this.sel = Math.min(this.sel, Save.data.boxes.length - 1); },
@@ -97,9 +168,12 @@ const Boxes = (() => {
       this.slots = [];
       if (cb) { const area = { x: 170, y: 50, w: 160, h: 170 }; const r = (this._r = drawBoxScaled({ drawImage() {}, set imageSmoothingEnabled(v) {} }, cb, area.x, area.y, area.w, area.h)); const d = DIM[cb.size]; for (let i = 0; i < cb.items.length; i++) this.slots.push({ i, x: r.x + (FR + (i % d.c) * CW) * r.k, y: r.y + (FR + Math.floor(i / d.c) * CH) * r.k, w: CW * r.k, h: CH * r.k }); }
     },
+    tab: 'boxes', tabBtns() { return [{ id: 'boxes', label: 'Коробки', x: 8, y: 6, w: 52, h: 14 }, { id: 'nets', label: 'Сачки', x: 62, y: 6, w: 44, h: 14 }]; },
     draw(ctx, t, m) {
-      this.layout(); Cab2.backdrop(ctx);
-      UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
+      Cab2.backdrop(ctx); UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
+      this.tabBtns().forEach(b => { const on = b.id === this.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : UIK.hit(b, m.x, m.y) ? '#244a3c' : '#1a3228', border: on ? c.gold : c.line, shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: on ? '#fff' : c.dim }); });
+      if (this.tab === 'nets') return nbench.draw(ctx, t, m);
+      this.layout();
       T.draw(ctx, 'Мастерская коробок', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
       T.draw(ctx, 'Новая коробка:', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -124,7 +198,9 @@ const Boxes = (() => {
       this.srows.forEach(r => { const hv = UIK.hit(r, m.x, m.y); const g = Grade(r.s.q); ctx.fillStyle = hv ? '#2a5a46' : '#1a3228'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.fillStyle = g.col; ctx.fillRect(r.x + 1, r.y + 2, 3, 10); let nm = SPECIES_BY_ID[r.s.sp].ru; while (T.width(nm, 8) > 96 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(ctx, nm, r.x + 8, r.y + 3, { size: 8, color: hv ? '#fff' : c.text }); T.draw(ctx, r.s.q + '%', r.x + r.w - 3, r.y + 3, { size: 8, align: 'r', color: g.col }); });
     },
     click(x, y) {
-      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      const tb = this.tabBtns().find(b => UIK.hit(b, x, y)); if (tb) { if (this.tab !== tb.id) { this.tab = tb.id; Snd.sfx.page(); } return null; }
+      if (this.tab === 'nets') return nbench.click(x, y);
+      this.layout(); const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
@@ -144,7 +220,7 @@ const Boxes = (() => {
       if (sr && cb) { const i = cb.items.findIndex(u => !u); if (i < 0) { Snd.sfx.deny(); return null; } Save.putIn(cb, i, sr.s.uid); Snd.sfx.pin(); return 'changed'; }
       return null;
     },
-    wheel(dy) { this.sscroll += dy > 0 ? 1 : -1; },
+    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else this.sscroll += dy > 0 ? 1 : -1; },
   };
 
   // ================================================================== PLACEMENT (wall / desk)

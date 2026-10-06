@@ -179,7 +179,7 @@ The cabinet / market / house pause menus have the same «Настройки» an
 
 ## Multiplayer: landscape and butterfly leadership
 - A biome that nobody is in gets a **new seed** (new landscape, new butterflies) every time a player walks into it; later joiners get the same landscape. The cabinet and the market keep theirs.
-- The butterflies of a location are simulated by its host. The host keeps simulating (and sending) under the pause menu / journal / help, and if the host stays silent for 6 s (hidden tab, frozen client) the server hands the lead to the next player (`host` message); the old host becomes a follower again. A new host fills an empty location with a fresh population.
+- The butterflies of a location are simulated by its host. The host keeps simulating (and sending) under the pause menu / journal / help, and if the host stays silent for 12 s (hidden tab, frozen client) the server hands the lead to the next player (`host` message); the old host becomes a follower again. A new host fills an empty location with a fresh population.
 - Server change: `joinLoc` re-seeds empty biomes, watchdog in `server.js`. Test: `tools/test/mp_host.js`.
 
 ## Misc
@@ -190,3 +190,23 @@ The cabinet / market / house pause menus have the same «Настройки» an
 ## Chat and the spreading desk
 - Multiplayer chat: **T** opens a line (Enter sends, Esc cancels; rebindable in «Клавиши»; a 💬 button on phones). Messages go to everybody online and fade after ~12 s. Offline, T only says that the chat needs multiplayer. Uses the server's existing `chat` message (no server change). Test: `tools/test/chat.js`.
 - Spreading desk: aberrations are purple cards with an «аберрант» tag and stand right after the normal form of their species.
+
+## Butterfly nets: parts, workbench, shop
+A net has three parts — **handle, hoop, mesh** (`src/nets.js`). Effects of the parts add up:
+
+| Part | Effect |
+|---|---|
+| Сетка из прочного полотна (60) | +12% swing speed |
+| Увеличенная сетка (70) | +12% catch radius |
+| Сетка из шёлка (220) | +0.5% chance a caught butterfly is an aberration |
+| Обруч из стали (90) | +12% swing speed |
+| Увеличенный обруч (110) | +15% catch radius |
+| Обруч из пластика (160) | +30% swing speed |
+| Удлинённая ручка (80) | +10% catch radius (and a longer pole) |
+| Ручка из пластика (100) | +15% swing speed |
+| Ручка из хрома (240) | +0.5% aberration chance |
+
+- **Buy** the parts from the net seller at the insect market (E at his stall).
+- **Assemble / take apart / equip** at the workbench in the entomologist's cabinet — the new «Сачки» tab (nets can only be changed in the cabinet). The plain net (basic parts) is always available.
+- The equipped net is shown in first person and on other players (`nt` field of the `pos` message; **the server relays it, so `server.js` changed**), and changes live when a player swaps nets in the cabinet.
+- Parts, nets and the equipped net are personal (saved with the coins). Tests: `tools/test/nets.js`, `mp_nets.js`.

@@ -34,7 +34,7 @@ const Net = (() => {
       case 'joined': N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
       case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
       case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
-      case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
+      case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.nt = typeof m.nt === 'string' ? m.nt : ''; r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
       case 'host': N.host = m.id === N.id; if (N.hooks.host) N.hooks.host(m); break;
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
       case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
@@ -43,6 +43,6 @@ const Net = (() => {
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
     }
   }
-  function mkRemote(id, name) { return { id, name, pos: new THREE.Vector3(0, -50, 0), fwd: new THREE.Vector3(0, 0, -1), yaw: 0, pitch: 0, noise: 0, flashOn: false, swinging: false, speedNow: 0, t: 0 }; }
+  function mkRemote(id, name) { return { id, name, pos: new THREE.Vector3(0, -50, 0), fwd: new THREE.Vector3(0, 0, -1), yaw: 0, pitch: 0, noise: 0, flashOn: false, swinging: false, speedNow: 0, t: 0, nt: '' }; }
   return N;
 })();

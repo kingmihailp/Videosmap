@@ -337,7 +337,7 @@ class Play {
   }
   sendNet(dt) {
     this.netAcc += dt; if (this.netAcc < 0.1) return; this.netAcc = 0; const P = this.player, R = n => Math.round(n * 100) / 100;
-    Net.send('pos', { x: R(P.pos.x), y: R(P.pos.y), z: R(P.pos.z), yaw: R(P.yaw), pitch: R(P.pitch), nz: R(P.noise), fl: this.flashOn ? 1 : 0, sw: this.netBusy() ? 1 : 0, sp: R(P.speedNow) });
+    Net.send('pos', { x: R(P.pos.x), y: R(P.pos.y), z: R(P.pos.z), yaw: R(P.yaw), pitch: R(P.pitch), nz: R(P.noise), fl: this.flashOn ? 1 : 0, sw: this.netBusy() ? 1 : 0, sp: R(P.speedNow), nt: NetParts.code(this.netCfg) });
     if (this.isHost) Net.send('flies', { list: this.snapshot() });
   }
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
@@ -345,7 +345,8 @@ class Play {
   // ---------------------------------------------------------------- net model
   // A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim.
   buildNet() {
-    const { g, root, roll } = makeNetModel(); g.traverse(o => { o.frustumCulled = false; });
+    this.netCfg = Save.curNet(); this.netStats = NetParts.stats(this.netCfg);
+    const { g, root, roll } = makeNetModel(this.netCfg); g.traverse(o => { o.frustumCulled = false; });
     this.netGroup = g; this.hoop = root; this.netRoll = roll; g.scale.setScalar(0.9);
     // idle pose: pole points up-left across the view; roll the hoop so its mouth faces the player and the bag trails away
     this.NET_IDLE = { px: 0.5, py: -0.5, pz: -0.34, rx: 0.34, ry: 0.55, rz: 0 };
@@ -367,12 +368,12 @@ class Play {
     let c = { px: I.px, py: I.py, pz: I.pz, rx: I.rx, ry: I.ry, rz: I.rz };
     const mv = clamp(this.player.speedNow / 3.3, 0, 1.6);
     if (n.phase >= 0) {
-      n.phase += dt / 0.62; const ph = n.phase;
+      n.phase += dt / 0.62 * this.netStats.speed; const ph = n.phase;
       const W = { px: 0.66, py: -0.3, pz: -0.3, rx: 0.6, ry: -0.75, rz: -0.35 }, S = { px: 0.0, py: -0.52, pz: -0.34, rx: 0.02, ry: 1.0, rz: 0.35 };
       const mix = (A, B, k) => { const o = {}; for (const key in A) o[key] = lerp(A[key], B[key], k); return o; };
       if (ph < 0.2) c = mix(c, W, smooth(0, 0.2, ph)); else if (ph < 0.55) c = mix(W, S, smooth(0.2, 0.55, ph)); else c = mix(S, c, smooth(0.55, 1, ph));
       if (ph > 0.24 && ph < 0.58) this.checkCatch();
-      if (ph >= 1) { n.phase = -1; n.cd = 0.18; if (!n.caughtThisSwing) Snd.sfx.miss(); }
+      if (ph >= 1) { n.phase = -1; n.cd = 0.18 / this.netStats.speed; if (!n.caughtThisSwing) Snd.sfx.miss(); }
     } else {
       // gentle idle sway + walking bob (bounded: sin of the step phase, never the raw accumulator)
       const b = Math.sin(this.player.bob) * 0.014 * mv, b2 = Math.cos(this.player.bob * 0.5) * 0.01 * mv;
@@ -383,13 +384,14 @@ class Play {
   checkCatch() {
     this.hoopWorld(_v);
     for (const f of this.flies) {
-      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
+      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul() * this.netStats.radius;
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { if (this.mp) { if (f.pendingCatch) continue; this.netCatch(f); } else this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
   onCatch(f) {
-    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
+    f.catchIt(); const sp = Aberr.roll(f.sp, this.netStats.ab);     // silk mesh / chrome handle: a small chance that the catch is an aberration
+    const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;

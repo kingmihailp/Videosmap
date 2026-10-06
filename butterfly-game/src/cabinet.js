@@ -259,7 +259,7 @@ const Cabinet = (() => {
       this.stations = [
         { id: 'spread', x: -3.0, z: 0.1, r: 1.6, label: () => { const n = Save.rawList().length; return n ? `E — расправить бабочку (ждут: ${n})` : 'E — расправилка (нет бабочек — наловите новых)'; } },
         { id: 'journal', x: 2.3, z: -1.75, r: 1.3, label: () => `E — открыть коллекцию (${collText()})` },
-        { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская коробок (коробок: ${Save.data.boxes.length})` },
+        { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская: коробки и сачки (коробок: ${Save.data.boxes.length})` },
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
         { id: 'exit', x: 4.0, z: -1.6, r: 1.4, label: () => 'E — выйти на карту экспедиций' },
@@ -369,7 +369,7 @@ const Cabinet = (() => {
     animate(dt) {
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
       this.sitStep(dt);
-      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 }); } }
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 , nt: NetParts.code(Save.curNet()) }); } }
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;

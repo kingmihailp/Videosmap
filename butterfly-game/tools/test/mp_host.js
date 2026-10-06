@@ -17,7 +17,7 @@ const wsClient = name => new Promise(res => { const ws = new WebSocket(`ws://loc
   a.send({ t: 'join', loc: 'cabinet' }); const jc1 = await a.wait('joined'); a.send({ t: 'join', loc: null }); await new Promise(r => setTimeout(r, 100)); a.send({ t: 'join', loc: 'cabinet' }); const jc2 = await a.wait('joined'); ok(jc1.seed === jc2.seed, 'the cabinet keeps its seed');
   // (3) watchdog: A hosts, B joins, A stays silent
   a.send({ t: 'join', loc: 'med' }); await a.wait('joined'); b.send({ t: 'join', loc: 'med' }); await b.wait('joined'); a.send({ t: 'flies', list: [[1, 'x', 0, 0, 0, 0, 0, 0]] });
-  const t0 = Date.now(); const h = await b.wait('host', 12000); ok(h && h.id !== undefined && Date.now() - t0 > 4000, `silent host replaced after ${(Date.now() - t0) / 1000}s (host msg ${JSON.stringify(h && { id: h.id, n: h.flies.length })})`);
+  const t0 = Date.now(); const h = await b.wait('host', 24000); ok(h && h.id !== undefined && Date.now() - t0 > 8000, `silent host replaced after ${(Date.now() - t0) / 1000}s (host msg ${JSON.stringify(h && { id: h.id, n: h.flies.length })})`);
   [a, b, c].forEach(x => x.ws.close());
   // (2) browser: host pauses, the other client's butterflies keep moving
   const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });

@@ -1360,6 +1360,78 @@ const Econ = (() => {
   return { info, price, bulkOk, baseValue };
 })();
 
+// ===== nets.js =====
+// ---------------------------------------------------------------- butterfly nets: three parts (handle, hoop, mesh), assembled at the workbench, bought at the market
+// Parts are consumed when a net is assembled and returned when it is taken apart. Effects of the three parts add up:
+//   speed  — swing speed (+x%),  radius — catch radius (+x%),  ab — chance that a caught butterfly turns out to be an aberration (+x, absolute)
+const NetParts = (() => {
+  const SLOTS = [{ id: 'h', ru: 'Ручка' }, { id: 'r', ru: 'Обруч' }, { id: 'm', ru: 'Сетка' }];
+  const PARTS = {
+    h_basic: { slot: 'h', ru: 'Деревянная ручка', price: 0, fx: {}, vis: {}, desc: 'Обычная ручка. Всегда под рукой.' },
+    r_basic: { slot: 'r', ru: 'Проволочный обруч', price: 0, fx: {}, vis: {}, desc: 'Обычный обруч. Всегда под рукой.' },
+    m_basic: { slot: 'm', ru: 'Хлопковая сетка', price: 0, fx: {}, vis: {}, desc: 'Обычная сетка. Всегда под рукой.' },
+    m_tough: { slot: 'm', ru: 'Сетка из прочного полотна', price: 60, fx: { speed: 0.12 }, vis: { mesh: '#c8b88a', wire: '#6a5a38', op: 0.6 }, desc: 'Плотная и лёгкая ткань не парусит.' },
+    m_big: { slot: 'm', ru: 'Увеличенная сетка', price: 70, fx: { radius: 0.12 }, vis: { bag: 1.4 }, desc: 'Глубокий мешок — бабочке труднее выскользнуть.' },
+    m_silk: { slot: 'm', ru: 'Сетка из шёлка', price: 220, fx: { ab: 0.005 }, vis: { mesh: '#f6eaff', wire: '#b88ae8', op: 0.55 }, desc: 'Редкий шёлк: пойманная бабочка с шансом 0,5% окажется аберрантом.' },
+    r_steel: { slot: 'r', ru: 'Обруч из стали', price: 90, fx: { speed: 0.12 }, vis: { hoop: '#8a96a6', th: 1.4 }, desc: 'Жёсткий обруч не гнётся на взмахе.' },
+    r_big: { slot: 'r', ru: 'Увеличенный обруч', price: 110, fx: { radius: 0.15 }, vis: { R: 1.35 }, desc: 'Широкий обруч захватывает больше.' },
+    r_plastic: { slot: 'r', ru: 'Обруч из пластика', price: 160, fx: { speed: 0.3 }, vis: { hoop: '#38c8e8', th: 1.5 }, desc: 'Почти невесомый обруч — взмах очень быстрый.' },
+    h_long: { slot: 'h', ru: 'Удлинённая ручка', price: 80, fx: { radius: 0.1 }, vis: { len: 1.5 }, desc: 'Длинная ручка достаёт дальше.' },
+    h_plastic: { slot: 'h', ru: 'Ручка из пластика', price: 100, fx: { speed: 0.15 }, vis: { handle: '#e8508c', grip: '#a82a5c' }, desc: 'Лёгкая ручка быстрее разгоняется.' },
+    h_chrome: { slot: 'h', ru: 'Ручка из хрома', price: 240, fx: { ab: 0.005 }, vis: { handle: '#dce8f0', grip: '#8a98a8' }, desc: 'Блестящий хром: пойманная бабочка с шансом 0,5% окажется аберрантом.' },
+  };
+  const BASIC = { uid: 0, h: 'h_basic', r: 'r_basic', m: 'm_basic' };
+  const SHOP = Object.keys(PARTS).filter(k => PARTS[k].price > 0);
+  const isBasic = id => PARTS[id] && PARTS[id].price === 0;
+  const parts = cfg => [PARTS[cfg.h] || PARTS.h_basic, PARTS[cfg.r] || PARTS.r_basic, PARTS[cfg.m] || PARTS.m_basic];
+  function stats(cfg) { let sp = 0, rd = 0, ab = 0; for (const p of parts(cfg || BASIC)) { sp += p.fx.speed || 0; rd += p.fx.radius || 0; ab += p.fx.ab || 0; } return { speed: 1 + sp, radius: 1 + rd, ab }; }
+  function vis(cfg) {
+    const v = { handle: '#9a6a38', grip: '#2a2018', len: 1, th: 1, hoop: '#eef2f4', R: 1, hth: 1, mesh: '#d4e8e0', wire: '#6f9088', op: 0.4, bag: 1 };
+    for (const p of parts(cfg || BASIC)) { const q = p.vis; for (const k in q) { if (k === 'th') { if (p.slot === 'r') v.hth = q.th; else v.th = q.th; } else v[k] = q[k]; } }
+    return v;
+  }
+  const code = cfg => (cfg && (!isBasic(cfg.h) || !isBasic(cfg.r) || !isBasic(cfg.m))) ? `${cfg.h}.${cfg.r}.${cfg.m}` : '';
+  function parse(s) { if (!s || typeof s !== 'string') return BASIC; const a = s.split('.'); if (a.length !== 3) return BASIC; const [h, r, m] = a; return (PARTS[h] && PARTS[h].slot === 'h' && PARTS[r] && PARTS[r].slot === 'r' && PARTS[m] && PARTS[m].slot === 'm') ? { uid: -1, h, r, m } : BASIC; }
+  const fxLines = fx => { const o = []; if (fx.speed) o.push(`+${Math.round(fx.speed * 100)}% скорость взмаха`); if (fx.radius) o.push(`+${Math.round(fx.radius * 100)}% радиус ловли`); if (fx.ab) o.push(`+${(fx.ab * 100).toFixed(1).replace('.', ',')}% шанс аберранта`); return o; };
+  const statLines = cfg => { const s = stats(cfg), o = []; o.push(s.speed > 1 ? `Скорость взмаха: +${Math.round((s.speed - 1) * 100)}%` : 'Скорость взмаха: обычная'); o.push(s.radius > 1 ? `Радиус ловли: +${Math.round((s.radius - 1) * 100)}%` : 'Радиус ловли: обычный'); o.push(s.ab > 0 ? `Шанс аберранта: +${(s.ab * 100).toFixed(1).replace('.', ',')}%` : 'Шанс аберранта: обычный'); return o; };
+  const name = (cfg, i) => cfg.uid === 0 ? 'Обычный сачок' : `Сачок №${i + 1}`;
+
+  // 2D picture of a net (pixel lines), used by the workbench and the shop
+  function line(ctx, x0, y0, x1, y1, w) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy; for (let n = 0; n < 600; n++) { ctx.fillRect(x0, y0, w, w); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
+  function draw2D(ctx, cfg, x, y, w, h) {
+    const V = vis(cfg), s = Math.min(w / 1.9, h / 2.3), POLE = 1.2 * V.len * s, R = 0.3 * V.R * s * 1.7, BAG = 0.9 * V.bag * s * 0.9; const d = { x: 0.6, y: -0.8 }, pp = { x: 0.8, y: 0.6 };
+    const gx = x + w * 0.1, gy = y + h - 4, ex = gx + d.x * POLE, ey = gy + d.y * POLE, cx = ex + d.x * R, cy = ey + d.y * R, ap = { x: cx + 0.2 * BAG, y: cy + 0.95 * BAG };
+    const ring = []; for (let i = 0; i < 24; i++) { const a = i / 24 * 6.2832; ring.push({ x: cx + d.x * Math.cos(a) * R + pp.x * Math.sin(a) * R * 0.5, y: cy + d.y * Math.cos(a) * R + pp.y * Math.sin(a) * R * 0.5 }); }
+    ctx.save(); ctx.globalAlpha = 0.28 + V.op * 0.4; ctx.fillStyle = V.mesh; ctx.beginPath(); ring.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.lineTo(ap.x, ap.y); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.fillStyle = V.wire; for (let i = 0; i < 24; i += 3) line(ctx, ring[i].x, ring[i].y, ap.x, ap.y, 1); for (const k of [0.33, 0.66]) { let prev = null; ring.forEach((p, i) => { const q = { x: p.x + (ap.x - p.x) * k, y: p.y + (ap.y - p.y) * k }; if (prev && i % 1 === 0) line(ctx, prev.x, prev.y, q.x, q.y, 1); prev = q; }); }
+    const th = Math.max(1, Math.round(V.th * 1.5)); ctx.fillStyle = V.handle; line(ctx, gx, gy, ex, ey, th); ctx.fillStyle = V.grip; line(ctx, gx, gy, gx + d.x * POLE * 0.3, gy + d.y * POLE * 0.3, th + 1);
+    ctx.fillStyle = V.hoop; const hr = Math.max(1, Math.round(V.hth * 1.3)); ring.forEach((p, i) => { const q = ring[(i + 1) % ring.length]; line(ctx, p.x, p.y, q.x, q.y, hr); });
+  }
+  return { SLOTS, PARTS, BASIC, SHOP, isBasic, stats, vis, code, parse, fxLines, statLines, name, draw2D };
+})();
+
+// inventory / assembly / equipment (everything here is personal, like coins)
+Object.assign(Save, {
+  netList() { return this.data.nets || (this.data.nets = []); },
+  partsObj() { return this.data.parts || (this.data.parts = {}); },
+  partCount(id) { return this.partsObj()[id] || 0; },
+  buyPart(id) { const p = NetParts.PARTS[id]; if (!p || !p.price || (this.data.coins || 0) < p.price) return false; this.data.coins -= p.price; this.partsObj()[id] = this.partCount(id) + 1; this.write(); return true; },
+  curNet() { const u = this.data.netEq || 0; return (u && this.netList().find(n => n.uid === u)) || NetParts.BASIC; },
+  assembleNet(sel) {                                  // sel = { h, r, m } part ids; basic parts are free, the others are taken from the inventory
+    const ids = [sel.h, sel.r, sel.m]; if (ids.every(NetParts.isBasic)) return null;
+    for (const id of ids) if (!NetParts.isBasic(id) && this.partCount(id) < ids.filter(x => x === id).length) return null;
+    if (this.netList().length >= 12) return null;
+    for (const id of ids) if (!NetParts.isBasic(id)) this.partsObj()[id]--;
+    const n = { uid: this.data.netUid = (this.data.netUid || 1) + 1, h: sel.h, r: sel.r, m: sel.m }; this.netList().push(n); this.write(); return n;
+  },
+  disassembleNet(uid) {
+    const L = this.netList(), i = L.findIndex(n => n.uid === uid); if (i < 0) return false; const n = L[i];
+    for (const id of [n.h, n.r, n.m]) if (!NetParts.isBasic(id)) this.partsObj()[id] = this.partCount(id) + 1;
+    L.splice(i, 1); if (this.data.netEq === uid) this.data.netEq = 0; this.write(); return true;
+  },
+  equipNet(uid) { if (uid && !this.netList().some(n => n.uid === uid)) return false; this.data.netEq = uid || 0; this.write(); return true; },
+});
+
 // ===== audio.js =====
 // ---------------------------------------------------------------- procedural audio (WebAudio, no files)
 const Snd = (() => {
@@ -2689,7 +2761,7 @@ const Net = (() => {
       case 'joined': N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
       case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
       case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
-      case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
+      case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.nt = typeof m.nt === 'string' ? m.nt : ''; r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
       case 'host': N.host = m.id === N.id; if (N.hooks.host) N.hooks.host(m); break;
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
       case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
@@ -2698,26 +2770,27 @@ const Net = (() => {
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
     }
   }
-  function mkRemote(id, name) { return { id, name, pos: new THREE.Vector3(0, -50, 0), fwd: new THREE.Vector3(0, 0, -1), yaw: 0, pitch: 0, noise: 0, flashOn: false, swinging: false, speedNow: 0, t: 0 }; }
+  function mkRemote(id, name) { return { id, name, pos: new THREE.Vector3(0, -50, 0), fwd: new THREE.Vector3(0, 0, -1), yaw: 0, pitch: 0, noise: 0, flashOn: false, swinging: false, speedNow: 0, t: 0, nt: '' }; }
   return N;
 })();
 
 // ===== remotes.js =====
 // A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim. Origin = the grip, pole along -z.
-function makeNetModel() {
-    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: '#9a6a38' }), dark = new THREE.MeshLambertMaterial({ color: '#2a2018' }), metal = new THREE.MeshBasicMaterial({ color: '#eef2f4' });
-    const POLE = 1.2, R = 0.3, BAG = 0.9;
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, POLE, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -POLE / 2; g.add(pole);
+function makeNetModel(cfg) {
+    const V = NetParts.vis(cfg);                              // colours and proportions of the three parts
+    const g = new THREE.Group(); const wood = new THREE.MeshLambertMaterial({ color: V.handle }), dark = new THREE.MeshLambertMaterial({ color: V.grip }), metal = new THREE.MeshBasicMaterial({ color: V.hoop });
+    const POLE = 1.2 * V.len, R = 0.3 * V.R, BAG = 0.9 * V.bag;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016 * V.th, 0.021 * V.th, POLE, 6), wood); pole.rotation.x = Math.PI / 2; pole.position.z = -POLE / 2; g.add(pole);
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.34, 6), dark); grip.rotation.x = Math.PI / 2; grip.position.z = -0.12; g.add(grip);
     const cap = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 5), dark); cap.position.z = 0.05; g.add(cap);
     const root = new THREE.Group(); root.position.set(0, 0, -POLE - R); g.add(root);            // hoop centre: on the pole axis, one radius beyond its tip
     const roll = new THREE.Group(); root.add(roll);                                               // roll about the pole axis
-    const torus = new THREE.TorusGeometry(R, 0.015, 5, 26); torus.rotateY(Math.PI / 2); roll.add(new THREE.Mesh(torus, metal));   // ring normal = +x
+    const torus = new THREE.TorusGeometry(R, 0.015 * V.hth, 5, 26); torus.rotateY(Math.PI / 2); roll.add(new THREE.Mesh(torus, metal));   // ring normal = +x
     const cone = new THREE.ConeGeometry(R, BAG, 16, 5, true); cone.rotateZ(-Math.PI / 2); cone.translate(BAG / 2, 0, 0);      // base on the ring, apex along +x
     const pos = cone.attributes.position; for (let i = 0; i < pos.count; i++) { const t = pos.getX(i) / BAG; pos.setY(i, pos.getY(i) - 0.16 * t * t * R * 2); }   // the bag sags a little
     cone.computeVertexNormals();
-    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })));
-    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })));
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: V.mesh, transparent: true, opacity: V.op, side: THREE.DoubleSide, depthWrite: false })));
+    roll.add(new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: V.wire, wireframe: true, transparent: true, opacity: 0.85 })));
     return { g, root, roll };
 }
 
@@ -2738,7 +2811,7 @@ class Remotes {
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.1, 10), new THREE.MeshLambertMaterial({ color: '#b09858' })); crown.position.y = 0.18; head.add(crown);
     const nose = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.06), new THREE.MeshLambertMaterial({ color: '#d8a888' })); nose.position.set(0, -0.01, -0.17); head.add(nose);
     // the same net model as in the first-person view, held in the right hand (pole forward and up, bag hanging), with arms
-    const nm = makeNetModel(), net = nm.g; net.scale.setScalar(0.9); net.position.set(0.33, 1.02, -0.12); up.add(net); nm.roll.rotation.z = -Math.PI / 2;
+    const net = this.mkNet(NetParts.parse(r.nt), up);
     const limb2 = (A, B, rad) => { const d = B.clone().sub(A), m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, d.length(), 6), jm); m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); up.add(m); return m; };
     limb2(new THREE.Vector3(-0.25, 1.27, 0), new THREE.Vector3(-0.3, 0.8, -0.04), 0.06); limb2(new THREE.Vector3(0.25, 1.27, 0), new THREE.Vector3(0.33, 1.02, -0.12), 0.06);
     for (const [hx, hy, hz] of [[-0.3, 0.78, -0.04], [0.33, 1.02, -0.12]]) { const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), new THREE.MeshLambertMaterial({ color: skin })); hd.position.set(hx, hy, hz); up.add(hd); }
@@ -2751,8 +2824,9 @@ class Remotes {
     const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, fog: false, depthWrite: false })); sp.scale.set(w / 40, 12 / 40, 1); sp.position.y = 2.1; up.add(sp);
     let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.3, 0.8, -0.24); const tg = new THREE.Object3D(); tg.position.set(-0.3, 0.8, -6); up.add(light, tg); light.target = tg; }
-    this.scene.add(g); return { g, up, hips, legs, head, net, light, lens, sitK: 0, lastPos: new THREE.Vector3() };
+    this.scene.add(g); return { g, up, hips, legs, head, net, nt: r.nt || '', light, lens, sitK: 0, lastPos: new THREE.Vector3() };
   }
+  mkNet(cfg, up) { const nm = makeNetModel(cfg), net = nm.g; net.scale.setScalar(0.9); net.position.set(0.33, 1.02, -0.12); up.add(net); nm.roll.rotation.z = -Math.PI / 2; return net; }
   update(dt) {
     this.t += dt; const now = performance.now(), R = Net.remote;
     for (const id in R) {
@@ -2761,6 +2835,7 @@ class Remotes {
       if (!alive) continue;
       const k = Math.min(1, dt * 12); a.g.position.x += (r.pos.x - a.g.position.x) * k; a.g.position.z += (r.pos.z - a.g.position.z) * k; a.g.position.y += (r.pos.y - 1.65 - a.g.position.y) * k;
       let dy = r.yaw - a.g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); a.g.rotation.y += dy * k; a.head.rotation.x = clamp(r.pitch, -1, 1) * 0.8;
+      if ((r.nt || '') !== a.nt) { a.up.remove(a.net); a.net = this.mkNet(NetParts.parse(r.nt), a.up); a.nt = r.nt || ''; }     // the player changed the net (in the cabinet)
       const sw = r.swinging ? 1 : 0; a.swv = (a.swv || 0) + (sw - (a.swv || 0)) * Math.min(1, dt * 14); const v = a.swv;
       a.net.rotation.set(0.5 - v * 0.7 + Math.sin(this.t * 2 + id) * 0.015, -0.12 + v * 0.8, v * 0.3, 'YXZ');
       // legs: walking swing, or sitting down on the chair (r.sit = 0..1, sent by the player)
@@ -3117,7 +3192,7 @@ class Play {
   }
   sendNet(dt) {
     this.netAcc += dt; if (this.netAcc < 0.1) return; this.netAcc = 0; const P = this.player, R = n => Math.round(n * 100) / 100;
-    Net.send('pos', { x: R(P.pos.x), y: R(P.pos.y), z: R(P.pos.z), yaw: R(P.yaw), pitch: R(P.pitch), nz: R(P.noise), fl: this.flashOn ? 1 : 0, sw: this.netBusy() ? 1 : 0, sp: R(P.speedNow) });
+    Net.send('pos', { x: R(P.pos.x), y: R(P.pos.y), z: R(P.pos.z), yaw: R(P.yaw), pitch: R(P.pitch), nz: R(P.noise), fl: this.flashOn ? 1 : 0, sw: this.netBusy() ? 1 : 0, sp: R(P.speedNow), nt: NetParts.code(this.netCfg) });
     if (this.isHost) Net.send('flies', { list: this.snapshot() });
   }
   toast(text, dur = 3, big = false) { this.toasts.push({ text, t: dur, d: dur, big }); }
@@ -3125,7 +3200,8 @@ class Play {
   // ---------------------------------------------------------------- net model
   // A real butterfly net: the pole lies IN the plane of the hoop and ends at its rim; the bag hangs off the rim.
   buildNet() {
-    const { g, root, roll } = makeNetModel(); g.traverse(o => { o.frustumCulled = false; });
+    this.netCfg = Save.curNet(); this.netStats = NetParts.stats(this.netCfg);
+    const { g, root, roll } = makeNetModel(this.netCfg); g.traverse(o => { o.frustumCulled = false; });
     this.netGroup = g; this.hoop = root; this.netRoll = roll; g.scale.setScalar(0.9);
     // idle pose: pole points up-left across the view; roll the hoop so its mouth faces the player and the bag trails away
     this.NET_IDLE = { px: 0.5, py: -0.5, pz: -0.34, rx: 0.34, ry: 0.55, rz: 0 };
@@ -3147,12 +3223,12 @@ class Play {
     let c = { px: I.px, py: I.py, pz: I.pz, rx: I.rx, ry: I.ry, rz: I.rz };
     const mv = clamp(this.player.speedNow / 3.3, 0, 1.6);
     if (n.phase >= 0) {
-      n.phase += dt / 0.62; const ph = n.phase;
+      n.phase += dt / 0.62 * this.netStats.speed; const ph = n.phase;
       const W = { px: 0.66, py: -0.3, pz: -0.3, rx: 0.6, ry: -0.75, rz: -0.35 }, S = { px: 0.0, py: -0.52, pz: -0.34, rx: 0.02, ry: 1.0, rz: 0.35 };
       const mix = (A, B, k) => { const o = {}; for (const key in A) o[key] = lerp(A[key], B[key], k); return o; };
       if (ph < 0.2) c = mix(c, W, smooth(0, 0.2, ph)); else if (ph < 0.55) c = mix(W, S, smooth(0.2, 0.55, ph)); else c = mix(S, c, smooth(0.55, 1, ph));
       if (ph > 0.24 && ph < 0.58) this.checkCatch();
-      if (ph >= 1) { n.phase = -1; n.cd = 0.18; if (!n.caughtThisSwing) Snd.sfx.miss(); }
+      if (ph >= 1) { n.phase = -1; n.cd = 0.18 / this.netStats.speed; if (!n.caughtThisSwing) Snd.sfx.miss(); }
     } else {
       // gentle idle sway + walking bob (bounded: sin of the step phase, never the raw accumulator)
       const b = Math.sin(this.player.bob) * 0.014 * mv, b2 = Math.cos(this.player.bob * 0.5) * 0.01 * mv;
@@ -3163,13 +3239,14 @@ class Play {
   checkCatch() {
     this.hoopWorld(_v);
     for (const f of this.flies) {
-      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul();
+      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul() * this.netStats.radius;
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { if (this.mp) { if (f.pendingCatch) continue; this.netCatch(f); } else this.onCatch(f); this.net.caughtThisSwing = true; }
     }
   }
   onCatch(f) {
-    f.catchIt(); const sp = f.sp; const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
+    f.catchIt(); const sp = Aberr.roll(f.sp, this.netStats.ab);     // silk mesh / chrome handle: a small chance that the catch is an aberration
+    const first = Save.add(sp.id, this.biome.id); if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
@@ -4107,6 +4184,77 @@ const Boxes = (() => {
   }
 
   // ================================================================== WORKBENCH
+
+  // ================================================================== NET WORKSHOP (the «Сачки» tab of the workbench)
+  const nbench = {
+    sel: 0, scroll: 0, draft: { h: 'h_basic', r: 'r_basic', m: 'm_basic' }, msg: '', msgT: 0, btns: [], rows: [], slotBtns: [],
+    list() { return [NetParts.BASIC].concat(Save.netList()); },
+    isNew() { return this.sel >= this.list().length; },
+    cfg() { return this.isNew() ? this.draft : this.list()[this.sel]; },
+    say(t) { this.msg = t; this.msgT = 5; },
+    options(slot) { return Object.keys(NetParts.PARTS).filter(id => NetParts.PARTS[id].slot === slot && (NetParts.isBasic(id) || Save.partCount(id) > 0)).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); },
+    cycle(slot, d) { const o = this.options(slot), k = o.indexOf(this.draft[slot]), n = o.length; this.draft[slot] = o[(k + d + n * 4) % n] || o[0]; Snd.sfx.page(); },
+    layout() {
+      const L = this.list(), vis = 8, total = L.length + 1; this.sel = clamp(this.sel, 0, total - 1); this.scroll = clamp(this.scroll, 0, Math.max(0, total - vis));
+      if (this.sel < this.scroll) this.scroll = this.sel; if (this.sel >= this.scroll + vis) this.scroll = this.sel - vis + 1;
+      this.rows = []; for (let k = 0; k < vis; k++) { const i = this.scroll + k; if (i >= total) break; this.rows.push({ i, x: 8, y: 54 + k * 21, w: 144, h: 19 }); }
+      for (const sl of NetParts.SLOTS) { const o = this.options(sl.id); if (o.indexOf(this.draft[sl.id]) < 0) this.draft[sl.id] = o[0]; }
+      const isNew = this.isNew(), cur = this.cfg(), eq = (Save.data.netEq || 0) === cur.uid;
+      this.slotBtns = []; if (isNew) NetParts.SLOTS.forEach((sl, k) => { const y = 64 + k * 48; this.slotBtns.push({ id: 'prev_' + sl.id, label: '<', x: 330, y: y + 11, w: 16, h: 16, slot: sl.id, d: -1 }, { id: 'next_' + sl.id, label: '>', x: 456, y: y + 11, w: 16, h: 16, slot: sl.id, d: 1 }); });
+      this.btns = [
+        { id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 },
+        isNew ? { id: 'make', label: 'Собрать сачок', x: 330, y: 210, w: 142, h: 18, disabled: ['h', 'r', 'm'].every(k => NetParts.isBasic(this.draft[k])) }
+          : { id: 'equip', label: eq && cur.uid ? 'Снять (взять обычный)' : eq ? 'В руках' : 'Взять в руки', x: 94, y: 248, w: 112, h: 16, disabled: eq && !cur.uid },
+        { id: 'take', label: 'Разобрать', x: 210, y: 248, w: 72, h: 16, disabled: isNew || !cur.uid },
+      ];
+    },
+    draw(ctx, t, m, dt) {
+      this.layout(); this.msgT = Math.max(0, this.msgT - 1 / 60); const L = this.list(), cur = this.cfg(), isNew = this.isNew(), eqU = Save.data.netEq || 0;
+      T.draw(ctx, 'Мастерская сачков', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
+      T.draw(ctx, 'Сачки меняются только в кабинете', SW / 2, 22, { size: 8, align: 'c', color: c.dim });
+      T.draw(ctx, `Ваши сачки (${L.length})`, 8, 40, { size: 8, color: c.dim });
+      this.rows.forEach(r => {
+        const sl = r.i === this.sel, hv = UIK.hit(r, m.x, m.y), isLast = r.i >= L.length; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false });
+        if (isLast) { T.draw(ctx, '+ Собрать новый', r.x + 6, r.y + 5, { size: 8, color: c.green }); return; }
+        const n = L[r.i]; T.draw(ctx, NetParts.name(n, r.i - 1), r.x + 6, r.y + 5, { size: 8, color: c.text }); if (n.uid === eqU) T.draw(ctx, 'в руках', r.x + r.w - 5, r.y + 5, { size: 8, align: 'r', color: c.gold });
+      });
+      // centre: the picture and the numbers
+      UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
+      NetParts.draw2D(ctx, cur, 166, 42, 148, 126);
+      T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
+      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, s, 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
+      [cur.h, cur.r, cur.m].forEach((id, k) => T.draw(ctx, fitStr(NetParts.PARTS[id].ru, 150), 164, 207 + k * 10 - 0, { size: 8, color: c.dim }));
+      // right: the parts
+      UIK.panel(ctx, 326, 32, 150, 208, { fill: '#10201c', border: c.line, shadow: false });
+      T.draw(ctx, isNew ? 'Выберите детали' : 'Детали сачка', 401, 36, { size: 8, align: 'c', color: c.text });
+      NetParts.SLOTS.forEach((sl, k) => {
+        const y = 64 + k * 48, id = isNew ? this.draft[sl.id] : cur[sl.id], p = NetParts.PARTS[id]; T.draw(ctx, sl.ru, 330, y - 12, { size: 8, color: c.dim });
+        const cnt = isNew && !NetParts.isBasic(id) ? ` ×${Save.partCount(id)}` : ''; T.draw(ctx, fitStr(p.ru + cnt, isNew ? 100 : 140), isNew ? 401 : 330, y + (isNew ? 15 : 2), { size: 8, align: isNew ? 'c' : 'l', color: NetParts.isBasic(id) ? c.text : '#fff' });
+        const fl = NetParts.fxLines(p.fx); T.draw(ctx, fl[0] || (isNew ? '' : 'без бонуса'), isNew ? 401 : 330, y + (isNew ? 29 : 13), { size: 8, align: isNew ? 'c' : 'l', color: fl.length ? c.green : c.dim });
+      });
+      this.slotBtns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+      if (isNew) { const free = NetParts.SLOTS.every(sl => this.options(sl.id).length === 1); if (free) T.para(ctx, 'Деталей нет. Купите их у продавца сачков на рынке насекомых.', 330, 196, 140, { size: 8, color: '#6a8a78', lh: 10 }); }
+      this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
+      if (this.msgT > 0) T.draw(ctx, this.msg, 316, 252, { size: 8, align: 'r', color: c.gold });
+      T.draw(ctx, `${Save.data.coins || 0} монет`, SW - 10, 252, { size: 8, align: 'r', color: '#ffe070' });
+    },
+    click(x, y) {
+      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      if (b) {
+        Snd.sfx.click(); if (b.id === 'close') return 'close';
+        const cur = this.cfg();
+        if (b.id === 'make') { const n = Save.assembleNet(this.draft); if (n) { this.sel = this.list().length - 1; this.say('Сачок собран!'); Snd.sfx.thud(); } else Snd.sfx.deny(); }
+        else if (b.id === 'equip') { if (cur.uid && (Save.data.netEq || 0) === cur.uid) { Save.equipNet(0); this.say('В руках обычный сачок'); } else { Save.equipNet(cur.uid); this.say('Сачок взят в руки'); } Snd.sfx.pin(); }
+        else if (b.id === 'take') { if (Save.disassembleNet(cur.uid)) { this.sel = Math.max(0, this.sel - 1); this.say('Сачок разобран: детали вернулись на склад'); Snd.sfx.deny(); } }
+        return 'changed';
+      }
+      const sb = this.slotBtns.find(b => UIK.hit(b, x, y)); if (sb) { this.cycle(sb.slot, sb.d); return null; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.i; Snd.sfx.click(); }
+      return null;
+    },
+    wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
+  };
+
   const bench = {
     sel: 0, style: 0, scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '',
     open() { this.sel = Math.min(this.sel, Save.data.boxes.length - 1); },
@@ -4130,9 +4278,12 @@ const Boxes = (() => {
       this.slots = [];
       if (cb) { const area = { x: 170, y: 50, w: 160, h: 170 }; const r = (this._r = drawBoxScaled({ drawImage() {}, set imageSmoothingEnabled(v) {} }, cb, area.x, area.y, area.w, area.h)); const d = DIM[cb.size]; for (let i = 0; i < cb.items.length; i++) this.slots.push({ i, x: r.x + (FR + (i % d.c) * CW) * r.k, y: r.y + (FR + Math.floor(i / d.c) * CH) * r.k, w: CW * r.k, h: CH * r.k }); }
     },
+    tab: 'boxes', tabBtns() { return [{ id: 'boxes', label: 'Коробки', x: 8, y: 6, w: 52, h: 14 }, { id: 'nets', label: 'Сачки', x: 62, y: 6, w: 44, h: 14 }]; },
     draw(ctx, t, m) {
-      this.layout(); Cab2.backdrop(ctx);
-      UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
+      Cab2.backdrop(ctx); UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
+      this.tabBtns().forEach(b => { const on = b.id === this.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : UIK.hit(b, m.x, m.y) ? '#244a3c' : '#1a3228', border: on ? c.gold : c.line, shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: on ? '#fff' : c.dim }); });
+      if (this.tab === 'nets') return nbench.draw(ctx, t, m);
+      this.layout();
       T.draw(ctx, 'Мастерская коробок', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
       T.draw(ctx, 'Новая коробка:', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -4157,7 +4308,9 @@ const Boxes = (() => {
       this.srows.forEach(r => { const hv = UIK.hit(r, m.x, m.y); const g = Grade(r.s.q); ctx.fillStyle = hv ? '#2a5a46' : '#1a3228'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.fillStyle = g.col; ctx.fillRect(r.x + 1, r.y + 2, 3, 10); let nm = SPECIES_BY_ID[r.s.sp].ru; while (T.width(nm, 8) > 96 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(ctx, nm, r.x + 8, r.y + 3, { size: 8, color: hv ? '#fff' : c.text }); T.draw(ctx, r.s.q + '%', r.x + r.w - 3, r.y + 3, { size: 8, align: 'r', color: g.col }); });
     },
     click(x, y) {
-      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      const tb = this.tabBtns().find(b => UIK.hit(b, x, y)); if (tb) { if (this.tab !== tb.id) { this.tab = tb.id; Snd.sfx.page(); } return null; }
+      if (this.tab === 'nets') return nbench.click(x, y);
+      this.layout(); const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
@@ -4177,7 +4330,7 @@ const Boxes = (() => {
       if (sr && cb) { const i = cb.items.findIndex(u => !u); if (i < 0) { Snd.sfx.deny(); return null; } Save.putIn(cb, i, sr.s.uid); Snd.sfx.pin(); return 'changed'; }
       return null;
     },
-    wheel(dy) { this.sscroll += dy > 0 ? 1 : -1; },
+    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else this.sscroll += dy > 0 ? 1 : -1; },
   };
 
   // ================================================================== PLACEMENT (wall / desk)
@@ -4524,7 +4677,7 @@ const Cabinet = (() => {
       this.stations = [
         { id: 'spread', x: -3.0, z: 0.1, r: 1.6, label: () => { const n = Save.rawList().length; return n ? `E — расправить бабочку (ждут: ${n})` : 'E — расправилка (нет бабочек — наловите новых)'; } },
         { id: 'journal', x: 2.3, z: -1.75, r: 1.3, label: () => `E — открыть коллекцию (${collText()})` },
-        { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская коробок (коробок: ${Save.data.boxes.length})` },
+        { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская: коробки и сачки (коробок: ${Save.data.boxes.length})` },
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
         { id: 'exit', x: 4.0, z: -1.6, r: 1.4, label: () => 'E — выйти на карту экспедиций' },
@@ -4634,7 +4787,7 @@ const Cabinet = (() => {
     animate(dt) {
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
       this.sitStep(dt);
-      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 }); } }
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 , nt: NetParts.code(Save.curNet()) }); } }
       const t = this.t; const dp = this.dust.geometry.attributes.position; for (let i = 0; i < dp.count; i++) { const b = this.dustBase[i]; dp.array[i * 3] = this.dust0[i * 3] + Math.sin(t * 0.2 + b[0]) * b[1]; dp.array[i * 3 + 1] = this.dust0[i * 3 + 1] + Math.sin(t * 0.3 + b[0] * 2) * b[1] * 0.7; dp.array[i * 3 + 2] = this.dust0[i * 3 + 2] + Math.cos(t * 0.25 + b[0]) * b[1]; } dp.needsUpdate = true;
       const d = new Date(); this.mHand.rotation.z = -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283; this.hHand.rotation.z = -((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283;
       this.globe.rotation.y += dt * 0.15; this.pend.intensity = 0.9 + Math.sin(t * 1.3) * 0.02;
@@ -5061,7 +5214,7 @@ const Market = (() => {
     vendor(g, x, z, key, sign) {
       const pr = PROF[key] || PROF.boxes, p = person(Object.assign({ skin: this.rng.pick(['#e8c8a0', '#d8a878', '#c8946a']) }, pr.o)); p.position.set(x, 0, z); p.rotation.y = Math.PI; p.userData.ph = this.rng.range(0, 6); g.add(p); this.vendors.push(p);
       const line = typeof pr.line === 'function' ? pr.line(sign || 'Коллекции') : pr.line; const wp = new THREE.Vector3(); g.updateMatrixWorld(true); p.getWorldPosition(wp);
-      this.stations.push({ id: 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => `E — поговорить: ${pr.title}` });
+      this.stations.push({ id: key === 'nets' ? 'netshop' : 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => key === 'nets' ? 'E — купить детали для сачков' : `E — поговорить: ${pr.title}` });
     }
 
     // a stall standing against a wall: side N/S = wall at z (customers on the street side), W/E = wall at x
@@ -5172,15 +5325,16 @@ const Market = (() => {
       if (this.waterTex) { this.waterTex.offset.x = t * 0.03; this.waterTex.offset.y = t * 0.02; }
       for (const v of this.vendors) { v.position.y = Math.sin(t * 1.4 + v.userData.ph) * 0.01; v.userData.head.rotation.y = Math.sin(t * 0.6 + v.userData.ph) * 0.35; v.userData.arms[1].rotation.x = Math.sin(t * 1.1 + v.userData.ph) * 0.06; }
       if (this.merchant) { const m = this.merchant; m.userData.head.rotation.y = Math.sin(t * 0.7) * 0.3; m.userData.arms[0].rotation.x = Math.sin(t * 1.3) * 0.08; m.userData.arms[1].rotation.x = Math.sin(t * 1.3 + 1) * 0.08; }
-      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0 }); } }
+      if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0 , nt: NetParts.code(Save.curNet()) }); } }
     }
 
     // ------------------------------------------------------------ interaction
-    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); }
+    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); }
     close() { this.ov = null; this.hooks.lock(); }
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'sell') { Snd.sfx.page(); this.open('sell'); }
+      else if (s.id === 'netshop') { Snd.sfx.page(); this.open('shop'); }
       else if (s.id === 'chat') { this.toast(`${s.line[0]}: «${s.line[1]}»`, 5); Snd.sfx.click(); }
       else if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exit(); }
       else if (s.id === 'cabinet') { Snd.sfx.door(); this.hooks.cabinet(); }
@@ -5191,6 +5345,7 @@ const Market = (() => {
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }
       if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
+      if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
     click(x, y) {
@@ -5199,8 +5354,9 @@ const Market = (() => {
       else if (ov === 'help') this.closeHelp();
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'sell') this.sellClick(x, y);
+      else if (ov === 'shop') this.shopClick(x, y);
     }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
     pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
@@ -5266,6 +5422,44 @@ const Market = (() => {
       T.draw(ctx, S.bulk.length ? `Все обычные: ${S.bulkSum} монет` : '', 244, 246, { size: 8, color: c.dim });
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
+    // ------------------------------------------------------------ the net seller: parts for nets
+    shopOpen() { this.shop = { sel: 0, msg: 'Всё для настоящего сачка! Собрать его можно на верстаке в кабинете.', msgT: 5, flash: 0, last: 0 }; }
+    shopMove(d) { const S = this.shop; if (!S) return; S.sel = clamp(S.sel + d, 0, NetParts.SHOP.length - 1); Snd.sfx.page(); }
+    shopLayout() {
+      const rows = NetParts.SHOP.map((id, k) => ({ id, k, x: 8, y: 44 + k * 23, w: 226, h: 21 }));
+      return { rows, buy: { id: 'buy', label: 'Купить', x: 244, y: 224, w: 110, h: 18 }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 } };
+    }
+    shopBuy() {
+      const S = this.shop, id = NetParts.SHOP[S.sel], p = NetParts.PARTS[id];
+      if (Save.buyPart(id)) { S.msg = ['Отличный выбор!', 'Берите, не пожалеете.', 'Хорошая деталь — служит годами.'][(Math.random() * 3) | 0]; S.last = -p.price; S.flash = 0.8; Snd.sfx.coin(); }
+      else { S.msg = 'Не хватает монет. Продайте бабочек скупщику — тот, что под красным навесом.'; Snd.sfx.deny(); } S.msgT = 5;
+    }
+    shopClick(x, y) {
+      const S = this.shop, L = this.shopLayout(); if (UIK.hit(L.closeBtn, x, y)) { Snd.sfx.page(); this.close(); return; }
+      const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { if (S.sel !== r.k) { S.sel = r.k; Snd.sfx.click(); } else this.shopBuy(); return; }
+      if (UIK.hit(L.buy, x, y)) this.shopBuy();
+    }
+    drawShop(ctx, t, m, dt) {
+      const S = this.shop; S.msgT = Math.max(0, S.msgT - dt); S.flash = Math.max(0, S.flash - dt); const L = this.shopLayout(), id = NetParts.SHOP[S.sel], p = NetParts.PARTS[id];
+      ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
+      T.draw(ctx, 'Детали для сачков', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите деталь и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim });
+      this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
+      UIK.panel(ctx, 6, 40, 230, 224, { fill: '#2a2018', border: '#5a4430', shadow: false });
+      L.rows.forEach(r => {
+        const q = NetParts.PARTS[r.id], on = r.k === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        const own = Save.partCount(r.id); T.draw(ctx, fitTxt(q.ru, 150), r.x + 5, r.y + 2, { size: 8, color: '#f0e8d0' }); T.draw(ctx, (NetParts.fxLines(q.fx)[0] || '').replace('шанс аберранта', 'аберрант'), r.x + 5, r.y + 11, { size: 8, color: '#9ac88a' });
+        this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 3); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: c.gold }); if (own) T.draw(ctx, `есть: ${own}`, r.x + r.w - 6, r.y + 11, { size: 8, align: 'r', color: c.dim });
+      });
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#8a6a3a'; ctx.fillRect(246, 46, 36, 42); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(254, 50, 20, 18); ctx.fillStyle = '#5a7a3a'; ctx.fillRect(252, 44, 24, 8); ctx.fillRect(250, 50, 28, 3);
+      T.para(ctx, S.msg, 288, 46, 182, { size: 8, color: '#2a1a0c', lh: 10 });
+      UIK.panel(ctx, 240, 98, 234, 122, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
+      const base = Object.assign({}, NetParts.BASIC); base[p.slot] = id; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 80, 80); NetParts.draw2D(ctx, base, 246, 104, 76, 76);
+      T.draw(ctx, fitTxt(p.ru, 140), 330, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, NetParts.SLOTS.find(s => s.id === p.slot).ru, 330, 114, { size: 8, color: '#8a2a1a' });
+      NetParts.fxLines(p.fx).forEach((s, k) => T.draw(ctx, s, 330, 128 + k * 11, { size: 8, color: '#2a6a1a' }));
+      T.para(ctx, p.desc, 246, 188, 222, { size: 8, color: '#4a3a20', lh: 10 });
+      UIK.btn(ctx, L.buy, Save.data.coins >= p.price && UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, `есть: ${Save.partCount(id)}`, 364, 228, { size: 8, color: c.dim });
+      if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, String(S.last), SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ff9070', shadow: '#000' }); ctx.globalAlpha = 1; }
+    }
     drawCoin(ctx, x, y) { ctx.fillStyle = '#8a5a10'; ctx.fillRect(x + 1, y, 5, 7); ctx.fillRect(x, y + 1, 7, 5); ctx.fillStyle = '#f0c040'; ctx.fillRect(x + 1, y + 1, 5, 5); ctx.fillStyle = '#fff0a0'; ctx.fillRect(x + 2, y + 1, 2, 1); ctx.fillStyle = '#c89020'; ctx.fillRect(x + 3, y + 2, 1, 3); }
     drawCoins(ctx, x, y, big) { this.drawCoin(ctx, x, y); T.draw(ctx, String(Save.data.coins || 0), x + 10, y - 1, { size: big ? 10 : 8, color: '#ffe070' }); }
 
@@ -5273,6 +5467,7 @@ const Market = (() => {
     draw(ctx, t, m, dt) {
       const ov = this.ov;
       if (ov === 'sell') return this.drawSell(ctx, t, m, dt);
+      if (ov === 'shop') return this.drawShop(ctx, t, m, dt);
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       this.hud(ctx, t);
       if (ov === 'pause') this.drawPause(ctx, m); else if (ov === 'help') this.drawHelp(ctx);
@@ -5608,7 +5803,7 @@ const StubRoom = (() => {
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
-      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
+      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
       if (!full) { renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
