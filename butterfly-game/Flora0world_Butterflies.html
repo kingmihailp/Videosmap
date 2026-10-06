@@ -858,6 +858,12 @@ const Batch = (() => {
   class Batch {
     constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); }
     geo(g, m, col, jitter = 0.07) {
+      if (this.rec) {      // record oriented boxes (exact for boxes, the bounding box for other shapes) so the test can check that every part touches another
+        const M = new THREE.Matrix4().multiplyMatrices(this.base, m), e = M.elements; let c, ax, h;
+        if (g === BOXG) { const cx = new THREE.Vector3(e[0], e[1], e[2]), cy = new THREE.Vector3(e[4], e[5], e[6]), cz = new THREE.Vector3(e[8], e[9], e[10]); h = [cx.length() / 2, cy.length() / 2, cz.length() / 2]; ax = [cx.normalize().toArray(), cy.normalize().toArray(), cz.normalize().toArray()]; c = [e[12], e[13], e[14]]; }
+        else { g.computeBoundingBox(); const bb = g.boundingBox, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (let i = 0; i < 8; i++) { V3.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).applyMatrix4(M); for (let k = 0; k < 3; k++) { const v = k === 0 ? V3.x : k === 1 ? V3.y : V3.z; mn[k] = Math.min(mn[k], v); mx[k] = Math.max(mx[k], v); } } c = mn.map((v, k) => (v + mx[k]) / 2); h = mn.map((v, k) => (mx[k] - v) / 2); ax = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; }
+        (this.parts || (this.parts = [])).push({ c, h, ax });
+      }
       const ng = g.index ? g.toNonIndexed() : g; const M = new THREE.Matrix4().multiplyMatrices(this.base, m); N3.getNormalMatrix(M); const p = ng.attributes.position, n = ng.attributes.normal; const k = 1 + (this.rng.next() - 0.5) * 2 * jitter, cc = Array.isArray(col) ? col : jit(col, k);
       for (let i = 0; i < p.count; i++) { V3.set(p.getX(i), p.getY(i), p.getZ(i)).applyMatrix4(M); this.P.push(V3.x, V3.y, V3.z); V3.set(n.getX(i), n.getY(i), n.getZ(i)).applyMatrix3(N3).normalize(); this.N.push(V3.x, V3.y, V3.z); this.C.push(cc[0], cc[1], cc[2]); }
     }
@@ -1517,7 +1523,7 @@ const Chalet = (() => {
   const OPEN_R = [[0.5, 2.1, 0.5, 2.4, 'collapse']];
 
   function build(rng, o) {            // o: { heightAt(wx, wz), cx, cy, cz, ry }
-    const B = new Batch(rng.int(1, 1e6)), pick = a => a[Math.floor(rng.next() * a.length)], cosr = Math.cos(o.ry), sinr = Math.sin(o.ry);
+    const B = new Batch(rng.int(1, 1e6)); if (Chalet.debugParts) B.rec = true; const pick = a => a[Math.floor(rng.next() * a.length)], cosr = Math.cos(o.ry), sinr = Math.sin(o.ry);
     const wx = (lx, lz) => o.cx + lx * cosr + lz * sinr, wz = (lx, lz) => o.cz - lx * sinr + lz * cosr, gy = (lx, lz) => o.heightAt(wx(lx, lz), wz(lx, lz)) - o.cy;     // ground height (local) below a local point
     // ---------------------------------------------------------------- foundation: rough stone blocks, deep enough to hide the slope
     for (let side = 0; side < 4; side++) {
@@ -1544,9 +1550,9 @@ const Chalet = (() => {
     wall('x', 1, OPEN_FRONT); wall('x', -1, OPEN_BACK); wall('z', -1, OPEN_L); wall('z', 1, OPEN_R);
     // gable ends: vertical weathered planks (some missing), a loft window in the middle
     for (const sx of [-1, 1]) for (let z = -D / 2 + 0.1; z < D / 2; z += 0.23) {
-      const h = RISE * (1 - Math.abs(z) / (D / 2)) - 0.08; if (h < 0.15 || rng.chance(0.1)) continue; const px = sx * (W / 2 + 0.04);
-      if (Math.abs(z) < 0.5) { B.box(0.09, Math.min(h, 1.0), 0.2, px, EAVE + Math.min(h, 1.0) / 2, z, pick(LOGS), 0, 0, rng.range(-0.03, 0.03)); if (h > 2.0) B.box(0.09, h - 1.9, 0.2, px, EAVE + 1.9 + (h - 1.9) / 2, z, pick(LOGS)); }
-      else B.box(0.09, h, 0.2, px, EAVE + h / 2, z, pick(LOGS), 0, 0, rng.range(-0.03, 0.03), 0.1);
+      const h = RISE * (1 - Math.abs(z) / (D / 2)) - 0.08; if (h < 0.15 || rng.chance(0.1)) continue; const px = sx * (W / 2 + 0.04), y0 = EAVE - 0.14;      // planks start inside the top log, so nothing hovers
+      if (Math.abs(z) < 0.5) { const hl = Math.min(h, 1.0); B.box(0.09, hl + 0.14, 0.2, px, y0 + (hl + 0.14) / 2, z, pick(LOGS), 0, 0, rng.range(-0.02, 0.02)); if (h > 2.0) B.box(0.09, h - 1.9 + 0.1, 0.2, px, EAVE + 1.85 + (h - 1.9 + 0.1) / 2, z, pick(LOGS)); }
+      else B.box(0.09, h + 0.14, 0.2, px, y0 + (h + 0.14) / 2, z, pick(LOGS), 0, 0, rng.range(-0.02, 0.02), 0.1);
     }
     // loft window frames in the gable ends
     for (const sx of [-1, 1]) { const px = sx * (W / 2 + 0.07); B.box(0.1, 0.1, 1.0, px, EAVE + 1.0, 0, DARK); B.box(0.1, 0.1, 1.0, px, EAVE + 1.9, 0, DARK); B.box(0.1, 0.9, 0.1, px, EAVE + 1.45, -0.5, DARK); B.box(0.1, 0.9, 0.1, px, EAVE + 1.45, 0.5, DARK); }
@@ -1556,27 +1562,31 @@ const Chalet = (() => {
       // chaotic holes: irregular outlines (angular noise), overlapping, in random places of the slope
       const holes = []; for (let h = 0; h < (s === 1 ? 7 : 6); h++) holes.push({ x: rng.range(-3.9, 3.9), l: rng.range(0.12, 0.92) * slopeLen, rx: rng.range(0.3, 1.2), rl: rng.range(0.28, 0.9), n: rng.range(0, 6.28) });
       const inHole = (x, l) => holes.some(h => { const dx = (x - h.x) / h.rx, dl = (l - h.l) / h.rl, a = Math.atan2(dl, dx), nz = 1 + 0.32 * Math.sin(a * 3 + h.n) + 0.2 * Math.sin(a * 7 + h.n * 2); return dx * dx + dl * dl < nz * nz * 0.9; });
-      const at = (x, l) => { const t = l / slopeLen; return [x, yE + rise * t + 0.03, s * run * (1 - t)]; };
+      const at = (x, l) => { const t = l / slopeLen; return [x, yE + rise * t + 0.03, s * run * (1 - t)]; }; const shingles = [];
       for (let i = 0; i < nR; i++) {
         const t = (i + 0.5) / nR, l = t * slopeLen, zc = s * (run * (1 - t)), yc = yE + rise * t + 0.03;
         for (let k = 0; k < nSeg; k++) {
           const xc = -(W + 2.2) / 2 + k * segL + segL / 2; if (inHole(xc, l) || rng.chance(0.03 + 0.04 * t)) continue;
-          const moss = rng.chance(0.12); B.box(segL * 1.04, 0.05, rowL * 1.25, xc, yc + rng.range(-0.025, 0.025), zc, moss ? pick(MOSS) : pick(SHING), s * th + rng.range(-0.04, 0.04), 0, rng.range(-0.03, 0.03), 0.1);
+          shingles.push([xc, l]); const moss = rng.chance(0.12); B.box(segL * 1.04, 0.05, rowL * 1.25, xc, yc + rng.range(-0.025, 0.025), zc, moss ? pick(MOSS) : pick(SHING), s * th + rng.range(-0.04, 0.04), 0, rng.range(-0.03, 0.03), 0.1);
         }
       }
-      for (let x = -(W + 2.0) / 2; x <= (W + 2.0) / 2 + 0.01; x += 0.78) { if (inHole(x, slopeLen * 0.5) && rng.chance(0.55)) continue; if (rng.chance(0.05)) continue; B.box(0.11, 0.13, slopeLen, x, yE + rise / 2 - 0.08, s * run / 2, DARK, s * th, 0, 0, 0.1); }
+      for (let x = -(W + 2.0) / 2; x <= (W + 2.0) / 2 + 0.01; x += 0.78) {       // rafters: whole, or snapped off at the first hole above the eave
+        if (rng.chance(0.05)) continue; let cut = slopeLen; for (let l = 0.3; l < slopeLen; l += 0.15) if (inHole(x, l)) { cut = rng.chance(0.65) ? l : slopeLen; break; }
+        const cx = at(x, cut / 2), a0 = at(x, cut); B.box(0.11, 0.13, cut, x, (cx[1] + 0.0) - 0.08 - 0.03, cx[2], DARK, s * th, 0, 0, 0.1); if (cut < slopeLen) B.box(0.1, 0.12, 0.28, x + rng.range(-0.04, 0.04), a0[1] - 0.1, a0[2] + s * 0.0, '#4a3a30', s * (th + rng.range(0.4, 0.9)), 0, rng.range(-0.2, 0.2));      // the splintered end
+      }
       for (const t of [0.3, 0.55, 0.8]) B.box(W + 2.1, 0.09, 0.09, 0, yE + rise * t - 0.12, s * run * (1 - t), DARK, 0, 0, 0);                      // purlins
       B.box(W + 2.4, 0.07, 0.34, 0, yE + 0.02, s * (run + 0.02), '#3a2e26', s * th, 0, 0);                                                         // eave board
-      // boards hanging from the edges of the holes (by one nail), swinging down at random angles; broken rafters poking out
-      for (const h of holes) {
-        const nb = rng.int(2, 5); for (let j = 0; j < nb; j++) {
-          const a = rng.range(0, 6.28), P = at(h.x + Math.cos(a) * h.rx * 0.9, clamp(h.l + Math.sin(a) * h.rl * 0.9, 0.2, slopeLen - 0.2)), L = rng.range(0.8, 1.9), tilt = rng.range(0.1, 0.8) * (rng.chance(0.5) ? 1 : -1), roll = rng.range(-0.35, 0.35);
-          B.box(0.04, 0.04, 0.09, P[0], P[1] + 0.05, P[2], IRON);
-          B.box(rng.range(0.14, 0.24), L, 0.05, P[0] + Math.sin(roll) * L / 2, P[1] - Math.cos(tilt) * L / 2 * 0.95, P[2] + Math.sin(tilt) * L / 2 * s * 0.0 + rng.range(-0.1, 0.1), pick(rng.chance(0.5) ? SHING : LOGS), tilt, 0, roll, 0.12);
-        }
-        for (let j = 0; j < 2; j++) { const P = at(h.x + rng.range(-h.rx, h.rx) * 0.6, clamp(h.l + rng.range(-h.rl, h.rl) * 0.6, 0.2, slopeLen - 0.2)); B.box(0.11, 0.13, rng.range(0.5, 1.3), P[0], P[1] - 0.05, P[2], DARK, s * th + rng.range(-0.7, 0.7), rng.range(-0.3, 0.3), rng.range(-0.2, 0.2)); }
+      // boards hanging by one nail from shingles on the rim of the holes (swinging down at random angles)
+      const rim = shingles.filter(([x, l]) => !inHole(x, l) && [[segL, 0], [-segL, 0], [0, rowL], [0, -rowL]].some(([dx, dl]) => inHole(x + dx, l + dl)));
+      const nb = Math.min(rim.length, rng.int(9, 15)); for (let j = 0; j < nb; j++) {
+        const [hx, hl] = rim.splice(rng.int(0, rim.length - 1), 1)[0], P = at(hx, hl), L = rng.range(0.8, 1.8), tilt = rng.range(0.1, 0.8) * (rng.chance(0.5) ? 1 : -1), roll = rng.range(-0.35, 0.35);
+        B.box(0.05, 0.05, 0.1, P[0], P[1] + 0.04, P[2], IRON);
+        B.box(rng.range(0.14, 0.24), L, 0.05, P[0] + Math.sin(roll) * L / 2, P[1] + 0.02 - Math.cos(tilt) * Math.cos(roll) * L / 2, P[2] - Math.sin(tilt) * L / 2, pick(rng.chance(0.5) ? SHING : LOGS), tilt, 0, roll, 0.12);
       }
-      for (let j = 0; j < 7; j++) { const x = rng.range(-W / 2 - 0.8, W / 2 + 0.8), L = rng.range(0.7, 1.5); B.box(0.2, 0.05, L, x, yE - 0.12 - L * 0.22, s * (run + L * 0.4), pick(SHING), s * (th + rng.range(0.7, 1.3)), 0, rng.range(-0.15, 0.15), 0.1); }     // eave boards drooping over the edge
+      for (let j = 0; j < 7; j++) {      // loose boards drooping over the eave: one end rests on the eave board, the rest hangs down the outside
+        const x = rng.range(-W / 2 - 0.8, W / 2 + 0.8), L = rng.range(0.7, 1.5), beta = rng.range(0.9, 1.45), E = [x, yE + 0.02, s * (run + 0.02)];
+        B.box(0.2, 0.05, L, x, E[1] - Math.sin(beta) * L / 2, E[2] + s * Math.cos(beta) * L / 2, pick(SHING), s * beta, 0, rng.range(-0.12, 0.12), 0.1);
+      }
     }
     B.box(W + 2.3, 0.22, 0.22, 0, EAVE + RISE + 0.08, 0, '#3a322a', 0, 0, rng.range(-0.01, 0.01));                                                   // ridge beam
     for (let x = -3.4; x <= 3.5; x += 0.55) if (rng.chance(0.85)) B.box(0.34, 0.1, 0.34, x, EAVE + RISE + 0.22, 0, pick(SHING), 0, rng.range(-0.3, 0.3), 0);   // ridge cap
@@ -1587,7 +1597,7 @@ const Chalet = (() => {
     const frame = (x0, x1, y0, y1, z, depth = 0.1) => { const c = '#3a3028'; B.box(x1 - x0 + 0.2, 0.12, depth + 0.1, (x0 + x1) / 2, y1 + 0.06, z, c); B.box(0.12, y1 - y0, depth, x0 - 0.06, (y0 + y1) / 2, z, c); B.box(0.12, y1 - y0, depth, x1 + 0.06, (y0 + y1) / 2, z, c); if (y0 > 0.8) B.box(x1 - x0 + 0.3, 0.1, depth + 0.16, (x0 + x1) / 2, y0 - 0.05, z + (depth > 0 ? 0.04 : 0), '#4a3a2c'); };
     const windowAt = (x0, x1, y0, y1, z, nz, hang) => {      // frame + cross + a few glass shards + shutters (one hanging askew, one lost)
       frame(x0, x1, y0, y1, z); B.box(0.05, y1 - y0, 0.06, (x0 + x1) / 2, (y0 + y1) / 2, z, '#3a3028'); B.box(x1 - x0, 0.05, 0.06, (x0 + x1) / 2, (y0 + y1) / 2 + 0.1, z, '#3a3028');
-      for (let i = 0; i < 4; i++) if (rng.chance(0.55)) { const sx = rng.range(x0 + 0.08, x1 - 0.08), sy = rng.pick ? 0 : 0; B.tri([sx, rng.chance(0.5) ? y0 + 0.05 : y1 - 0.05, z + 0.02 * nz], [sx + rng.range(0.1, 0.22), y0 + rng.range(0.05, 0.3), z + 0.02 * nz], [sx + rng.range(-0.05, 0.1), y0 + rng.range(0.25, 0.5), z + 0.02 * nz], '#8aa4aa'); }
+      for (let i = 0; i < 5; i++) if (rng.chance(0.6)) { const sx = rng.range(x0 + 0.1, x1 - 0.2), w = rng.range(0.08, 0.2), top = rng.chance(0.4), yy = top ? y1 : y0, dy = (top ? -1 : 1) * rng.range(0.12, 0.4); B.tri([sx, yy, z + 0.02 * nz], [sx + w, yy, z + 0.02 * nz], [sx + w * rng.range(0.2, 0.8), yy + dy, z + 0.02 * nz], '#8aa4aa'); }      // shards stick out of the sill / the lintel
       const sh = (x, ax) => { const w = (x1 - x0) / 2 - 0.02, h = y1 - y0; if (hang === 0) { B.box(w, h, 0.05, x, (y0 + y1) / 2, z + 0.14 * nz, '#7a4a38', 0, 0, ax * 0.0, 0.1); for (let k = 0; k < 3; k++) B.box(w, 0.04, 0.02, x, y0 + 0.2 + k * (h - 0.35) / 2, z + 0.17 * nz, '#4a3228'); } };
       // left shutter hangs from its top hinge, tilted; right one fell to the ground and leans on the wall
       B.box((x1 - x0) / 2 - 0.02, y1 - y0, 0.05, x0 - (x1 - x0) / 4 - 0.04, (y0 + y1) / 2 - 0.12, z + 0.12 * nz, '#7a4a38', 0, 0, rng.range(0.25, 0.5) * (nz > 0 ? 1 : -1), 0.1);
@@ -1603,7 +1613,7 @@ const Chalet = (() => {
     const pz0 = zf + 0.55, pL = 1.7;
     for (let i = 0; i < 6; i++) { if (i === 3 && rng.chance(0.7)) continue; const bx = -1.75 + i * 0.62; B.box(0.58, 0.07, pL, bx + 0.3 - 0.0, 0.32 + (i === 2 ? -0.05 : 0), zf + 0.2 + pL / 2, pick(LOGS), rng.range(-0.04, 0.04), rng.range(-0.02, 0.02), rng.range(-0.03, 0.03), 0.1); }
     for (const x of [-1.8, 1.8]) B.box(0.3, 0.6, 0.15, x, 0.2, zf + 0.2 + pL - 0.1, pick(STONE));
-    const post = (x, broken) => { const hh = broken ? 1.3 : 2.5; B.box(0.16, hh, 0.16, x, 0.33 + hh / 2, zf + 0.2 + pL - 0.1, '#5a4a3a', 0, 0, broken ? 0.06 : 0.0); if (broken) B.box(0.14, 0.9, 0.14, x + 0.55, 0.3, zf + 0.2 + pL + 0.25, '#4a3a2e', 0.1, 0.3, 1.4); };      // the broken top lies on the ground
+    const post = (x, broken) => { const hh = broken ? 1.3 : 2.5; B.box(0.16, hh, 0.16, x, 0.33 + hh / 2, zf + 0.2 + pL - 0.1, '#5a4a3a', 0, 0, broken ? 0.06 : 0.0); if (broken) B.box(0.14, 0.9, 0.14, x - 0.05, 0.26, zf + 0.2 + pL - 0.45, '#4a3a2e', 0.05, 0.3, 1.4); };      // the broken top lies on the ground
     post(-1.8, false); post(1.8, true);
     for (let x = -1.8; x <= 1.0; x += 0.35) if (rng.chance(0.75)) B.box(0.08, 0.7, 0.08, x, 0.7, zf + 0.2 + pL - 0.1, '#5a4a3a', 0, 0, rng.range(-0.1, 0.1));      // balusters (some missing)
     B.box(3.8, 0.1, 0.12, -0.1, 1.08, zf + 0.2 + pL - 0.1, '#4a3a2e', 0, 0, 0.06);
@@ -1632,13 +1642,14 @@ const Chalet = (() => {
     for (let i = 0; i < 9; i++) { const a = rng.range(0, 6.28), lx = Math.cos(a) * (W / 2 + 1.8), lz = Math.sin(a) * (D / 2 + 1.6), g0 = gy(lx, lz); if (lz > zf - 0.2 && Math.abs(lx) < 2.2) continue; const r = rng.range(0.35, 0.65); B.sph(r, lx, g0 + r * 0.7, lz, pick(MOSS), 1.2, 0.9, 1.1, 6, 5); B.sph(r * 0.7, lx + r * 0.6, g0 + r * 0.5, lz + 0.1, pick(['#5a7a3a', '#6a8a40']), 1, 0.9, 1, 6, 5); }
     // ivy creeping up the corners
     for (const [lx, lz] of [[-W / 2, zf], [W / 2, zb], [-W / 2, zb]]) for (let k = 0; k < 14; k++) B.box(rng.range(0.14, 0.26), rng.range(0.12, 0.2), 0.06, lx + rng.range(-0.1, 0.1), 0.6 + k * 0.17 + rng.range(-0.05, 0.05), lz + rng.range(-0.1, 0.1), pick(MOSS), 0, rng.range(0, 3), rng.range(-0.5, 0.5), 0.15);
-    // a rusty lantern hanging by the door and a faded, crooked sign
-    B.box(0.06, 0.5, 0.06, 0.95, 2.2, zf + 0.45, '#3a2e28'); B.box(0.4, 0.05, 0.05, 0.95, 2.45, zf + 0.45, '#3a2e28', 0, 0, 0.0); B.cyl(0.09, 0.09, 0.3, 1.14, 2.12, zf + 0.45, RUST, 6); B.cyl(0.02, 0.02, 0.2, 1.14, 2.35, zf + 0.45, IRON, 4);
+    // a rusty lantern on a bracket bolted to the wall beside the door
+    B.box(0.06, 0.6, 0.06, 0.95, 2.2, zf + 0.2, '#3a2e28'); B.box(0.06, 0.06, 0.5, 0.95, 2.5, zf + 0.42, '#3a2e28'); B.box(0.02, 0.22, 0.02, 0.95, 2.37, zf + 0.62, IRON); B.cyl(0.09, 0.09, 0.28, 0.95, 2.12, zf + 0.62, RUST, 6);
     const mesh = B.build(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), true);
-    return { mesh, door: { lx: 0, lz: zf + 1.9 }, W, D };
+    return { parts: B.parts, mesh, door: { lx: 0, lz: zf + 1.9 }, W, D };
   }
   function LOG_R() { return 0.17; }
-  return { build, W, D };
+  const Chalet = { build, W, D, debugParts: false };
+  return Chalet;
 })();
 
 // ===== world.js =====

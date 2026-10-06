@@ -6,6 +6,12 @@ const Batch = (() => {
   class Batch {
     constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); }
     geo(g, m, col, jitter = 0.07) {
+      if (this.rec) {      // record oriented boxes (exact for boxes, the bounding box for other shapes) so the test can check that every part touches another
+        const M = new THREE.Matrix4().multiplyMatrices(this.base, m), e = M.elements; let c, ax, h;
+        if (g === BOXG) { const cx = new THREE.Vector3(e[0], e[1], e[2]), cy = new THREE.Vector3(e[4], e[5], e[6]), cz = new THREE.Vector3(e[8], e[9], e[10]); h = [cx.length() / 2, cy.length() / 2, cz.length() / 2]; ax = [cx.normalize().toArray(), cy.normalize().toArray(), cz.normalize().toArray()]; c = [e[12], e[13], e[14]]; }
+        else { g.computeBoundingBox(); const bb = g.boundingBox, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (let i = 0; i < 8; i++) { V3.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).applyMatrix4(M); for (let k = 0; k < 3; k++) { const v = k === 0 ? V3.x : k === 1 ? V3.y : V3.z; mn[k] = Math.min(mn[k], v); mx[k] = Math.max(mx[k], v); } } c = mn.map((v, k) => (v + mx[k]) / 2); h = mn.map((v, k) => (mx[k] - v) / 2); ax = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; }
+        (this.parts || (this.parts = [])).push({ c, h, ax });
+      }
       const ng = g.index ? g.toNonIndexed() : g; const M = new THREE.Matrix4().multiplyMatrices(this.base, m); N3.getNormalMatrix(M); const p = ng.attributes.position, n = ng.attributes.normal; const k = 1 + (this.rng.next() - 0.5) * 2 * jitter, cc = Array.isArray(col) ? col : jit(col, k);
       for (let i = 0; i < p.count; i++) { V3.set(p.getX(i), p.getY(i), p.getZ(i)).applyMatrix4(M); this.P.push(V3.x, V3.y, V3.z); V3.set(n.getX(i), n.getY(i), n.getZ(i)).applyMatrix3(N3).normalize(); this.N.push(V3.x, V3.y, V3.z); this.C.push(cc[0], cc[1], cc[2]); }
     }
