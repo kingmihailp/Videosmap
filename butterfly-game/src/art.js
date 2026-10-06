@@ -205,9 +205,10 @@ const Art = (() => {
     const ab = new THREE.Mesh(new THREE.BoxGeometry(span * 0.05, span * 0.05, span * 0.34), bodyMat); ab.position.z = bl * 0.36;
     const hd = new THREE.Mesh(new THREE.BoxGeometry(span * 0.06, span * 0.06, span * 0.06), headMat); hd.position.z = -bl * 0.22;
     g.add(th, ab, hd);
-    for (const s of [-1, 1]) {
-      const an = new THREE.Mesh(new THREE.BoxGeometry(span * 0.012, span * 0.012, span * 0.22), antMat);
-      an.position.set(s * span * 0.07, span * 0.03, -bl * 0.42); an.rotation.y = s * 0.45; an.rotation.x = -0.2; g.add(an);
+    for (const s of [-1, 1]) {                       // antennae start at the front of the head and spread outwards / upwards in a V, with a tiny club at the tip
+      const pv = new THREE.Group(); pv.position.set(s * span * 0.018, span * 0.02, -bl * 0.22 - span * 0.03); pv.rotation.set(0.45, -s * 0.38, 0, 'YXZ');
+      const AL = span * 0.24, an = new THREE.Mesh(new THREE.BoxGeometry(span * 0.012, span * 0.012, AL), antMat); an.position.z = -AL / 2;
+      const club = new THREE.Mesh(new THREE.BoxGeometry(span * 0.026, span * 0.026, span * 0.03), antMat); club.position.z = -AL; pv.add(an, club); g.add(pv);
     }
     g.userData = { L, R, span };
     return g;

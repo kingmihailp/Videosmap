@@ -63,6 +63,7 @@ const Screens = (() => {
         { id: 'mp', label: Net.on ? `Онлайн: ${Net.count()} · ${Net.name}` : 'Мультиплеер', x, y: 200, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 219, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 219, w: 68, h: 16 },
+        { id: 'keys', label: 'Клавиши управления', x, y: 238, w, h: 16 },
       ];
     },
     draw(ctx, t, m) {
@@ -307,7 +308,8 @@ const Screens = (() => {
         { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
         { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 131, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 131, w: 88, h: 16 },
+        { id: 'keys', label: 'Клавиши', x: x + 92, y: 131, w: 88, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
         { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
         { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
@@ -324,6 +326,40 @@ const Screens = (() => {
       T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // ------------------------------------------------------------------ KEY BINDINGS
+  const keysScr = {
+    wait: -1, btns: [], rows: [], msg: '',
+    layout() {
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 36 + i * 15, w: 260, h: 13 }));
+      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 231, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 231, w: 170, h: 16, size: 10 }];
+    },
+    draw(ctx, t, m) {
+      this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.88)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 150, 10, 300, 252, { fill: 'rgba(16,32,28,0.97)', border: c.gold });
+      T.draw(ctx, 'Клавиши управления', SW / 2, 16, { size: 14, align: 'c', color: c.gold });
+      this.rows.forEach(r => {
+        const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
+        UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
+        T.draw(ctx, a.ru, r.x + 6, r.y + 3, { size: 8, color: c.text });
+        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
+      });
+      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 217, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) {                                   // returns true when the screen should close
+      this.layout(); this.msg = ''; const b = this.btns.find(b => UIK.hit(b, x, y));
+      if (b) { Snd.sfx.click(); if (b.id === 'back') { this.wait = -1; return true; } if (b.id === 'reset') { Keys.reset(); this.wait = -1; } return false; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); this.wait = r ? (this.wait === r.i ? -1 : r.i) : -1; if (r) Snd.sfx.click(); return false;
+    },
+    key(e) {                                        // raw key presses; returns true when the screen should close
+      if (this.wait >= 0) {
+        if (e.code === 'Escape') { this.wait = -1; return false; }
+        if (['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight'].indexOf(e.code) >= 0 && e.type === 'keydown' && false) return false;
+        if (Keys.set(Keys.ACTIONS[this.wait].id, e.code)) { Snd.sfx.click(); this.msg = ''; } else this.msg = 'Эту клавишу назначить нельзя';
+        this.wait = -1; return false;
+      }
+      if (e.code === 'Escape') return true; return false;
+    },
   };
   // move / scale the catch card
   const cardpos = {
@@ -369,5 +405,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();

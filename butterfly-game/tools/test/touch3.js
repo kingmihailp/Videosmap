@@ -14,7 +14,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await pg.touchscreen.tap(btn.x, btn.y); await pg.waitForTimeout(400); console.log('after tap 2', await pg.evaluate(() => [...F0W.inp.keys]));
   // multiplayer: name field twice (second tap after "keyboard hidden" must refocus)
   await pg.evaluate(() => { F0W.toTitle(); F0W.screen = 'mp'; }); await pg.waitForTimeout(600);
-  const tapField = async i => { const r = await pg.evaluate(i => { const f = Screens.mp.fr[i], u = document.getElementById('ui').getBoundingClientRect(); return { x: u.left + (f.x + f.w / 2) / SW * u.width, y: u.top + (f.y + f.h / 2) / SH * u.height }; }, i); await pg.touchscreen.tap(r.x, r.y); await pg.waitForTimeout(300); };
+  console.log('screen', await pg.evaluate(() => [F0W.screen, !!Screens.mp.fr, F0W.fade])); const tapField = async i => { const r = await pg.evaluate(i => { const f = Screens.mp.fr[i], u = document.getElementById('ui').getBoundingClientRect(); return { x: u.left + (f.x + f.w / 2) / SW * u.width, y: u.top + (f.y + f.h / 2) / SH * u.height }; }, i); await pg.touchscreen.tap(r.x, r.y); await pg.waitForTimeout(300); };
   await tapField(1); console.log('name focus', await pg.evaluate(() => document.activeElement.id));
   await pg.keyboard.type('Anya'); await pg.evaluate(() => document.activeElement.blur()); await tapField(1);
   console.log('refocus after hide', await pg.evaluate(() => document.activeElement.id)); await pg.keyboard.type('X');

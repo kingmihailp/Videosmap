@@ -946,6 +946,66 @@ const T = (() => {
   return { draw, width, wrap, para, onReady: f => (ready ? f() : waiting.push(f)), lh: s => meta(s).lh };
 })();
 
+// ===== keys.js =====
+// ---------------------------------------------------------------- re-bindable controls
+// The game logic keeps reading the default key codes (KeyW, Space, KeyE ...). A capture-phase listener translates the physical key the player chose
+// into the default ("logical") one before the game sees it, while playing; the default key of a re-bound action stops working.
+// On-screen texts that mention keys ("E — ...", "Tab — журнал") are rewritten through T.draw / T.width (Keys.fix).
+const Keys = (() => {
+  const ACTIONS = [
+    { id: 'fwd', ru: 'Вперёд', def: ['KeyW'] }, { id: 'back', ru: 'Назад', def: ['KeyS'] }, { id: 'left', ru: 'Влево', def: ['KeyA'] }, { id: 'right', ru: 'Вправо', def: ['KeyD'] },
+    { id: 'sprint', ru: 'Бег', def: ['ShiftLeft', 'ShiftRight'] }, { id: 'crouch', ru: 'Красться', def: ['ControlLeft', 'KeyC', 'ControlRight'] },
+    { id: 'swing', ru: 'Взмах сачка (и ЛКМ)', def: ['Space'] }, { id: 'use', ru: 'Действие / войти', def: ['KeyE'] }, { id: 'journal', ru: 'Журнал', def: ['Tab'] },
+    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] },
+  ];
+  const SYM = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Пробел', Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', CapsLock: 'Caps',
+    ShiftLeft: 'Shift (лев.)', ShiftRight: 'Shift (прав.)', ControlLeft: 'Ctrl (лев.)', ControlRight: 'Ctrl (прав.)', AltLeft: 'Alt (лев.)', AltRight: 'Alt (прав.)',
+    ArrowUp: 'Стрелка вверх', ArrowDown: 'Стрелка вниз', ArrowLeft: 'Стрелка влево', ArrowRight: 'Стрелка вправо', Delete: 'Delete', Insert: 'Insert', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown' };
+  const name = code => SYM[code] || (/^Key(.)$/.test(code) ? code[3] : /^Digit(\d)$/.test(code) ? code[5] : /^Numpad/.test(code) ? 'Num ' + code.slice(6) : code);
+  const FORBID = new Set(['Escape', 'Enter', 'MetaLeft', 'MetaRight', 'ContextMenu']);
+  let map = {}, dead = {}, custom = false;
+  const cfg = () => (Save.data.settings.keys && typeof Save.data.settings.keys === 'object') ? Save.data.settings.keys : {};
+  const bound = id => { const a = ACTIONS.find(a => a.id === id); return cfg()[id] || a.def[0]; };
+  function rebuild() {
+    map = {}; dead = {}; custom = false; const c = cfg();
+    for (const a of ACTIONS) if (c[a.id] && c[a.id] !== a.def[0]) { map[c[a.id]] = a.def[0]; custom = true; }
+    for (const a of ACTIONS) if (c[a.id] && c[a.id] !== a.def[0]) for (const d of a.def) if (!(d in map)) dead[d] = true;
+    // default keys that something else now uses are not "dead" (they map); keys of untouched actions stay as they are
+  }
+  const tr = code => (code in map) ? map[code] : dead[code] ? null : code;
+  function set(id, code) {                                   // swaps when the key is already used by another action
+    if (FORBID.has(code)) return false; const c = Save.data.settings.keys = Object.assign({}, cfg()); const old = bound(id);
+    const other = ACTIONS.find(a => a.id !== id && bound(a.id) === code); if (other) c[other.id] = old;
+    c[id] = code; for (const a of ACTIONS) if (c[a.id] === a.def[0]) delete c[a.id]; rebuild(); Save.write(); return true;
+  }
+  function reset() { delete Save.data.settings.keys; rebuild(); Save.write(); }
+  // translate texts: the default key names in prompts become the player's keys
+  const EXACT = () => ({ 'WASD': ['fwd', 'left', 'back', 'right'].map(i => name(bound(i))).join(' '), 'Ctrl / C': name(bound('crouch')), 'Shift': name(bound('sprint')), 'H': name(bound('sense')), 'Tab': name(bound('journal')), 'F': name(bound('torch')), 'ЛКМ / Пробел': 'ЛКМ / ' + name(bound('swing')) });
+  function fix(s) {
+    if (!custom || typeof s !== 'string') return s; let o = s;
+    if (/E — /.test(o)) o = o.replace(/(^|[^A-Za-zА-Яа-я])E — /g, (m, p) => p + name(bound('use')) + ' — ');
+    if (/Tab — /.test(o)) o = o.replace(/(^|[^A-Za-z])Tab — /g, (m, p) => p + name(bound('journal')) + ' — ');
+    if (/H — /.test(o)) o = o.replace(/(^|[^A-Za-z])H — /g, (m, p) => p + name(bound('sense')) + ' — ');
+    if (/Shift — /.test(o)) o = o.replace(/Shift — /g, name(bound('sprint')) + ' — ');
+    if (/Ctrl — /.test(o)) o = o.replace(/Ctrl — /g, name(bound('crouch')) + ' — ');
+    if (/F — фонарь/.test(o)) o = o.replace(/F — фонарь/g, name(bound('torch')) + ' — фонарь');
+    if (/\[F\]/.test(o)) o = o.replace('[F]', '[' + name(bound('torch')) + ']');
+    if (/Журнал \(Tab\)/.test(o)) o = o.replace('(Tab)', '(' + name(bound('journal')) + ')');
+    const ex = EXACT(); if (o in ex) o = ex[o];
+    return o;
+  }
+  const origDraw = T.draw, origWidth = T.width; T.draw = (ctx, str, ...r) => origDraw(ctx, fix(str), ...r); T.width = (str, size) => origWidth(fix(str), size);
+  // gameplay contexts only: menus, journal pages and text fields keep the raw keys
+  const active = () => { const A = window.F0W; if (!A || !custom) return false; return (A.screen === 'play' && !A.overlay) || (A.screen === 'cabinet' && !!A.cab && !A.cab.ov); };
+  addEventListener('keydown', e => {
+    if (e.__tr || !active()) return; const c = tr(e.code); if (c === e.code) return;
+    e.stopImmediatePropagation(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (c === null) return;
+    const ev = new KeyboardEvent('keydown', { code: c, key: /^Key(.)$/.test(c) ? c[3].toLowerCase() : c === 'Space' ? ' ' : c, repeat: e.repeat, bubbles: true, cancelable: true, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey }); ev.__tr = true; window.dispatchEvent(ev);
+  }, true);
+  rebuild();
+  return { ACTIONS, name, bound, set, reset, rebuild, tr, fix, FORBID };
+})();
+
 // ===== art.js =====
 // ---------------------------------------------------------------- butterfly art: procedural pixel wings, specimens, 3D models
 const Art = (() => {
@@ -1154,9 +1214,10 @@ const Art = (() => {
     const ab = new THREE.Mesh(new THREE.BoxGeometry(span * 0.05, span * 0.05, span * 0.34), bodyMat); ab.position.z = bl * 0.36;
     const hd = new THREE.Mesh(new THREE.BoxGeometry(span * 0.06, span * 0.06, span * 0.06), headMat); hd.position.z = -bl * 0.22;
     g.add(th, ab, hd);
-    for (const s of [-1, 1]) {
-      const an = new THREE.Mesh(new THREE.BoxGeometry(span * 0.012, span * 0.012, span * 0.22), antMat);
-      an.position.set(s * span * 0.07, span * 0.03, -bl * 0.42); an.rotation.y = s * 0.45; an.rotation.x = -0.2; g.add(an);
+    for (const s of [-1, 1]) {                       // antennae start at the front of the head and spread outwards / upwards in a V, with a tiny club at the tip
+      const pv = new THREE.Group(); pv.position.set(s * span * 0.018, span * 0.02, -bl * 0.22 - span * 0.03); pv.rotation.set(0.45, -s * 0.38, 0, 'YXZ');
+      const AL = span * 0.24, an = new THREE.Mesh(new THREE.BoxGeometry(span * 0.012, span * 0.012, AL), antMat); an.position.z = -AL / 2;
+      const club = new THREE.Mesh(new THREE.BoxGeometry(span * 0.026, span * 0.026, span * 0.03), antMat); club.position.z = -AL; pv.add(an, club); g.add(pv);
     }
     g.userData = { L, R, span };
     return g;
@@ -2678,12 +2739,16 @@ class Remotes {
     const limb2 = (A, B, rad) => { const d = B.clone().sub(A), m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, d.length(), 6), jm); m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); up.add(m); return m; };
     limb2(new THREE.Vector3(-0.25, 1.27, 0), new THREE.Vector3(-0.3, 0.8, -0.04), 0.06); limb2(new THREE.Vector3(0.25, 1.27, 0), new THREE.Vector3(0.33, 1.02, -0.12), 0.06);
     for (const [hx, hy, hz] of [[-0.3, 0.78, -0.04], [0.33, 1.02, -0.12]]) { const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), new THREE.MeshLambertMaterial({ color: skin })); hd.position.set(hx, hy, hz); up.add(hd); }
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lamp.position.set(-0.28, 1.05, -0.2); up.add(lamp);
+    let lens = null;                                  // the torch (only where the biome allows one) is held in the left hand; its lens glows while it is on
+    if (this.flash) {
+      const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.2, 6), new THREE.MeshLambertMaterial({ color: '#2a2a30' })); tb.rotation.x = Math.PI / 2; tb.position.set(-0.3, 0.78, -0.12); up.add(tb);
+      lens = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.02, 6), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lens.rotation.x = Math.PI / 2; lens.position.set(-0.3, 0.78, -0.225); lens.visible = false; up.add(lens);
+    }
     const cv = document.createElement('canvas'); const w = Math.max(24, T.width(r.name, 8) + 8); cv.width = w; cv.height = 12; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = 'rgba(8,16,14,0.7)'; x.fillRect(0, 0, w, 12); T.draw(x, r.name, w / 2, 2, { size: 8, align: 'c', color: '#f0f0dc' });
     const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, fog: false, depthWrite: false })); sp.scale.set(w / 40, 12 / 40, 1); sp.position.y = 2.1; up.add(sp);
-    let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.28, 1.05, -0.25); const tg = new THREE.Object3D(); tg.position.set(-0.28, 1.0, -6); up.add(light, tg); light.target = tg; }
-    this.scene.add(g); return { g, up, hips, legs, head, net, light, sitK: 0, lastPos: new THREE.Vector3() };
+    let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.3, 0.8, -0.24); const tg = new THREE.Object3D(); tg.position.set(-0.3, 0.8, -6); up.add(light, tg); light.target = tg; }
+    this.scene.add(g); return { g, up, hips, legs, head, net, light, lens, sitK: 0, lastPos: new THREE.Vector3() };
   }
   update(dt) {
     this.t += dt; const now = performance.now(), R = Net.remote;
@@ -2701,6 +2766,7 @@ class Remotes {
       a.up.position.y = -0.17 * e; a.hips.position.y = 0.72 - 0.17 * e;
       a.legs.forEach((L, i) => { const sw = Math.sin(a.ph * 2 + i * Math.PI) * 0.6 * walk; L.th.rotation.x = sw + e * (Math.PI / 2 - sw); L.sh.rotation.x = -e * Math.PI / 2 + Math.max(0, -sw) * 0.7 * (1 - e); });
       a.up.rotation.x = e * 0.12;
+      if (a.lens) a.lens.visible = !!r.flashOn;
       if (a.light) { a.light.visible = r.flashOn; a.light.intensity = r.flashOn ? 2.2 : 0; }
     }
     for (const id in this.av) if (!R[id]) { this.scene.remove(this.av[id].g); delete this.av[id]; }
@@ -3326,6 +3392,7 @@ const Screens = (() => {
         { id: 'mp', label: Net.on ? `Онлайн: ${Net.count()} · ${Net.name}` : 'Мультиплеер', x, y: 200, w, h: 16, size: 8 },
         { id: 'help', label: 'Управление', x, y: 219, w: 68, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x: x + 72, y: 219, w: 68, h: 16 },
+        { id: 'keys', label: 'Клавиши управления', x, y: 238, w, h: 16 },
       ];
     },
     draw(ctx, t, m) {
@@ -3570,7 +3637,8 @@ const Screens = (() => {
         { id: 'resume', label: 'Продолжить', x, y: 70, w: 180, h: 20, size: 10 },
         { id: 'journal', label: 'Журнал (Tab)', x, y: 93, w: 180, h: 16 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 112, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 131, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 131, w: 88, h: 16 },
+        { id: 'keys', label: 'Клавиши', x: x + 92, y: 131, w: 88, h: 16 },
         { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 150, w: 88, h: 16 },
         { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 150, w: 88, h: 16 },
         { id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y: 169, w: 180, h: 16 },
@@ -3587,6 +3655,40 @@ const Screens = (() => {
       T.draw(ctx, `Видов в этом биоме поймано: ${Save.biomeCount(play.biome)} / ${play.biome.secret ? '???' : play.biome.species.length}`, SW / 2, 247, { size: 8, align: 'c', color: c.text });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+  // ------------------------------------------------------------------ KEY BINDINGS
+  const keysScr = {
+    wait: -1, btns: [], rows: [], msg: '',
+    layout() {
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 36 + i * 15, w: 260, h: 13 }));
+      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 231, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 231, w: 170, h: 16, size: 10 }];
+    },
+    draw(ctx, t, m) {
+      this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.88)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 150, 10, 300, 252, { fill: 'rgba(16,32,28,0.97)', border: c.gold });
+      T.draw(ctx, 'Клавиши управления', SW / 2, 16, { size: 14, align: 'c', color: c.gold });
+      this.rows.forEach(r => {
+        const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
+        UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
+        T.draw(ctx, a.ru, r.x + 6, r.y + 3, { size: 8, color: c.text });
+        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
+      });
+      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 217, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) {                                   // returns true when the screen should close
+      this.layout(); this.msg = ''; const b = this.btns.find(b => UIK.hit(b, x, y));
+      if (b) { Snd.sfx.click(); if (b.id === 'back') { this.wait = -1; return true; } if (b.id === 'reset') { Keys.reset(); this.wait = -1; } return false; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); this.wait = r ? (this.wait === r.i ? -1 : r.i) : -1; if (r) Snd.sfx.click(); return false;
+    },
+    key(e) {                                        // raw key presses; returns true when the screen should close
+      if (this.wait >= 0) {
+        if (e.code === 'Escape') { this.wait = -1; return false; }
+        if (['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight'].indexOf(e.code) >= 0 && e.type === 'keydown' && false) return false;
+        if (Keys.set(Keys.ACTIONS[this.wait].id, e.code)) { Snd.sfx.click(); this.msg = ''; } else this.msg = 'Эту клавишу назначить нельзя';
+        this.wait = -1; return false;
+      }
+      if (e.code === 'Escape') return true; return false;
+    },
   };
   // move / scale the catch card
   const cardpos = {
@@ -3632,7 +3734,7 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { title, wmap, journal, pause, cardpos, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { title, wmap, journal, pause, cardpos, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
 // ===== spread.js =====
@@ -5209,7 +5311,7 @@ const StubRoom = (() => {
   gl.width = SW; gl.height = SH; let uiK = 2; ui.width = SW * uiK; ui.height = SH * uiK;
   const ctx = ui.getContext('2d');
   const params = new URLSearchParams(location.hash.replace('#', '?'));
-  Save.load(); revealOcean();
+  Save.load(); Keys.rebuild(); revealOcean();
 
   // ---------------- renderer + post (palette quantisation + ordered dither + depth outlines)
   const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('debug') });
@@ -5314,15 +5416,17 @@ const StubRoom = (() => {
   document.addEventListener('pointerlockerror', () => { if (App.lockWant) return; if (App.screen === 'play' && !App.overlay) App.overlay = 'pause'; if (App.screen === 'cabinet' && App.cab && !App.cab.ov) App.cab.ov = 'pause'; });
   document.addEventListener('visibilitychange', () => { if (document.hidden && App.screen === 'play' && !App.overlay) { unlock(); App.overlay = 'pause'; } if (document.hidden && App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; unlock(); } });
   addEventListener('blur', () => inp.keys.clear());
-  addEventListener('keyup', e => inp.keys.delete(e.code));
+  addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     inp.keys.add(e.code);
     if (e.code === 'KeyF' && !e.repeat && App.screen === 'play' && App.play && App.play.flash && !App.overlay) { App.play.toggleFlash(); } else if (e.code === 'KeyF' && !e.repeat) { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (er) {} }
     const sc = App.screen;
+    if (sc === 'keys') { e.preventDefault(); if (S.keys.key(e)) { App.screen = 'title'; Save.write(); } return; }
     if (sc === 'mp') { if (['Backspace', 'Tab', 'Space', 'ArrowDown', 'ArrowUp'].includes(e.code)) e.preventDefault(); mpAct(S.mp.key(e)); return; }
     if (sc === 'cabinet' && App.cab) { if (!e.repeat) App.cab.key(e); return; }
     if (sc === 'play') {
+      if (App.overlay === 'keys') { e.preventDefault(); if (S.keys.key(e)) App.overlay = 'pause'; return; }
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
         if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
@@ -5346,17 +5450,19 @@ const StubRoom = (() => {
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'keys') { if (S.keys.click(x, y)) App.overlay = 'pause'; return; }
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'cardpos') App.overlay = 'cardpos'; else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'cardpos') App.overlay = 'cardpos'; else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.overlay = 'keys'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
       if (App.locked) inp.fire = true; else lock();
     } else if (sc === 'title') {
       const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
-      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'mp') { S.mp.msg = ''; App.screen = 'mp'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+      if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'mp') { S.mp.msg = ''; App.screen = 'mp'; } else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.screen = 'keys'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
+    } else if (sc === 'keys') { if (S.keys.click(x, y)) App.screen = 'title';
     } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
@@ -5384,7 +5490,7 @@ const StubRoom = (() => {
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; }
       renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'keys') { S.keys.draw(ctx, t, mouse); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
@@ -5396,6 +5502,7 @@ const StubRoom = (() => {
       if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
       else if (sc === 'map') S.wmap.draw(ctx, t, mouse);
       else if (sc === 'mp') S.mp.draw(ctx, t, mouse);
+      else if (sc === 'keys') S.keys.draw(ctx, t, mouse);
       else if (sc === 'journal') S.journal.draw(ctx, t, mouse);
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
@@ -5439,7 +5546,7 @@ const StubRoom = (() => {
   const kb = document.createElement('input'); kb.id = 'kb'; kb.autocapitalize = 'off'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.value = ' '; kb.setAttribute('inputmode', 'text'); kb.setAttribute('enterkeyhint', 'done'); document.body.appendChild(kb);
   const S = () => Math.max(44, Math.min(70, Math.round(Math.min(innerWidth, innerHeight) * 0.15)));
 
-  const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; window.dispatchEvent(new KeyboardEvent('keydown', o)); window.dispatchEvent(new KeyboardEvent('keyup', o)); };
+  const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; for (const t of ['keydown', 'keyup']) { const ev = new KeyboardEvent(t, o); ev.__tr = true; window.dispatchEvent(ev); } };
   const btns = [];
   function mk(label, place, show, act, cls) {
     const b = document.createElement('div'); b.className = 'b' + (cls ? ' ' + cls : ''); b.textContent = label; Object.assign(b.style, place);

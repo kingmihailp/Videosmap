@@ -167,3 +167,8 @@ or host the single HTML file anywhere over https (then the multiplayer server mu
 
 ## Catch card position
 The "caught a butterfly" card now sits at the top left, below the online-players line. Pause menu → «Карточка улова: положение и размер»: drag the card anywhere (mouse or finger), −/+ or the mouse wheel change the size, «Сброс» restores the default. Saved in the settings (`settings.card`).
+
+## Re-binding the controls
+Title screen → «Клавиши управления», or Pause → «Клавиши»: click an action, press the new key (a key already used by another action is swapped with it; Esc cancels, Enter/Esc cannot be assigned).
+Defaults: W/A/S/D, Shift = run, Ctrl or C = sneak, Space (and the left mouse button) = swing, E = interact, Tab = journal, H = scent, F = torch, P = pause.
+Implementation: `src/keys.js` translates the chosen physical key into the default code in a capture-phase listener (gameplay only), and rewrites key names in on-screen texts. Saved in `settings.keys`. Test: `tools/test/keys.js`.

@@ -24,7 +24,7 @@
   const kb = document.createElement('input'); kb.id = 'kb'; kb.autocapitalize = 'off'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.value = ' '; kb.setAttribute('inputmode', 'text'); kb.setAttribute('enterkeyhint', 'done'); document.body.appendChild(kb);
   const S = () => Math.max(44, Math.min(70, Math.round(Math.min(innerWidth, innerHeight) * 0.15)));
 
-  const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; window.dispatchEvent(new KeyboardEvent('keydown', o)); window.dispatchEvent(new KeyboardEvent('keyup', o)); };
+  const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; for (const t of ['keydown', 'keyup']) { const ev = new KeyboardEvent(t, o); ev.__tr = true; window.dispatchEvent(ev); } };
   const btns = [];
   function mk(label, place, show, act, cls) {
     const b = document.createElement('div'); b.className = 'b' + (cls ? ' ' + cls : ''); b.textContent = label; Object.assign(b.style, place);

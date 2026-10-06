@@ -37,12 +37,16 @@ class Remotes {
     const limb2 = (A, B, rad) => { const d = B.clone().sub(A), m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.85, d.length(), 6), jm); m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); up.add(m); return m; };
     limb2(new THREE.Vector3(-0.25, 1.27, 0), new THREE.Vector3(-0.3, 0.8, -0.04), 0.06); limb2(new THREE.Vector3(0.25, 1.27, 0), new THREE.Vector3(0.33, 1.02, -0.12), 0.06);
     for (const [hx, hy, hz] of [[-0.3, 0.78, -0.04], [0.33, 1.02, -0.12]]) { const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), new THREE.MeshLambertMaterial({ color: skin })); hd.position.set(hx, hy, hz); up.add(hd); }
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lamp.position.set(-0.28, 1.05, -0.2); up.add(lamp);
+    let lens = null;                                  // the torch (only where the biome allows one) is held in the left hand; its lens glows while it is on
+    if (this.flash) {
+      const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.2, 6), new THREE.MeshLambertMaterial({ color: '#2a2a30' })); tb.rotation.x = Math.PI / 2; tb.position.set(-0.3, 0.78, -0.12); up.add(tb);
+      lens = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.02, 6), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); lens.rotation.x = Math.PI / 2; lens.position.set(-0.3, 0.78, -0.225); lens.visible = false; up.add(lens);
+    }
     const cv = document.createElement('canvas'); const w = Math.max(24, T.width(r.name, 8) + 8); cv.width = w; cv.height = 12; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = 'rgba(8,16,14,0.7)'; x.fillRect(0, 0, w, 12); T.draw(x, r.name, w / 2, 2, { size: 8, align: 'c', color: '#f0f0dc' });
     const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, fog: false, depthWrite: false })); sp.scale.set(w / 40, 12 / 40, 1); sp.position.y = 2.1; up.add(sp);
-    let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.28, 1.05, -0.25); const tg = new THREE.Object3D(); tg.position.set(-0.28, 1.0, -6); up.add(light, tg); light.target = tg; }
-    this.scene.add(g); return { g, up, hips, legs, head, net, light, sitK: 0, lastPos: new THREE.Vector3() };
+    let light = null; if (this.flash) { light = new THREE.SpotLight('#fff2d4', 2.2, 36, 0.46, 0.5, 1.05); light.position.set(-0.3, 0.8, -0.24); const tg = new THREE.Object3D(); tg.position.set(-0.3, 0.8, -6); up.add(light, tg); light.target = tg; }
+    this.scene.add(g); return { g, up, hips, legs, head, net, light, lens, sitK: 0, lastPos: new THREE.Vector3() };
   }
   update(dt) {
     this.t += dt; const now = performance.now(), R = Net.remote;
@@ -60,6 +64,7 @@ class Remotes {
       a.up.position.y = -0.17 * e; a.hips.position.y = 0.72 - 0.17 * e;
       a.legs.forEach((L, i) => { const sw = Math.sin(a.ph * 2 + i * Math.PI) * 0.6 * walk; L.th.rotation.x = sw + e * (Math.PI / 2 - sw); L.sh.rotation.x = -e * Math.PI / 2 + Math.max(0, -sw) * 0.7 * (1 - e); });
       a.up.rotation.x = e * 0.12;
+      if (a.lens) a.lens.visible = !!r.flashOn;
       if (a.light) { a.light.visible = r.flashOn; a.light.intensity = r.flashOn ? 2.2 : 0; }
     }
     for (const id in this.av) if (!R[id]) { this.scene.remove(this.av[id].g); delete this.av[id]; }
