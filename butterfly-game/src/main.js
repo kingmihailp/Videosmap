@@ -72,10 +72,13 @@
     leave(); App.screen = 'loading'; App.loadText = 'Идём на рынок насекомых…';
     if (Net.on) Net.join('market').then(() => setTimeout(enterMarket, 40)).catch(netFail); else setTimeout(enterMarket, 60);
   };
-  App.start = (biomeId, seed) => {
+  // a room behind a door in the world (currently an empty placeholder room); leaving brings you back to the same door
+  const roomHooks = Object.assign({}, cabHooks, { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
+  App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
+  App.start = (biomeId, seed, at) => {
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp) => {
-      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };
@@ -121,7 +124,7 @@
       }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
-      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && App.play.doorNear) App.play.enterDoor(); else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });

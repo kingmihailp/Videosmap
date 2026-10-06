@@ -68,6 +68,14 @@ const Snd = (() => {
     rushWarn(amb) { if (!ac) return; const t = now(); osc('sawtooth', 70, t, 1.4, 0.2, null, amb ? 400 : 240); noiseBurst(t + 0.6, 0.9, 400, 4000, 0.3, 'bandpass', 1.2); for (let i = 0; i < 5; i++) osc('square', 90, t + i * 0.28, 0.08, 0.12); },
     eyes() { if (!ac) return; const t = now(); osc('sine', 300, t, 0.5, 0.18, null, 90); noiseBurst(t, 0.25, 1800, 400, 0.12, 'bandpass', 2); },
     coin() { if (!ac) return; const t = now(); osc('square', 1318, t, 0.06, 0.07); osc('square', 1760, t + 0.06, 0.2, 0.07); noiseBurst(t, 0.05, 5000, 9000, 0.05, 'highpass', 1); },
+    mystery() {       // entering the abandoned house: a low unsettling swell, a reversed breath, a dissonant bell and distant whispers
+      if (!ac) return; const t = now();
+      osc('sine', 46, t, 4.2, 0.3, null, 38); osc('sawtooth', 46.7, t, 4.2, 0.05, null, 39); osc('sine', 92.5, t + 0.2, 3.6, 0.07, null, 70);
+      noiseBurst(t, 2.4, 160, 1700, 0.2, 'bandpass', 2.2); noiseBurst(t + 2.2, 1.4, 1500, 200, 0.12, 'bandpass', 1.4);
+      bell(midi(63), t + 0.5, 0.09, 3.4); bell(midi(69), t + 0.62, 0.07, 3.2); bell(midi(75.5), t + 1.1, 0.05, 2.8);
+      [1.5, 2.05, 2.35, 3.0].forEach((d, i) => { noiseBurst(t + d, 0.45, 700 + i * 230, 1200 + i * 150, 0.07, 'bandpass', 5); });
+      osc('triangle', 150, t + 1.9, 0.9, 0.08, null, 60);
+    },
     reward() { if (!ac) return; const t = now(); [0, 4, 7, 11, 14].forEach((n, i) => bell(midi(72 + n), t + i * 0.09, 0.16, 1.6)); },
     modifier() { if (!ac) return; const t = now(); for (let i = 0; i < 8; i++) osc('triangle', midi(60 + ((i * 5) % 12) * 1 + (i % 2) * 7), t + i * 0.06, 0.14, 0.1); noiseBurst(t, 0.5, 5000, 800, 0.08, 'bandpass', 1.5); },
     deny() { if (!ac) return; const t = now(); osc('square', 180, t, 0.12, 0.08); osc('square', 140, t + 0.1, 0.16, 0.08); },
@@ -83,6 +91,7 @@ const Snd = (() => {
     savanna:    { wind: 0.55, bird: 'dove', insect: ['cricket', 3800, 0.04], base: 50, scale: [0, 2, 5, 7, 10], mus: 0.8 },
     prairie:    { wind: 0.65, bird: 'lark', insect: ['cricket', 4000, 0.05], base: 55, scale: [0, 2, 4, 7, 9], mus: 0.9 },
     market:     { wind: 0.1, bird: 'sparse', insect: null, bell: true, crowd: true, base: 52, scale: [0, 2, 4, 7, 9], mus: 0.8 },
+    stub:       { wind: 0.06, bird: null, insect: null, eerie: true, base: 34, scale: [0, 1, 3, 6], mus: 0.25 },
     cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },

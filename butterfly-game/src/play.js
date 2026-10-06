@@ -225,12 +225,12 @@ class Fly {
 
 // ---------------------------------------------------------------- the play session
 class Play {
-  constructor(biome, seed, mp) {
+  constructor(biome, seed, mp, at) {
     this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
-    const sx = 0, sz = 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y;
+    const sx = at ? at.x : 0, sz = at ? at.z : 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y; if (at) this.player.yaw = at.yaw;     // coming back out of a house: stand in front of its door
     this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
     if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false };
@@ -314,6 +314,7 @@ class Play {
     for (const f of this.flies) if (f.puppet) { f.puppet = false; if (f.state === CAUGHT) continue; f.state = FLY; f.vel.set(0, 0, 0); f.rs = { ph: 'hide', t: 2 + Math.random() * 4 }; f.pickTarget(); }
     this.toast('Вы теперь ведёте бабочек в этой локации', 3);
   }
+  enterDoor() { if (this.entering || !this.world.door) return; this.entering = true; Snd.sfx.mystery(); F0W.enterRoom('chalet', { biome: this.biome.id, seed: this.seed, at: { x: this.world.door.x + Math.sin(this.world.door.yaw) * 0.9, z: this.world.door.z + Math.cos(this.world.door.yaw) * 0.9, yaw: this.world.door.yaw + Math.PI } }); }
   netCatch(f) { f.pendingCatch = true; f.releaseFlower(); f.state = CAUGHT; f.t = 2.0; Net.send('catch', { fid: f.id }); }
   netCatchOk(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp]; if (!sp) return;
@@ -397,6 +398,7 @@ class Play {
   // ---------------------------------------------------------------- per-frame
   update(dt, inp) {
     this.t += dt; const P = this.player, w = this.world;
+    this.doorNear = false; if (w.door && !this.entering) { const dx = w.door.x - P.pos.x, dz = w.door.z - P.pos.z, dd = Math.hypot(dx, dz); if (dd < 2.6) { const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); this.doorNear = dd < 1.1 || (dx * fx + dz * fz) / (dd || 1) > 0.2; } }
     // look
     P.yaw -= inp.dx * 0.0022 * (this.hasMod('mirror') ? -1 : 1); P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.45, 1.45); inp.dx = inp.dy = 0;
     const lk = (inp.keys.has('ArrowLeft') ? 1 : 0) - (inp.keys.has('ArrowRight') ? 1 : 0); P.yaw += lk * dt * 1.9;
@@ -482,6 +484,7 @@ class Play {
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
+    if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
     const hint = this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
     if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
