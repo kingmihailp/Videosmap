@@ -40,8 +40,13 @@ const Portrait = (() => {
     // the net seller: green cap, brown apron, friendly stubble, a net behind his shoulder
     seller(ctx, ox, oy, o) {
       R(ctx, ox, oy, 0, 0, 40, 48, '#b8c8a0'); R(ctx, ox, oy, 0, 30, 40, 18, '#a8b890'); for (let i = 0; i < 40; i += 8) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(60,90,40,0.12)');
-      ctx.fillStyle = '#9a6a38'; for (let k = 0; k < 30; k++) ctx.fillRect(ox + 36 - k * 0.3, oy + 40 - k, 1, 1);                       // net pole behind
-      ctx.strokeStyle = '#eef2f4'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(ox + 33, oy + 6, 5, 4, 0.5, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(210,235,225,0.35)'; ctx.beginPath(); ctx.moveTo(ox + 28, oy + 8); ctx.lineTo(ox + 36, oy + 16); ctx.lineTo(ox + 38, oy + 6); ctx.fill();
+      // the net leans on his shoulder: the pole runs up along the hoop's axis and ends at its rim, the bag hangs down from the ring
+      const L = (x0, y0, x1, y1, col) => { ctx.fillStyle = col; const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))); for (let k = 0; k <= n; k++) ctx.fillRect(ox + Math.round(x0 + (x1 - x0) * k / n), oy + Math.round(y0 + (y1 - y0) * k / n), 1, 1); };
+      const P0 = { x: 29, y: 47 }, P1 = { x: 35, y: 17 }, dx = 6 / 30.6, dy = -30 / 30.6, rr = 5.5, cx0 = P1.x + dx * rr, cy0 = P1.y + dy * rr, ring = [];
+      for (let i = 0; i < 20; i++) { const a2 = i / 20 * 6.2832; ring.push({ x: cx0 + dx * Math.cos(a2) * rr - dy * Math.sin(a2) * 3.2, y: cy0 + dy * Math.cos(a2) * rr + dx * Math.sin(a2) * 3.2 }); }
+      const ap = { x: 37, y: 31 }; ctx.save(); ctx.globalAlpha = 0.42; ctx.fillStyle = '#dff0e8'; ctx.beginPath(); ring.forEach((q, i) => i ? ctx.lineTo(ox + q.x + 0.5, oy + q.y + 0.5) : ctx.moveTo(ox + q.x + 0.5, oy + q.y + 0.5)); ctx.lineTo(ox + ap.x + 0.5, oy + ap.y + 0.5); ctx.closePath(); ctx.fill(); ctx.restore();
+      for (let i = 0; i < 20; i += 3) L(ring[i].x, ring[i].y, ap.x, ap.y, 'rgba(90,130,120,0.9)'); L(ring[3].x + (ap.x - ring[3].x) * 0.5, ring[3].y + (ap.y - ring[3].y) * 0.5, ring[13].x + (ap.x - ring[13].x) * 0.5, ring[13].y + (ap.y - ring[13].y) * 0.5, 'rgba(90,130,120,0.8)');
+      L(P0.x, P0.y, P1.x, P1.y, '#8a5a2a'); L(P0.x + 1, P0.y, P1.x + 1, P1.y, '#b07a40'); ring.forEach((q, i) => { const n2 = ring[(i + 1) % 20]; L(q.x, q.y, n2.x, n2.y, '#eef2f4'); });
       R(ctx, ox, oy, 3, 37, 34, 11, '#8a6a3a'); R(ctx, ox, oy, 5, 35, 30, 3, '#8a6a3a'); R(ctx, ox, oy, 3, 37, 3, 11, '#6a4a28'); R(ctx, ox, oy, 34, 37, 3, 11, '#6a4a28');   // work shirt
       R(ctx, ox, oy, 14, 35, 12, 13, '#e8e0c8'); R(ctx, ox, oy, 14, 35, 2, 13, '#d0c8aa'); R(ctx, ox, oy, 16, 40, 8, 8, '#5a4028'); R(ctx, ox, oy, 15, 36, 1, 12, '#5a4028'); R(ctx, ox, oy, 24, 36, 1, 12, '#5a4028'); R(ctx, ox, oy, 18, 42, 4, 3, '#4a3420'); R(ctx, ox, oy, 19, 43, 2, 1, '#8a6a48');   // apron with a pocket
       head(ctx, ox, oy, { skin: '#d8a878', light: '#e8c090', dark: '#b88858', blush: 'rgba(210,90,70,0.3)', brow: '#4a3020', iris: '#5a7a3a', blink: o.blink });
