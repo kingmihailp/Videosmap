@@ -210,5 +210,6 @@ const Snd = (() => {
     if (amb.cfg.jazz) jazz(t + 0.05); else music(t + 0.05);
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
-  return { init, sfx, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
+  function hush(on) { if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
+  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();

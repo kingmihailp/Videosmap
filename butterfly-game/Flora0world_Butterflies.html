@@ -1501,7 +1501,8 @@ const Snd = (() => {
     if (amb.cfg.jazz) jazz(t + 0.05); else music(t + 0.05);
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
-  return { init, sfx, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
+  function hush(on) { if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
+  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();
 
 // ===== chalet.js =====
@@ -5057,7 +5058,7 @@ const StubRoom = (() => {
   function ctex(w, h, draw, rx, ry) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; draw(x, w, h); const t = new THREE.CanvasTexture(cv); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; if (rx) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry || rx); } return t; }
   const lam = (col, o = {}) => new THREE.MeshLambertMaterial(Object.assign({ color: col }, o));
   const logsTex = () => ctex(64, 64, (x, w, h) => { const r = new Rng(31); for (let j = 0; j < 8; j++) { const g = r.int(-10, 10); x.fillStyle = `rgb(${96 + g},${84 + g},${70 + g})`; x.fillRect(0, j * 8, w, 7); x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, j * 8 + 7, w, 1); x.fillStyle = 'rgba(255,255,255,0.06)'; x.fillRect(0, j * 8, w, 1); for (let k = 0; k < 6; k++) { x.fillStyle = 'rgba(30,22,16,0.3)'; x.fillRect(r.int(0, 56), j * 8 + r.int(1, 5), r.int(3, 10), 1); } } });
-  const planksTex = () => ctex(64, 64, (x, w, h) => { const r = new Rng(77); for (let i = 0; i < 8; i++) { const g = r.int(-12, 12); x.fillStyle = `rgb(${74 + g},${60 + g},${46 + g})`; x.fillRect(i * 8, 0, 7, h); x.fillStyle = 'rgba(0,0,0,0.4)'; x.fillRect(i * 8 + 7, 0, 1, h); for (let k = 0; k < 5; k++) { x.fillStyle = 'rgba(20,14,8,0.35)'; x.fillRect(i * 8 + r.int(1, 5), r.int(0, 56), 1, r.int(4, 14)); } } for (let j = 0; j < 3; j++) { x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(0, r.int(8, 56), w, 1); } });
+  const planksTex = (rx, ry) => ctex(64, 64, (x, w, h) => { const r = new Rng(77); for (let i = 0; i < 8; i++) { const g = r.int(-12, 12); x.fillStyle = `rgb(${74 + g},${60 + g},${46 + g})`; x.fillRect(i * 8, 0, 7, h); x.fillStyle = 'rgba(0,0,0,0.4)'; x.fillRect(i * 8 + 7, 0, 1, h); for (let k = 0; k < 5; k++) { x.fillStyle = 'rgba(20,14,8,0.35)'; x.fillRect(i * 8 + r.int(1, 5), r.int(0, 56), 1, r.int(4, 14)); } } for (let j = 0; j < 3; j++) { x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(0, r.int(8, 56), w, 1); } }, rx, ry);
 
   class Room {
     constructor(hooks, id) {
@@ -5065,14 +5066,14 @@ const StubRoom = (() => {
       this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 60); this.scene.add(this.camera);
       this.player = { pos: new THREE.Vector3(0, 0, HZ - 0.9), yaw: 0, pitch: -0.02, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
       this.toastT = 0; this.toastText = ''; this.prompt = null; this.stations = [{ id: 'exit', x: 0, z: HZ - 0.4, r: 1.7, label: () => 'E — выйти на улицу' }];
-      this.build(); Snd.startAmbient('stub'); this.toast('Внутри тихо. Слишком тихо…', 4);
+      this.build(); Snd.stopAmbient(); Snd.hush(true); this.toast('Внутри тихо. Слишком тихо…', 4);
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
     toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
     build() {
-      const S = this.scene, logs = logsTex(), planks = planksTex();
+      const S = this.scene, logs = logsTex(), planks = planksTex(RW / 2, RD / 2);
       this.hemi = new THREE.HemisphereLight('#7a8a9a', '#3a2c20', 1.25); S.add(this.hemi);
-      const fl = new THREE.Mesh(new THREE.PlaneGeometry(RW, RD).rotateX(-Math.PI / 2), lam('#ffffff', { map: planks })); planks.repeat.set(RW / 2, RD / 2); fl.receiveShadow = true; S.add(fl);
+      const fl = new THREE.Mesh(new THREE.PlaneGeometry(RW, RD).rotateX(-Math.PI / 2), lam('#ffffff', { map: planks })); fl.receiveShadow = true; S.add(fl);
       const ce = new THREE.Mesh(new THREE.PlaneGeometry(RW, RD).rotateX(Math.PI / 2), lam('#3a3028')); ce.position.y = RH; S.add(ce);
       const wallMat = (w, h) => { const t = logs.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(w / 2, h / 2); return lam('#b8b0a8', { map: t }); };
       const wall = (w, x, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, RH), wallMat(w, RH)); m.position.set(x, RH / 2, z); m.rotation.y = ry; S.add(m); return m; };
@@ -5101,7 +5102,7 @@ const StubRoom = (() => {
       P.vel.x = damp(P.vel.x, (fx * -mz + rx * mx) * spd, 12, dt); P.vel.y = damp(P.vel.y, (fz * -mz + rz * mx) * spd, 12, dt);
       const nx = clamp(P.pos.x + P.vel.x * dt, -HX + 0.45, HX - 0.45), nz = clamp(P.pos.z + P.vel.y * dt, -HZ + 0.45, HZ - 0.45);
       const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002; P.bob += moved * 2.0; P.stepD += moved;
-      if (P.stepD > 0.8) { P.stepD = 0; Snd.sfx.step('wood'); }
+      if (P.stepD > 0.8) P.stepD = 0;                       // no footsteps: the room is silent
       this.camera.position.set(P.pos.x, 1.62 + Math.sin(P.bob) * 0.02, P.pos.z); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
       this.prompt = this.nearest(); this.toastT = Math.max(0, this.toastT - dt); this.animate(dt);
     }
@@ -5112,7 +5113,7 @@ const StubRoom = (() => {
     }
     open(name) { this.ov = name; this.hooks.unlock(); }
     close() { this.ov = null; this.hooks.lock(); }
-    interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitRoom(); } }
+    interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.hush(false); Snd.sfx.door(); this.hooks.exitRoom(); } }
     key(e) {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
@@ -5121,7 +5122,7 @@ const StubRoom = (() => {
     pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 84, w: 180, h: 20, size: 10 }, { id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y: 112, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y: 112, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на улицу', x, y: 136, w: 180, h: 16 }, { id: 'title', label: 'Главное меню', x, y: 158, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
-      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'sound') this.hooks.toggle('sound'); else if (b.id === 'music') this.hooks.toggle('music'); else if (b.id === 'exit') this.hooks.exitRoom(); else if (b.id === 'title') this.hooks.title();
+      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'sound') this.hooks.toggle('sound'); else if (b.id === 'music') this.hooks.toggle('music'); else if (b.id === 'exit') { Snd.hush(false); this.hooks.exitRoom(); } else if (b.id === 'title') this.hooks.title();
     }
     wheel() {}
     draw(ctx, t, m) {
@@ -5132,7 +5133,7 @@ const StubRoom = (() => {
       T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.5)', shadow: '#000' });
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }
     }
-    dispose() { Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
+    dispose() { Snd.hush(false); Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
   }
   return Room;
 })();
