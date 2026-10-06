@@ -186,3 +186,7 @@ The cabinet / market / house pause menus have the same «Настройки» an
 - World map (online): figures next to a pin show who is in that place, hovering a pin lists their names, a corner panel lists everybody and where they are (cabinet / market / map).
 - Spreading desk: unspread specimens of one species are stacked into one card with a «×N» badge; aberrants are separate cards (identical aberration codes stack together).
 - Birch trunks now end inside the crown.
+
+## Chat and the spreading desk
+- Multiplayer chat: **T** opens a line (Enter sends, Esc cancels; rebindable in «Клавиши»; a 💬 button on phones). Messages go to everybody online and fade after ~12 s. Offline, T only says that the chat needs multiplayer. Uses the server's existing `chat` message (no server change). Test: `tools/test/chat.js`.
+- Spreading desk: aberrations are purple cards with an «аберрант» tag and stand right after the normal form of their species.

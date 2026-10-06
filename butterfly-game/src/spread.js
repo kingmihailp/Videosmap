@@ -13,11 +13,14 @@ const Cab2 = {
 // small card for a specimen: butterfly picture, name, line with date or quality
 function specCard(ctx, x, y, w, h, spec, hover, sel, count) {
   const c = UIK.col; const sp = SPECIES_BY_ID[spec.sp];
-  UIK.panel(ctx, x, y, w, h, { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
+  const ab = !!sp.ab;                                // aberrations are lit up in purple
+  UIK.panel(ctx, x, y, w, h, ab ? { fill: sel ? '#5a3a8a' : hover ? '#4a3076' : '#35235a', border: sel ? c.gold : hover ? '#d0a8ff' : '#a070e8', shadow: false } : { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
+  if (ab) { ctx.fillStyle = 'rgba(190,130,255,0.16)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4); }
   Art.drawPose(ctx, sp, spec.pose || Art.RAW, x + w / 2, y + 22, 1);
-  const nm = sp.ru.length > 15 ? sp.ru.slice(0, 14) + '…' : sp.ru;
+  if (ab) { const lb = 'аберрант', lw = T.width(lb, 8) + 8; UIK.panel(ctx, x + 3, y + 3, lw, 12, { fill: 'rgba(60,30,100,0.95)', border: '#c090ff', shadow: false }); T.draw(ctx, lb, x + 3 + lw / 2, y + 5, { size: 8, align: 'c', color: '#f0d8ff' }); }
+  const nm = ab ? (SPECIES_BY_ID[sp.base] || sp).ru : sp.ru.length > 15 ? sp.ru.slice(0, 14) + '…' : sp.ru;
   let n = nm; while (T.width(n, 8) > w - 6 && n.length > 3) n = n.slice(0, -2) + '…';
-  T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: c.text });
+  T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: ab ? '#f0d8ff' : c.text });
   if (spec.q !== null) { const g = Grade(spec.q); T.draw(ctx, spec.q + '% ' + g.name.split(' ')[0], x + w / 2, y + h - 11, { size: 8, align: 'c', color: g.col }); }
   else T.draw(ctx, fmtDate(spec.date), x + w / 2, y + h - 11, { size: 8, align: 'c', color: c.dim });
   if (count > 1) {                                   // a stack of identical (unspread) specimens
@@ -41,6 +44,8 @@ const Spread = (() => {
     layout() {
       this.list = Save.rawList(); const per = 12;
       const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
+      const ord = new Map(); for (const g of groups) { const b = SPECIES_BY_ID[g.s.sp].base || g.s.sp; if (!ord.has(b)) ord.set(b, ord.size); }
+      groups.sort((a, b) => { const sa = SPECIES_BY_ID[a.s.sp], sb = SPECIES_BY_ID[b.s.sp]; return (ord.get(sa.base || sa.id) - ord.get(sb.base || sb.id)) || ((sa.ab ? 1 : 0) - (sb.ab ? 1 : 0)) || (sa.id < sb.id ? -1 : 1); });   // every aberration stands right after its normal form
       const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
       this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
       this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];

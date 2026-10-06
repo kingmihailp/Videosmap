@@ -24,6 +24,7 @@ const Net = (() => {
   N.disconnect = () => { if (N.ws) { try { N.ws.close(); } catch (e) {} } };
   // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
   N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; N.send('join', { loc }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
+  N.say = text => { if (N.on && text) N.send('chat', { text }); };
   N.leave = () => { N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
 
   function handle(m) {
@@ -38,7 +39,7 @@ const Net = (() => {
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
       case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
       case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
-      case 'chat': N.chat.push(m); if (N.chat.length > 6) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
+      case 'chat': m.at = performance.now(); N.chat.push(m); if (N.chat.length > 8) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
     }
   }

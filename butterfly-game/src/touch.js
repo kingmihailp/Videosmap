@@ -37,6 +37,7 @@
   mk('E', { right: `calc(var(--s)*1.45 + ${g})`, bottom: `calc(var(--s)*1.45 + ${g})` }, moving, () => key('KeyE', 'e'));
   mk('📖', { right: g, top: `calc(var(--s)*1.3 + ${g})` }, moving, () => key('Tab'));
   const crouch = mk('⬇', { right: g, top: `calc(var(--s)*2.6 + ${g})` }, () => moving() && App.screen === 'play', () => { if (inp.keys.has('KeyC')) inp.keys.delete('KeyC'); else inp.keys.add('KeyC'); });
+  mk('💬', { left: g, top: `calc(var(--s)*4.6 + ${g})` }, () => moving() && Net.on, () => key('KeyT', 't'));
   mk('☰', { right: g, top: g }, moving, () => key('KeyP', 'p'));
   mk('🔦', { left: g, top: `calc(var(--s)*3.3 + ${g})` }, () => moving() && App.screen === 'play' && App.play.flash, () => key('KeyF', 'f'));
   mk('👁', { left: g, top: `calc(var(--s)*2 + ${g})` }, () => moving() && App.screen === 'play', () => key('KeyH', 'h'));
@@ -84,6 +85,7 @@
 
   // ---- on-screen text input (multiplayer address / name): a tap on the form focuses a hidden input, typed characters become key events
   ui.addEventListener('click', () => { if (App.screen === 'mp' && !(window.Net && Net.on)) { kb.blur(); kb.value = ' '; kb.focus({ preventScroll: true }); try { kb.setSelectionRange(1, 1); } catch (er) {} } else if (document.activeElement === kb) kb.blur(); });   // focus inside the tap itself (needed to raise the keyboard); blur first so it comes back after being hidden
+  App.kbFocus = on => { if (on) { kb.blur(); kb.value = ' '; kb.focus({ preventScroll: true }); try { kb.setSelectionRange(1, 1); } catch (er) {} } else kb.blur(); };
   kb.addEventListener('input', () => {
     const v = kb.value; kb.value = ' ';
     if (!v.length) { key('Backspace'); return; }

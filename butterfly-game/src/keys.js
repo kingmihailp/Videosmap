@@ -7,7 +7,7 @@ const Keys = (() => {
     { id: 'fwd', ru: 'Вперёд', def: ['KeyW'] }, { id: 'back', ru: 'Назад', def: ['KeyS'] }, { id: 'left', ru: 'Влево', def: ['KeyA'] }, { id: 'right', ru: 'Вправо', def: ['KeyD'] },
     { id: 'sprint', ru: 'Бег', def: ['ShiftLeft', 'ShiftRight'] }, { id: 'crouch', ru: 'Красться', def: ['ControlLeft', 'KeyC', 'ControlRight'] },
     { id: 'swing', ru: 'Взмах сачка (и ЛКМ)', def: ['Space'] }, { id: 'use', ru: 'Действие / войти', def: ['KeyE'] }, { id: 'journal', ru: 'Журнал', def: ['Tab'] },
-    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] },
+    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] },
   ];
   const SYM = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Пробел', Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', CapsLock: 'Caps',
     ShiftLeft: 'Shift (лев.)', ShiftRight: 'Shift (прав.)', ControlLeft: 'Ctrl (лев.)', ControlRight: 'Ctrl (прав.)', AltLeft: 'Alt (лев.)', AltRight: 'Alt (прав.)',
@@ -36,6 +36,7 @@ const Keys = (() => {
     if (!custom || typeof s !== 'string') return s; let o = s;
     if (/E — /.test(o)) o = o.replace(/(^|[^A-Za-zА-Яа-я])E — /g, (m, p) => p + name(bound('use')) + ' — ');
     if (/Tab — /.test(o)) o = o.replace(/(^|[^A-Za-z])Tab — /g, (m, p) => p + name(bound('journal')) + ' — ');
+    if (/T — /.test(o)) o = o.replace(/(^|[^A-Za-z])T — /g, (m, p) => p + name(bound('chat')) + ' — ');
     if (/H — /.test(o)) o = o.replace(/(^|[^A-Za-z])H — /g, (m, p) => p + name(bound('sense')) + ' — ');
     if (/Shift — /.test(o)) o = o.replace(/Shift — /g, name(bound('sprint')) + ' — ');
     if (/Ctrl — /.test(o)) o = o.replace(/Ctrl — /g, name(bound('crouch')) + ' — ');
@@ -47,7 +48,7 @@ const Keys = (() => {
   }
   const origDraw = T.draw, origWidth = T.width; T.draw = (ctx, str, ...r) => origDraw(ctx, fix(str), ...r); T.width = (str, size) => origWidth(fix(str), size);
   // gameplay contexts only: menus, journal pages and text fields keep the raw keys
-  const active = () => { const A = window.F0W; if (!A || !custom) return false; return (A.screen === 'play' && !A.overlay) || (A.screen === 'cabinet' && !!A.cab && !A.cab.ov); };
+  const active = () => { const A = window.F0W; if (!A || !custom || A.chatOpen) return false; return (A.screen === 'play' && !A.overlay) || (A.screen === 'cabinet' && !!A.cab && !A.cab.ov); };
   addEventListener('keydown', e => {
     if (e.__tr || !active()) return; const c = tr(e.code); if (c === e.code) return;
     e.stopImmediatePropagation(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (c === null) return;

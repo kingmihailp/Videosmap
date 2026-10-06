@@ -956,7 +956,7 @@ const Keys = (() => {
     { id: 'fwd', ru: 'Вперёд', def: ['KeyW'] }, { id: 'back', ru: 'Назад', def: ['KeyS'] }, { id: 'left', ru: 'Влево', def: ['KeyA'] }, { id: 'right', ru: 'Вправо', def: ['KeyD'] },
     { id: 'sprint', ru: 'Бег', def: ['ShiftLeft', 'ShiftRight'] }, { id: 'crouch', ru: 'Красться', def: ['ControlLeft', 'KeyC', 'ControlRight'] },
     { id: 'swing', ru: 'Взмах сачка (и ЛКМ)', def: ['Space'] }, { id: 'use', ru: 'Действие / войти', def: ['KeyE'] }, { id: 'journal', ru: 'Журнал', def: ['Tab'] },
-    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] },
+    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] },
   ];
   const SYM = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Пробел', Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', CapsLock: 'Caps',
     ShiftLeft: 'Shift (лев.)', ShiftRight: 'Shift (прав.)', ControlLeft: 'Ctrl (лев.)', ControlRight: 'Ctrl (прав.)', AltLeft: 'Alt (лев.)', AltRight: 'Alt (прав.)',
@@ -985,6 +985,7 @@ const Keys = (() => {
     if (!custom || typeof s !== 'string') return s; let o = s;
     if (/E — /.test(o)) o = o.replace(/(^|[^A-Za-zА-Яа-я])E — /g, (m, p) => p + name(bound('use')) + ' — ');
     if (/Tab — /.test(o)) o = o.replace(/(^|[^A-Za-z])Tab — /g, (m, p) => p + name(bound('journal')) + ' — ');
+    if (/T — /.test(o)) o = o.replace(/(^|[^A-Za-z])T — /g, (m, p) => p + name(bound('chat')) + ' — ');
     if (/H — /.test(o)) o = o.replace(/(^|[^A-Za-z])H — /g, (m, p) => p + name(bound('sense')) + ' — ');
     if (/Shift — /.test(o)) o = o.replace(/Shift — /g, name(bound('sprint')) + ' — ');
     if (/Ctrl — /.test(o)) o = o.replace(/Ctrl — /g, name(bound('crouch')) + ' — ');
@@ -996,7 +997,7 @@ const Keys = (() => {
   }
   const origDraw = T.draw, origWidth = T.width; T.draw = (ctx, str, ...r) => origDraw(ctx, fix(str), ...r); T.width = (str, size) => origWidth(fix(str), size);
   // gameplay contexts only: menus, journal pages and text fields keep the raw keys
-  const active = () => { const A = window.F0W; if (!A || !custom) return false; return (A.screen === 'play' && !A.overlay) || (A.screen === 'cabinet' && !!A.cab && !A.cab.ov); };
+  const active = () => { const A = window.F0W; if (!A || !custom || A.chatOpen) return false; return (A.screen === 'play' && !A.overlay) || (A.screen === 'cabinet' && !!A.cab && !A.cab.ov); };
   addEventListener('keydown', e => {
     if (e.__tr || !active()) return; const c = tr(e.code); if (c === e.code) return;
     e.stopImmediatePropagation(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); if (c === null) return;
@@ -2678,6 +2679,7 @@ const Net = (() => {
   N.disconnect = () => { if (N.ws) { try { N.ws.close(); } catch (e) {} } };
   // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
   N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; N.send('join', { loc }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
+  N.say = text => { if (N.on && text) N.send('chat', { text }); };
   N.leave = () => { N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
 
   function handle(m) {
@@ -2692,7 +2694,7 @@ const Net = (() => {
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
       case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
       case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
-      case 'chat': N.chat.push(m); if (N.chat.length > 6) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
+      case 'chat': m.at = performance.now(); N.chat.push(m); if (N.chat.length > 8) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
     }
   }
@@ -3255,7 +3257,7 @@ class Play {
     // biome plate
     UIK.panel(ctx, 6, 6, 158, 24, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, b.name, 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, 12, 19, { size: 8, color: c.dim });
-    if (this.mp) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', '), 8, 33, { size: 8, color: '#9ae0b0', shadow: '#000' });
+    if (this.mp) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', ') + '   [T — чат]', 8, 33, { size: 8, color: '#9ae0b0', shadow: '#000' });
     // species checklist
     const n = this.pool.length, cmp = n > 9, tw = cmp ? 21 : 32, th = cmp ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, cmp ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
@@ -3700,8 +3702,8 @@ const Screens = (() => {
   const keysScr = {
     wait: -1, btns: [], rows: [], msg: '',
     layout() {
-      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 36 + i * 15, w: 260, h: 13 }));
-      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 231, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 231, w: 170, h: 16, size: 10 }];
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 14, w: 260, h: 12 }));
+      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 235, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 235, w: 170, h: 16, size: 10 }];
     },
     draw(ctx, t, m) {
       this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.88)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 150, 10, 300, 252, { fill: 'rgba(16,32,28,0.97)', border: c.gold });
@@ -3709,10 +3711,10 @@ const Screens = (() => {
       this.rows.forEach(r => {
         const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
         UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
-        T.draw(ctx, a.ru, r.x + 6, r.y + 3, { size: 8, color: c.text });
-        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
+        T.draw(ctx, a.ru, r.x + 6, r.y + 2, { size: 8, color: c.text });
+        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 2, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
       });
-      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 217, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
+      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 222, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
     },
     click(x, y) {                                   // returns true when the screen should close
@@ -3777,6 +3779,41 @@ const Screens = (() => {
   return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
 })();
 
+// ===== chat.js =====
+// ---------------------------------------------------------------- multiplayer chat: T opens a line, Enter sends, Esc closes; recent messages fade out
+const Chat = (() => {
+  const MAX = 120, W = 270; let text = '', last = 0;
+  const A = () => window.F0W;
+  const wrap = (s, w) => { const out = []; let cur = ''; for (const word of s.split(' ')) { const t = cur ? cur + ' ' + word : word; if (T.width(t, 8) <= w || !cur) cur = t; else { out.push(cur); cur = word; } } if (cur) out.push(cur); return out.flatMap(l => { const r = []; while (T.width(l, 8) > w && l.length > 1) { let k = l.length - 1; while (k > 1 && T.width(l.slice(0, k), 8) > w) k--; r.push(l.slice(0, k)); l = l.slice(k); } r.push(l); return r; }); };
+  const o = {
+    open: false,
+    canOpen() { const a = A(); return !!(a && Net.on && !a.modal && ((a.screen === 'play' && a.play && !a.overlay) || (a.screen === 'cabinet' && a.cab && !a.cab.ov))); },
+    show() { text = ''; o.open = true; A().chatOpen = true; A().inp.keys.clear(); if (A().kbFocus) A().kbFocus(true); },
+    close() { o.open = false; A().chatOpen = false; text = ''; if (A().kbFocus) A().kbFocus(false); },
+    send() { const t = text.trim(); const now = performance.now(); if (t && now - last > 600) { Net.say(t); last = now; } o.close(); },
+    key(e) {                                           // returns nothing; always consumes the key while the line is open
+      if (e.code === 'Escape') { o.close(); return; } if (e.code === 'Enter') { o.send(); return; }
+      if (e.code === 'Backspace') { text = text.slice(0, -1); return; }
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && text.length < MAX) text += e.key;
+    },
+    draw(ctx, t) {
+      if (!Net.on) { if (o.open) o.close(); return; }
+      const now = performance.now(), c = UIK.col, msgs = Net.chat.filter(m => o.open || now - m.at < 12000).slice(o.open ? -8 : -5); if (!msgs.length && !o.open) return;
+      const lines = []; for (const m of msgs) { const mine = m.name === Net.name, ls = wrap(`${m.name}: ${m.text}`, W - 8); ls.forEach((l, i) => lines.push({ l, mine, a: o.open ? 1 : clamp((12000 - (now - m.at)) / 2500), head: i === 0 ? m.name.length + 1 : 0 })); }
+      const L = lines.slice(-9), baseY = SH - 68 - (o.open ? 18 : 0); const h = L.length * 10 + 6;
+      if (L.length) { ctx.fillStyle = 'rgba(8,16,14,0.55)'; ctx.fillRect(6, baseY - h, W, h); }
+      L.forEach((ln, i) => { ctx.globalAlpha = ln.a; const y = baseY - h + 3 + i * 10; if (ln.head) { const nm = ln.l.slice(0, ln.head); T.draw(ctx, nm, 10, y, { size: 8, color: ln.mine ? c.gold : '#9ae0b0' }); T.draw(ctx, ln.l.slice(ln.head), 10 + T.width(nm, 8), y, { size: 8, color: '#fff' }); } else T.draw(ctx, ln.l, 10, y, { size: 8, color: '#fff' }); ctx.globalAlpha = 1; });
+      if (o.open) {
+        const y = baseY + 4; UIK.panel(ctx, 6, y, W, 14, { fill: 'rgba(16,32,28,0.96)', border: c.gold, shadow: false });
+        const shown = text.length > 0 ? text : ''; let vis = shown; while (T.width(vis, 8) > W - 18 && vis.length > 1) vis = vis.slice(1);
+        T.draw(ctx, vis, 10, y + 3, { size: 8, color: '#fff' }); if (Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.gold; ctx.fillRect(10 + T.width(vis, 8), y + 3, 1, 8); }
+        if (!text) T.draw(ctx, 'Введите сообщение… (Enter — отправить, Esc — отмена)', 10, y + 3, { size: 8, color: c.dim });
+      }
+    },
+  };
+  return o;
+})();
+
 // ===== spread.js =====
 // ---------------------------------------------------------------- spreading board mini-game + specimen cards
 const Grade = q => q >= 95 ? { name: 'Музейный экземпляр', col: '#ffe27a' } : q >= 85 ? { name: 'Отлично', col: '#9af0a0' } : q >= 70 ? { name: 'Хорошо', col: '#b8e0f0' } : q >= 50 ? { name: 'Средне', col: '#e8d0a0' } : { name: 'Небрежно', col: '#e88a70' };
@@ -3793,11 +3830,14 @@ const Cab2 = {
 // small card for a specimen: butterfly picture, name, line with date or quality
 function specCard(ctx, x, y, w, h, spec, hover, sel, count) {
   const c = UIK.col; const sp = SPECIES_BY_ID[spec.sp];
-  UIK.panel(ctx, x, y, w, h, { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
+  const ab = !!sp.ab;                                // aberrations are lit up in purple
+  UIK.panel(ctx, x, y, w, h, ab ? { fill: sel ? '#5a3a8a' : hover ? '#4a3076' : '#35235a', border: sel ? c.gold : hover ? '#d0a8ff' : '#a070e8', shadow: false } : { fill: sel ? '#2a5a46' : hover ? '#244a3c' : '#1a3228', border: sel ? c.gold : hover ? '#8ab89a' : c.line, shadow: false });
+  if (ab) { ctx.fillStyle = 'rgba(190,130,255,0.16)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4); }
   Art.drawPose(ctx, sp, spec.pose || Art.RAW, x + w / 2, y + 22, 1);
-  const nm = sp.ru.length > 15 ? sp.ru.slice(0, 14) + '…' : sp.ru;
+  if (ab) { const lb = 'аберрант', lw = T.width(lb, 8) + 8; UIK.panel(ctx, x + 3, y + 3, lw, 12, { fill: 'rgba(60,30,100,0.95)', border: '#c090ff', shadow: false }); T.draw(ctx, lb, x + 3 + lw / 2, y + 5, { size: 8, align: 'c', color: '#f0d8ff' }); }
+  const nm = ab ? (SPECIES_BY_ID[sp.base] || sp).ru : sp.ru.length > 15 ? sp.ru.slice(0, 14) + '…' : sp.ru;
   let n = nm; while (T.width(n, 8) > w - 6 && n.length > 3) n = n.slice(0, -2) + '…';
-  T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: c.text });
+  T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: ab ? '#f0d8ff' : c.text });
   if (spec.q !== null) { const g = Grade(spec.q); T.draw(ctx, spec.q + '% ' + g.name.split(' ')[0], x + w / 2, y + h - 11, { size: 8, align: 'c', color: g.col }); }
   else T.draw(ctx, fmtDate(spec.date), x + w / 2, y + h - 11, { size: 8, align: 'c', color: c.dim });
   if (count > 1) {                                   // a stack of identical (unspread) specimens
@@ -3821,6 +3861,8 @@ const Spread = (() => {
     layout() {
       this.list = Save.rawList(); const per = 12;
       const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
+      const ord = new Map(); for (const g of groups) { const b = SPECIES_BY_ID[g.s.sp].base || g.s.sp; if (!ord.has(b)) ord.set(b, ord.size); }
+      groups.sort((a, b) => { const sa = SPECIES_BY_ID[a.s.sp], sb = SPECIES_BY_ID[b.s.sp]; return (ord.get(sa.base || sa.id) - ord.get(sb.base || sb.id)) || ((sa.ab ? 1 : 0) - (sb.ab ? 1 : 0)) || (sa.id < sb.id ? -1 : 1); });   // every aberration stands right after its normal form
       const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
       this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
       this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];
@@ -5476,6 +5518,7 @@ const StubRoom = (() => {
   // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
   function lockLost() {
+    if (Chat.open) { Chat.close(); lock(); return; }
     if (App.screen === 'play' && !App.overlay) { App.overlay = 'pause'; App.pauseT = performance.now(); }
     if (App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; App.pauseT = performance.now(); }
   }
@@ -5488,7 +5531,9 @@ const StubRoom = (() => {
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
+    if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
     if (App.modal) { modalKey(e); return; }
@@ -5578,6 +5623,7 @@ const StubRoom = (() => {
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
+    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
@@ -5632,6 +5678,7 @@ const StubRoom = (() => {
   mk('E', { right: `calc(var(--s)*1.45 + ${g})`, bottom: `calc(var(--s)*1.45 + ${g})` }, moving, () => key('KeyE', 'e'));
   mk('📖', { right: g, top: `calc(var(--s)*1.3 + ${g})` }, moving, () => key('Tab'));
   const crouch = mk('⬇', { right: g, top: `calc(var(--s)*2.6 + ${g})` }, () => moving() && App.screen === 'play', () => { if (inp.keys.has('KeyC')) inp.keys.delete('KeyC'); else inp.keys.add('KeyC'); });
+  mk('💬', { left: g, top: `calc(var(--s)*4.6 + ${g})` }, () => moving() && Net.on, () => key('KeyT', 't'));
   mk('☰', { right: g, top: g }, moving, () => key('KeyP', 'p'));
   mk('🔦', { left: g, top: `calc(var(--s)*3.3 + ${g})` }, () => moving() && App.screen === 'play' && App.play.flash, () => key('KeyF', 'f'));
   mk('👁', { left: g, top: `calc(var(--s)*2 + ${g})` }, () => moving() && App.screen === 'play', () => key('KeyH', 'h'));
@@ -5679,6 +5726,7 @@ const StubRoom = (() => {
 
   // ---- on-screen text input (multiplayer address / name): a tap on the form focuses a hidden input, typed characters become key events
   ui.addEventListener('click', () => { if (App.screen === 'mp' && !(window.Net && Net.on)) { kb.blur(); kb.value = ' '; kb.focus({ preventScroll: true }); try { kb.setSelectionRange(1, 1); } catch (er) {} } else if (document.activeElement === kb) kb.blur(); });   // focus inside the tap itself (needed to raise the keyboard); blur first so it comes back after being hidden
+  App.kbFocus = on => { if (on) { kb.blur(); kb.value = ' '; kb.focus({ preventScroll: true }); try { kb.setSelectionRange(1, 1); } catch (er) {} } else kb.blur(); };
   kb.addEventListener('input', () => {
     const v = kb.value; kb.value = ' ';
     if (!v.length) { key('Backspace'); return; }
