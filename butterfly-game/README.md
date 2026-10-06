@@ -152,3 +152,9 @@ cd server && npm install && node server.js [порт]   # по умолчани�
 В локации «Альпы» всегда стоит старый заброшенный шале (`src/chalet.js`): бревенчатые стены, прогнившая крыша с дырами и обвалом, разбитые окна с повисшими ставнями,
 сломанная веранда, покосившийся забор, поленница, бочка, колесо, заросли травы вокруг. Дверью можно воспользоваться: «E — войти в заброшенный дом» —
 звучит таинственный звук (`Snd.sfx.mystery`), и игрок оказывается в пустой комнате-заглушке (`src/room.js`); «E» у двери возвращает его к дому.
+
+## Desktop app (Windows .exe with an icon)
+`desktop/` wraps the game in an Electron window (own icon, no browser UI, F11 = fullscreen).
+- Ready exe: GitHub → Actions → "Windows exe" → artifact `Flora0world-Butterflies-exe` (built automatically on each push that changes the game).
+- Or build locally on Windows: install Node.js, run `desktop\Собрать exe.bat` → `desktop\dist\Flora0world-Butterflies.exe` (portable, no installer).
+- The icon is drawn by `tools/make_icon.py`. In the app the multiplayer address must be typed manually (`host:port`).

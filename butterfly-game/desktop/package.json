@@ -1,0 +1,25 @@
+{
+  "name": "flora0world-butterflies",
+  "productName": "Flora0world Butterflies",
+  "version": "1.0.0",
+  "description": "Flora0world: Butterflies — desktop launcher",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "local.flora0world.butterflies",
+    "productName": "Flora0world Butterflies",
+    "icon": "build/icon.ico",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "package.json"],
+    "extraResources": [{ "from": "../Flora0world_Butterflies.html", "to": "game.html" }],
+    "win": { "target": [{ "target": "portable", "arch": ["x64"] }], "icon": "build/icon.ico" },
+    "portable": { "artifactName": "Flora0world-Butterflies.exe" }
+  }
+}

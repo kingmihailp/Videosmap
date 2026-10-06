@@ -1,0 +1,17 @@
+name: Windows exe
+on:
+  workflow_dispatch:
+  push:
+    paths: ['butterfly-game/Flora0world_Butterflies.html', 'butterfly-game/desktop/**']
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults: { run: { working-directory: butterfly-game/desktop } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with: { name: Flora0world-Butterflies-exe, path: butterfly-game/desktop/dist/Flora0world-Butterflies.exe }
