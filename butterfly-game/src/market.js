@@ -509,8 +509,8 @@ const Market = (() => {
         this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(e.i.price), 8), r.y + 8); T.draw(ctx, String(e.i.price), r.x + r.w - 6, r.y + 8, { size: 8, align: 'r', color: c.gold }); });
       if (S.items.length > 7) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${S.sel + 1}/${S.items.length}`, 12, 253, { size: 8, color: c.dim }); }
       // right: the merchant and the selected specimen
-      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#7a2a3a'; ctx.fillRect(246, 46, 36, 42); ctx.fillStyle = '#e0b890'; ctx.fillRect(254, 50, 20, 18); ctx.fillStyle = '#1c1820'; ctx.fillRect(252, 42, 24, 10); ctx.fillRect(250, 50, 28, 3); ctx.fillStyle = '#201810'; ctx.fillRect(257, 58, 3, 3); ctx.fillRect(268, 58, 3, 3); ctx.fillRect(259, 66, 10, 2); ctx.fillStyle = '#e8e0d0'; ctx.fillRect(250, 72, 28, 16);
-      T.para(ctx, S.msg, 288, 46, 182, { size: 8, color: '#2a1a0c', lh: 10 });
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'buyer', 247, 43, t, S.msgT > 0);
+      T.para(ctx, S.msg, 294, 46, 176, { size: 8, color: '#2a1a0c', lh: 10 });
       const e = S.items[S.sel]; UIK.panel(ctx, 240, 98, 234, 102, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
       if (e) { const i = e.i; ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 90, 46); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(i.sp), 247, 103, 84, 42);
         T.draw(ctx, fitTxt(i.sp.ru, 130), 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, fitTxt(i.sp.la, 130), 340, 114, { size: 8, color: '#8a2a1a' }); T.draw(ctx, `${i.sp.mm[0]}–${i.sp.mm[1]} мм`, 340, 125, { size: 8, color: '#6a5030' }); T.draw(ctx, e.spec.by ? `поймал: ${e.spec.by}` : i.spread ? `качество ${e.spec.q}%` : 'не расправлен', 340, 136, { size: 8, color: '#6a5030' });
@@ -554,8 +554,8 @@ const Market = (() => {
         const own = Save.partCount(r.id); T.draw(ctx, fitTxt(q.ru, 150), r.x + 5, r.y + 3, { size: 8, color: '#f0e8d0' }); T.draw(ctx, fitTxt(NetParts.fxShort(q.fx), own ? 150 : 214), r.x + 5, r.y + 12, { size: 8, color: '#9ac88a' });
         this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 3); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 3, { size: 8, align: 'r', color: c.gold }); if (own) T.draw(ctx, `есть: ${own}`, r.x + r.w - 6, r.y + 12, { size: 8, align: 'r', color: c.dim });
       });
-      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); ctx.fillStyle = '#8a6a3a'; ctx.fillRect(246, 46, 36, 42); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(254, 50, 20, 18); ctx.fillStyle = '#5a7a3a'; ctx.fillRect(252, 44, 24, 8); ctx.fillRect(250, 50, 28, 3);
-      T.para(ctx, S.msg, 288, 46, 182, { size: 8, color: '#2a1a0c', lh: 10 });
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'seller', 247, 43, t, S.msgT > 0);
+      T.para(ctx, S.msg, 294, 46, 176, { size: 8, color: '#2a1a0c', lh: 10 });
       UIK.panel(ctx, 240, 98, 234, 122, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
       if (p) {
         const base = Object.assign({}, NetParts.BASIC); base[p.slot] = id; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 80, 80); NetParts.draw2D(ctx, base, 246, 104, 76, 76);
