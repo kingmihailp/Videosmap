@@ -181,7 +181,7 @@ const Screens = (() => {
         ctx.fillStyle = col; ctx.fillRect(p.x - 3, p.y - 12 + bob, 7, 7); ctx.fillRect(p.x - 1, p.y - 5 + bob, 3, 3); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(p.x - 2, p.y - 11 + bob, 2, 2);
         if (done) { ctx.fillStyle = c.gold; ctx.fillRect(p.x - 1, p.y - 17 + bob, 3, 3); ctx.fillRect(p.x - 2, p.y - 16 + bob, 5, 1); }
         if (sel) { ctx.strokeStyle = c.gold; ctx.strokeRect(p.x - 7.5, p.y - 16.5 + bob, 15, 17); }
-        T.draw(ctx, String(i + 1), p.x, p.y - 12 + bob, { size: 8, align: 'c', color: '#10201c' });
+        T.draw(ctx, String((i + 1) % 10), p.x + 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' });      // the 3x5 glyph sits in the middle of the 7x7 marker (the 10th pin is key 0)
         if (hov || sel) T.draw(ctx, short[b.id], p.x, p.y + 2, { size: 8, align: 'c', color: '#2a1608', outline: '#f4e8c0' });
       });
       // other players: small figures next to the pin of the place they are in, a roster in the corner, names when a pin is hovered

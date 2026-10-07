@@ -420,7 +420,7 @@ class Play {
     // move
     let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
-    const sprint = inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'), slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight');
+    const slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight'), sprint = !slow && (inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'));      // creeping wins over running (on a phone the stick's edge also means Shift)
     const wading = w.inWater(P.pos.x, P.pos.z, 0);
     const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1);
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
