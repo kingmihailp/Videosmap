@@ -264,7 +264,7 @@ class Play {
   spawnInitial() {
     // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
     const stage = !!this.biome.map, list = this.pool.slice(); if (stage) for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; }
-    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = stage && (sp.scarce || k >= 4);
+    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 * (sp.thin || 1) ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = stage && (sp.scarce || k >= 4);
       for (let i = 0; i < n; i++) { if (later) this.respawns.push({ sp, t: sp.scarce ? 120 + Math.random() * 240 : 10 + Math.random() * 90 + i * 25 }); else this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); } });
   }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
@@ -338,7 +338,7 @@ class Play {
   netCaught(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
     if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
-    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
+    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) / (bs.thin || 1) }); }
     if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
   }
   sendNet(dt) {
@@ -405,7 +405,7 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
+    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) / (bs.thin || 1) }); }
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
@@ -460,7 +460,7 @@ class Play {
     // butterflies
     if (this.mp) { this.sendNet(dt); this.remotes.update(dt); }
     this.helperT -= dt;
-    if (this.helperT <= 0 && (!this.mp || this.isHost)) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34) this.flies.push(new Fly(this, sp, false)); }
+    if (this.helperT <= 0 && (!this.mp || this.isHost)) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34 * (sp.thin || 1)) this.flies.push(new Fly(this, sp, false)); }
     const ghosts = this.hasMod('ghosts');
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; } f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
@@ -561,7 +561,7 @@ class Play {
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {
-  const scarce = biome.species.filter(sp => sp.scarce), left = biome.species.filter(sp => !sp.scarce).map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
+  const scarce = biome.species.filter(sp => sp.scarce), left = biome.species.filter(sp => !sp.scarce).map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) * (sp.thin || 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   for (const sp of scarce) if (rng.next() < sp.scarce * 0.3) out.push(sp);      // the very rare ones only now and then (0.18 -> about 5% of the visits), on top of the ordinary pool
   return out;

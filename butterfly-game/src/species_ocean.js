@@ -52,6 +52,8 @@
       'Мерцает, ускользает и телепортирует свет', 'Только открытый океан', 'случайность', 'Красная бабочка с завитком на крыле. Поймаете — получите случайный модификатор ночи на полтора минуты: с шансом 80% плохой (15 вариантов), с шансом 20% хороший (5 вариантов).'],
   ];
   R.forEach(([la, ru, en, lo, hi, rar, beh, art, hab, range, host, fact]) => SPECIES.push({ id: la.toLowerCase().replace(/[^a-z]+/g, '_'), la, ru, en, fam: 'Ночные', biome: 'ocean', mm: [lo, hi], hab, range, host, fact, look: hab, rar, beh, art, glow: true, mystery: true }));
+  // the guiding, curious and modifier moths: a flat starting price of 400 (no x2 of the secret places; spreading still multiplies it) and several times rarer than the others
+  for (const id of ['lux_ductrix', 'lux_curiosa', 'mutator_chromatis']) { const q = SPECIES.find(x => x.id === id); if (q) { q.fixedPrice = 400; q.thin = 0.25; } }
   rebuildSpeciesIndex();
 })();
 const REAL = SPECIES.filter(s => !s.mystery).length;
