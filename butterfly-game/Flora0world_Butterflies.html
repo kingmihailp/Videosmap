@@ -2363,20 +2363,21 @@ const World = (() => {
   function boughTree(r, o) {
       const parts = [], H = r.range(...o.H), lean = r.range(-0.03, 0.03);
       const top = trunk(parts, r, H * 0.97, 0.3, 0.035, lean, o.bark, 7, 7);
-      for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + r.range(-0.3, 0.3), L = r.range(0.7, 1.1); const b = new V3(Math.cos(a) * L, -0.12, Math.sin(a) * L), q = limb(new V3(0, 0.55, 0), b, 0.1, 0.03, 5); parts.push({ g: q.g, m: q.m, c: '#3e2c20', j: 0.08 }); }      // roots
+      parts.push({ g: cylG(0.3, 0.46, 0.5, 8), c: ['#2e2016', '#4a3424', 0, 0.5], j: 0.06 });      // the swollen foot, and shallow surface roots: low ridges that grow out of it and sink into the ground
+      { const n = 6, a0 = r.range(0, 6.28); for (let i = 0; i < n; i++) { const a = a0 + i / n * 6.28 + r.range(-0.25, 0.25); parts.push({ g: buttressG(r.range(0.9, 1.5), r.range(0.42, 0.6), 0.075, r.range(-0.3, 0.3), r), m: M(0, 0.02, 0, 0, -a, 0), c: ['#2e2016', '#4a3424', 0, 0.6], j: 0.05 }); } }
       const pool = []; for (let i = 0; i < 4; i++) pool.push(blobG(1, r, 0.3, 0));
       const at = y => { const t = clamp(y / (H * 0.97)), k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1)); return new V3(lerp(A.x, B.x, u), y, lerp(A.z, B.z, u)); };
       // a dark inner core of overlapping skirts, so the crown has body and no light shows through between the boughs
-      for (let i = 0; i < 6; i++) { const t = i / 5; parts.push({ g: coneG(lerp(1.15, 0.22, t), H * 0.3, 8), m: M(0, H * 0.2 + t * H * 0.66, 0, 0, i * 0.8), c: o.core, j: 0.12 }); }
+      for (let i = 0; i < 6; i++) { const t = i / 5; parts.push({ g: coneG(lerp(1.15, 0.3, t), H * lerp(0.3, 0.14, t), 8), m: M(0, H * 0.2 + t * H * 0.62, 0, 0, i * 0.8), c: o.core, j: 0.12 }); }
       const W = o.W, cols = o.cols;
       for (let w = 0; w < W; w++) {
         const t = w / (W - 1), y = H * (0.13 + 0.8 * t) + r.range(-0.12, 0.12), c0 = at(y), nb = Math.round(lerp(o.nb[0], o.nb[1], t)), a0 = r.range(0, 6.28);
         const Lmax = lerp(o.Lmax, 0.4, Math.pow(t, o.taper)), dead = w < o.dead;
         for (let b = 0; b < nb; b++) {
-          const a = a0 + b / nb * 6.28 + r.range(-0.25, 0.25), L = Lmax * r.range(0.8, 1.12), dx = Math.cos(a), dz = Math.sin(a), sag = lerp(o.sag[0], o.sag[1], t);
+          const a = a0 + b / nb * 6.28 + r.range(-0.25, 0.25), L = Lmax * r.range(0.8, 1.12) * (dead ? 0.4 : 1), dx = Math.cos(a), dz = Math.sin(a), sag = lerp(o.sag[0], o.sag[1], t);
           const pt = u => new V3(c0.x + dx * L * u, c0.y - L * (sag * u - 0.34 * sag * u * u * 1.6) * (u > 0.6 ? 1 : 1), c0.z + dz * L * u);
           const p0 = c0, p1 = pt(0.5), p2 = pt(1);
-          const l1 = limb(p0, p1, 0.05 * (1.2 - t * 0.6), 0.03, 4), l2 = limb(p1, p2, 0.03, 0.012, 4); parts.push({ g: l1.g, m: l1.m, c: '#4a3626', j: 0.05 }, { g: l2.g, m: l2.m, c: '#4a3626', j: 0.05 });
+          const l1 = limb(p0, p1, dead ? 0.07 : 0.05 * (1.2 - t * 0.6), dead ? 0.045 : 0.03, 4), l2 = limb(p1, p2, dead ? 0.045 : 0.03, dead ? 0.02 : 0.012, 4); parts.push({ g: l1.g, m: l1.m, c: '#4a3626', j: 0.05 }, { g: l2.g, m: l2.m, c: '#4a3626', j: 0.05 });
           const nn = dead ? 0 : 4;
           for (let k = 0; k < nn; k++) {
             const u = dead ? 0.95 : [0.38, 0.6, 0.82, 1.0][k], p = pt(u), sz = (dead ? 0.22 : 1) * (u > 0.9 ? 0.8 : 1), dp = Math.atan2(p2.y - p0.y, L) * 0.9;
@@ -2388,7 +2389,7 @@ const World = (() => {
         }
       }
       // the leader: a slim pointed spike with short needle whorls
-      const lead = at(H * 0.9); parts.push({ g: coneG(0.26, H * 0.15, 6), m: M(lead.x, lead.y, lead.z), c: o.lead, j: 0.1 }, { g: coneG(0.04, H * 0.07, 4), m: M(top.x, H * 0.97, top.z), c: '#5a4030', j: 0.02 });
+      const lead = at(H * 0.89); parts.push({ g: coneG(0.36, H * 0.07, 8), m: M(lead.x, lead.y - H * 0.01, lead.z), c: o.lead, j: 0.06 }, { g: coneG(0.2, H * 0.06, 7), m: M(lead.x, lead.y + H * 0.05, lead.z), c: o.lead, j: 0.06 });      // the leader: a slim needle-covered cone, the trunk ends inside it
       return { g: merge(parts, r), rad: o.rad, h: H };
 
   }
