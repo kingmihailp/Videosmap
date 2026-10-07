@@ -11,14 +11,99 @@ const Art = (() => {
     long:     { f: [[0, 18], [4, 10], [18, 4], [37, 6], [39, 12], [30, 19], [10, 20]], h: [[0, 20], [15, 20], [25, 24], [23, 31], [11, 34], [3, 28]] },
     birdwing: { f: [[0, 18], [5, 10], [22, 3], [39, 4], [38, 10], [26, 17], [10, 20]], h: [[0, 19], [18, 20], [30, 23], [33, 30], [24, 35], [10, 34], [3, 28]] },
     round:    { f: [[0, 18], [4, 8], [15, 3], [30, 5], [36, 12], [32, 20], [12, 21]], h: [[0, 20], [15, 21], [30, 23], [35, 30], [28, 37], [12, 38], [4, 31]] },
+    // ---- more forms (Papilionidae)
+    papilio:  { f: [[0, 17], [2, 8], [12, 2.5], [27, 3.5], [37, 9], [35, 18], [22, 20], [10, 20]], h: [[0, 19], [12, 20], [27, 21], [33, 25], [34, 30], [29, 35], [23, 36], [17, 34], [10, 36], [4, 32], [2, 26]],
+                tail: [[25, 33], [31, 31], [33, 38.5], [29.5, 38.5]], longTail: [[24, 33], [31, 31], [34, 39.5], [30, 39.5]], spoonTail: [[24, 33], [29, 31], [30, 35], [34, 37], [33.5, 39.5], [28, 39.5], [28, 36]] },
+    iphiclides: { f: [[0, 17], [2, 8], [12, 2.5], [28, 3], [38, 8], [34, 18], [22, 20], [10, 20]], h: [[0, 19], [12, 20], [27, 21], [32, 25], [33, 29], [29, 31], [26, 33], [22, 31], [18, 35], [13, 32], [8, 35], [4, 31], [2, 26]],
+                tail: [[26, 32], [31, 30], [32, 38], [29, 38]], longTail: [[25, 32], [31, 30], [33.5, 39.5], [30, 39.5]] },
+    kite:     { f: [[0, 18], [3, 8], [15, 3], [31, 2.5], [39, 6], [34, 12], [30, 18], [14, 20]], h: [[0, 20], [12, 21], [24, 22], [28, 26], [25, 31], [15, 32], [5, 28]],
+                tail: [[20, 30], [26, 29], [28, 36], [25, 36]], longTail: [[19, 30], [26, 29], [30, 39.5], [27, 39.5]], spoonTail: [[19, 30], [24, 29], [26, 33], [31, 35], [31.5, 39.5], [25, 39.5], [23, 34]] },
+    lamproptera: { f: [[0, 18], [4, 10], [16, 5], [28, 6], [33, 10], [28, 16], [18, 19], [8, 20]], h: [[0, 20], [10, 21], [20, 22], [24, 26], [20, 30], [10, 30], [3, 26]],
+                tail: [[18, 28], [22, 27], [24, 36], [22, 36]], longTail: [[18, 28], [22, 27], [26, 39.5], [24, 39.5]] },
+    aristolochia: { f: [[0, 18], [3, 9], [16, 3], [30, 5], [37, 10], [33, 17], [24, 20], [10, 20]], h: [[0, 20], [12, 21], [26, 22], [33, 26], [33, 32], [28, 36], [22, 36], [14, 35], [7, 33], [2, 27]],
+                tail: [[25, 33], [30, 32], [31, 38.5], [28, 38.5]], longTail: [[24, 33], [30, 32], [32, 39.5], [28, 39.5]] },
+    festoon:  { f: [[0, 18], [3, 8], [15, 3], [28, 5], [35, 10], [33, 18], [20, 21], [8, 21]], h: [[0, 20], [12, 21], [26, 22], [32, 26], [33, 31], [30, 35], [26, 33], [22, 37], [18, 34], [13, 37], [8, 34], [3, 30]],
+                tail: [[21, 35], [26, 34], [27, 39], [23, 39]] },
+    apollo:   { f: [[0, 18], [3, 8], [14, 3], [28, 3.5], [36, 9], [35, 16], [26, 21], [10, 21]], h: [[0, 20], [14, 21], [28, 22], [34, 28], [32, 34], [22, 38], [10, 37], [3, 31]] },
+    trog:     { f: [[0, 18], [5, 10], [22, 3.5], [39, 3], [39, 7], [28, 14], [22, 19], [8, 21]], h: [[0, 20], [16, 21], [28, 24], [32, 29], [26, 34], [12, 35], [4, 29]] },
+    // ---- Pieridae
+    sulphur:  { f: [[0, 18], [4, 7], [18, 3], [31, 5], [36, 10], [34, 17], [26, 20], [12, 21]], h: [[0, 20], [14, 21], [27, 22], [31, 28], [26, 34], [12, 35], [3, 29]] },
+    brimstone: { f: [[0, 18], [3, 8], [16, 3], [30, 3], [37, 6], [33, 14], [31, 19], [12, 21]], h: [[0, 20], [15, 21], [29, 23], [36, 29], [28, 32], [22, 37], [10, 35], [3, 29]] },
+    orangetip: { f: [[0, 18], [3, 8], [15, 3], [28, 2.5], [35, 4], [38, 8], [33, 11], [33, 17], [28, 20], [12, 21]], h: [[0, 20], [14, 21], [26, 22], [30, 27], [25, 33], [12, 34], [3, 29]] },
+    phoebis:  { f: [[0, 18], [5, 8], [20, 3], [35, 3.5], [38, 6], [32, 11], [30, 19], [10, 21]], h: [[0, 20], [16, 21], [28, 23], [33, 29], [27, 35], [13, 36], [4, 31]] },
+    delias:   { f: [[0, 18], [6, 6], [22, 2.5], [34, 8], [34, 16], [24, 20], [8, 21]], h: [[0, 20], [12, 21], [24, 22], [28, 27], [22, 31], [10, 31], [2, 26]] },
+    leptosia: { f: [[0, 18], [4, 8], [16, 4], [28, 6], [32, 13], [27, 19], [10, 20]], h: [[0, 20], [12, 21], [24, 22], [28, 27], [23, 32], [10, 32], [3, 26]] },
+    // ---- Lycaenidae
+    hairstreak: { f: [[0, 18], [3, 8], [15, 3.5], [28, 5], [34, 10], [32, 17], [20, 20], [8, 20]], h: [[0, 20], [12, 21], [24, 22], [29, 26], [30, 31], [28, 35], [22, 34], [14, 35], [6, 32], [3, 27]],
+                tail: [[26, 33], [29, 32], [30, 38.5], [28.5, 38.5]], longTail: [[25, 33], [29, 32], [31, 39.5], [29, 39.5]],
+                twoTail: [[[24, 33], [27, 32], [27.5, 38.5], [26, 38.5]], [[28.5, 31], [31, 30], [33, 36], [31.5, 36]]] },
+    copper:   { f: [[0, 18], [4, 8], [16, 4], [28, 6], [34, 11], [31, 18], [14, 20]], h: [[0, 20], [12, 21], [24, 22], [28, 27], [27, 32], [20, 34], [11, 33], [4, 28]], tail: [[24, 31], [27, 30], [28, 36], [26, 36]] },
+    // ---- Nymphalidae
+    vanessa:  { f: [[0, 18], [3, 8], [14, 3], [28, 3.5], [37, 5.5], [38, 9], [32, 10.5], [34, 15], [31, 19], [18, 21]], h: [[0, 20], [14, 21], [26, 22], [31, 26], [33, 30], [29, 35], [22, 36], [13, 36], [5, 32], [2, 27]] },
+    aglais:   { f: [[0, 18], [3, 8], [14, 3], [28, 4], [35, 8], [36, 13], [30, 19], [12, 21]], h: [[0, 20], [14, 21], [28, 22], [34, 26], [33, 32], [28, 35], [23, 34], [16, 37], [8, 35], [2, 28]] },
+    comma:    { f: [[0, 18], [3, 8], [14, 3], [27, 4], [35, 8], [36, 11], [32, 12.5], [35, 15], [31, 19], [12, 21]], h: [[0, 20], [14, 21], [26, 22], [33, 25], [31, 28], [35, 31], [28, 32], [27, 36], [20, 34], [14, 38], [7, 34], [2, 28]] },
+    fritillary: { f: [[0, 18], [3, 8], [15, 3], [29, 4], [36, 9], [34.5, 12], [36, 15], [31, 19], [12, 21]], h: [[0, 20], [13, 21], [27, 22], [32, 26], [30, 28.5], [33, 31], [29, 34], [26, 36], [18, 37], [8, 35], [2, 28]] },
+    junonia:  { f: [[0, 18], [3, 8], [15, 3], [30, 4], [37, 8], [36, 15], [30, 20], [12, 21]], h: [[0, 20], [14, 21], [28, 22], [35, 27], [35, 32], [30, 37], [24, 35], [18, 38], [11, 36], [5, 33], [2, 27]] },
+    leaf:     { f: [[0, 18], [3, 8], [15, 3], [29, 3], [38, 5], [34, 12], [30, 19], [12, 21]], h: [[0, 20], [14, 21], [27, 22], [32, 26], [30, 32], [22, 35], [12, 35], [4, 30]], tail: [[26, 32], [30, 31], [33, 39], [31, 39]] },
+    snout:    { f: [[0, 18], [3, 8], [14, 3], [28, 4], [36, 7], [37, 11], [33, 13], [35, 17], [30, 19], [12, 21]], h: [[0, 20], [12, 21], [24, 22], [29, 26], [28, 31], [22, 34], [12, 34], [4, 29]] },
+    sailor:   { f: [[0, 18], [4, 9], [18, 5], [32, 5], [38, 9], [34, 15], [28, 19], [10, 20]], h: [[0, 20], [14, 21], [26, 23], [32, 28], [29, 33], [20, 35], [9, 34], [3, 29]] },
+    emperor:  { f: [[0, 18], [3, 8], [14, 3], [28, 3.5], [37, 8], [35, 14], [30, 19], [12, 21]], h: [[0, 20], [14, 21], [28, 22], [34, 27], [34, 32], [36, 34], [31, 35], [28, 37], [20, 37], [12, 36], [5, 32], [2, 27]] },
+    danaid:   { f: [[0, 18], [3, 9], [15, 4], [29, 5], [36, 10], [35, 16], [28, 20], [10, 21]], h: [[0, 20], [14, 21], [28, 22], [34, 27], [33, 33], [26, 37], [14, 37], [5, 33], [2, 27]] },
+    idea:     { f: [[0, 18], [4, 8], [20, 3], [36, 6], [39, 12], [34, 19], [10, 21]], h: [[0, 20], [16, 21], [30, 23], [36, 29], [32, 36], [20, 39], [8, 36], [3, 30]] },
+    ithomiine: { f: [[0, 18], [4, 9], [18, 5], [33, 6], [38, 11], [32, 18], [10, 20]], h: [[0, 20], [14, 21], [28, 23], [33, 28], [26, 32], [12, 32], [3, 27]] },
+    dryas:    { f: [[0, 18], [5, 9], [20, 4], [36, 3], [39, 5], [34, 12], [28, 18], [10, 20]], h: [[0, 20], [14, 21], [25, 23], [27, 29], [17, 33], [6, 29]] },
+    daggerwing: { f: [[0, 18], [4, 8], [18, 3], [34, 3], [38, 5], [30, 12], [26, 20], [10, 21]], h: [[0, 20], [14, 21], [26, 23], [30, 27], [26, 31], [17, 34], [8, 33], [3, 28]],
+                tail: [[22, 30], [28, 29], [31, 36], [28.5, 36]], longTail: [[22, 30], [28, 29], [32, 39.5], [29, 39.5]] },
+    acraea:   { f: [[0, 18], [4, 8], [18, 3.5], [32, 6], [37, 12], [33, 18], [20, 21], [8, 21]], h: [[0, 20], [14, 21], [28, 22], [34, 28], [30, 34], [20, 37], [8, 35], [3, 30]] },
+    morpho:   { f: [[0, 18], [3, 8], [14, 3], [30, 4], [39, 10], [36, 17], [26, 21], [10, 21]], h: [[0, 20], [14, 21], [28, 22], [36, 27], [34, 33], [24, 37], [12, 38], [4, 33], [2, 27]] },
+    caligo:   { f: [[0, 18], [4, 7], [16, 2.5], [31, 4], [38, 11], [36, 18], [24, 21], [8, 21]], h: [[0, 20], [16, 21], [30, 23], [37, 29], [35, 36], [27, 39], [16, 39], [6, 35], [2, 28]] },
+    charaxes: { f: [[0, 18], [3, 8], [16, 3], [30, 5], [37, 10], [34, 18], [24, 20], [10, 20]], h: [[0, 20], [12, 21], [26, 22], [33, 27], [34, 32], [30, 35], [22, 35], [12, 36], [4, 32]],
+                tail: [[[22, 34], [27, 34], [28, 39], [25, 39]], [[31, 31], [35, 31], [37, 36], [34.5, 36]]], longTail: [[[21, 34], [27, 34], [28.5, 39.5], [24.5, 39.5]], [[31, 31], [35, 31], [38, 38.5], [35, 38.5]]] },
+    rhetus:   { f: [[0, 18], [3, 9], [16, 4], [30, 6], [35, 11], [30, 18], [14, 20]], h: [[0, 20], [12, 21], [24, 22], [30, 27], [28, 32], [20, 34], [10, 33], [3, 28]],
+                tail: [[[22, 33], [25, 33], [24.5, 38.5], [22.5, 38.5]], [[27, 31], [30, 30], [32, 38.5], [30, 38.5]]], longTail: [[[22, 33], [25, 33], [24.5, 39.5], [22.5, 39.5]], [[27, 31], [30, 30], [32, 39.5], [30, 39.5]]] },
+    prothoe:  { f: [[0, 18], [3, 8], [14, 3], [30, 4], [38, 9], [36, 17], [26, 21], [10, 21]], h: [[0, 20], [16, 21], [30, 23], [37, 28], [36, 34], [32, 39], [26, 37], [18, 38], [8, 35], [3, 30]] },
+    // ---- Satyrinae and Hesperiidae
+    satyr:    { f: [[0, 18], [3, 8], [14, 3.5], [28, 5], [35, 11], [33, 18], [22, 21], [8, 21]], h: [[0, 20], [12, 21], [26, 22], [32, 27], [31, 32], [26, 36], [21, 34.5], [16, 37], [10, 35], [5, 36], [2, 30]] },
+    ringlet:  { f: [[0, 18], [3, 9], [14, 5], [27, 6], [33, 12], [30, 18], [18, 21], [6, 21]], h: [[0, 20], [12, 21], [24, 22], [30, 27], [28, 33], [20, 36], [10, 35], [3, 30]] },
+    dryad:    { f: [[0, 18], [3, 8], [14, 3], [28, 3], [36, 6], [38, 10], [33, 12], [32, 18], [20, 21], [8, 21]], h: [[0, 20], [12, 21], [26, 22], [31, 27], [30, 32], [33, 38], [24, 35], [14, 36], [5, 33], [2, 27]] },
+    skipper:  { f: [[0, 18], [3, 10], [16, 5], [30, 6], [37, 10], [33, 16], [22, 19], [8, 20]], h: [[0, 20], [10, 20], [20, 21], [24, 26], [20, 31], [10, 31], [3, 27]] },
   };
+
+  // The form of each species' wings (by genus, then by species): the shape table above is chosen by biology, not by the old coarse shape of the data rows
+  const GENUS_FORM = {
+    Papilio: 'papilio', Iphiclides: 'iphiclides', Graphium: 'kite', Eurytides: 'kite', Lamproptera: 'lamproptera', Battus: 'aristolochia', Parides: 'aristolochia', Pachliopta: 'aristolochia', Byasa: 'aristolochia',
+    Zerynthia: 'festoon', Luehdorfia: 'festoon', Parnassius: 'apollo', Trogonoptera: 'trog',
+    Colias: 'sulphur', Gonepteryx: 'brimstone', Anthocharis: 'orangetip', Hebomoia: 'orangetip', Colotis: 'orangetip', Phoebis: 'phoebis', Anteos: 'phoebis', Catopsilia: 'phoebis', Zerene: 'phoebis',
+    Eurema: 'leptosia', Abaeis: 'leptosia', Nathalis: 'leptosia', Leptosia: 'leptosia', Delias: 'delias', Dismorphia: 'ithomiine',
+    Thecla: 'hairstreak', Favonius: 'hairstreak', Strymon: 'hairstreak', Lampides: 'hairstreak', Leptotes: 'hairstreak', Everes: 'hairstreak', Spindasis: 'hairstreak', Lycaena: 'copper',
+    Vanessa: 'vanessa', Aglais: 'aglais', Nymphalis: 'aglais', Araschnia: 'aglais', Polygonia: 'comma', Kaniska: 'comma',
+    Argynnis: 'fritillary', Speyeria: 'fritillary', Fabriciana: 'fritillary', Brenthis: 'fritillary', Issoria: 'fritillary', Boloria: 'fritillary', Euptoieta: 'fritillary', Argyreus: 'fritillary', Damora: 'fritillary', Cethosia: 'fritillary', Cupha: 'fritillary', Phalanta: 'fritillary',
+    Melitaea: 'ringlet', Euphydryas: 'ringlet', Chlosyne: 'ringlet', Phyciodes: 'ringlet',
+    Apatura: 'emperor', Sasakia: 'emperor', Asterocampa: 'emperor', Limenitis: 'sailor', Neptis: 'sailor', Hestina: 'sailor',
+    Junonia: 'junonia', Precis: 'junonia', Hypolimnas: 'junonia', Anartia: 'junonia', Siproeta: 'junonia', Catonephele: 'junonia', Byblia: 'junonia', Hamanumida: 'junonia', Lexias: 'junonia', Diaethria: 'junonia', Prepona: 'junonia',
+    Doleschallia: 'leaf', Prothoe: 'prothoe', Libythea: 'snout', Libytheana: 'snout', Charaxes: 'charaxes', Polyura: 'charaxes', Marpesia: 'daggerwing',
+    Agraulis: 'dryas', Dryas: 'dryas', Philaethria: 'dryas', Mechanitis: 'ithomiine', Methona: 'ithomiine', Acraea: 'acraea',
+    Danaus: 'danaid', Tirumala: 'danaid', Parantica: 'danaid', Euploea: 'danaid', Amauris: 'danaid', Elymnias: 'danaid', Idea: 'idea',
+    Morpho: 'morpho', Caligo: 'caligo', Zeuxidia: 'caligo', Amathusia: 'caligo',
+    Maniola: 'satyr', Pararge: 'satyr', Lasiommata: 'satyr', Hipparchia: 'satyr', Brintesia: 'satyr', Chazara: 'satyr', Kirinia: 'satyr', Minois: 'satyr', Melanargia: 'satyr', Erebia: 'satyr', Oeneis: 'satyr', Cercyonis: 'satyr', Lethe: 'satyr',
+    Coenonympha: 'ringlet', Ypthima: 'ringlet', Mycalesis: 'ringlet', Bicyclus: 'ringlet', Melanitis: 'dryad',
+    Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
+  };
+  const SPECIES_FORM = { 'Papilio machaon': 'swallow', 'Papilio alexanor': 'swallow', 'Parnassius mnemosyne': 'apollo', 'Pieris krueperi': 'pierid', 'Euchloe ausonia': 'pierid', 'Jamides celeno': 'blue', 'Cupido minimus': 'blue', 'Cupido': 'blue', 'Eurema mandarina': 'leptosia', 'Pontia callidice': 'pierid', 'Phyciodes tharos': 'ringlet',
+    'Lycaena ottomana': 'copper', 'Libythea celtis': 'snout', 'Byblia ilithyia': 'sailor', 'Argynnis pandora': 'fritillary' };
+  // tail of a species: the data rows say whether there is one; these are the corrections / special kinds ('none', 'short', 'long', 'spoon', 'two', 'twolong')
+  const TAIL_OF = { 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
+    'Graphium policenes': 'spoon', 'Charaxes jasius': 'twolong', 'Polyura athamas': 'twolong', 'Rhetus periander': 'twolong', 'Spindasis natalensis': 'two', 'Jamides celeno': 'short', 'Marpesia petreus': 'long', 'Eurytides marcellus': 'long', 'Lamproptera meges': 'long', 'Iphiclides podalirius': 'long',
+    'Doleschallia bisaltide': 'short', 'Thecla betulae': 'short', 'Favonius orientalis': 'short', 'Strymon melinus': 'short', 'Lampides boeticus': 'short', 'Leptotes pirithous': 'short', 'Everes comyntas': 'short', 'Lycaena phlaeas': 'short', 'Zerynthia cerisyi': 'short', 'Luehdorfia japonica': 'none' };
+  const formOf = sp => { const la = sp.la || ''; return SPECIES_FORM[la] || GENUS_FORM[la.split(' ')[0]] || sp.art.t; };
+  const tailPoly = (sh, mode) => mode === 'long' ? (sh.longTail || sh.tail) : mode === 'spoon' ? (sh.spoonTail || sh.longTail || sh.tail) : mode === 'two' ? (sh.twoTail || sh.tail) : mode === 'twolong' ? (sh.longTail && sh.tail && Array.isArray(sh.longTail[0][0]) ? sh.longTail : (sh.twoTail || sh.longTail || sh.tail)) : sh.tail;
 
   const cache = {};
 
   function maskOf(poly) {
     const c = document.createElement('canvas'); c.width = c.height = N;
-    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath();
-    poly.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py))); x.closePath(); x.fill();
+    const x = c.getContext('2d'); x.fillStyle = '#fff';
+    for (const pl of (Array.isArray(poly[0][0]) ? poly : [poly])) { x.beginPath(); pl.forEach(([px, py], i) => (i ? x.lineTo(px, py) : x.moveTo(px, py))); x.closePath(); x.fill(); }
     const d = x.getImageData(0, 0, N, N).data; const m = new Uint8Array(N * N);
     for (let i = 0; i < N * N; i++) m[i] = d[i * 4 + 3] > 110 ? 1 : 0;
     return m;
@@ -61,10 +146,11 @@ const Art = (() => {
 
   function wingCanvas(sp) {
     if (cache[sp.id]) return cache[sp.id];
-    const a = sp.art; const sh = SHAPES[a.t] || SHAPES.std;
+    const a = sp.art; const sh = SHAPES[formOf(sp)] || SHAPES[a.t] || SHAPES.std;
     const fM = maskOf(sh.f), hM = maskOf(sh.h);
     let tM = null;
-    if (a.tail !== undefined && a.tail !== false && sh.tail) tM = maskOf(a.longTail ? sh.longTail : sh.tail);
+    const tmode = TAIL_OF[sp.la] || (a.tail !== undefined && a.tail !== false ? (a.longTail ? 'long' : 'short') : 'none'), tpoly = tmode === 'none' ? null : tailPoly(sh, tmode);
+    if (tpoly) tM = maskOf(tpoly);
     const fD = distMap(fM), hD = distMap(hM), tD = tM ? distMap(tM) : null;
     const fB = bbox(fM), hB = bbox(hM);
     const cv = document.createElement('canvas'); cv.width = cv.height = N;
