@@ -2368,7 +2368,7 @@ const World = (() => {
       const pool = []; for (let i = 0; i < 4; i++) pool.push(blobG(1, r, 0.3, 0));
       const at = y => { const t = clamp(y / (H * 0.97)), k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1)); return new V3(lerp(A.x, B.x, u), y, lerp(A.z, B.z, u)); };
       // a dark inner core of overlapping skirts, so the crown has body and no light shows through between the boughs
-      for (let i = 0; i < 6; i++) { const t = i / 5; parts.push({ g: coneG(lerp(1.15, 0.3, t), H * lerp(0.3, 0.14, t), 8), m: M(0, H * 0.2 + t * H * 0.62, 0, 0, i * 0.8), c: o.core, j: 0.12 }); }
+      for (let i = 0; i < 6; i++) { const t = i / 5; parts.push({ g: coneG(lerp(0.55, 0.14, t), H * lerp(0.26, 0.12, t), 7), m: M(0, H * 0.2 + t * H * 0.62, 0, 0, i * 0.8), c: o.core, j: 0.12 }); }
       const W = o.W, cols = o.cols;
       for (let w = 0; w < W; w++) {
         const t = w / (W - 1), y = H * (0.13 + 0.8 * t) + r.range(-0.12, 0.12), c0 = at(y), nb = Math.round(lerp(o.nb[0], o.nb[1], t)), a0 = r.range(0, 6.28);
@@ -2378,9 +2378,9 @@ const World = (() => {
           const pt = u => new V3(c0.x + dx * L * u, c0.y - L * (sag * u - 0.34 * sag * u * u * 1.6) * (u > 0.6 ? 1 : 1), c0.z + dz * L * u);
           const p0 = c0, p1 = pt(0.5), p2 = pt(1);
           const l1 = limb(p0, p1, dead ? 0.07 : 0.05 * (1.2 - t * 0.6), dead ? 0.045 : 0.03, 4), l2 = limb(p1, p2, dead ? 0.045 : 0.03, dead ? 0.02 : 0.012, 4); parts.push({ g: l1.g, m: l1.m, c: '#4a3626', j: 0.05 }, { g: l2.g, m: l2.m, c: '#4a3626', j: 0.05 });
-          const nn = dead ? 0 : 4;
+          const nn = dead ? 0 : (t > 0.55 ? 3 : 4);
           for (let k = 0; k < nn; k++) {
-            const u = dead ? 0.95 : [0.38, 0.6, 0.82, 1.0][k], p = pt(u), sz = (dead ? 0.22 : 1) * (u > 0.9 ? 0.8 : 1), dp = Math.atan2(p2.y - p0.y, L) * 0.9;
+            const u = dead ? 0.95 : (t > 0.55 ? [0.45, 0.75, 1.0] : [0.38, 0.6, 0.82, 1.0])[k], p = pt(u), sz = (dead ? 0.22 : 1) * (u > 0.9 ? 0.8 : 1), dp = Math.atan2(p2.y - p0.y, L) * 0.9;
             const col = shadeHex(r.pick(cols), o.lit[0] + o.lit[1] * t + 0.22 * u);
             parts.push({ g: r.pick(pool), m: M(p.x, p.y, p.z, 0, -a, dp, L * 0.2 * sz + 0.12, L * 0.11 * sz + 0.1, L * 0.22 * sz + 0.12), c: col, j: 0.1 });
             if (!dead && u < 1 && L > 0.8) parts.push({ g: r.pick(pool), m: M(p.x, p.y - 0.1 * L, p.z, 0, -a, dp - 0.25, L * 0.13 + 0.06, L * 0.09 + 0.05, L * 0.12 + 0.06), c: shadeHex(cols[0], 0.8 + 0.2 * t), j: 0.08 });   // a darker drooping twig under the bough
@@ -2389,7 +2389,8 @@ const World = (() => {
         }
       }
       // the leader: a slim pointed spike with short needle whorls
-      const lead = at(H * 0.89); parts.push({ g: coneG(0.36, H * 0.07, 8), m: M(lead.x, lead.y - H * 0.01, lead.z), c: o.lead, j: 0.06 }, { g: coneG(0.2, H * 0.06, 7), m: M(lead.x, lead.y + H * 0.05, lead.z), c: o.lead, j: 0.06 });      // the leader: a slim needle-covered cone, the trunk ends inside it
+      // the leader: a small upright tuft of needles (the trunk ends inside it)
+      const lead = at(H * 0.93); for (let k = 0; k < 3; k++) { const sc = [1, 0.75, 0.5][k]; parts.push({ g: r.pick(pool), m: M(lead.x, lead.y + k * H * 0.028, lead.z, 0, r.range(0, 6), 0, 0.22 * sc + 0.05, 0.3 * sc + 0.05, 0.22 * sc + 0.05), c: shadeHex(o.cols[k % o.cols.length], 1.1 + k * 0.08), j: 0.08 }); }
       return { g: merge(parts, r), rad: o.rad, h: H };
 
   }
@@ -2409,8 +2410,8 @@ const World = (() => {
       for (let i = 0; i < 4; i++) { const t = out[i]; const a = new V3(top.x * 0.55, H * r.range(0.45, 0.65), top.z * 0.55); const L = limb(a, new V3(t.x, Math.max(t.y - 0.4, a.y + 0.4), t.z), 0.06, 0.03, 5); parts.push({ g: L.g, m: L.m, c: '#e2e0d2', j: 0.05 }); }
       return { g: merge(parts, r), rad: 0.28, h: H + 1.6 };
     },
-    spruce(r) { return boughTree(r, { H: [8, 12], bark: ['#3a281c', '#5a4030', 0, 12], core: ['#10301a', '#1c4426', 0, 12], W: 15, cols: ['#1a4224', '#235030', '#2c5e38'], nb: [7, 4], Lmax: 2.8, taper: 0.85, sag: [0.42, 0.2], dead: 2, cone: [0.07, 0.3], coneP: 0.28, lead: ['#1c4a28', '#2e6a3a', 0, 12], lit: [0.82, 0.34], rad: 0.38 }); },
-    larch(r) { return boughTree(r, { H: [7, 10.5], bark: ['#5a4030', '#7a5a42', 0, 12], core: ['#2c4a1c', '#486a2a', 0, 12], W: 13, cols: ['#78a040', '#90b84c', '#a8c85a'], nb: [5, 3], Lmax: 2.2, taper: 0.9, sag: [0.3, 0.12], dead: 2, cone: [0.05, 0.16], coneP: 0.4, lead: ['#78a040', '#a0c452', 0, 12], lit: [0.9, 0.3], rad: 0.34 }); },
+    spruce(r) { return boughTree(r, { H: [8, 12], bark: ['#3a281c', '#2c3a22', 0, 12], core: ['#10301a', '#1c4426', 0, 12], W: 23, cols: ['#1a4224', '#235030', '#2c5e38'], nb: [7, 3], Lmax: 2.8, taper: 0.85, sag: [0.42, 0.2], dead: 2, cone: [0.07, 0.3], coneP: 0.28, lead: ['#1c4a28', '#2e6a3a', 0, 12], lit: [0.82, 0.34], rad: 0.38 }); },
+    larch(r) { return boughTree(r, { H: [7, 10.5], bark: ['#5a4030', '#3a4a26', 0, 12], core: ['#2c4a1c', '#486a2a', 0, 12], W: 20, cols: ['#78a040', '#90b84c', '#a8c85a'], nb: [5, 3], Lmax: 2.2, taper: 0.9, sag: [0.3, 0.12], dead: 2, cone: [0.05, 0.16], coneP: 0.4, lead: ['#78a040', '#a0c452', 0, 12], lit: [0.9, 0.3], rad: 0.34 }); },
     cypress(r) {
       const parts = []; const H = r.range(8, 12);
       parts.push({ g: cylG(0.1, 0.22, 1.4, 6), c: '#4a3828', j: 0.05 });
