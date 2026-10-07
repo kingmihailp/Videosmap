@@ -6459,6 +6459,46 @@ const SecretMarket = (() => {
     for (const [lx, lz] of [[-1.6, -4.3], [1.6, -4.3]]) { B.seg([lx, H, lz], [lx, 2.5, lz], 0.02, IRON); box(0.2, 0.04, 0.2, lx, 2.48, lz, IRON); G.sph(0.09, lx, 2.38, lz, '#c8a8ff', 1, 1.2, 1, 8, 6); X.candles.push({ x: lx, y: 2.3, z: lz, violet: true }); }
   }
 
+
+  // the picture of a map in the shop: a rolled parchment with a hand-drawn bog (pools, pines, a duckboard path, a compass, a wax seal and a red cross)
+  const mapSprite = (() => {
+    const cache = {};
+    return id => {
+      if (cache[id]) return cache[id];
+      const W = 76, H = 46, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      const px = (xx, yy, col) => { x.fillStyle = col; x.fillRect(xx, yy, 1, 1); };
+      // parchment: two-tone grain, darker towards the edges, burnt specks
+      for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) { const e = Math.min(xx, W - 1 - xx, yy - 4, H - 5 - yy), edge = e < 3 ? 2 - e : 0; let col = (xx + yy * 2) % 7 === 0 ? '#cdb985' : (xx * 3 + yy) % 11 === 0 ? '#e4d3a2' : '#d8c696'; if (edge > 0) col = edge === 2 ? '#a88a58' : edge === 1 ? '#bea06a' : col; if (rnd() < 0.02 && e < 5) col = '#8a6a3c'; px(xx, yy, col); }
+      // the map area: a thin double frame
+      x.strokeStyle = '#7a5a30'; x.lineWidth = 1; x.strokeRect(4.5, 8.5, W - 9, H - 17); x.strokeStyle = '#a88a58'; x.strokeRect(6.5, 10.5, W - 13, H - 21);
+      // faint water ripples on the parchment
+      for (let k = 0; k < 9; k++) { const yy = 12 + (k * 4) % 30, xx = 8 + ((k * 17) % 50); px(xx, yy, '#b8a878'); px(xx + 1, yy, '#b8a878'); px(xx + 2, yy + 1, '#b8a878'); }
+      // the land: a lumpy island of moss and peat
+      const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
+      for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
+      land.forEach(([xx, yy, d]) => { let col = d > 0.82 ? '#4a5a2e' : (xx + yy) % 3 === 0 ? '#86964f' : (xx * 2 + yy) % 5 === 0 ? '#6a7a3e' : '#7a8a46'; if (d < 0.5 && rnd() < 0.08) col = '#9a5a3a'; px(xx, yy, col); });
+      // pools
+      for (const [pxx, pyy, prx, pry] of [[26, 24, 4, 2], [44, 30, 5, 2], [34, 33, 3, 1.4], [52, 24, 3, 1.6], [20, 31, 2.4, 1.3]]) for (let yy = -3; yy <= 3; yy++) for (let xx = -5; xx <= 5; xx++) if ((xx / prx) ** 2 + (yy / pry) ** 2 <= 1) px(Math.round(pxx + xx), Math.round(pyy + yy), yy < 0 ? '#6a8294' : '#3e5668');
+      // pines
+      for (const [tx, ty] of [[16, 28], [30, 19], [39, 21], [49, 19], [58, 27], [57, 32], [22, 36], [42, 37], [13, 24], [33, 28]]) { px(tx, ty - 3, '#2a4226'); x.fillStyle = '#2e4a2a'; x.fillRect(tx - 1, ty - 2, 3, 1); x.fillRect(tx - 2, ty - 1, 5, 1); x.fillRect(tx - 2, ty, 5, 1); px(tx, ty + 1, '#4a3626'); }
+      // the duckboard path: dashes running to the cross
+      let wx = 15, wy = 35; const route = [[15, 35], [22, 33], [28, 30], [33, 30], [39, 27], [44, 25], [49, 26], [55, 23]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
+      // the red cross
+      for (let k = -2; k <= 2; k++) { px(56 + k, 22 + k, '#b02a1c'); px(56 + k, 22 - k, '#b02a1c'); }
+      // a compass rose with an N
+      px(66, 12, '#2a1c10'); px(66, 13, '#2a1c10'); px(66, 14, '#2a1c10'); px(66, 15, '#7a2a1c'); px(65, 16, '#2a1c10'); px(67, 16, '#2a1c10'); px(66, 17, '#2a1c10'); px(65, 14, '#2a1c10'); px(67, 14, '#2a1c10');
+      // the rolled ends of the scroll, top and bottom, with a highlight
+      const roll = (y0) => { const cols = ['#7a5a30', '#b8985c', '#e4cc94', '#c8a86c', '#8a6a3c']; cols.forEach((col, i) => { x.fillStyle = col; x.fillRect(1, y0 + i, W - 2, 1); }); x.fillStyle = '#5a3c1c'; x.fillRect(0, y0 + 1, 1, 3); x.fillRect(W - 1, y0 + 1, 1, 3); };
+      roll(0); roll(H - 5);
+      // a red wax seal in the bottom corner with a ribbon
+      x.fillStyle = '#6a1c14'; x.fillRect(8, H - 14, 9, 9); x.fillStyle = '#a82a1c'; x.fillRect(9, H - 13, 7, 7); x.fillStyle = '#d04a38'; x.fillRect(10, H - 12, 2, 2); x.fillStyle = '#6a1c14'; x.fillRect(12, H - 10, 2, 2);
+      x.fillStyle = '#2a2a5a'; x.fillRect(18, H - 11, 6, 2); x.fillStyle = '#3a3a7a'; x.fillRect(18, H - 11, 6, 1);
+      // outline
+      x.strokeStyle = '#2a1c10'; x.strokeRect(0.5, 0.5, W - 1, H - 1);
+      return (cache[id] = cv);
+    };
+  })();
+
   // ------------------------------------------------------------ the room
   class SecretMarket {
     constructor(hooks) {
@@ -6512,7 +6552,8 @@ const SecretMarket = (() => {
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
     openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0 }; this.open('shop'); }
     buy(i) { const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 356, y: 96 + i * 50, w: 84, h: 18 })); }
+    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 128 + i * 54, w: 88, h: 18 })); }
+    shopClose() { return { x: 352, y: 238, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
     key(e) {
@@ -6525,7 +6566,7 @@ const SecretMarket = (() => {
     pauseButtons() { const x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на рынок', x, y: 126, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 148, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov === 'talk') { this.talkNext(); return; }
-      if (this.ov === 'shop') { const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit({ x: 360, y: 228, w: 80, h: 16 }, x, y)) { Snd.sfx.page(); this.close(); } return; }
+      if (this.ov === 'shop') { const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
       if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'stash') this.hooks.stash(); else if (b.id === 'exit') this.hooks.exitSecret(); else if (b.id === 'title') this.hooks.title();
     }
@@ -6539,22 +6580,22 @@ const SecretMarket = (() => {
       if (this.ov === 'talk') { const T0 = this.talk, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length); T.draw(ctx, 'Торговец в капюшоне', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, line.slice(0, Math.floor(T0.chars)), 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 }); T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' }); }
       if (this.ov === 'shop') {
         const S0 = this.shop, coins = Save.data.coins || 0; S0.chars = Math.min(S0.line.length, S0.chars + dt * 34);
-        ctx.fillStyle = 'rgba(4,2,8,0.6)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 30, 20, 420, 232, { fill: 'rgba(20,14,30,0.97)', border: '#a070e0' });
-        T.draw(ctx, 'Торговец в капюшоне · карты мест', 42, 28, { size: 10, color: '#c8a8f0' }); T.draw(ctx, `Монеты: ${coins}`, 438, 29, { size: 8, align: 'r', color: c.gold });
-        Portrait.draw(ctx, 'hooded', 42, 44, t, S0.chars < S0.line.length); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 100, 50, 340, { size: 10, color: '#f0e8ff', lh: 13 });
-        ctx.fillStyle = 'rgba(160,112,224,0.35)'; ctx.fillRect(42, 84, 396, 1);
+        ctx.fillStyle = 'rgba(4,2,8,0.62)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 20, 10, 440, 250, { fill: 'rgba(20,14,30,0.97)', border: '#a070e0' });
+        T.draw(ctx, 'Торговец в капюшоне · карты мест', 34, 19, { size: 10, color: '#c8a8f0' }); T.draw(ctx, `Монеты: ${coins}`, 446, 20, { size: 8, align: 'r', color: c.gold });
+        // the trader and what he says (in a bubble to the right of the portrait, inside the window)
+        Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
+        UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
+        ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 100, 412, 1);
         Maps.LIST.forEach((m, i) => {
-          const y = 92 + i * 50, have = Maps.has(m.id), hv = this.shop.sel === i;
-          if (hv) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(40, y - 2, 400, 46); }
-          // the map: a small parchment with a bog on it
-          ctx.fillStyle = '#2a1c10'; ctx.fillRect(42, y, 66, 42); ctx.fillStyle = '#d4c394'; ctx.fillRect(43, y + 1, 64, 40); ctx.fillStyle = '#b8a678'; ctx.fillRect(43, y + 20, 64, 1); ctx.fillRect(75, y + 1, 1, 40);
-          ctx.fillStyle = '#6a7a42'; ctx.fillRect(50, y + 8, 24, 12); ctx.fillRect(56, y + 20, 30, 12); ctx.fillStyle = '#4a5c32'; ctx.fillRect(60, y + 12, 6, 4); ctx.fillRect(70, y + 24, 8, 4); ctx.fillStyle = '#3a3a5a'; ctx.fillRect(80, y + 10, 5, 3); ctx.fillRect(52, y + 28, 5, 3);
-          ctx.fillStyle = '#b02a1c'; ctx.fillRect(86, y + 24, 7, 1); ctx.fillRect(89, y + 21, 1, 7);
-          T.draw(ctx, m.name, 118, y + 2, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 118, y + 16, 232, { size: 8, color: '#c8c0d8', lh: 10 });
-          const b = this.shopRows()[i]; UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : m.price + ' монет', disabled: have }), UIK.hit(b, m_.x, m_.y) && !have);
+          const y = 108 + i * 54, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 3, 416, 52); }
+          ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
+          T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
+          if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
+          UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
         });
-        UIK.btn(ctx, { id: 'close', label: 'Закрыть (Esc)', x: 360, y: 228, w: 80, h: 16 }, UIK.hit({ x: 360, y: 228, w: 80, h: 16 }, m_.x, m_.y));
-        T.para(ctx, 'Карта открывает новое место на карте экспедиций. Карты личные: кто владеет одной картой, встречается там с другими её владельцами.', 42, 200, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        T.para(ctx, 'Карта открывает новое место на карте экспедиций. Карты личные: кто владеет одной картой, встречается там с другими её владельцами.', 34, 222, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        UIK.btn(ctx, Object.assign({ id: 'close', label: 'Закрыть' }, this.shopClose()), UIK.hit(this.shopClose(), m_.x, m_.y));
       }
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }
     }
