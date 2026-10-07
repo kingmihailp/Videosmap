@@ -15,7 +15,7 @@ const World = (() => {
       grass: { col: ['#8cc050', '#6aa03c', '#a4d060'], h: [0.5, 0.95], n: 9000 },
       flowers: [['#ffffff', 'daisy', 1.0], ['#c85a9a', 'cluster', 0.9], ['#ffd23c', 'daisy', 0.8], ['#6a7ae8', 'bell', 0.7], ['#a060d0', 'spike', 0.6], ['#f06aa0', 'spike', 0.6], ['#ffffff', 'umbel', 0.5]],
       veg: [['birch', 90, 'grove'], ['spruce', 22, 'grove'], ['birch', 12, 'sparse'], ['bush', 46, 'edge']], rocks: 8, water: ['pond', 'stream'], waterCol: '#4a90c0', mount: ['#6a8a5a', '#8aa07a', false, 14, 22],
-      particles: ['fluff', '#ffffff', 1.0], amb: 'meadow', clouds: 0.9, bait: null, lm: ['logs', 'hay', 'fence', 'stumps'], tf: 0.5,
+      particles: ['fluff', '#ffffff', 1.0], amb: 'meadow', clouds: 0.9, bait: null, lm: ['logs', 'fence', 'stumps'], tf: 0.5,
     },
     alps: {
       sky: ['#3f86e4', '#cfe2f2'], fog: ['#d4e4f2', 0.0085], sun: ['#ffffff', [0.4, 0.85, 0.3]], hemi: ['#d8eaff', '#7a8a60', 0.95],
@@ -63,7 +63,7 @@ const World = (() => {
       grass: { col: ['#a8b858', '#88a048', '#bccb68'], h: [0.7, 1.3], n: 11000 },
       flowers: [['#c060b0', 'daisy', 1.2], ['#ffcc20', 'daisy', 1.2], ['#e87aa0', 'umbel', 1.3], ['#a05ae0', 'spike', 0.9], ['#ffffff', 'daisy', 0.6], ['#ff8a2a', 'cluster', 0.6]],
       veg: [['cotton', 10, 'riparian'], ['willow', 10, 'riparian'], ['cotton', 3, 'sparse'], ['bush', 30, 'riparian'], ['bush', 16, 'sparse']], rocks: 6, water: ['stream'], waterCol: '#5a9ac0', mount: ['#7a9a6a', '#a0b88a', false, 4, 10],
-      particles: ['fluff', '#fff4d8', 1.0], amb: 'prairie', clouds: 1.0, bait: null, lm: ['windmill', 'fence', 'hay'], tf: 0.55,
+      particles: ['fluff', '#fff4d8', 1.0], amb: 'prairie', clouds: 1.0, bait: null, lm: ['windmill', 'fence'], tf: 0.55,
     },
     // a raised sphagnum bog (Vasyugan mire): overcast, dark, damp; hummocks, brown pools, stunted pines, cotton-grass tussocks, Labrador tea, cranberries
     bog: {
@@ -862,13 +862,12 @@ const World = (() => {
     }
 
     // ---- landmarks (two picked at random per visit)
-    const mat = c => new THREE.MeshLambertMaterial({ color: c }); const mWood = mat('#8a6a42'), mDark = mat('#5a4430'), mStone = mat('#9a9a92'), mHay = mat('#d8b858'), mRed = mat('#c83a22'), mBlk = mat('#22201e'), mMoss = mat('#5a7a3a'), mWhite = mat('#e8e0d0'), mRoof = mat('#8a3a2a');
+    const mat = c => new THREE.MeshLambertMaterial({ color: c }); const mWood = mat('#8a6a42'), mDark = mat('#5a4430'), mStone = mat('#9a9a92'), mRed = mat('#c83a22'), mBlk = mat('#22201e'), mMoss = mat('#5a7a3a'), mWhite = mat('#e8e0d0'), mRoof = mat('#8a3a2a');
     const addMesh = (m, x, y, z, ry = 0, shadow = true) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m; };
     const LM = {
       logs() { const c = scatter(1, 3, 12, 50, { waterGap: 3 })[0]; if (!c) return; const n = rng.int(1, 3); for (let i = 0; i < n; i++) { const x = c.x + rng.range(-2, 2), z = c.z + rng.range(-2, 2), y = heightAt(x, z), len = rng.range(2.6, 4.4), ry = rng.range(0, 3.14); const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, len, 7), mWood); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.35, len * 0.55, 6), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.06; g.add(m, mo); g.position.set(x, y + 0.28, z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x, z, r: 0.5 }); } },
       biglog() { const c = scatter(1, 4, 12, 46, { waterGap: 3 })[0]; if (!c) return; const len = rng.range(7, 11), ry = rng.range(0, 3.14), g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, len, 8), mDark); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.87, len * 0.6, 8), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.08; g.add(m, mo); g.position.set(c.x, heightAt(c.x, c.z) + 0.6, c.z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); for (let i = -2; i <= 2; i++) world.colliders.push({ x: c.x + Math.cos(ry) * i * 1.6, z: c.z - Math.sin(ry) * i * 1.6, r: 0.8 }); },
       stumps() { scatter(5, 1, 8, 50, { waterGap: 3 }).forEach(c => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.5, 7), mWood); addMesh(m, c.x, c.y + 0.22, c.z); world.colliders.push({ x: c.x, z: c.z, r: 0.4 }); }); },
-      hay() { scatter(rng.int(2, 3), 2, 12, 48, { waterGap: 3 }).forEach(c => { const g = new THREE.Group(); const a = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 1.0, 1.6, 8), mHay); a.position.y = 0.8; const b = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.1, 8), mHay); b.position.y = 2.1; g.add(a, b); g.position.set(c.x, c.y, c.z); g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x: c.x, z: c.z, r: 1.0 }); }); },
       fence() { const c = scatter(1, 4, 14, 48, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(7, 12); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 2.2, z = c.z - Math.sin(ry) * i * 2.2; if (inWater(x, z, 1) || Math.hypot(x, z) > 56) continue; const y = heightAt(x, z); addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.2, 0.16), mWood), x, y + 0.55, z); if (i < n - 1) { const x2 = x + Math.cos(ry) * 1.1, z2 = z - Math.sin(ry) * 1.1, y2 = heightAt(x2, z2); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.95, z2, ry); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.55, z2, ry); } } },
       chalet() {      // the old abandoned chalet (always present in the Alps): door towards the spawn point, a door spot the player can enter
         let c = scatter(1, 5, 20, 40, { waterGap: 4, maxSlope: 0.2 })[0] || scatter(1, 5, 20, 44, { waterGap: 4, maxSlope: 0.4 })[0]; if (!c) return;
