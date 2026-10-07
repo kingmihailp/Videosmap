@@ -26,5 +26,11 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     const doorWall = [solid(16, 20, 0, 6.4, -36, -32), solid(20, 24, 0, 6.4, -32, -28)], stallWalls = [];
     return { stall: FC(stall, tol, stallWalls), door: FC(door, tol, doorWall), s: stall.length, d: door.length }; }, tol);
   report('strange stall', mk.stall); report('code door', mk.door);
+  // the whole market (stalls, lamps, decor ...) against the ground and the house blocks
+  const all = await pg.evaluate(tol => { Batch.recAll = true; const mkt = new Market({ lock() {}, unlock() {} }); Batch.recAll = false; const P = mkt.B.parts.concat(mkt.G.parts);
+    const houses = []; mkt.cells.forEach((ht, k) => { const [gx, gz] = k.split(',').map(Number); houses.push(solid(gx, gx + 4, 0, ht + 3, gz, gz + 4)); });
+    houses.push(solid(-36, 40, 0, 16, -36, -35), solid(-36, 40, 0, 16, 35, 36), solid(-36, -35, 0, 16, -36, 36), solid(39, 40, 0, 16, -36, 36));
+    return FC(P, tol, houses); }, tol);
+  report('whole market', all);
   await br.close();
 })();
