@@ -2,7 +2,7 @@
 // Whoever owns a map sees its location on the world map and in the journal and may enter it; players who own the same map meet there.
 const Maps = (() => {
   const LIST = [
-    { id: 'bog', biome: 'bog', name: 'Карта торфяных болот', price: 1500, blurb: 'Васюганское болото в Западной Сибири: кочки, мочажины, пушица и бабочки, которые не летают нигде больше.' },
+    { id: 'bog', biome: 'bog', name: 'Карта торфяных болот', price: 4500, blurb: 'Васюганское болото в Западной Сибири: кочки, мочажины, пушица и бабочки, которые не летают нигде больше.' },
   ];
   const ids = () => { const d = Save.data; if (!d.maps) d.maps = {}; return d.maps; };
   const api = {

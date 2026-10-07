@@ -13,7 +13,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await ev(() => { Save.data.coins = 100; F0W.toSecret(); }); for (let i = 0; i < 60; i++) { if (await ev(() => !!(F0W.cab && F0W.cab.seller))) break; await pg.waitForTimeout(300); }
   await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.cab.ov = null; F0W.cab.openShop(); });
   await ev(() => F0W.cab.buy(0)); T('too poor: refused', await ev(() => !Maps.has('bog') && Save.data.coins === 100));
-  await ev(() => { Save.data.coins = 2000; F0W.cab.buy(0); }); T('bought for 1500', await ev(() => Maps.has('bog') && Save.data.coins === 500), await ev(() => Save.data.coins));
+  await ev(() => { Save.data.coins = 5000; F0W.cab.buy(0); }); T('bought for 4500', await ev(() => Maps.has('bog') && Save.data.coins === 500), await ev(() => Save.data.coins));
   await ev(() => F0W.cab.buy(0)); T('second purchase does nothing', await ev(() => Save.data.coins === 500));
   await pg.screenshot({ path: '/tmp/maps_shop.png' });
   T('bog visible now', await ev(() => visibleBiomes().some(b => b.id === 'bog') && Maps.allowed('bog')));
