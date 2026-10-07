@@ -5,7 +5,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const pg = await br.newPage({ viewport: { width: 400, height: 300 } }); pg.on('pageerror', e => console.log('ERR', e.message));
   await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(2500);
   const tol = +(process.argv[2] || 0.04);
-  const report = (name, r) => { console.log(name, 'parts', r.total, 'floating', r.floating); r.list.forEach(x => console.log('  pos', x.slice(0, 3).join(','), 'size', x.slice(3).join('x'))); };
+  let bad = 0; const report = (name, r) => { bad += r.floating; console.log(name, 'parts', r.total, 'floating', r.floating); r.list.forEach(x => console.log('  pos', x.slice(0, 3).join(','), 'size', x.slice(3).join('x'))); };
   await pg.evaluate(() => { window.FC = (P, tol, extra) => {
     P = P.concat(extra || []); const n = P.length, par = Array.from({ length: n }, (_, i) => i), f = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
     const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -32,5 +32,5 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     houses.push(solid(-36, 40, 0, 16, -36, -35), solid(-36, 40, 0, 16, 35, 36), solid(-36, -35, 0, 16, -36, 36), solid(39, 40, 0, 16, -36, 36));
     return FC(P, tol, houses); }, tol);
   report('whole market', all);
-  await br.close();
+  await br.close(); console.log(bad ? 'FAIL: ' + bad + ' floating parts' : 'PASS: nothing floats'); process.exit(bad ? 1 : 0);
 })();

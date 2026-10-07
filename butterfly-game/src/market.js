@@ -170,13 +170,13 @@ const Market = (() => {
       for (const z of [-3.6, 3.6]) { B.box(0.8, 5.2, 0.8, gx, 2.6, z, STONE); B.box(1.1, 0.3, 1.1, gx, 5.3, z, '#7a746a'); B.box(1.0, 0.25, 1.0, gx, 0.12, z, '#8a847a'); }
       B.box(0.7, 0.6, 8.6, gx, 5.4, 0, DWOOD); B.box(0.5, 0.25, 8.2, gx, 5.85, 0, WOOD);
       const st = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 1.35), new THREE.MeshLambertMaterial({ map: signTex('РЫНОК НАСЕКОМЫХ', 150, 38, '#3a2414', '#f0d890', '#c8a040') })); st.position.set(gx + 0.37, 4.4, 0); st.rotation.y = Math.PI / 2; this.scene.add(st);
-      const st2 = st.clone(); st2.position.x = gx - 0.37; st2.rotation.y = -Math.PI / 2; S.add(st2); for (const z of [-2.4, 2.4]) B.rope([gx + 0.2, 4.7, z], [gx + 0.2, 4.1, z * 0.9], 0, '#3a2a1c', 0.04, 2);
+      const st2 = st.clone(); st2.position.x = gx - 0.37; st2.rotation.y = -Math.PI / 2; S.add(st2); for (const z of [-2.4, 2.4]) B.rope([gx + 0.2, 5.12, z], [gx + 0.2, 4.1, z * 0.9], 0, '#3a2a1c', 0.04, 3);
       this.stations.push({ id: 'exit', x: -25.2, z: 0, r: 2.6, label: () => 'E — выйти на карту экспедиций' });
       this.addCol(gx - 0.5, gx + 0.5, -4.2, -3.1); this.addCol(gx - 0.5, gx + 0.5, 3.1, 4.2); this.addCol(-31, -28.4, -5, 5);
       // the door of the entomologist's house on the east side of the plaza
       const dx = 31.95; const door = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 2.5), new THREE.MeshLambertMaterial({ map: ctex(24, 40, (x, w, h) => { x.fillStyle = '#3a2414'; x.fillRect(0, 0, w, h); x.fillStyle = '#6a4428'; x.fillRect(2, 2, w - 4, h - 4); x.fillStyle = '#7a5434'; x.fillRect(4, 4, w - 8, 14); x.fillRect(4, 22, w - 8, 14); x.fillStyle = BRASS; x.fillRect(w - 6, 20, 3, 3); }) })); door.position.set(dx, 1.25, 0); door.rotation.y = -Math.PI / 2; S.add(door);
       const ds = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.62), new THREE.MeshLambertMaterial({ map: signTex('Кабинет энтомолога', 100, 24, '#243a30', '#f0d890', '#c8a040') })); ds.position.set(dx, 2.95, 0); ds.rotation.y = -Math.PI / 2; S.add(ds);
-      B.box(0.2, 0.2, 1.9, dx - 0.05, 2.6, 0, DWOOD); for (const z of [-1.5, 1.5]) { B.box(0.55, 0.06, 0.06, dx - 0.28, 2.62, z, IRON); this.lamp(dx - 0.5, 2.28, z, 0.2, '#ffd070', 0.1); }
+      B.box(0.2, 0.2, 3.8, dx - 0.05, 2.6, 0, DWOOD); for (const z of [-1.5, 1.5]) { B.box(0.55, 0.06, 0.06, dx - 0.28, 2.62, z, IRON); this.lamp(dx - 0.5, 2.28, z, 0.2, '#ffd070', 0.1); }
       this.stations.push({ id: 'cabinet', x: 30.4, z: 0, r: 2.4, label: () => 'E — вернуться в кабинет энтомолога' });
     }
     // a glowing hanging lantern (also registers a warm light at night for a few of them)
@@ -195,7 +195,9 @@ const Market = (() => {
       for (const [tx, tz] of [[29.7, -4.0], [29.7, 4.0], [18.6, -6.6], [18.6, 6.6]]) tree(tx, tz, 1.1);
       // north plaza (end of the second alley): a stone well, trees, benches
       const wx = 14, wz = -24; B.cyl(1.1, 1.15, 1.0, wx, 0.5, wz, '#8a847a', 12); B.cyl(0.8, 0.8, 0.1, wx, 1.0, wz, '#2a4a6a', 12); B.box(0.18, 2.4, 0.18, wx - 1.0, 2.2, wz, DWOOD); B.box(0.18, 2.4, 0.18, wx + 1.0, 2.2, wz, DWOOD); B.box(2.4, 0.16, 0.2, wx, 3.4, wz, DWOOD); B.cyl(0.1, 0.1, 2.0, wx, 3.1, wz, WOOD, 6, 0, 0, Math.PI / 2);
-      B.geo(gableGeo(2.8, 2.0, 0.9, 0.2, true), B.mat(wx, 3.45, wz), '#b5503a'); this.addCircle(wx, wz, 1.2); B.cyl(0.03, 0.03, 1.1, wx, 2.55, wz, '#8a6a3a', 5); B.cyl(0.25, 0.22, 0.3, wx, 1.85, wz, '#6a4a2a', 8);
+      B.geo(gableGeo(2.8, 2.0, 0.9, 0.2, true), B.mat(wx, 3.45, wz), '#b5503a'); this.addCircle(wx, wz, 1.2); B.cyl(0.14, 0.14, 0.7, wx, 3.1, wz, '#6a4a2a', 8, 0, 0, Math.PI / 2); B.cyl(0.045, 0.045, 1.3, wx, 2.4, wz, '#9a7a48', 5); B.box(0.6, 0.07, 0.07, wx, 3.1, wz, DWOOD);        // rope wound on the drum, down to the bucket's bail
+      B.seg([wx - 0.24, 1.72, wz], [wx, 1.78, wz], 0.03, IRON); B.seg([wx + 0.24, 1.72, wz], [wx, 1.78, wz], 0.03, IRON); B.box(0.1, 0.1, 0.1, wx, 1.76, wz, IRON);                                  // bail + ring
+      B.cyl(0.26, 0.2, 0.36, wx, 1.52, wz, '#6a4a2a', 10); B.cyl(0.27, 0.27, 0.04, wx, 1.66, wz, IRON, 10); B.cyl(0.22, 0.22, 0.04, wx, 1.36, wz, IRON, 10);                                    // the bucket and its hoops
       for (const [tx, tz] of [[10.6, -27], [17.6, -27], [10.2, -21], [18, -21]]) tree(tx, tz, 1.15); for (const [bx, bz, ry] of [[14, -28.2, Math.PI], [9.3, -24, Math.PI / 2], [18.7, -24, -Math.PI / 2]]) this.bench(bx, bz, ry);
       // south plaza: a big tree and tea tables
       tree(2, 27.5, 1.6, 'birch'); tree(-2.2, 30.8, 1.2); tree(6.2, 30.8, 1.2); for (const [bx, bz, ry] of [[2, 23.4, Math.PI], [-2.2, 27.6, Math.PI / 2], [6.2, 27.6, -Math.PI / 2]]) this.bench(bx, bz, ry);
@@ -377,8 +379,8 @@ const Market = (() => {
       const EB = '#2a1b13', EB2 = '#36241a', EB3 = '#1d130d', FE = '#2e2f35', FE2 = '#44454c', BR = BRASS, y0 = 0.97;
       const g = this.at(x, z, ry, g => {
         const B = this.B, G = this.G, rng = this.rng;
-        B.box(4.0, 3.3, 0.4, 0, 1.65, -1.0, '#706a60'); B.box(4.3, 0.2, 0.56, 0, 3.4, -1.0, '#8a847a'); for (const sx of [-1, 1]) { B.box(0.5, 3.5, 0.56, sx * 2.1, 1.75, -1.0, '#7a746a'); B.box(0.62, 0.14, 0.68, sx * 2.1, 3.57, -1.0, '#9a948a'); }     // an old stone wall closes the nook behind the stall
-        for (let i = 0; i < 14; i++) { const ix = -1.8 + i * 0.27 + rng.next() * 0.1, iy = 0.3 + rng.next() * 2.2; if (Math.abs(ix) < 1.6 && iy < 2.5) continue; B.box(0.12 + rng.next() * 0.1, 0.1 + rng.next() * 0.12, 0.03, ix, iy, -0.78, ['#3a5a2a', '#4a6a30', '#2a4a24'][i % 3], 0, 0, rng.next(), 0.1); }   // ivy on the stone beside the stall
+        B.box(4.0, 3.3, 0.4, 0, 1.65, -1.12, '#706a60'); B.box(4.3, 0.2, 0.56, 0, 3.4, -1.12, '#8a847a'); for (const sx of [-1, 1]) { B.box(0.5, 3.5, 0.56, sx * 2.1, 1.75, -1.12, '#7a746a'); B.box(0.62, 0.14, 0.68, sx * 2.1, 3.57, -1.12, '#9a948a'); }     // an old stone wall closes the nook behind the stall
+        for (let i = 0; i < 14; i++) { const ix = -1.8 + i * 0.27 + rng.next() * 0.1, iy = 0.3 + rng.next() * 2.2; if (Math.abs(ix) < 1.6 && iy < 2.5) continue; B.box(0.12 + rng.next() * 0.1, 0.1 + rng.next() * 0.12, 0.03, ix, iy, -0.91, ['#3a5a2a', '#4a6a30', '#2a4a24'][i % 3], 0, 0, rng.next(), 0.1); }   // ivy on the stone beside the stall
         B.box(w + 0.5, 0.02, 2.5, 0, 0.01, 0.1, EB3); B.box(w - 0.2, 0.03, 0.5, 0, 0.025, 0.95, '#3a1a18');                              // worn boards and a dark red runner in front of the counter
         // the back wall: dark plank panelling
         B.box(w, 2.5, 0.1, 0, 1.25, -0.85, EB3); for (let i = 0; i < 15; i++) B.box(0.012, 2.46, 0.01, -w / 2 + 0.1 + i * 0.2, 1.25, -0.795, '#0f0906');
@@ -429,7 +431,7 @@ const Market = (() => {
         // a cabinet of many little drawers with brass pulls and paper labels
         B.box(0.92, 1.75, 0.3, -1.0, 0.875, -0.63, EB); B.box(0.98, 0.06, 0.34, -1.0, 1.78, -0.62, EB2);
         for (let r = 0; r < 7; r++) for (let c = 0; c < 3; c++) { const dx = -1.0 + (c - 1) * 0.29, dy = 0.17 + r * 0.24; B.box(0.27, 0.22, 0.02, dx, dy, -0.47, [EB2, '#2f1f15', '#3a281c'][(r + c) % 3]); B.box(0.08, 0.016, 0.025, dx, dy - 0.01, -0.45, BR); B.box(0.1, 0.045, 0.008, dx, dy + 0.06, -0.457, '#c8b890'); }
-        B.box(0.2, 0.05, 0.14, -0.7, 1.835, -0.62, '#241410'); B.box(0.18, 0.045, 0.13, -0.7, 1.88, -0.62, '#3a2a1c'); B.sph(0.08, -0.7, 1.985, -0.62, '#d8d0b8', 1, 1.1, 1, 8, 6); B.box(0.08, 0.06, 0.07, -0.7, 1.94, -0.57, '#c8c0a8');   // jar, books and a plain skull
+        B.box(0.2, 0.05, 0.14, -0.7, 1.835, -0.62, '#241410'); B.box(0.18, 0.045, 0.13, -0.7, 1.88, -0.62, '#3a2a1c'); B.box(0.16, 0.04, 0.12, -0.7, 1.925, -0.62, '#1c1410'); B.box(0.15, 0.035, 0.11, -0.7, 1.962, -0.62, '#2c1e16');   // jar, books and a plain skull
         // shelves on the right: bottles, a rolled map, a compass, a closed ledger
         for (const sy of [1.25, 1.75]) { B.box(1.25, 0.045, 0.3, 0.75, sy, -0.68, EB); for (const sx of [0.2, 1.3]) B.box(0.04, 0.2, 0.26, sx, sy - 0.12, -0.68, FE); }
         for (let i = 0; i < 7; i++) { const c = ['#2a3a2a', '#3a2a22', '#2a2a3a', '#40381f', '#33262e'][i % 5]; const bh = 0.16 + (i % 3) * 0.04; B.cyl(0.04, 0.045, bh, 0.34 + i * 0.1, 1.27 + bh / 2, -0.68, c, 8); B.cyl(0.017, 0.02, 0.05, 0.34 + i * 0.1, 1.27 + bh + 0.03, -0.68, '#6a4a2a', 6); }
@@ -496,7 +498,7 @@ const Market = (() => {
       const B = this.B, G = this.G, S = this.scene, rng = this.rng;
       // cloth sails, lantern strings and pennants: only between two real house walls (never across alley mouths or the open plazas)
       const walls2 = (x, a, b) => this.hasWall(x, a) && this.hasWall(x, b);
-      for (let i = 0; i < 7; i++) { const x = -24 + i * 8 + rng.range(-1, 1), cl = rng.pick(CLOTH), y = 5.3 + rng.range(-0.3, 0.3); if (!walls2(x - 1.4, -4.6, 4.6) || !walls2(x + 1.4, -4.6, 4.6)) continue; for (let k = 0; k < 10; k++) { const t = (k + 0.5) / 10, sag = Math.sin(t * Math.PI) * 0.35; B.box(2.4 + rng.range(0, 0.8), 0.03, 0.84, x, y - sag, -4.0 + t * 8.0, cl[k % 2], 0, 0, 0, 0.02); } B.box(2.6, 0.06, 0.1, x, y + 0.02, -3.98, DWOOD); B.box(2.6, 0.06, 0.1, x, y + 0.02, 3.98, DWOOD); }
+      for (let i = 0; i < 7; i++) { const x = -24 + i * 8 + rng.range(-1, 1), cl = rng.pick(CLOTH), y = 5.3 + rng.range(-0.3, 0.3); if (!walls2(x - 1.4, -4.6, 4.6) || !walls2(x + 1.4, -4.6, 4.6)) continue; for (let k = 0; k < 10; k++) { const t = (k + 0.5) / 10, sag = Math.sin(t * Math.PI) * 0.35; B.box(2.4 + rng.range(0, 0.8), 0.03, 0.84, x, y - sag, -4.0 + t * 8.0, cl[k % 2], Math.atan(0.35 * Math.PI * Math.cos(t * Math.PI) / 8), 0, 0, 0.02); } B.box(2.6, 0.06, 0.1, x, y + 0.02, -3.98, DWOOD); B.box(2.6, 0.06, 0.1, x, y + 0.02, 3.98, DWOOD); }
       for (let i = 0; i < 12; i++) { const x = -26 + i * 4.7; if (!walls2(x, -4.6, 4.6)) continue; B.rope([x, 4.4, -4.0], [x, 4.4, 4.0], 0.5, '#2a1c10', 0.025, 10); for (let k = 0; k < 5; k++) { const t = (k + 0.5) / 5; this.lamp(x, 4.4 - Math.sin(t * Math.PI) * 0.5 - 0.14 - 0.21, -4.0 + t * 8.0, 0.16, null, 0.14); } }
       for (let i = 0; i < 8; i++) { const x = -26 + i * 7 + 1.5, col = rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0']); if (!this.hasWall(x, -4.6) || !this.hasWall(x + 4.5, 4.6)) continue; const a = [x, 5.0, -4.0], b = [x + 4.5, 5.0, 4.0]; B.rope(a, b, 0.7, '#2a1c10', 0.02, 14); for (let k = 1; k < 14; k++) { const t = k / 14, px = lerp(a[0], b[0], t), py = lerp(a[1], b[1], t) - 0.7 * Math.sin(t * Math.PI), pz = lerp(a[2], b[2], t); B.tri([px - 0.12, py, pz - 0.05], [px + 0.12, py, pz + 0.05], [px, py - 0.3, pz], rng.pick(['#e84a4a', '#f0c030', '#3a8ae0', '#3ac07a', '#d86ad0', '#f2e8d0'])); } }
       // lantern strings across the alleys (wall to wall)
