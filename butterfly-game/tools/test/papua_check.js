@@ -15,7 +15,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     const rar3 = others.filter(s => s.rar === 3), avg3 = rar3.reduce((a, s) => a + (inc[s.id] || 0), 0) / rar3.length / N;
     return { raw, spread, spread0, abp, bulk, bulkOther, mine: +mine.toFixed(3), avg: +avg.toFixed(3), avg3: +avg3.toFixed(3), n: pap.species.length, scarce: sp.scarce, mm: sp.mm };
   });
-  T('raw specimen: exactly 1500 (not doubled like the others of the location)', r.raw === 1500, r.raw); T('spread specimen: 2.5 x raw, whatever the quality', r.spread === 3750 && r.spread0 === 3750, [r.spread, r.spread0]);
+  T('raw specimen: exactly 1500 (not doubled like the others of the location)', r.raw === 1500, r.raw); T('spread specimen: 3 x raw at quality 100, less at 10', r.spread === 4500 && r.spread0 > 2300 && r.spread0 < 2500, [r.spread, r.spread0]);
   T('aberration: multiplier applies (about x6)', r.abp >= 1500 * 5.3 && r.abp <= 1500 * 6.7, r.abp); T('not taken by "sell all"', r.bulk === false && r.bulkOther === true);
   T('in a visit population far more rarely than the others', r.mine * 3 < r.avg3, r);
   // buy + enter
