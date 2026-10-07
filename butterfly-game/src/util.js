@@ -76,8 +76,11 @@ const Save = {
   },
   // while online the cabinet (specimens + boxes) is the server's shared one; the personal journal and settings stay local
   write() { try { const d = this.mp && this.stash ? Object.assign({}, this.data, { specimens: this.stash.specimens, boxes: this.stash.boxes, uid: this.stash.uid }) : this.data; localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} },
-  enterMP(cab, idx) { if (!this.mp) this.stash = { specimens: this.data.specimens, boxes: this.data.boxes, uid: this.data.uid }; this.mp = true; this.mpIdx = idx; this.mpCnt = 0; this.setCab(cab); },
-  leaveMP() { if (!this.mp) return; this.mp = false; if (this.stash) { this.data.specimens = this.stash.specimens; this.data.boxes = this.stash.boxes; this.data.uid = this.stash.uid; } this.stash = null; },
+  enterMP(cab, idx) { if (!this.mp) this.stash = { specimens: this.data.specimens, boxes: this.data.boxes, uid: this.data.uid }; this.mp = true; this.mpT = Date.now(); this.mpIdx = idx; this.mpCnt = 0; this.setCab(cab); },
+  // salvage = the connection dropped by itself: the butterflies caught online this session may not have reached the server, so they are kept in the personal cabinet
+  leaveMP(salvage) { if (!this.mp) return; this.mp = false; const mine = salvage && this.stash ? this.data.specimens.filter(x => x.by === Net.name && x.date >= this.mpT && x.q === null) : [];
+    if (this.stash) { this.data.specimens = this.stash.specimens; this.data.boxes = this.stash.boxes; this.data.uid = this.stash.uid; } this.stash = null;
+    for (const x of mine) { const c = Object.assign({}, x, { uid: this.data.uid++, box: null }); delete c.by; this.data.specimens.push(c); } if (mine.length) this.write(); },
   setCab(cab) { this.data.specimens = cab.specimens.filter(x => SPECIES_BY_ID[x.sp]); this.data.boxes = cab.boxes; },
   nextUid() { return this.mp ? this.mpIdx * 1000000 + (++this.mpCnt) : this.data.uid++; },
   _op(op) { if (this.mp) Net.sendOp(op); },

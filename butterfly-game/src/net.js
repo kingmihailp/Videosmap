@@ -19,9 +19,9 @@ const Net = (() => {
     ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name }));
     ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'welcome') { done = true; clearTimeout(to); } handle(m); };
     ws.onerror = () => { lastErr = 'Не удалось подключиться'; };
-    ws.onclose = () => { clearTimeout(to); if (!done) { done = true; rej(new Error(lastErr || 'Соединение закрыто')); } if (ws === N.ws) { const was = N.on; N.on = false; N.ws = null; N.remote = {}; N.list = []; N.loc = null; N.host = false; Save.leaveMP(); N.status = ''; if (was && N.hooks.closed) N.hooks.closed(); } };
+    ws.onclose = () => { clearTimeout(to); if (!done) { done = true; rej(new Error(lastErr || 'Соединение закрыто')); } if (ws === N.ws) { const was = N.on; N.on = false; N.ws = null; N.remote = {}; N.list = []; N.loc = null; N.host = false; Save.leaveMP(!N.bye); N.bye = false; N.status = ''; if (was && N.hooks.closed) N.hooks.closed(); } };
   });
-  N.disconnect = () => { if (N.ws) { try { N.ws.close(); } catch (e) {} } };
+  N.disconnect = () => { if (N.ws) { N.bye = true; try { N.ws.close(); } catch (e) {} } };
   // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
   N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; joinRej = rej; N.send('join', { loc, maps: Maps.owned() }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
   N.say = text => { if (N.on && text) N.send('chat', { text }); };

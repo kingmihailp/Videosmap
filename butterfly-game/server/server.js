@@ -124,7 +124,7 @@ setInterval(() => {
     toLoc(name, { t: 'host', id: l.host, flies: l.flies }); console.log('host of', name, '->', players.get(l.host) && players.get(l.host).name, '(previous host silent)');
   }
 }, 2000);
-setInterval(() => { wss.clients.forEach(ws => { if (!ws.isAlive) return ws.terminate(); ws.isAlive = false; ws.ping(); }); }, 15000);
+setInterval(() => { wss.clients.forEach(ws => { if (ws.miss >= 3) return ws.terminate(); ws.miss = ws.isAlive ? 0 : (ws.miss || 0) + 1; ws.isAlive = false; ws.ping(); }); }, 15000);
 server.listen(PORT, () => {
   try { const st = fs.statSync(GAME); console.log(`Game file: ${GAME}  (${Math.round(st.size / 1024)} KB, modified ${st.mtime.toISOString().slice(0, 16).replace('T', ' ')})`); } catch (e) { console.log('WARNING: game file not found: ' + GAME); }
   const nets = require('os').networkInterfaces(); const ips = [].concat(...Object.values(nets)).filter(n => n && n.family === 'IPv4' && !n.internal).map(n => n.address);
