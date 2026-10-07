@@ -87,7 +87,7 @@ const Art = (() => {
     Morpho: 'morpho', Caligo: 'caligo', Zeuxidia: 'caligo', Amathusia: 'caligo',
     Maniola: 'satyr', Pararge: 'satyr', Lasiommata: 'satyr', Hipparchia: 'satyr', Brintesia: 'satyr', Chazara: 'satyr', Kirinia: 'satyr', Minois: 'satyr', Melanargia: 'satyr', Erebia: 'satyr', Oeneis: 'satyr', Cercyonis: 'satyr', Lethe: 'satyr',
     Coenonympha: 'ringlet', Ypthima: 'ringlet', Mycalesis: 'ringlet', Bicyclus: 'ringlet', Melanitis: 'dryad',
-    Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
+    Callophrys: 'hairstreak', Carterocephalus: 'skipper', Leptidea: 'leptosia', Aphantopus: 'satyr', Phengaris: 'blue', Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
   };
   const SPECIES_FORM = { 'Papilio machaon': 'swallow', 'Papilio alexanor': 'swallow', 'Parnassius mnemosyne': 'apollo', 'Pieris krueperi': 'pierid', 'Euchloe ausonia': 'pierid', 'Jamides celeno': 'blue', 'Cupido minimus': 'blue', 'Cupido': 'blue', 'Eurema mandarina': 'leptosia', 'Pontia callidice': 'pierid', 'Phyciodes tharos': 'ringlet',
     'Lycaena ottomana': 'copper', 'Libythea celtis': 'snout', 'Byblia ilithyia': 'sailor', 'Argynnis pandora': 'fritillary' };

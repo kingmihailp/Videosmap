@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------- menu screens (all drawn on the 480x270 UI canvas)
-const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const have = sec ? SPECIES.filter(s => !s.mystery && Save.has(s.id)).length : Save.total(); return `${have}/${sec ? REAL : SPECIES.length}`; };
+const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); const have = mine.filter(s => Save.has(s.id)).length; return `${have}/${mine.length}`; };
 const Screens = (() => {
   const c = UIK.col;
-  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония' };
-  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -173,8 +173,8 @@ const Screens = (() => {
       const cx = MAPX + 22, cy = MAPY + MAP_H * MS - 22; ctx.fillStyle = '#4a2a10'; ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 3, cy); ctx.lineTo(cx, cy + 12); ctx.lineTo(cx - 3, cy); ctx.fill(); ctx.fillStyle = '#b02a1c'; ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 3, cy); ctx.lineTo(cx - 3, cy); ctx.fill(); ctx.fillStyle = '#4a2a10'; ctx.fillRect(cx - 12, cy, 24, 1); T.draw(ctx, 'N', cx, cy - 22, { size: 8, align: 'c', color: '#3a2008' });
       // pins
       this.hover = -1;
-      BIOMES.forEach((b, i) => { const p = pinPos(b); if (Math.hypot(m.x - p.x, m.y - (p.y - 6)) < 9) this.hover = i; });
-      BIOMES.forEach((b, i) => {
+      visibleBiomes().forEach((b, i) => { const p = pinPos(b); if (Math.hypot(m.x - p.x, m.y - (p.y - 6)) < 9) this.hover = i; });
+      visibleBiomes().forEach((b, i) => {
         const p = pinPos(b); const cnt = Save.biomeCount(b); const done = cnt === b.species.length; const sel = i === this.sel, hov = i === this.hover; const bob = sel || hov ? Math.round(Math.sin(t * 6) * 1.5) : 0; const col = biomeCol[b.id];
         ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(p.x - 3, p.y, 7, 2);
         ctx.fillStyle = '#1a0e06'; ctx.fillRect(p.x - 4, p.y - 13 + bob, 9, 9); ctx.fillRect(p.x - 2, p.y - 5 + bob, 5, 4); ctx.fillRect(p.x - 1, p.y - 2 + bob, 3, 2);
@@ -189,18 +189,18 @@ const Screens = (() => {
         const by = {}; for (const pl of Net.list) (by[pl.loc || '_'] = by[pl.loc || '_'] || []).push(pl);
         const col = n => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsl(${h % 360},55%,42%)`; };
         const person = (x, y, pl) => { x = Math.round(x); y = Math.round(y); ctx.fillStyle = '#1a0e06'; ctx.fillRect(x - 1, y - 1, 7, 12); ctx.fillStyle = '#e8c8a0'; ctx.fillRect(x + 1, y, 3, 3); ctx.fillStyle = col(pl.name); ctx.fillRect(x, y + 3, 5, 5); ctx.fillStyle = '#2a2a34'; ctx.fillRect(x + 1, y + 8, 1, 2); ctx.fillRect(x + 3, y + 8, 1, 2); if (pl.id === Net.id) { ctx.fillStyle = c.gold; ctx.fillRect(x - 1, y + 11, 7, 1); } };
-        BIOMES.forEach((b, i) => {
+        visibleBiomes().forEach((b, i) => {
           const L = by[b.id]; if (!L) return; const p = pinPos(b); L.slice(0, 4).forEach((pl, k) => person(p.x + 8 + k * 8, p.y - 12, pl));
           if (L.length > 4) T.draw(ctx, '+' + (L.length - 4), p.x + 8 + 4 * 8, p.y - 10, { size: 8, color: '#2a1608', outline: '#f4e8c0' });
           if (i === this.hover) { const w = Math.max(...L.map(pl => T.width(pl.name + (pl.id === Net.id ? ' (вы)' : ''), 8))) + 10, h = L.length * 10 + 6, x = clamp(p.x + 8, 4, SW - w - 4), y = Math.max(MAPY + 2, p.y - 18 - h); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(16,32,28,0.95)', border: c.gold }); L.forEach((pl, k) => T.draw(ctx, pl.name + (pl.id === Net.id ? ' (вы)' : ''), x + 5, y + 4 + k * 10, { size: 8, color: pl.id === Net.id ? c.gold : '#fff' })); }
         });
-        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc && short[pl.loc] ? short[pl.loc] : 'на карте';
+        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc && short[pl.loc] && Maps.allowed(pl.loc) ? short[pl.loc] : 'на карте';
         const rows = Net.list.slice(0, 8).map(pl => [pl.name + (pl.id === Net.id ? ' (вы)' : ''), where(pl), pl.id === Net.id]); const w1 = Math.max(...rows.map(r => T.width(r[0], 8))), w2 = Math.max(...rows.map(r => T.width(r[1], 8))), pw = w1 + w2 + 24, ph = rows.length * 10 + 18;
         const px = MAPX + MAP_W * MS - pw - 6, py = MAPY + MAP_H * MS - ph - 6; UIK.panel(ctx, px, py, pw, ph, { fill: 'rgba(16,32,28,0.88)', border: c.line, shadow: false });
         T.draw(ctx, `Онлайн: ${Net.list.length}`, px + 6, py + 4, { size: 8, color: c.green }); rows.forEach((r, k) => { T.draw(ctx, r[0], px + 6, py + 16 + k * 10, { size: 8, color: r[2] ? c.gold : '#fff' }); T.draw(ctx, r[1], px + pw - 6, py + 16 + k * 10, { size: 8, align: 'r', color: c.dim }); });
       }
       // info panel
-      const b = BIOMES[this.sel >= 0 ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
+      const VB = visibleBiomes(); const b = VB[this.sel >= 0 && this.sel < VB.length ? this.sel : this.hover >= 0 ? this.hover : 0]; const show = this.sel >= 0 || this.hover >= 0;
       const py0 = MAPY + MAP_H * MS + 10; UIK.panel(ctx, 8, py0, SW - 16, SH - py0 - 6, { fill: 'rgba(16,32,28,0.92)' });
       const iy = py0 + 4;
       if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–9 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
@@ -228,20 +228,20 @@ const Screens = (() => {
   const journal = {
     tab: 0, sel: 0, btns: [], slots: [], tabs: [],
     layout() {
-      this.tabs = BIOMES.map((b, i) => ({ id: 'tab' + i, i, x: 6 + i * 53, y: 22, w: 51, h: 15 }));
-      this.slots = []; const b = BIOMES[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
+      const VB = visibleBiomes(), tw = Math.min(51, Math.floor(468 / VB.length) - 2), ts = Math.min(53, 468 / VB.length); this.tab = Math.min(this.tab, VB.length - 1); this.tabs = VB.map((b, i) => ({ id: 'tab' + i, i, x: 6 + Math.round(i * ts), y: 22, w: tw, h: 15 }));
+      this.slots = []; const b = VB[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
-      this.fragRect = (this.tab === BIOMES.length - 1 && this.page === this.pages - 1 && !Secret.has(4)) ? { x: SW - 6 - 84, y: 204, w: 76, h: 56 } : null;     // the last piece of the note, taped to the last page
+      this.fragRect = (this.tab === VB.length - 1 && this.page === this.pages - 1 && !Secret.has(4)) ? { x: SW - 6 - 84, y: 204, w: 76, h: 56 } : null;     // the last piece of the note, taped to the last page
     },
     draw(ctx, t, m) {
       if (this.ab && this.ab.tab !== this.tab) this.ab = null;
       if (this.ab) return this.drawAb(ctx, t, m);
-      this.layout(); const b = BIOMES[this.tab];
+      this.layout(); const b = visibleBiomes()[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
       T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
-      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = BIOMES[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
+      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = visibleBiomes()[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
       for (let i = 0; i < 240; i++) { const x = 9 + (i * 97) % 210, y = 45 + (i * 53) % 216; ctx.fillStyle = i % 3 ? '#b89860' : '#d8b880'; ctx.fillRect(x, y, 2, 1); }
@@ -306,12 +306,12 @@ const Screens = (() => {
       });
       if (!list.length) T.draw(ctx, 'Пока ни одного аберранта', SW / 2, 150, { size: 8, align: 'c', color: c.dim });
     },
-    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
+    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = visibleBiomes()[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
       if (!this.ab && this.fragRect && UIK.hit(this.fragRect, x, y)) { if (Secret.take(4)) { this.msg = 'Обрывок записки: 01. Он лежит на складе (I).'; this.msgUntil = performance.now() + 4500; Snd.sfx.coin(); } return 'frag'; }
       if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
-      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: BIOMES[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
+      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: visibleBiomes()[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
       const tb = this.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.tab = tb.i; this.sel = 0; Snd.sfx.page(); return 'tab'; }
       const s = this.slots.find(s => UIK.hit(s, x, y)); if (s) { this.sel = s.k; Snd.sfx.click(); return 'slot'; }

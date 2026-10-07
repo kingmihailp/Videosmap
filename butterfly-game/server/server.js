@@ -12,7 +12,8 @@ const { WebSocketServer } = require('ws');
 const PORT = +(process.argv[2] || process.env.PORT || 3000);
 const GAME = path.resolve(process.env.GAME || path.join(__dirname, '..', 'Flora0world_Butterflies.html'));   // GAME=/path/to/file.html overrides
 const DATA_DIR = path.join(__dirname, 'data'), STATE_FILE = path.join(DATA_DIR, 'state.json');
-const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'ocean'];
+const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'bog', 'ocean'];
+const SECRET_MAP = { bog: 'bog' };      // secret locations: a player may enter only when his client says he owns the map (maps are personal; players with the same map meet there)
 const MAX_NAME = 16;
 
 // ------------------------------------------------------------------ persistent shared state
@@ -70,6 +71,7 @@ function leaveLoc(p) {
   if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; }
 }
 function joinLoc(p, name) {
+  if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
@@ -100,7 +102,7 @@ wss.on('connection', ws => {
       sendPlist(); console.log('+', name, `(${players.size} online)`); return;
     }
     switch (m.t) {
-      case 'join': joinLoc(me, m.loc); break;
+      case 'join': if (Array.isArray(m.maps)) me.maps = m.maps.filter(x => typeof x === 'string').slice(0, 16); joinLoc(me, m.loc); break;
       case 'pos': if (me.loc) toLoc(me.loc, { t: 'p', id: me.id, x: m.x, y: m.y, z: m.z, yaw: m.yaw, pitch: m.pitch, nz: m.nz, fl: m.fl, sw: m.sw, sp: m.sp, st: m.st, nt: (typeof m.nt === 'string' && /^[a-z_.]{0,40}$/.test(m.nt)) ? m.nt : '' }, me.id); break;
       case 'flies': { const l = me.loc && locs.get(me.loc); if (!l || l.host !== me.id || !Array.isArray(m.list)) break; l.lastFlies = Date.now(); const now = Date.now(); for (const [k, t] of l.caught) if (now - t > 15000) l.caught.delete(k); l.flies = m.list.filter(f => !l.caught.has(f[0])); toLoc(me.loc, { t: 'flies', list: l.flies }, me.id); break; }
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }

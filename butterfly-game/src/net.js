@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- multiplayer client: WebSocket link, shared cabinet mirror, remote players
 const Net = (() => {
   const N = { on: false, ws: null, id: 0, idx: 0, name: '', url: '', list: [], loc: null, host: false, remote: {}, seeds: {}, hooks: {}, status: '', chat: [] };
-  let joinWait = null, connWait = null, lastErr = '';
+  let joinWait = null, joinRej = null, connWait = null, lastErr = '';
   const EUL = new THREE.Euler();
   N.defaultUrl = () => (location.protocol === 'http:' || location.protocol === 'https:') ? location.host : 'localhost:3000';
   N.send = (t, o) => { if (N.ws && N.ws.readyState === 1) N.ws.send(JSON.stringify(Object.assign({ t }, o))); };
@@ -23,7 +23,7 @@ const Net = (() => {
   });
   N.disconnect = () => { if (N.ws) { try { N.ws.close(); } catch (e) {} } };
   // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
-  N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; N.send('join', { loc }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
+  N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; joinRej = rej; N.send('join', { loc, maps: Maps.owned() }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
   N.say = text => { if (N.on && text) N.send('chat', { text }); };
   N.leave = () => { N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
 
@@ -32,6 +32,7 @@ const Net = (() => {
       case 'welcome': N.on = true; N.id = m.id; N.idx = m.idx; N.name = m.name; N.seeds = m.seeds; N.list = m.players; Save.enterMP(m.cab, m.idx); N.status = 'Онлайн'; if (connWait) { connWait.res(m); connWait = null; } break;
       case 'plist': N.list = m.list; break;
       case 'joined': N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
+      case 'denied': if (joinWait) { joinWait = null; if (joinRej) joinRej(new Error('для этого места нужна карта')); } break;
       case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
       case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
       case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.nt = typeof m.nt === 'string' ? m.nt : ''; r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }

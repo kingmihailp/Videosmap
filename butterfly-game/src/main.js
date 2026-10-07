@@ -79,6 +79,7 @@
   const roomHooks = Object.assign({}, cabHooks, { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
   App.start = (biomeId, seed, at) => {
+    if (!Maps.allowed(biomeId)) { App.toMap(); return; }          // a secret location can only be entered with its map
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp) => {
       if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
@@ -97,7 +98,7 @@
     Net.connect(addr, name).then(() => { M.busy = false; M.msg = ''; try { localStorage.setItem('f0w_mp', JSON.stringify({ addr, name })); } catch (e) {} Snd.sfx.complete(); }).catch(e => { M.busy = false; M.msg = e.message; });
   }
   function mpAct(id) { if (id === 'connect') mpConnect(); else if (id === 'disc') { Net.disconnect(); Screens.mp.msg = ''; } else if (id === 'info') { Snd.sfx.click(); Screens.mp.info = !Screens.mp.info; } else if (id === 'back') { Snd.sfx.click(); App.screen = 'title'; } }
-  function journalIndex() { if (App.play) { S.journal.tab = BIOMES.indexOf(App.play.biome); S.journal.sel = 0; } }
+  function journalIndex() { if (App.play) { S.journal.tab = Math.max(0, visibleBiomes().indexOf(App.play.biome)); S.journal.sel = 0; } }
   function openJournal(from) { App.journalFrom = from; if (from === 'play') { unlock(); App.overlay = 'journal'; journalIndex(); } else { App.screen = 'journal'; } Snd.sfx.page(); }
   function closeJournal() { if (App.journalFrom === 'play') { App.overlay = 'pause'; } else App.screen = App.journalFrom; Snd.sfx.page(); }
   function resume() { App.overlay = null; lock(); }
@@ -157,7 +158,7 @@
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
       if (App.overlay === 'journal') {
-        if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
+        if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + visibleBiomes().length - 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
       if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
@@ -166,11 +167,11 @@
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
-      else if (e.code >= 'Digit1' && e.code <= 'Digit9') { S.wmap.sel = +e.code.slice(5) - 1; Snd.sfx.pin(); }
-      else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = BIOMES[S.wmap.sel].id; go(() => App.start(id)); }
+      else if (e.code >= 'Digit0' && e.code <= 'Digit9') { const i = (+e.code.slice(5) + 9) % 10; if (i < visibleBiomes().length) { S.wmap.sel = i; Snd.sfx.pin(); } }
+      else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = (visibleBiomes()[S.wmap.sel] || {}).id; if (id) go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
-      if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + BIOMES.length - 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % BIOMES.length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
+      if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft') { S.journal.tab = (S.journal.tab + visibleBiomes().length - 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowRight') { S.journal.tab = (S.journal.tab + 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1);
     }
   });
   ui.addEventListener('mousedown', e => {
@@ -194,7 +195,7 @@
     } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
     } else if (sc === 'map') {
       const id = S.wmap.click(x, y); if (!id) return;
-      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = BIOMES[S.wmap.sel].id; go(() => App.start(b)); }
+      if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = (visibleBiomes()[S.wmap.sel] || {}).id; if (b) go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
   addEventListener('mouseup', () => S.cardpos.release());
