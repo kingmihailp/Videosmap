@@ -12,8 +12,8 @@ const { WebSocketServer } = require('ws');
 const PORT = +(process.argv[2] || process.env.PORT || 3000);
 const GAME = path.resolve(process.env.GAME || path.join(__dirname, '..', 'Flora0world_Butterflies.html'));   // GAME=/path/to/file.html overrides
 const DATA_DIR = path.join(__dirname, 'data'), STATE_FILE = path.join(DATA_DIR, 'state.json');
-const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'bog', 'ocean'];
-const SECRET_MAP = { bog: 'bog' };      // secret locations: a player may enter only when his client says he owns the map (maps are personal; players with the same map meet there)
+const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'bog', 'papua', 'ocean'];
+const SECRET_MAP = { bog: 'bog', papua: 'papua' };      // secret locations: a player may enter only when his client says he owns the map (maps are personal; players with the same map meet there)
 const MAX_NAME = 16;
 
 // ------------------------------------------------------------------ persistent shared state

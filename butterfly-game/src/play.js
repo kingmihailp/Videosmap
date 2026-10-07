@@ -333,7 +333,7 @@ class Play {
   netCaught(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
     if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
-    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
+    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
     if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
   }
   sendNet(dt) {
@@ -400,7 +400,7 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
+    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
@@ -556,7 +556,7 @@ class Play {
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {
-  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
+  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) * (sp.scarce || 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };

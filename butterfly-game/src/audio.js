@@ -95,6 +95,7 @@ const Snd = (() => {
     cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     bog:        { wind: 0.45, bird: 'sparse', insect: ['cricket', 3200, 0.025], frog: true, base: 45, scale: [0, 2, 3, 7, 8], mus: 0.7 },
+    papua:      { wind: 0.12, bird: 'tropic', insect: ['cicada', 4800, 0.075], frog: true, base: 49, scale: [0, 2, 3, 7, 10], mus: 0.8 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {

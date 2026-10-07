@@ -67,6 +67,8 @@ const BIOMES = [
   // a secret location: only players who bought its map from the trader of the secret market can see it on the map and go there
   { id: 'bog', name: 'Торфяное болото', place: 'Васюганское болото, Западная Сибирь', lat: 57.0, lon: 78.5, alt: '90 м', map: 'bog', poolSize: 11,
     climate: 'умеренно-холодный, влажный, пасмурно', desc: 'Верховое сфагновое болото: кочки с клюквой и морошкой, мочажины с бурой водой, пушица, багульник и чахлые сосны-рям. Под низким небом всё тихо и сыро.' },
+  { id: 'papua', name: 'Реликтовые джунгли Ламингтона', place: 'Провинция Оро, Папуа — Новая Гвинея', lat: -8.95, lon: 148.15, alt: '250 м', map: 'papua', poolSize: 12,
+    climate: 'экваториальный, влажный, под густым пологом', desc: 'Древний лес у подножия вулкана Ламингтон: гигантские ветвистые деревья смыкают кроны почти над всем небом, внизу — папоротники, цикады, ручьи и чёрные потоки застывшей лавы.' },
   { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 15,
     climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
 ];
@@ -683,13 +685,73 @@ rebuildSpeciesIndex();
       'Сырые луга, лесные болота', 'Европа, Сибирь, Дальний Восток', 'валериана, подмаренник', 'Тёмная шашечница: рыжие шашки на почти чёрном фоне.'],
   ];
 
+  // ============================================================ NEW GUINEA (a secret location: Oro province, the slopes of Mount Lamington)
+  ROWS.papua = [
+    ['Ornithoptera alexandrae', 'Птицекрылка королевы Александры', 'Queen Alexandra\'s birdwing', 'P', 190, 280, 3, 'bird', A('trog', ['#06100c', '#0c3a2c'], ['#22d4a4', '#0c7a60'], { edge: ['#040808', 3], rays: ['f', '#22e4b4'], sp: sp('h', [[.5, .5, 2.2, '#0a1c16'], [.72, .55, 1.8, '#0a1c16'], [.34, .62, 1.6, '#0a1c16']]) }),
+      'Кроны дождевого леса на равнине у вулкана Ламингтон', 'Только провинция Оро на северо-востоке Папуа — Новой Гвинеи', 'лиана Pararistolochia schlecteri', 'Крупнейшая бабочка мира: размах самок доходит до 28 см. Она так редка, что находится под охраной, а торговля ею запрещена.'],
+    ['Ornithoptera priamus', 'Птицекрылка приам', 'Priam\'s birdwing', 'P', 130, 190, 2, 'bird', A('birdwing', ['#0a1a0c', '#1a5a2a'], ['#3ad070', '#e8b020'], { edge: ['#050805', 2], rays: ['f', '#40e080'], sp: sp('h', [[.6, .55, 2.4, '#0a1a0c'], [.4, .6, 1.8, '#0a1a0c']]) }),
+      'Опушки и кроны равнинных лесов, цветущие кусты', 'Новая Гвинея, Молуккские и Соломоновы острова, север Австралии', 'лианы рода Aristolochia', 'Самцы блестят зелёным и золотым, самки скромные, бурые.'],
+    ['Ornithoptera paradisea', 'Райская птицекрылка', 'Paradise birdwing', 'P', 130, 160, 3, 'bird', A('papilio', ['#0a140c', '#1a6a38'], ['#f0c828', '#d8a010'], { edge: ['#050805', 3], rays: ['f', '#34d070'], tail: '#0a1008', longTail: true }),
+      'Горные и предгорные леса', 'Новая Гвинея', 'лианы рода Aristolochia', 'Единственная птицекрылка с длинными хвостами на задних крыльях у самцов.'],
+    ['Ornithoptera goliath', 'Птицекрылка голиаф', 'Goliath birdwing', 'P', 160, 210, 3, 'bird', A('birdwing', ['#1a1e12', '#3a6a28'], ['#e8d444', '#a8b830'], { edge: ['#0a0c06', 2], rays: ['f', '#7ad048'], sp: sp('h', [[.55, .5, 2.2, '#1a1e12'], [.35, .6, 1.6, '#1a1e12']]) }),
+      'Влажные равнинные и горные леса', 'Новая Гвинея и близлежащие острова', 'лианы рода Pararistolochia', 'Огромная бабочка, которая парит высоко в кронах и редко спускается к земле.'],
+    ['Ornithoptera chimaera', 'Птицекрылка химера', 'Chimaera birdwing', 'P', 120, 150, 3, 'bird', A('trog', ['#1a1410', '#4a5a38'], ['#d8b028', '#7a8a28'], { edge: ['#0a0804', 2], band: ['f', .4, .6, '#6ac078'], sp: sp('h', [[.5, .55, 2, '#1a1410']]) }),
+      'Горные леса, речные долины', 'Новая Гвинея', 'лианы рода Pararistolochia', 'Узкие длинные крылья и золотые задние крылья отличают самцов.'],
+    ['Troides oblongomaculatus', 'Тройдес продолговатопятнистый', 'Yellow birdwing', 'P', 110, 150, 2, 'bird', A('birdwing', ['#0c0c0a', '#2a2a22'], ['#f2c820', '#dca010'], { edge: ['#050505', 2], sp: sp('h', [[.4, .5, 2.2, '#16120a'], [.6, .62, 2.2, '#16120a'], [.75, .45, 1.8, '#16120a']]) }),
+      'Равнинные леса, прибрежные заросли', 'Новая Гвинея и Молуккские острова', 'лианы рода Aristolochia', 'Золотые задние крылья заметны с большого расстояния.'],
+    ['Papilio ulysses', 'Улисс', 'Ulysses swallowtail', 'P', 100, 130, 2, 'swallow', A('papilio', ['#1a46d0', '#2a7af0'], ['#1a46d0', '#2a7af0'], { edge: ['#08101e', 4], dots: '#8ac0ff', tail: '#08101e' }),
+      'Дождевые леса и опушки, сады', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'цитрусовые, мелококки', 'Ярко-синяя бабочка, эмблема австралийских тропиков; мелькает в лесу, как осколок неба.'],
+    ['Papilio aegeus', 'Папилио эгей', 'Orchard swallowtail', 'P', 90, 120, 1, 'swallow', A('papilio', ['#16120e', '#241c14'], ['#16120e', '#241c14'], { edge: ['#08060a', 1], band: ['f', .38, .58, '#f0e8c0'], sp: sp('h', [[.5, .6, 2, '#d83a2a'], [.7, .55, 1.6, '#e8d89a']]) }),
+      'Опушки, сады, вырубки', 'Новая Гвинея, Австралия, Меланезия', 'цитрусовые', 'Любит апельсиновые сады, откуда и название.'],
+    ['Papilio euchenor', 'Папилио эухенор', 'Banded swallowtail', 'P', 100, 130, 2, 'swallow', A('papilio', ['#14100c', '#20180e'], ['#14100c', '#20180e'], { edge: ['#060404', 1], band: ['fh', .4, .66, '#f4f0d8'], sp: sp('h', [[.7, .6, 1.5, '#d8c08a']]) }),
+      'Тенистые леса и речные берега', 'Новая Гвинея и острова Бисмарка', 'рутовые', 'Светлая перевязь на тёмных крыльях хорошо видна в сумраке леса.'],
+    ['Graphium weiskei', 'Графиум вайске', 'Purple spotted swallowtail', 'P', 90, 110, 3, 'swallow', A('kite', ['#0c0a14', '#1a1428'], ['#0c0a14', '#1a1428'], { edge: ['#040306', 1], sp: [...sp('f', [[.35, .3, 2.2, '#8a5ae0'], [.55, .4, 2.2, '#8a5ae0'], [.72, .3, 1.8, '#7a4ad0']]), ...sp('h', [[.4, .5, 2.2, '#8a5ae0'], [.6, .6, 2, '#7a4ad0']])] }),
+      'Горные леса, лесные ручьи', 'Новая Гвинея', 'аннона', 'Фиолетовые пятна на чёрном делают её одной из красивейших парусников.'],
+    ['Graphium eurypylus', 'Графиум эврипил', 'Pale triangle', 'P', 60, 75, 1, 'swallow', A('kite', ['#14160e', '#202414'], ['#14160e', '#202414'], { edge: ['#08090a', 1], sp: [...sp('f', [[.3, .35, 2.4, '#a8e8b8'], [.5, .5, 2.4, '#a8e8b8'], [.7, .35, 2, '#a8e8b8']]), ...sp('h', [[.5, .5, 2.4, '#a8e8b8']])], tail: '#08090a' }),
+      'Опушки, сады, речные долины', 'Юго-Восточная Азия, Новая Гвинея, Австралия', 'аннона, мускатные', 'Быстро летает у цветов, часто пьёт у ручьёв.'],
+    ['Pachliopta polydorus', 'Пахлиопта полидор', 'Red-bodied swallowtail', 'P', 80, 100, 1, 'swallow', A('aristolochia', ['#161210', '#2a2420'], ['#161210', '#2a2420'], { edge: ['#060506', 1], sp: [...sp('h', [[.4, .55, 2.4, '#d02a22'], [.6, .62, 2, '#d02a22'], [.75, .5, 1.6, '#e8d8c8']])], tail: '#0a0808' }),
+      'Равнинные леса и опушки', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'аристолохиевые', 'Красное брюшко и красные пятна предупреждают хищников: она ядовита.'],
+    ['Delias mysis', 'Делиас мизис', 'Red-banded jezebel', 'W', 55, 70, 1, 'pierid', A('delias', ['#f4f2e8', '#fffdf2'], ['#f4f2e8', '#ece6c8'], { edge: ['#16120e', 3], tip: ['#1a1612', .72], sp: sp('h', [[.45, .6, 2.2, '#e8c820'], [.65, .65, 2, '#d83a22']]) }),
+      'Лесные поляны и опушки, кроны', 'Новая Гвинея, Молуккские острова, север Австралии', 'омелы', 'У делиасов яркая окраска снизу — она отпугивает птиц.'],
+    ['Delias schoenbergi', 'Делиас шёнберга', 'Schoenberg\'s jezebel', 'W', 55, 75, 3, 'pierid', A('delias', ['#16120e', '#2a2018'], ['#f0d020', '#d8b010'], { edge: ['#0a0806', 2], band: ['f', .4, .58, '#f4f0d0'], sp: sp('h', [[.5, .6, 2, '#16120e']]) }),
+      'Горные дождевые леса', 'Новая Гвинея', 'омелы', 'Узкий эндемик горных лесов, виден только в светлых прогалинах.'],
+    ['Appias paulina', 'Аппиас паулина', 'Common albatross', 'W', 60, 75, 1, 'pierid', A('pierid', ['#f4f2e8', '#fffdf2'], ['#f4f2e8', '#e8e6c8'], { edge: ['#4a4a38', 1], tip: ['#5a5a48', .88], veins: '#b8b898' }),
+      'Опушки, берега ручьёв', 'Юго-Восточная Азия, Новая Гвинея, северо-восток Австралии', 'каперсовые', 'Белая бабочка, которая массово мигрирует и собирается на влажном песке.'],
+    ['Euploea tulliolus', 'Эуплоя туллиол', 'Small crow', 'D', 65, 75, 1, 'nymph', A('danaid', ['#2a1a14', '#3a241c'], ['#2a1a14', '#3a241c'], { edge: ['#0e0806', 2], dots: '#f6f2e6', sheen: ['#5a6ad0', .5] }),
+      'Дождевые леса и прибрежные заросли', 'Юго-Восточная Азия, Новая Гвинея, Австралия', 'фикусы', 'Ядовитая бабочка, которую копируют многие другие виды.'],
+    ['Tirumala hamata', 'Тирумала хамата', 'Dark blue tiger', 'D', 80, 95, 1, 'nymph', A('danaid', ['#1a1218', '#2a1c26'], ['#1a1218', '#2a1c26'], { edge: ['#0a0608', 2], bars: ['#8ab8e8', 3] }),
+      'Лесные опушки, берега', 'Новая Гвинея, Австралия, Юго-Восточная Азия', 'ваточниковые', 'Голубые полосы на тёмных крыльях видны даже в густой тени.'],
+    ['Hypolimnas alimena', 'Гиполимнас алимена', 'Blue-banded eggfly', 'N', 60, 75, 1, 'nymph', A('junonia', ['#1c1410', '#2a1c14'], ['#1c1410', '#2a1c14'], { edge: ['#0a0806', 2], band: ['fh', .4, .6, '#3a8ae8'], sp: sp('f', [[.82, .2, 1.4, WH]]) }),
+      'Опушки, тропы, сады', 'Новая Гвинея, Меланезия, север Австралии', 'крапивные', 'Яркая синяя полоса на тёмном фоне, самцы охраняют свой участок.'],
+    ['Cethosia cydippe', 'Цетозия кидиппа', 'Red lacewing', 'N', 75, 90, 1, 'heli', A('fritillary', ['#d8321c', '#e8561c'], ['#e8561c', '#f08a2c'], { edge: ['#1a0e0c', 3], dots: '#f6f2e6', sp: [...sp('f', [[.7, .3, 2, '#1a0e0c'], [.5, .55, 2.2, '#1a0e0c']]), ...sp('h', [[.4, .6, 1.8, '#1a0e0c']])] }),
+      'Лесные опушки и поляны', 'Новая Гвинея, Меланезия, север Австралии', 'страстоцвет', 'Нижняя сторона крыльев с «кружевным» рисунком — отсюда английское название.'],
+    ['Parthenos sylvia', 'Партенос сильвия', 'Clipper', 'N', 85, 100, 2, 'emperor', A('sailor', ['#1e4a40', '#3a9a88'], ['#1e4a40', '#3a9a88'], { edge: ['#0a1612', 2], sp: [...sp('f', [[.4, .3, 2.2, '#f0f4e0'], [.6, .45, 2.4, '#f0f4e0'], [.78, .3, 1.8, '#f0f4e0']]), ...sp('h', [[.5, .55, 2.4, '#f0f4e0']])] }),
+      'Дождевые леса, берега рек', 'Юго-Восточная Азия, Новая Гвинея, Австралия', 'лианы рода Adenia', 'Быстро и мощно скользит над землёй, а гусеницы ядовитых лиан делают её несъедобной.'],
+    ['Vindula arsinoe', 'Виндула арсиноя', 'Cruiser', 'N', 80, 100, 1, 'heli', A('fritillary', ['#e08a1c', '#f0b030'], ['#d8781a', '#e89a2c'], { edge: ['#2a1608', 2], band: ['f', .5, .62, '#f6e8b0'], sp: sp('f', [[.3, .35, 1.4, '#7a3a14']]) }),
+      'Опушки, тенистые тропы', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'страстоцвет', 'Крейсер: летит ровно и быстро, как корабль, над самой тропой.'],
+    ['Taenaris catops', 'Тенарис катопс', 'Owl butterfly', 'S', 100, 125, 2, 'owl', A('caligo', ['#c4ccdc', '#e4e8f0'], ['#b4bcd0', '#d4dae8'], { edge: ['#2a2a38', 2], eye: [['f', .6, .35, 3.4, '#10101a', '#f4f4ee'], ['h', .5, .6, 3.8, '#10101a', '#f4f4ee']] }),
+      'Тенистые леса, у корней деревьев', 'Новая Гвинея и близлежащие острова', 'пальмы и имбирные', 'Огромные «глаза» на крыльях отпугивают птиц, а сама бабочка предпочитает тень и сумерки.'],
+    ['Polyura jupiter', 'Полиура юпитер', 'Jupiter nawab', 'N', 80, 100, 2, 'emperor', A('charaxes', ['#14120e', '#241e18'], ['#14120e', '#241e18'], { edge: ['#060504', 1], band: ['fh', .5, .72, '#f0ecd4'], sp: sp('h', [[.55, .72, 1.6, '#e8c8a0']]), tail: '#0a0806' }),
+      'Лесные поляны, у бродящих плодов', 'Новая Гвинея, Австралия', 'акации', 'Сильная и быстрая бабочка с двумя хвостиками, любит падалицу и сок деревьев.'],
+    ['Danis danis', 'Данис данис', 'Large green-banded blue', 'L', 35, 45, 2, 'blue', A('blue', ['#6aa0e8', '#9ac4f4'], ['#6aa0e8', '#9ac4f4'], { edge: ['#101828', 2], band: ['fh', .45, .7, '#e4f4ff'], dots: WH }),
+      'Прибрежные и равнинные леса', 'Новая Гвинея, север Австралии', 'лианы и орхидные', 'Гусеницы живут в гнёздах муравьёв — один из примеров дружбы бабочек и муравьёв.'],
+    ['Mycalesis phidon', 'Микалезис фидон', 'Common bushbrown', 'S', 40, 50, 1, 'owl', A('ringlet', ['#6a4a30', '#7a5a3c'], ['#6a4a30', '#7a5a3c'], { edge: ['#2a1a10', 1], eye: [['f', .78, .25, 2.4, '#f0e0b0', DK], ['h', .5, .72, 2.1, '#f0e0b0', DK], ['h', .7, .72, 1.9, '#f0e0b0', DK]] }),
+      'Подлесок, тенистые тропы', 'Новая Гвинея и острова Торресова пролива', 'злаки', 'Тенелюбивая бархатница, вспархивает из-под самых ног.'],
+    ['Elymnias agondas', 'Элимниас агонда', 'Palmfly', 'S', 55, 70, 1, 'nymph', A('danaid', ['#5a3c28', '#7a5438'], ['#6a4630', '#8a6038'], { edge: ['#1c120c', 2], band: ['f', .5, .66, '#d8a050'], sp: sp('f', [[.82, .2, 1.4, WH]]) }),
+      'Пальмовые заросли и лесные опушки', 'Новая Гвинея, острова Бисмарка, Австралия', 'пальмы', 'Самки подражают ядовитым данаидам и получают защиту без яда.'],
+    ['Ideopsis juventa', 'Идеопсис ювента', 'Wood nymph', 'D', 70, 85, 1, 'nymph', A('idea', ['#f4f2e8', '#fffdf2'], ['#f4f2e8', '#ece6d0'], { edge: ['#16120e', 2], veins: '#2a2620', sp: [...sp('f', [[.4, .35, 1.4, '#16120e'], [.62, .5, 1.4, '#16120e']]), ...sp('h', [[.5, .5, 1.6, '#16120e']])] }),
+      'Опушки, лесные тропы, прибрежные заросли', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'ваточниковые', 'Лёгкая белая бабочка со штриховкой, плавно парит у земли.'],
+  ];
+  // Queen Alexandra's birdwing: paid a fixed 1500 coins by the merchant (an aberration multiplies it) and many times rarer than anything else
+  { const q = ROWS.papua[0]; q.fixed = 1500; q.scarce = 0.18; }
+
   // ============================================================ assemble
   const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_|_$/g, '');
   for (const bid in ROWS) {
     ROWS[bid].forEach(r => {
       const [la, ru, en, fam, lo, hi, rar, beh, art, hab, range, host, fact] = r;
       const famRu = FAM[fam] || fam;
-      SPECIES.push({ id: slug(la), la, ru, en, fam: famRu, biome: bid, mm: [lo, hi], hab, range, host, fact, look: hab.split(',')[0], rar, beh, art });
+      const o = { id: slug(la), la, ru, en, fam: famRu, biome: bid, mm: [lo, hi], hab, range, host, fact, look: hab.split(',')[0], rar, beh, art }; if (r.fixed) o.fixedPrice = r.fixed; if (r.scarce) o.scarce = r.scarce; SPECIES.push(o);
     });
   }
   rebuildSpeciesIndex();
@@ -1153,12 +1215,12 @@ const Art = (() => {
     Morpho: 'morpho', Caligo: 'caligo', Zeuxidia: 'caligo', Amathusia: 'caligo',
     Maniola: 'satyr', Pararge: 'satyr', Lasiommata: 'satyr', Hipparchia: 'satyr', Brintesia: 'satyr', Chazara: 'satyr', Kirinia: 'satyr', Minois: 'satyr', Melanargia: 'satyr', Erebia: 'satyr', Oeneis: 'satyr', Cercyonis: 'satyr', Lethe: 'satyr',
     Coenonympha: 'ringlet', Ypthima: 'ringlet', Mycalesis: 'ringlet', Bicyclus: 'ringlet', Melanitis: 'dryad',
-    Callophrys: 'hairstreak', Carterocephalus: 'skipper', Leptidea: 'leptosia', Aphantopus: 'satyr', Phengaris: 'blue', Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
+    Callophrys: 'hairstreak', Ornithoptera: 'birdwing', Troides: 'birdwing', Taenaris: 'caligo', Parthenos: 'sailor', Vindula: 'fritillary', Ideopsis: 'idea', Danis: 'blue', Carterocephalus: 'skipper', Leptidea: 'leptosia', Aphantopus: 'satyr', Phengaris: 'blue', Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
   };
-  const SPECIES_FORM = { 'Papilio machaon': 'swallow', 'Papilio alexanor': 'swallow', 'Parnassius mnemosyne': 'apollo', 'Pieris krueperi': 'pierid', 'Euchloe ausonia': 'pierid', 'Jamides celeno': 'blue', 'Cupido minimus': 'blue', 'Cupido': 'blue', 'Eurema mandarina': 'leptosia', 'Pontia callidice': 'pierid', 'Phyciodes tharos': 'ringlet',
+  const SPECIES_FORM = { 'Ornithoptera alexandrae': 'trog', 'Ornithoptera chimaera': 'trog', 'Ornithoptera paradisea': 'papilio', 'Papilio machaon': 'swallow', 'Papilio alexanor': 'swallow', 'Parnassius mnemosyne': 'apollo', 'Pieris krueperi': 'pierid', 'Euchloe ausonia': 'pierid', 'Jamides celeno': 'blue', 'Cupido minimus': 'blue', 'Cupido': 'blue', 'Eurema mandarina': 'leptosia', 'Pontia callidice': 'pierid', 'Phyciodes tharos': 'ringlet',
     'Lycaena ottomana': 'copper', 'Libythea celtis': 'snout', 'Byblia ilithyia': 'sailor', 'Argynnis pandora': 'fritillary' };
   // tail of a species: the data rows say whether there is one; these are the corrections / special kinds ('none', 'short', 'long', 'spoon', 'two', 'twolong')
-  const TAIL_OF = { 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
+  const TAIL_OF = { 'Ornithoptera paradisea': 'long', 'Papilio ulysses': 'short', 'Papilio aegeus': 'none', 'Papilio euchenor': 'none', 'Graphium weiskei': 'none', 'Polyura jupiter': 'twolong', 'Pachliopta polydorus': 'short', 'Graphium eurypylus': 'short', 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
     'Graphium policenes': 'spoon', 'Charaxes jasius': 'twolong', 'Polyura athamas': 'twolong', 'Rhetus periander': 'twolong', 'Spindasis natalensis': 'two', 'Jamides celeno': 'short', 'Marpesia petreus': 'long', 'Eurytides marcellus': 'long', 'Lamproptera meges': 'long', 'Iphiclides podalirius': 'long',
     'Doleschallia bisaltide': 'short', 'Thecla betulae': 'short', 'Favonius orientalis': 'short', 'Strymon melinus': 'short', 'Lampides boeticus': 'short', 'Leptotes pirithous': 'short', 'Everes comyntas': 'short', 'Lycaena phlaeas': 'short', 'Zerynthia cerisyi': 'short', 'Luehdorfia japonica': 'none' };
   const baseLa = sp => (sp.la || '').split(' ab. ')[0];      // an aberration keeps the wing form and tail of its species
@@ -1488,18 +1550,18 @@ SPECIES_BY_ID = new Proxy(RAW_BY_ID, { get(t, k) { return typeof k === 'string' 
 const Econ = (() => {
   const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, AB_K = 6;
   const h = id => (strSeed(id) % 1000) / 1000;
-  const baseValue = sp => (sp.biome === 'ocean' || sp.mystery) ? Math.round(150 + h(sp.id) * 100) : Math.round(BASE[sp.rar || 1] * (0.85 + 0.3 * h(sp.id)));
+  const baseValue = sp => sp.fixedPrice ? sp.fixedPrice : (sp.biome === 'ocean' || sp.mystery) ? Math.round(150 + h(sp.id) * 100) : Math.round(BASE[sp.rar || 1] * (0.85 + 0.3 * h(sp.id)));
   const condK = spec => spec.q === null || spec.q === undefined ? RAW_K : 0.8 + 0.9 * clamp(spec.q / 100);
   // full breakdown for one specimen
   function info(spec) {
     const sp = SPECIES_BY_ID[spec.sp]; if (!sp) return null;
     const species = sp.base ? RAW_BY_ID[sp.base] : sp, base = baseValue(species);
-    const ab = sp.ab ? AB_K * (0.9 + 0.2 * h(sp.ab.code)) : 1, cond = condK(spec);
+    const ab = sp.ab ? AB_K * (0.9 + 0.2 * h(sp.ab.code)) : 1, cond = species.fixedPrice ? 1 : condK(spec);       // a species with a fixed price (Queen Alexandra's birdwing, 1500) is paid exactly that, whatever the condition; an aberration multiplies it
     return { sp, species, base, ab, cond, isAb: !!sp.ab, isOcean: species.biome === 'ocean', spread: spec.q !== null && spec.q !== undefined, price: Math.max(1, Math.round(base * ab * cond)) };
   }
   const price = spec => { const i = info(spec); return i ? i.price : 0; };
   // regular (non-aberrant, non-ocean) specimens: the ones "sell all" is allowed to take
-  const bulkOk = spec => { const i = info(spec); return !!i && !i.isAb && !i.isOcean; };
+  const bulkOk = spec => { const i = info(spec); return !!i && !i.isAb && !i.isOcean && !i.species.fixedPrice; };
   return { info, price, bulkOk, baseValue };
 })();
 
@@ -1726,6 +1788,7 @@ const Secret = (() => {
 const Maps = (() => {
   const LIST = [
     { id: 'bog', biome: 'bog', name: 'Карта торфяных болот', price: 4500, blurb: 'Васюганское болото в Западной Сибири: кочки, мочажины, пушица и бабочки, которые не летают нигде больше.' },
+    { id: 'papua', biome: 'papua', name: 'Карта Новой Гвинеи', price: 5000, blurb: 'Реликтовые джунгли у вулкана Ламингтон: гигантские деревья, застывшая лава и самая крупная бабочка мира.' },
   ];
   const ids = () => { const d = Save.data; if (!d.maps) d.maps = {}; return d.maps; };
   const api = {
@@ -1839,6 +1902,7 @@ const Snd = (() => {
     cabinet:    { wind: 0, bird: null, insect: null, clock: true, jazz: true, base: 48, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     bog:        { wind: 0.45, bird: 'sparse', insect: ['cricket', 3200, 0.025], frog: true, base: 45, scale: [0, 2, 3, 7, 8], mus: 0.7 },
+    papua:      { wind: 0.12, bird: 'tropic', insect: ['cicada', 4800, 0.075], frog: true, base: 49, scale: [0, 2, 3, 7, 10], mus: 0.8 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {
@@ -2178,6 +2242,16 @@ const World = (() => {
       rocks: 3, water: ['pool'], waterCol: '#3e3322', shoreCol: ['#3a3a22', '#2c2216'], mount: ['#34423a', '#46564a', false, 3, 8],
       particles: ['fluff', '#e4e8e0', 0.75], amb: 'bog', clouds: 2.6, bait: null, lm: ['boardwalk', 'peatcut', 'boulders', 'stumps'], tf: 0.5,
     },
+    // relic rain forest on the slopes of Mount Lamington (Oro province, New Guinea): giant branching trees close the sky, tree ferns and cycads below, frozen black lava flows, a jungle stream
+    papua: {
+      sky: ['#3f6e64', '#8fb8a4'], fog: ['#5f8a74', 0.0185], sun: ['#f0f4d0', [0.3, 0.9, 0.2]], hemi: ['#b0e0c4', '#2c4a30', 0.9], sunI: 0.5, canopy: true, lava: true,
+      amp: 2.3, freq: 0.03, ground: ['#34462a', '#2a3a22', '#4a3c28'], rock: '#38342f', litter: true,
+      grass: { col: ['#2a6a30', '#1e5a28', '#3a8038', '#2e7a46'], h: [0.4, 0.95], n: 8500 },
+      flowers: [['#e0302a', 'spike', 1.4], ['#f08a22', 'spike', 1.1], ['#b058d0', 'cluster', 1.0], ['#f4f4ea', 'bell', 0.9], ['#f06aa0', 'cluster', 0.8], ['#ffd23c', 'umbel', 0.5]],
+      veg: [['relic', 62, 'uniform', { variants: 6, group: 'relic', minSep: 11.5, minR: 4 }], ['fern', 70, 'dense'], ['cycad', 26, 'dense', { variants: 3 }], ['palm', 22, 'riparian'], ['pandan', 14, 'riparian', { variants: 3 }], ['alocasia', 80, 'uniform', { variants: 3 }], ['groundfern', 200, 'uniform', { variants: 4 }], ['lavarock', 52, 'lava', { variants: 5, onLava: true, minR: 4 }], ['lavashard', 150, 'lava', { variants: 4, onLava: true, minR: 4 }], ['bush', 26, 'edge']],
+      rocks: 10, water: ['stream'], waterCol: '#2e6a5a', mount: ['#2c4a3a', '#6a7e70', false, 26, 50],
+      particles: ['spores', '#dfffb0', 1.0], amb: 'papua', clouds: 0.25, bait: ['fruit', 'sap'], lm: ['lavaflow', 'biglog', 'boulders'], tf: 0.42,
+    },
     japan: {
       sky: ['#5ba8dc', '#dcecec'], fog: ['#c8e0e0', 0.013], sun: ['#fff4dc', [0.4, 0.85, 0.3]], hemi: ['#d4ecec', '#4a7a38', 0.82],
       amp: 2.4, freq: 0.026, ground: ['#5a8a42', '#4a7a38', '#6a9a4a'], rock: '#7a7c78', moss: true,
@@ -2462,6 +2536,75 @@ const World = (() => {
       for (let i = 0; i < 5; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.2), h = r.range(0.7, 1.05), lx = Math.cos(a) * 0.12, lz = Math.sin(a) * 0.12; const L = limb(new V3(Math.cos(a) * d, 0.12, Math.sin(a) * d), new V3(Math.cos(a) * d + lx, h, Math.sin(a) * d + lz), 0.012, 0.008, 3); parts.push({ g: L.g, m: L.m, c: '#9a9a58', j: 0.04 }); parts.push({ g: blobG(0.085, r, 0.3, 1), m: M(Math.cos(a) * d + lx, h + 0.06, Math.sin(a) * d + lz, 0, 0, 0, 1, 1.2, 1), c: '#f4f2ea', j: 0.05 }); }   // cotton-grass heads
       return { g: merge(parts, r), rad: 0, h: 1.1 };
     },
+    // ---- the relic forest of New Guinea
+    relic(r) {      // an emergent giant: buttressed trunk, a fork, a few huge limbs that branch again, flat crowns of leaves, epiphytes and lianas
+      const parts = []; const H = r.range(28, 38), F = H * r.range(0.4, 0.5);
+      const top = trunk(parts, r, F, 1.2, 0.74, r.range(-0.03, 0.03), ['#6e5e4a', '#463a2e', 0, F], 5);
+      for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28 + r.range(-0.15, 0.15), h = r.range(F * 0.5, F * 0.95), y0 = r.range(1, F - h), rr = lerp(1.2, 0.74, (y0 + h / 2) / F) * 0.96; parts.push({ g: new THREE.BoxGeometry(0.16, h, 0.2), m: M(Math.cos(a) * rr, y0 + h / 2, Math.sin(a) * rr, 0, -a + Math.PI / 2, 0), c: r.pick(['#5a4c3a', '#4a3e30', '#6a5a46']), j: 0.1 }); }     // bark ridges
+      const nb = r.int(6, 8); for (let i = 0; i < nb; i++) { const a = i / nb * 6.28 + r.range(-0.2, 0.2), hb = r.range(3.4, 6.0), lb = r.range(1.8, 3.0); parts.push({ g: new THREE.BoxGeometry(0.3, hb, lb), m: M(Math.cos(a) * (0.7 + lb * 0.5), hb * 0.46, Math.sin(a) * (0.7 + lb * 0.5), 0, Math.PI / 2 - a, 0.0), c: ['#5a4c3a', '#6e5e4a', 0, hb], j: 0.08 }); parts.push({ g: new THREE.BoxGeometry(0.22, hb * 0.55, lb * 1.35), m: M(Math.cos(a) * (0.7 + lb * 0.75), hb * 0.24, Math.sin(a) * (0.7 + lb * 0.75), 0, Math.PI / 2 - a, 0.0), c: '#4e4234', j: 0.08 }); }
+      for (let i = 0; i < 7; i++) { const a = r.range(0, 6.28), y = r.range(0.6, F * 0.8); parts.push({ g: blobG(0.32, r, 0.3, 0), m: M(Math.cos(a) * 1.0 * (1 - y / F * 0.4), y, Math.sin(a) * 1.0 * (1 - y / F * 0.4), 0, 0, 0, 1.4, 0.45, 1.4), c: '#3a6a30', j: 0.1 }); }      // moss on the trunk
+      const cols = ['#1e5a2c', '#2a6a34', '#16482a', '#347a3a', '#245a30'], nL = r.int(3, 4), base = top.clone();
+      const crownAt = (p, big) => crown(parts, r, p.x, p.y + 0.4, p.z, big ? 5.4 : 4.6, 1.3, big ? 5.4 : 4.6, big ? 10 : 8, 1.7, big ? 3.1 : 2.8, cols, 0.5);
+      const limbs = [];
+      for (let k = 0; k < nL; k++) {
+        const a = k / nL * 6.28 + r.range(-0.4, 0.4), dir = new V3(Math.cos(a), 0, Math.sin(a));
+        const P1 = base.clone().addScaledVector(dir, r.range(5, 8)); P1.y = base.y + r.range(0.12, 0.2) * H; const L1 = limb(base, P1, 0.62, 0.4, 6); parts.push({ g: L1.g, m: L1.m, c: ['#5a4c3a', '#4a3e30', 0, H], j: 0.07 }); limbs.push([base, P1, 0.62]);
+        const ns = r.int(2, 3);
+        for (let q = 0; q < ns; q++) {
+          const a2 = a + (q - (ns - 1) / 2) * 0.9 + r.range(-0.25, 0.25), P2 = P1.clone().add(new V3(Math.cos(a2) * r.range(5, 8), r.range(0.07, 0.16) * H, Math.sin(a2) * r.range(5, 8))); const L2 = limb(P1, P2, 0.4, 0.22, 6); parts.push({ g: L2.g, m: L2.m, c: '#4e4234', j: 0.07 }); limbs.push([P1, P2, 0.4]);
+          if (r.chance(0.7)) { const a3 = a2 + r.range(-0.7, 0.7), P3 = P2.clone().add(new V3(Math.cos(a3) * r.range(3, 5), r.range(0.03, 0.08) * H, Math.sin(a3) * r.range(3, 5))); const L3 = limb(P2, P3, 0.22, 0.1, 5); parts.push({ g: L3.g, m: L3.m, c: '#4e4234', j: 0.07 }); crownAt(P3, false); } else crownAt(P2, true);
+        }
+      }
+      crownAt(top.clone().setY(top.y + 2), true);
+      for (const [A, B, th] of limbs) {       // epiphytes, orchids and ferns on the limbs
+        for (let i = 0; i < 3; i++) { const t = r.range(0.25, 0.9), x = lerp(A.x, B.x, t), y = lerp(A.y, B.y, t) + th * 0.5, z = lerp(A.z, B.z, t);
+          for (let f = 0; f < 6; f++) parts.push({ g: frondG(r.range(1.0, 1.7), 0.4, r.range(0.3, 0.6), 4), m: M(x, y, z, 0, f / 6 * 6.28, r.range(0.2, 0.7)), c: ['#2e7a36', '#5ab04a', 0, 4], j: 0.1 });
+          if (r.chance(0.5)) parts.push({ g: blobG(0.12, r, 0.3, 0), m: M(x, y + 0.4, z), c: r.pick(['#d060d8', '#f4f0e0', '#e86a3a']), j: 0.05 }); }
+        for (let i = 0; i < 2; i++) { const t = r.range(0.3, 0.95), x = lerp(A.x, B.x, t), y = lerp(A.y, B.y, t), z = lerp(A.z, B.z, t), len = r.range(8, Math.max(9, y - 1)); parts.push({ g: cylG(0.035, 0.03, len, 4), m: M(x, y - len, z), c: '#34542a', j: 0.05 }); for (let k = 0; k < 3; k++) parts.push({ g: blobG(0.14, r, 0.3, 0), m: M(x, y - len * (0.25 + k * 0.28), z, 0, 0, 0, 1.3, 0.6, 1.3), c: '#2e6a32', j: 0.1 }); }    // lianas
+      }
+      return { g: merge(parts, r), rad: 1.3, h: H + 6 };
+    },
+    cycad(r) {
+      const parts = []; const H = r.range(1.2, 3.2); parts.push({ g: cylG(0.32, 0.46, H, 7), c: ['#3a3026', '#5a4a38', 0, H], j: 0.08 });
+      for (let k = 0; k < 6; k++) parts.push({ g: new THREE.TorusGeometry(0.4, 0.04, 4, 8), m: M(0, 0.3 + k * H / 6.5, 0, Math.PI / 2, 0, 0), c: '#2a2218', j: 0.04 });     // leaf-scar rings
+      for (let i = 0; i < 13; i++) { const a = i / 13 * 6.28 + r.range(-0.1, 0.1); parts.push({ g: frondG(r.range(2.2, 3.0), 0.55, r.range(0.25, 0.7), 6), m: M(0, H, 0, 0, a, r.range(0.0, 0.25)), c: ['#1e5a2a', '#4a9a40', 0, H + 2], j: 0.1 }); }
+      parts.push({ g: coneG(0.2, 0.55, 7), m: M(0, H - 0.05, 0), c: '#b4452a', j: 0.1 });
+      return { g: merge(parts, r), rad: 0.3, h: H + 1.5 };
+    },
+    pandan(r) {     // a screw pine on stilt roots with rosettes of long saw-edged leaves
+      const parts = []; const H = r.range(3.8, 6.0), lean = r.range(0.1, 0.3); const top = trunk(parts, r, H, 0.2, 0.12, lean, ['#7a6a52', '#5a4c38', 0, H], 4);
+      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + r.range(-0.2, 0.2), L = limb(new V3(Math.cos(a) * 0.9, 0, Math.sin(a) * 0.9), new V3(Math.cos(a) * 0.15, H * 0.35, Math.sin(a) * 0.15), 0.04, 0.08, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); }
+      const rosette = (p, n, len) => { for (let i = 0; i < n; i++) { const a = i / n * 6.28 + r.range(-0.15, 0.15); parts.push({ g: coneG(0.07, len * r.range(0.8, 1.1), 3), m: M(p.x, p.y, p.z, Math.sin(a) * 1.0, 0, -Math.cos(a) * 1.0), c: ['#5a8a2e', '#9ac04a', 0, len], j: 0.1 }); } };
+      rosette(top, 16, 2.3); for (let k = 0; k < 2; k++) { const a = r.range(0, 6.28), tip = new V3(top.x + Math.cos(a) * 1.4, H * 0.88, top.z + Math.sin(a) * 1.4); const L = limb(new V3(top.x, H * 0.7, top.z), tip, 0.1, 0.06, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); rosette(tip, 12, 1.8); }
+      return { g: merge(parts, r), rad: 0.6, h: H + 2 };
+    },
+    alocasia(r) {   // an elephant-ear: a few huge arrow-shaped leaves on bent stalks
+      const parts = []; const n = r.int(4, 6);
+      for (let i = 0; i < n; i++) {
+        const a = r.range(0, 6.28), lean = r.range(0.25, 0.7), h = r.range(0.7, 1.3), x = Math.cos(a) * lean, z = Math.sin(a) * lean;
+        const L = limb(new V3(0, 0, 0), new V3(x * 0.9, h, z * 0.9), 0.03, 0.02, 4); parts.push({ g: L.g, m: L.m, c: '#4a7a3a', j: 0.05 });
+        const lg = new THREE.BufferGeometry(), w = r.range(0.5, 0.8), l = r.range(0.8, 1.2); lg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, w * 0.5, 0.05, l * 0.2, -w * 0.5, 0.05, l * 0.2, w * 0.35, 0.1, l * 0.75, -w * 0.35, 0.1, l * 0.75, 0, 0.14, l, w * 0.52, 0, -l * 0.12, -w * 0.52, 0, -l * 0.12], 3)); lg.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4, 0, 6, 1, 0, 2, 7]);
+        parts.push({ g: lg, m: M(x * 0.9, h, z * 0.9, r.range(-0.5, -0.1), -a + Math.PI / 2, 0), c: ['#1c5a2c', '#3a8a40', 0, 1.6], j: 0.08 });
+      }
+      return { g: merge(parts, r), rad: 0, h: 1.6 };
+    },
+    lavarock(r) {   // a heap of cooled lava: dark vesicular crust, ropy ridges, rusty edges, ferns and moss in the cracks
+      const parts = []; const R = r.range(0.7, 1.6);
+      parts.push({ g: blobG(R, r, 0.45, 1), m: M(0, R * 0.14, 0, 0, r.range(0, 6), 0, 1.3, 0.55, 1.1), c: ['#1c1917', '#3c3631', 0, R], j: 0.16 });
+      for (let i = 0; i < r.int(4, 7); i++) { const a = r.range(0, 6.28), d = r.range(0.1, R * 0.8), w = r.range(0.35, 0.8); parts.push({ g: new THREE.BoxGeometry(w, 0.1, w * r.range(0.6, 1.1)), m: M(Math.cos(a) * d, R * 0.5 * (1 - d / (R * 1.2)) + 0.2, Math.sin(a) * d, r.range(-0.2, 0.2), r.range(0, 6), r.range(-0.2, 0.2)), c: r.pick(['#2a2522', '#38322e', '#241f1d', '#443a34']), j: 0.12 }); }      // crust plates
+      for (let i = 0; i < 3; i++) { const a = r.range(0, 6.28), A = new V3(Math.cos(a) * R * 0.2, R * 0.45, Math.sin(a) * R * 0.2), B = new V3(Math.cos(a + 0.3) * R * 0.85, R * 0.18, Math.sin(a + 0.3) * R * 0.85); const L = limb(A, B, 0.07, 0.05, 4); parts.push({ g: L.g, m: L.m, c: '#4a2e26', j: 0.08 }); }       // ropy ridges, rusty
+      for (let i = 0; i < 4; i++) { const a = r.range(0, 6.28), d = r.range(R * 0.4, R * 0.95); parts.push({ g: blobG(0.12, r, 0.3, 0), m: M(Math.cos(a) * d, R * 0.22, Math.sin(a) * d, 0, 0, 0, 1.4, 0.5, 1.4), c: r.pick(['#3a6a30', '#4a7a38', '#58884a']), j: 0.1 }); }       // moss
+      if (r.chance(0.7)) { const a = r.range(0, 6.28), d = R * 0.5; for (let f = 0; f < 5; f++) parts.push({ g: frondG(r.range(0.5, 0.9), 0.2, r.range(0.3, 0.6), 4), m: M(Math.cos(a) * d, R * 0.3, Math.sin(a) * d, 0, f / 5 * 6.28, r.range(0.3, 0.8)), c: ['#2e7a36', '#58b04a', 0, 1], j: 0.1 }); }
+      return { g: merge(parts, r), rad: R * 0.8, h: R * 0.7 };
+    },
+    lavashard(r) {      // loose sharp shards of cooled lava scattered over the crust
+      const parts = []; for (let i = 0; i < r.int(3, 6); i++) { const sz = r.range(0.12, 0.34); parts.push({ g: coneG(sz, sz * r.range(1.1, 2.2), r.pick([3, 4, 5])), m: M(r.range(-0.4, 0.4), -0.02, r.range(-0.4, 0.4), r.range(-0.5, 0.5), r.range(0, 6), r.range(-0.5, 0.5)), c: r.pick([['#1a1715', '#3a332e'], ['#2a2420', '#5a4a40'], ['#3a2420', '#6a3a2c']]).concat([0, sz * 2]), j: 0.12 }); }
+      return { g: merge(parts, r), rad: 0, h: 0.5 };
+    },
+    groundfern(r) {      // a low fan of fronds on the forest floor
+      const parts = []; const n = r.int(9, 13); for (let i = 0; i < n; i++) { const a = i / n * 6.28 + r.range(-0.2, 0.2); parts.push({ g: frondG(r.range(0.7, 1.4), 0.34, r.range(0.35, 0.9), 5), m: M(0, 0.06, 0, 0, a, r.range(0.35, 0.8)), c: ['#1e5a2c', '#58b04a', 0, 1.2], j: 0.12 }); }
+      return { g: merge(parts, r), rad: 0, h: 1.2 };
+    },
     bush(r, env) {
       const parts = []; const cols = env._bush;
       for (let i = 0; i < 4; i++) parts.push({ g: blobG(r.range(0.45, 0.8), r), m: M(r.range(-0.5, 0.5), 0.35 + r.range(0, 0.3), r.range(-0.5, 0.5), 0, 0, 0, 1, 0.8, 1), c: r.pick(cols), j: 0.14 });
@@ -2570,7 +2713,7 @@ const World = (() => {
     const env = Object.assign({}, ENV[biome.id]);
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
-    env._bush = ({ russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
+    env._bush = ({ papua: ['#2a6a30', '#3a7a34'], russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
 
     // ---- per-visit variation (time of day, weather, relief)
     const OC = !!env.overcast;      // a grey, overcast day (the bog): no golden hour, no sun disc, soft light
@@ -2586,12 +2729,23 @@ const World = (() => {
     scene.background = fogC.clone(); scene.fog = new THREE.FogExp2(fogC, fogDen);
     const world = { biome, env, scene, seedStr, flowers: [], baits: [], colliders: [], R: PLAY_R, spawn: new V3(0, 0, 0), spawnYaw: 0, updaters: [], waters: [] };
 
+    // ---- a frozen lava flow (raised, rugged crust) running down from the volcano: its course first, the crust is added to the relief
+    let lava = null;
+    const lSeg = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz, t = L > 0 ? clamp(((px - ax) * dx + (pz - az) * dz) / L) : 0; return [Math.hypot(px - (ax + dx * t), pz - (az + dz * t)), t]; };
+    if (env.lava) {
+      const a0 = rng.range(0, 6.283), a1 = a0 + Math.PI + rng.range(-0.9, 0.9), Rr = 88, S = new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr), E = new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr);
+      const NP = 70, pts = [], amp = rng.range(10, 22), no = rng.range(0, 99), dir = E.clone().sub(S), len = dir.length(); dir.normalize(); const nrm = new V3(-dir.z, 0, dir.x), wL = rng.range(4.2, 6.0);
+      for (let i = 0; i < NP; i++) { const t = i / (NP - 1), off = (tnoise.fbm(t * 2.4 + no, 5.1, 3) - 0.5) * 2 * amp * Math.sin(Math.PI * t) + Math.sin(t * 7 + no) * 2.5; const p = S.clone().addScaledVector(dir, len * t).addScaledVector(nrm, off); const dd = Math.hypot(p.x, p.z); if (dd < 24) { const k = 24 - dd; p.x += p.x / (dd || 1) * k; p.z += p.z / (dd || 1) * k; } pts.push({ x: p.x, z: p.z, w: wL * (0.8 + 0.4 * tnoise.at(t * 6 + no, 2.2)) }); }
+      lava = { pts };
+    }
+    const lavaNear = (x, z) => { let bd = 1e9, bi = 0, bt = 0; for (let i = 0; i < lava.pts.length - 1; i++) { const A = lava.pts[i], B = lava.pts[i + 1], sd = lSeg(x, z, A.x, A.z, B.x, B.z); if (sd[0] < bd) { bd = sd[0]; bi = i; bt = sd[1]; } } const A = lava.pts[bi], B = lava.pts[bi + 1]; return [bd, bi + bt, lerp(A.w, B.w, bt)]; };
     // ---- base relief
     const baseH = (x, z) => {
       let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP;
       const r = Math.hypot(x, z);
       h *= smooth(5, 16, r);
       h += Math.pow(clamp((r - 56) / 30), 2) * (AMP * 2.6 + 5) * (0.75 + 0.5 * noise.at(x * 0.05 + 40, z * 0.05 + 7));
+      if (lava) { const [dc, al, ww] = lavaNear(x, z); if (dc < ww * 1.9) h += smooth(ww * 1.9, ww * 0.7, dc) * (0.55 + Math.sin(al * 2.4 + noise.at(x * 0.15, z * 0.15) * 5) * 0.14 + (noise.at(x * 0.8, z * 0.8) - 0.5) * 0.4); }       // the crust of the lava flow: raised, with ropy ridges across the flow
       if (env.bog) { const hm = noise.at(x * 0.55 + 7, z * 0.55 + 3), rg = Math.sin((x * 0.8 + z * 0.6) * 0.16 + noise.at(x * 0.03, z * 0.03) * 6); h += (Math.max(0, hm - 0.5) * 1.1 + rg * 0.16) * smooth(5, 12, r); }   // sphagnum lawn: low hummocks and long ridge/hollow stripes
       return h;
     };
@@ -2666,6 +2820,9 @@ const World = (() => {
       return lerp(lerp(H[iz * N1 + ix], H[iz * N1 + ix + 1], tx), lerp(H[(iz + 1) * N1 + ix], H[(iz + 1) * N1 + ix + 1], tx), tz);
     };
     world.heightAt = heightAt;
+    let LDG = null; if (lava) { LDG = new Float32Array(N1 * N1); for (let iz = 0; iz < N1; iz++) for (let ix = 0; ix < N1; ix++) { const [dc, , ww] = lavaNear(-HALF + ix * CELL, -HALF + iz * CELL); LDG[iz * N1 + ix] = dc - ww; } }
+    const ld = (x, z) => LDG ? LDG[clamp(Math.round((z + HALF) / CELL), 0, SEG) * N1 + clamp(Math.round((x + HALF) / CELL), 0, SEG)] : 99;
+    world.ld = ld; world.lava = lava;
     const slopeAt = (x, z) => Math.hypot(heightAt(x + 1, z) - heightAt(x - 1, z), heightAt(x, z + 1) - heightAt(x, z - 1)) / 2;
     world.slopeAt = slopeAt;
 
@@ -2696,6 +2853,7 @@ const World = (() => {
       let c = n < 0.45 ? mixc(gc[0], gc[1], n / 0.45) : mixc(gc[1], gc[2], (n - 0.45) / 0.55);
       if (env.litter && n2 > 0.45) c = mixc(c, litter, 0.55);
       if (env.moss && n2 > 0.5) c = mixc(c, mossc, 0.4);
+      if (LDG) { const l0 = LDG[i]; if (l0 < 4) c = mixc(c, hex2rgb('#2e2c2a'), smooth(4, 0.6, l0) * 0.45); if (l0 < 0.8) { const st = Math.sin(((x * 0.7 + z * 0.4) * 1.9) + n2 * 6) * 0.5 + 0.5; c = mixc(c, hex2rgb(n2 > 0.66 ? '#5a3428' : n2 > 0.5 ? '#403834' : n2 > 0.28 ? '#2c2825' : '#181514'), smooth(0.8, -0.4, l0) * (0.9 + st * 0.08)); if (l0 > -0.3 && l0 < 0.8 && n2 > 0.7) c = mixc(c, hex2rgb('#4a6a36'), 0.5); } }      // black crust with rusty patches
       if (env.bog) { const hv = noise.fbm(x * 0.11 + 20, z * 0.11 + 8, 3), hr = noise.at(x * 0.23 + 50, z * 0.23 + 30), red = smooth(0.6, 0.74, hv); c = mixc(c, hex2rgb('#8a4a30'), red * 0.5); c = mixc(c, hex2rgb('#8e8a44'), smooth(0.5, 0.62, hr) * 0.4 * (1 - red)); c = mixc(c, hex2rgb('#3e3220'), smooth(0.4, 0.3, hv) * 0.6); }   // red / yellow sphagnum, brown peat moss, bare dark peat
       const sl = slopeAt(x, z);
       if (env.slopeRock && sl > 0.55) c = mixc(c, rockc, clamp((sl - 0.55) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
@@ -2709,7 +2867,7 @@ const World = (() => {
 
     // ---- lights
     const hemi = new THREE.HemisphereLight(mixHex(env.hemi[0], '#ffd8b0', golden * 0.5), env.hemi[1], env.hemi[2] * (1 - golden * 0.12)); scene.add(hemi);
-    const sun = new THREE.DirectionalLight(sunCol, OC ? 0.5 : 1.05); sun.castShadow = true; sun.shadow.mapSize.set(1536, 1536);
+    const sun = new THREE.DirectionalLight(sunCol, env.sunI || (OC ? 0.5 : 1.05)); sun.castShadow = true; sun.shadow.mapSize.set(1536, 1536);
     const sc = sun.shadow.camera; sc.left = -34; sc.right = 34; sc.top = 34; sc.bottom = -34; sc.near = 1; sc.far = 220;
     sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.06; scene.add(sun, sun.target);
     world.sun = sun; world.sunDir = sunDir;
@@ -2742,6 +2900,11 @@ const World = (() => {
       scene.add(sp); clouds.push(sp);
     }
 
+    // ---- shafts of light that fall through the gaps of the canopy
+    if (env.canopy) {
+      const sTex = canvasTex(8, 64, (x, w, h) => { const d = x.createImageData(w, h); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const u = 1 - Math.abs(xx / (w - 1) * 2 - 1), v = yy / (h - 1), a = Math.pow(u, 1.4) * (0.25 + 0.75 * Math.sin(v * Math.PI)) * 255; const i = (yy * w + xx) * 4; d.data[i] = 255; d.data[i + 1] = 250; d.data[i + 2] = 200; d.data[i + 3] = a; } x.putImageData(d, 0, 0); });
+      for (let i = 0; i < 8; i++) { const a = rng.range(0, 6.28), d = rng.range(8, 44), m = new THREE.Mesh(new THREE.PlaneGeometry(rng.range(2.4, 4.4), 34), new THREE.MeshBasicMaterial({ map: sTex, transparent: true, opacity: rng.range(0.1, 0.2), blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); m.position.set(Math.cos(a) * d, 15, Math.sin(a) * d); m.rotation.set(0.0, rng.range(0, 3.14), 0.22 * (rng.chance(0.5) ? 1 : -1)); scene.add(m); }
+    }
     // ---- far mountains
     const [mc0, mc1, snow, hMin, hMax] = env.mount; const mparts = []; const mrng = new Rng(seed ^ 0x77);
     for (let i = 0; i < 46; i++) {
@@ -2766,8 +2929,10 @@ const World = (() => {
       edge: (x, z) => bell(tf(x, z), TH, 0.07) * 0.9 + 0.08,
       dense: (x, z) => 0.3 + 0.7 * smooth(TH - 0.18, TH - 0.02, tf(x, z)),
       riparian: (x, z) => { const d = sdf(x, z); return waters.length ? bell(d, 6, 4) * 0.95 + 0.02 : 0.4; },
+      lava: (x, z) => LDG ? 0.08 + 0.92 * smooth(3.5, 0.2, ld(x, z)) : 0.3,
       upland: (x, z, y) => 0.12 + 0.88 * smooth(-0.5, 1.8, y + (tf(x, z) - 0.5) * 3),
     };
+    const groups = {};
     const reserve = [];          // ground kept free for landmarks planned in advance (the bog's boardwalk and peat cutting)
     function scatter(count, rad, minR, maxR, opts = {}) {
       const out = []; let tries = 0; const f = FIELD[opts.field || 'uniform'] || FIELD.uniform;
@@ -2779,9 +2944,11 @@ const World = (() => {
         if (!opts.anySlope && slopeAt(x, z) > (opts.maxSlope || 0.75)) continue;
         if (rng.next() > f(x, z, y)) continue;
         if (reserve.length && reserve.some(q => (q.x - x) ** 2 + (q.z - z) ** 2 < (q.r + 0.4) ** 2)) continue;
+        if (LDG && !opts.onLava && ld(x, z) < 1.2) continue;
+        if (opts.group) { const G = groups[opts.group] || (groups[opts.group] = []); if (G.some(q => (q[0] - x) ** 2 + (q[1] - z) ** 2 < opts.minSep * opts.minSep)) continue; }
         let ok = true; for (const p of placed) { const dd = (p.x - x) ** 2 + (p.z - z) ** 2; if (dd < (p.r + rad) ** 2) { ok = false; break; } }
         if (!ok) continue;
-        out.push({ x, z, y }); placed.push({ x, z, r: rad });
+        out.push({ x, z, y }); placed.push({ x, z, r: rad }); if (opts.group) groups[opts.group].push([x, z]);
       }
       return out;
     }
@@ -2811,11 +2978,11 @@ const World = (() => {
         im.castShadow = !opts.noShadow; im.receiveShadow = true; im.frustumCulled = false; scene.add(im);
       });
     }
-    const spacing = { bush: 0.5, rock: 0.5, giant: 2.4, dipt: 2.0, baobab: 3.2, crypto: 1.6, hummock: 1.3, tussock: 0.55, ledum: 0.7, cassandra: 0.6, dbirch: 0.7, ryam: 1.8, snag: 1.6 };
+    const spacing = { bush: 0.5, rock: 0.5, giant: 2.4, dipt: 2.0, baobab: 3.2, crypto: 1.6, hummock: 1.3, tussock: 0.55, ledum: 0.7, cassandra: 0.6, dbirch: 0.7, ryam: 1.8, snag: 1.6, relic: 1.6, cycad: 0.9, pandan: 1.1, alocasia: 0.8, lavashard: 0.35, groundfern: 0.5, lavarock: 1.2 };
     function addTrees(type, count, opts = {}) { instanceAt(type, scatter(count, spacing[type] || 1.6, opts.minR || 6, opts.maxR || 56, opts), opts); }
 
     // vegetation recipe
-    const lowOpts = { noShadow: true, noCollide: true }; const LOW_BOG = { hummock: 1, tussock: 1, ledum: 1, cassandra: 1, dbirch: 1 };
+    const lowOpts = { noShadow: true, noCollide: true }; const LOW_BOG = { lavashard: 1, groundfern: 1, hummock: 1, tussock: 1, ledum: 1, cassandra: 1, dbirch: 1, alocasia: 1 };
     for (const [type, n, field, vo] of env.veg) {
       if (field === 'orchard') { // rows of trees on terraces
         const nPatch = rng.int(2, 3);
@@ -2883,9 +3050,23 @@ const World = (() => {
         }
         const gg = merge(parts, rng); const m = new THREE.Mesh(gg, treeMat); m.castShadow = true; m.receiveShadow = true; scene.add(m);
       },
+      lavaflow() {        // columnar basalt: a cluster of hexagonal columns of cooled lava standing at the edge of the flow, moss and ferns on their tops
+        if (!lava) return; const idx = rng.int(14, lava.pts.length - 14), P = lava.pts[idx], Q = lava.pts[idx + 1], ang = Math.atan2(Q.z - P.z, Q.x - P.x) + Math.PI / 2, off = P.w * 1.3; const cx = P.x + Math.cos(ang) * off, cz = P.z + Math.sin(ang) * off;
+        world.lmPos = Object.assign(world.lmPos || {}, { lavatube: [cx, cz] }); const parts = [];
+        for (let i = 0; i < 30; i++) {
+          const a = rng.range(0, 6.28), d = Math.sqrt(rng.next()) * 3.4, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d, y0 = heightAt(x, z), h = Math.max(0.5, (3.4 - d) * rng.range(0.6, 1.0) + rng.range(0.3, 1.1)), r0 = rng.range(0.34, 0.55);
+          if (inWater(x, z, 0.5)) continue; const tilt = rng.range(-0.06, 0.06), tz = rng.range(-0.06, 0.06);
+          parts.push({ g: new THREE.CylinderGeometry(r0 * 0.96, r0, h + 0.6, 6), m: M(x, y0 + h / 2 - 0.3, z, tilt, rng.range(0, 1), tz), c: ['#201c1a', '#4a423b', y0 - 0.3, y0 + h], j: 0.1 });
+          parts.push({ g: new THREE.CylinderGeometry(r0 * 0.9, r0 * 0.96, 0.08, 6), m: M(x, y0 + h + 0.02 + Math.sin(tilt) * r0, z, tilt, 0.3, tz), c: rng.chance(0.55) ? '#3a5a2e' : '#5a4a3e', j: 0.1 });     // the top: moss or bare rock
+          if (rng.chance(0.4)) for (let f = 0; f < 4; f++) parts.push({ g: frondG(rng.range(0.5, 0.9), 0.2, rng.range(0.3, 0.6), 4), m: M(x, y0 + h + 0.06, z, 0, f / 4 * 6.28, rng.range(0.4, 0.8)), c: ['#2e7a36', '#58b04a', 0, 1], j: 0.1 });
+          world.colliders.push({ x, z, r: r0 * 1.05 });
+        }
+        const m = new THREE.Mesh(merge(parts, rng), treeMat); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+      },
       stones() { const wt = waters.find(w => w.kind === 'river'); if (!wt) return; for (let k = 0; k < 14; k++) { const p = wt.pts[rng.int(8, wt.pts.length - 9)]; addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.46, 0.16, 7), mStone), p.x + rng.range(-0.6, 0.6), p.level + 0.03, p.z + rng.range(-0.6, 0.6), rng.range(0, 6), false); } },
     };
     const pool = (env.lm || []).filter(k => LM[k]); const picks = []; if (biome.id === 'alps' && pool.includes('chalet')) picks.push(pool.splice(pool.indexOf('chalet'), 1)[0]);
+    if (biome.id === 'papua' && pool.includes('lavaflow')) picks.push(pool.splice(pool.indexOf('lavaflow'), 1)[0]);
     while (picks.length < 2 && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
     picks.forEach(k => { try { LM[k](); } catch (e) { console.warn('landmark failed', k, e); } });
     world.landmarks = picks;
@@ -2905,7 +3086,7 @@ const World = (() => {
       const im = new THREE.InstancedMesh(grassGeo, foliageMat(gAtlas, false, 1), n); let cnt = 0, tries = 0; const c = new THREE.Color();
       while (cnt < n && tries++ < n * 3) {
         const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(0, PLAY_R * PLAY_R * 1.1)); const x = Math.cos(a) * d, z = Math.sin(a) * d;
-        if (inWater(x, z, 0.6)) continue; if (env.slopeRock && slopeAt(x, z) > 0.7 && rng.chance(0.8)) continue;
+        if (inWater(x, z, 0.6)) continue; if (LDG && ld(x, z) < 0.5 && rng.chance(0.93)) continue; if (env.slopeRock && slopeAt(x, z) > 0.7 && rng.chance(0.8)) continue;
         const s = rng.range(env.grass.h[0], env.grass.h[1]) * (0.8 + 0.4 * (1 - tf(x, z))); const w = rng.range(0.55, 1.0) * (0.6 + s * 0.6);
         im.setMatrixAt(cnt, M(x, heightAt(x, z) - 0.05, z, 0, rng.range(0, 3.14), 0, w, s, w));
         c.copy(rng.pick(gcols)).lerp(rng.pick(gcols), rng.next()); im.setColorAt(cnt, c); cnt++;
@@ -2930,13 +3111,13 @@ const World = (() => {
         if (inWater(x, z, 1.5) || rng.next() > wantPatch(x, z)) continue; patches.push({ x, z, r: rng.range(3, 7), f: rng.pick(env.flowers) }); i++;
       }
       if (!patches.length) patches.push({ x: 8, z: 4, r: 5, f: env.flowers[0] });
-      const nF = biome.id === 'bog' ? 1500 : 2800; const im = new THREE.InstancedMesh(grassGeo, foliageMat(flowerAtlas(), true, KINDS.length), nF); const kind = new Float32Array(nF); const c = new THREE.Color(); let cnt = 0, tries = 0;
+      const nF = biome.id === 'bog' ? 1500 : biome.id === 'papua' ? 1700 : 2800; const im = new THREE.InstancedMesh(grassGeo, foliageMat(flowerAtlas(), true, KINDS.length), nF); const kind = new Float32Array(nF); const c = new THREE.Color(); let cnt = 0, tries = 0;
       while (cnt < nF && tries++ < nF * 4) {
         let x, z, f;
         if (rng.chance(0.82)) { const p = rng.pick(patches); const a = rng.range(0, 6.28), d = Math.abs(rng.next() + rng.next() - 1) * p.r * 1.3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; f = rng.chance(0.75) ? p.f : rng.pick(env.flowers); }
         else { const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(4, PLAY_R * PLAY_R)); x = Math.cos(a) * d; z = Math.sin(a) * d; f = rng.pick(env.flowers); }
-        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8)) continue;
-        const sz = rng.range(0.5, 0.85) * (f[1] === 'spike' ? 1.5 : 1) * (biome.id === 'kenya' || biome.id === 'prairie' ? 1.4 : biome.id === 'bog' ? 0.72 : 1); const y = heightAt(x, z) - 0.04;
+        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8) || (LDG && ld(x, z) < 0.5)) continue;
+        const sz = rng.range(0.5, 0.85) * (f[1] === 'spike' ? 1.5 : 1) * (biome.id === 'kenya' || biome.id === 'prairie' ? 1.4 : biome.id === 'bog' ? 0.72 : biome.id === 'papua' ? 0.8 : 1); const y = heightAt(x, z) - 0.04;
         im.setMatrixAt(cnt, M(x, y, z, 0, rng.range(0, 3.14), 0, sz, sz, sz)); c.set(f[0]).multiplyScalar(rng.range(0.9, 1.1)); im.setColorAt(cnt, c); kind[cnt] = KINDS.indexOf(f[1]);
         if (rng.chance(0.4)) world.flowers.push({ x, y: y + sz * 0.78, z, kind: f[1], size: sz, taken: false });
         cnt++;
@@ -3622,7 +3803,7 @@ class Play {
   netCaught(m) {
     const f = this.flies.find(x => x.id === m.fid); const sp = SPECIES_BY_ID[m.sp];
     if (f) { f.releaseFlower(); f.state = CAUGHT; f.remote = true; f.pendingCatch = false; f.t = 0.4; }
-    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
+    if (this.isHost && sp) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (BEH[bs.beh].light ? 3 : 1) }); }
     if (sp) this.toast(`${m.name} поймал: ${sp.mystery && !Save.has(sp.id) ? '???' : sp.ru}`, 2.5);
   }
   sendNet(dt) {
@@ -3689,7 +3870,7 @@ class Play {
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
     // respawn a fresh one later
-    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
+    if (!this.mp || this.isHost) { const bs = SPECIES_BY_ID[sp.base] || sp; if (!bs.scarce) this.respawns.push({ sp: bs, t: (bs.rar === 1 ? 14 : bs.rar === 2 ? 22 : 34) * (f.beh.light ? 3 : 1) }); }
     const spc = f.beh.special;
     if (spc === 'guiding') { this.guideT = 60; this.toast('Путеводный свет: стрелка укажет на новую бабочку (60 с)', 4.5, true); Snd.sfx.reward(); }
     else if (spc === 'curious') { this.revealT = 30; this.toast('Любопытство: все бабочки подсвечены (30 с)', 4.5, true); Snd.sfx.reward(); }
@@ -3845,7 +4026,7 @@ class Play {
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {
-  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
+  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) * (sp.scarce || 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
   return out;
 };
@@ -3858,8 +4039,8 @@ const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); const have = mine.filter(s => Save.has(s.id)).length; return `${have}/${mine.length}`; };
 const Screens = (() => {
   const c = UIK.col;
-  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото' };
-  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -6474,6 +6655,24 @@ const SecretMarket = (() => {
       x.strokeStyle = '#7a5a30'; x.lineWidth = 1; x.strokeRect(4.5, 8.5, W - 9, H - 17); x.strokeStyle = '#a88a58'; x.strokeRect(6.5, 10.5, W - 13, H - 21);
       // faint water ripples on the parchment
       for (let k = 0; k < 9; k++) { const yy = 12 + (k * 4) % 30, xx = 8 + ((k * 17) % 50); px(xx, yy, '#b8a878'); px(xx + 1, yy, '#b8a878'); px(xx + 2, yy + 1, '#b8a878'); }
+      const inPoly = (poly, xx, yy) => { let c = false; for (let i = 0, k = poly.length - 1; i < poly.length; k = i++) { const [xi, yi] = poly[i], [xk, yk] = poly[k]; if ((yi > yy) !== (yk > yy) && xx < (xk - xi) * (yy - yi) / (yk - yi) + xi) c = !c; } return c; };
+      const drawPapua = () => {
+        const isl = [[9, 24], [13, 19], [19, 16], [26, 18], [31, 15], [37, 14], [43, 17], [49, 19], [55, 22], [61, 26], [66, 31], [60, 33], [54, 31], [50, 35], [44, 33], [40, 30], [34, 32], [30, 36], [24, 34], [20, 30], [14, 28]];
+        for (let yy = 12; yy < H - 8; yy++) for (let xx = 7; xx < W - 6; xx++) { if (!inPoly(isl, xx + 0.5, yy + 0.5)) continue; const edge = !inPoly(isl, xx - 1.5, yy + 0.5) || !inPoly(isl, xx + 2.5, yy + 0.5) || !inPoly(isl, xx + 0.5, yy - 1.5) || !inPoly(isl, xx + 0.5, yy + 2.5); px(xx, yy, edge ? '#3a5a2c' : (xx * 7 + yy * 3) % 5 === 0 ? '#2e5a2e' : (xx + yy * 2) % 4 === 0 ? '#4a7a3a' : '#3c6a32'); }
+        for (const [rx0, ry0, rx1, ry1] of [[9, 24, 14, 28], [30, 36, 34, 32]]) { void rx0; void ry0; void rx1; void ry1; }
+        for (const [tx, ty] of [[18, 22], [24, 25], [29, 22], [35, 20], [40, 24], [46, 23], [22, 29], [38, 28], [58, 30], [48, 28], [14, 25]]) { x.fillStyle = '#244a26'; x.fillRect(tx - 1, ty - 1, 3, 2); px(tx, ty - 2, '#1c3c20'); px(tx, ty + 1, '#4a3a28'); }      // big trees
+        for (let k = 0; k < 14; k++) { const t = k / 13, rx = Math.round(30 + t * 14 + Math.sin(t * 6) * 2), ry = Math.round(34 - t * 12); px(rx, ry, '#6a98b0'); px(rx + 1, ry, '#6a98b0'); }                       // a river
+        // Mount Lamington: a dark cone with a crater, steam and a black lava tongue
+        for (let k = 0; k < 9; k++) { const w = Math.round(k * 0.55); x.fillStyle = k < 2 ? '#6a5048' : k < 5 ? '#4a3a34' : '#3a2e2a'; x.fillRect(52 - w, 17 + k, w * 2 + 1, 1); }
+        px(51, 17, '#b04a22'); px(52, 17, '#d86a2a'); px(53, 17, '#b04a22'); px(52, 15, '#c8c8c8'); px(53, 14, '#d8d8d8'); px(51, 13, '#b8b8b8'); px(52, 12, '#d0d0d0');
+        for (let k = 0; k < 8; k++) { px(53 + Math.round(k * 0.9), 20 + k, '#1c1816'); px(54 + Math.round(k * 0.9), 20 + k, '#2a2420'); }
+        // a bird with spread wings over the island
+        for (const [bx, by] of [[3, 0], [4, 1], [5, 1], [2, 1], [1, 2], [6, 2]]) px(26 + bx, 9 + by, '#7a2a1c');
+        // the route: dashes from the sea to the red cross
+        const route = [[14, 41], [26, 40], [38, 40], [50, 38], [58, 34], [60, 30]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
+        for (let k = -2; k <= 2; k++) { px(60 + k, 29 + k, '#b02a1c'); px(60 + k, 29 - k, '#b02a1c'); }
+      };
+      if (id === 'papua') drawPapua(); else {
       // the land: a lumpy island of moss and peat
       const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
       for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
@@ -6486,6 +6685,7 @@ const SecretMarket = (() => {
       let wx = 15, wy = 35; const route = [[15, 35], [22, 33], [28, 30], [33, 30], [39, 27], [44, 25], [49, 26], [55, 23]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
       // the red cross
       for (let k = -2; k <= 2; k++) { px(56 + k, 22 + k, '#b02a1c'); px(56 + k, 22 - k, '#b02a1c'); }
+      }
       // a compass rose with an N
       px(66, 12, '#2a1c10'); px(66, 13, '#2a1c10'); px(66, 14, '#2a1c10'); px(66, 15, '#7a2a1c'); px(65, 16, '#2a1c10'); px(67, 16, '#2a1c10'); px(66, 17, '#2a1c10'); px(65, 14, '#2a1c10'); px(67, 14, '#2a1c10');
       // the rolled ends of the scroll, top and bottom, with a highlight

@@ -168,6 +168,24 @@ const SecretMarket = (() => {
       x.strokeStyle = '#7a5a30'; x.lineWidth = 1; x.strokeRect(4.5, 8.5, W - 9, H - 17); x.strokeStyle = '#a88a58'; x.strokeRect(6.5, 10.5, W - 13, H - 21);
       // faint water ripples on the parchment
       for (let k = 0; k < 9; k++) { const yy = 12 + (k * 4) % 30, xx = 8 + ((k * 17) % 50); px(xx, yy, '#b8a878'); px(xx + 1, yy, '#b8a878'); px(xx + 2, yy + 1, '#b8a878'); }
+      const inPoly = (poly, xx, yy) => { let c = false; for (let i = 0, k = poly.length - 1; i < poly.length; k = i++) { const [xi, yi] = poly[i], [xk, yk] = poly[k]; if ((yi > yy) !== (yk > yy) && xx < (xk - xi) * (yy - yi) / (yk - yi) + xi) c = !c; } return c; };
+      const drawPapua = () => {
+        const isl = [[9, 24], [13, 19], [19, 16], [26, 18], [31, 15], [37, 14], [43, 17], [49, 19], [55, 22], [61, 26], [66, 31], [60, 33], [54, 31], [50, 35], [44, 33], [40, 30], [34, 32], [30, 36], [24, 34], [20, 30], [14, 28]];
+        for (let yy = 12; yy < H - 8; yy++) for (let xx = 7; xx < W - 6; xx++) { if (!inPoly(isl, xx + 0.5, yy + 0.5)) continue; const edge = !inPoly(isl, xx - 1.5, yy + 0.5) || !inPoly(isl, xx + 2.5, yy + 0.5) || !inPoly(isl, xx + 0.5, yy - 1.5) || !inPoly(isl, xx + 0.5, yy + 2.5); px(xx, yy, edge ? '#3a5a2c' : (xx * 7 + yy * 3) % 5 === 0 ? '#2e5a2e' : (xx + yy * 2) % 4 === 0 ? '#4a7a3a' : '#3c6a32'); }
+        for (const [rx0, ry0, rx1, ry1] of [[9, 24, 14, 28], [30, 36, 34, 32]]) { void rx0; void ry0; void rx1; void ry1; }
+        for (const [tx, ty] of [[18, 22], [24, 25], [29, 22], [35, 20], [40, 24], [46, 23], [22, 29], [38, 28], [58, 30], [48, 28], [14, 25]]) { x.fillStyle = '#244a26'; x.fillRect(tx - 1, ty - 1, 3, 2); px(tx, ty - 2, '#1c3c20'); px(tx, ty + 1, '#4a3a28'); }      // big trees
+        for (let k = 0; k < 14; k++) { const t = k / 13, rx = Math.round(30 + t * 14 + Math.sin(t * 6) * 2), ry = Math.round(34 - t * 12); px(rx, ry, '#6a98b0'); px(rx + 1, ry, '#6a98b0'); }                       // a river
+        // Mount Lamington: a dark cone with a crater, steam and a black lava tongue
+        for (let k = 0; k < 9; k++) { const w = Math.round(k * 0.55); x.fillStyle = k < 2 ? '#6a5048' : k < 5 ? '#4a3a34' : '#3a2e2a'; x.fillRect(52 - w, 17 + k, w * 2 + 1, 1); }
+        px(51, 17, '#b04a22'); px(52, 17, '#d86a2a'); px(53, 17, '#b04a22'); px(52, 15, '#c8c8c8'); px(53, 14, '#d8d8d8'); px(51, 13, '#b8b8b8'); px(52, 12, '#d0d0d0');
+        for (let k = 0; k < 8; k++) { px(53 + Math.round(k * 0.9), 20 + k, '#1c1816'); px(54 + Math.round(k * 0.9), 20 + k, '#2a2420'); }
+        // a bird with spread wings over the island
+        for (const [bx, by] of [[3, 0], [4, 1], [5, 1], [2, 1], [1, 2], [6, 2]]) px(26 + bx, 9 + by, '#7a2a1c');
+        // the route: dashes from the sea to the red cross
+        const route = [[14, 41], [26, 40], [38, 40], [50, 38], [58, 34], [60, 30]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
+        for (let k = -2; k <= 2; k++) { px(60 + k, 29 + k, '#b02a1c'); px(60 + k, 29 - k, '#b02a1c'); }
+      };
+      if (id === 'papua') drawPapua(); else {
       // the land: a lumpy island of moss and peat
       const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
       for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
@@ -180,6 +198,7 @@ const SecretMarket = (() => {
       let wx = 15, wy = 35; const route = [[15, 35], [22, 33], [28, 30], [33, 30], [39, 27], [44, 25], [49, 26], [55, 23]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
       // the red cross
       for (let k = -2; k <= 2; k++) { px(56 + k, 22 + k, '#b02a1c'); px(56 + k, 22 - k, '#b02a1c'); }
+      }
       // a compass rose with an N
       px(66, 12, '#2a1c10'); px(66, 13, '#2a1c10'); px(66, 14, '#2a1c10'); px(66, 15, '#7a2a1c'); px(65, 16, '#2a1c10'); px(67, 16, '#2a1c10'); px(66, 17, '#2a1c10'); px(65, 14, '#2a1c10'); px(67, 14, '#2a1c10');
       // the rolled ends of the scroll, top and bottom, with a highlight
