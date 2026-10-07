@@ -261,7 +261,12 @@ class Play {
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
   }
-  spawnInitial() { this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); }); }
+  spawnInitial() {
+    // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
+    const stage = !!this.biome.map, list = this.pool.slice(); if (stage) for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; }
+    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = stage && (sp.scarce || k >= 4);
+      for (let i = 0; i < n; i++) { if (later) this.respawns.push({ sp, t: sp.scarce ? 120 + Math.random() * 240 : 10 + Math.random() * 90 + i * 25 }); else this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); } });
+  }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
 
   // ------------------------------------------------------------ multiplayer
@@ -556,8 +561,9 @@ class Play {
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {
-  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) * (sp.scarce || 1) })); const out = [];
+  const scarce = biome.species.filter(sp => sp.scarce), left = biome.species.filter(sp => !sp.scarce).map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
+  for (const sp of scarce) if (rng.next() < sp.scarce * 0.3) out.push(sp);      // the very rare ones only now and then (0.18 -> about 5% of the visits), on top of the ordinary pool
   return out;
 };
 Play.CARD_SCALES = [0.6, 0.8, 1, 1.25, 1.5, 2];

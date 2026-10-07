@@ -65,9 +65,9 @@ const BIOMES = [
   { id: 'japan', name: 'Горные леса Японии', place: 'Нагано, Хонсю', lat: 36.3, lon: 138.0, alt: '900 м',
     climate: 'умеренный муссонный', desc: 'Клёны, криптомерии и бамбук на склонах сатояма, тихий ручей и цветы на светлых полянах.' },
   // a secret location: only players who bought its map from the trader of the secret market can see it on the map and go there
-  { id: 'bog', name: 'Торфяное болото', place: 'Васюганское болото, Западная Сибирь', lat: 57.0, lon: 78.5, alt: '90 м', map: 'bog', poolSize: 11,
+  { id: 'bog', name: 'Торфяное болото', place: 'Васюганское болото, Западная Сибирь', lat: 57.0, lon: 78.5, alt: '90 м', map: 'bog', poolSize: 9,
     climate: 'умеренно-холодный, влажный, пасмурно', desc: 'Верховое сфагновое болото: кочки с клюквой и морошкой, мочажины с бурой водой, пушица, багульник и чахлые сосны-рям. Под низким небом всё тихо и сыро.' },
-  { id: 'papua', name: 'Реликтовые джунгли Ламингтона', place: 'Провинция Оро, Папуа — Новая Гвинея', lat: -8.95, lon: 148.15, alt: '250 м', map: 'papua', poolSize: 12,
+  { id: 'papua', name: 'Реликтовые джунгли Ламингтона', place: 'Провинция Оро, Папуа — Новая Гвинея', lat: -8.95, lon: 148.15, alt: '250 м', map: 'papua', poolSize: 9,
     climate: 'экваториальный, влажный, под густым пологом', desc: 'Древний лес у подножия вулкана Ламингтон: гигантские ветвистые деревья смыкают кроны почти над всем небом, внизу — папоротники, цикады, ручьи и чёрные потоки застывшей лавы.' },
   { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 15,
     climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
@@ -3100,15 +3100,9 @@ const World = (() => {
         const [sx, sz, sa] = pts[0], sp = new THREE.Group(); const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.3, 6), mWood); post.position.y = 0.65; const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.04), mat('#4a6a44')); board.position.set(0, 1.15, 0.05); sp.add(post, board);
         addMesh(sp, sx - Math.sin(sa) * 0.9, heightAt(sx, sz), sz + Math.cos(sa) * 0.9, -sa, true);    // a trail sign at the start
       },
-      peatcut() {         // an old peat cutting: a wet trench and drying rows of peat bricks
-        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry, co = Math.cos(ry), si = Math.sin(ry), parts = [];
+      peatcut() {         // an old peat cutting: a wet dark trench in the moss
+        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry;
         const trench = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.2).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#2a2016' })); addMesh(trench, c.x, heightAt(c.x, c.z) + 0.05, c.z, -ry, false);
-        for (let row = 0; row < 3; row++) for (let i = 0; i < 6; i++) {
-          const lx = -2.2 + i * 0.9, lz = 2.2 + row * 0.9, wx = c.x + lx * co + lz * si, wz = c.z - lx * si + lz * co; if (inWater(wx, wz, 1)) continue; const y0 = heightAt(wx, wz);
-          for (let k = 0; k < 3; k++) for (let b = 0; b < 2 - (k === 2 ? 1 : 0); b++) parts.push({ g: new THREE.BoxGeometry(0.42, 0.13, 0.22), m: M(wx + (b - 0.5) * 0.22 * (k % 2 ? 1 : 0) + rng.range(-0.02, 0.02), y0 + 0.07 + k * 0.14, wz + (k % 2 ? 0.0 : (b - 0.5) * 0.26), 0, -ry + rng.range(-0.06, 0.06) + (k % 2) * Math.PI / 2, 0), c: ['#3a2a1c', '#44301f', '#32261a'][(i + k + b) % 3], j: 0.1 });
-          world.colliders.push({ x: wx, z: wz, r: 0.34 });
-        }
-        const gg = merge(parts, rng); const m = new THREE.Mesh(gg, treeMat); m.castShadow = true; m.receiveShadow = true; scene.add(m);
       },
       lavaflow() {        // columnar basalt: a cluster of hexagonal columns of cooled lava standing at the edge of the flow, moss and ferns on their tops
         if (!lava) return; const idx = rng.int(14, lava.pts.length - 14), P = lava.pts[idx], Q = lava.pts[idx + 1], ang = Math.atan2(Q.z - P.z, Q.x - P.x) + Math.PI / 2, off = P.w * 1.3; const cx = P.x + Math.cos(ang) * off, cz = P.z + Math.sin(ang) * off;
@@ -3791,7 +3785,12 @@ class Play {
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
   }
-  spawnInitial() { this.pool.forEach(sp => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1; for (let i = 0; i < n; i++) this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); }); }
+  spawnInitial() {
+    // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
+    const stage = !!this.biome.map, list = this.pool.slice(); if (stage) for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; }
+    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = stage && (sp.scarce || k >= 4);
+      for (let i = 0; i < n; i++) { if (later) this.respawns.push({ sp, t: sp.scarce ? 120 + Math.random() * 240 : 10 + Math.random() * 90 + i * 25 }); else this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); } });
+  }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
 
   // ------------------------------------------------------------ multiplayer
@@ -4086,8 +4085,9 @@ class Play {
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {
-  const left = biome.species.map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) * (sp.scarce || 1) })); const out = [];
+  const scarce = biome.species.filter(sp => sp.scarce), left = biome.species.filter(sp => !sp.scarce).map(sp => ({ sp, w: (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (!shared && !Save.has(sp.id) ? 1.8 : 1) })); const out = [];
   while (out.length < size && left.length) { let tot = left.reduce((a, b) => a + b.w, 0), r = rng.next() * tot, i = 0; for (; i < left.length - 1; i++) { r -= left[i].w; if (r <= 0) break; } out.push(left[i].sp); left.splice(i, 1); }
+  for (const sp of scarce) if (rng.next() < sp.scarce * 0.3) out.push(sp);      // the very rare ones only now and then (0.18 -> about 5% of the visits), on top of the ordinary pool
   return out;
 };
 Play.CARD_SCALES = [0.6, 0.8, 1, 1.25, 1.5, 2];
@@ -4278,7 +4278,7 @@ const Screens = (() => {
         ctx.fillStyle = col; ctx.fillRect(p.x - 3, p.y - 12 + bob, 7, 7); ctx.fillRect(p.x - 1, p.y - 5 + bob, 3, 3); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(p.x - 2, p.y - 11 + bob, 2, 2);
         if (done) { ctx.fillStyle = c.gold; ctx.fillRect(p.x - 1, p.y - 17 + bob, 3, 3); ctx.fillRect(p.x - 2, p.y - 16 + bob, 5, 1); }
         if (sel) { ctx.strokeStyle = c.gold; ctx.strokeRect(p.x - 7.5, p.y - 16.5 + bob, 15, 17); }
-        T.draw(ctx, String((i + 1) % 10), p.x + 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' });      // the 3x5 glyph sits in the middle of the 7x7 marker (the 10th pin is key 0)
+        { const n = String(i + 1); if (n.length === 1) T.draw(ctx, n, p.x + 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); else { T.draw(ctx, n[0], p.x - 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); T.draw(ctx, n[1], p.x + 3, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); } }      // the 3x5 glyph sits in the middle of the 7x7 marker; pins past the ninth have two digits
         if (hov || sel) T.draw(ctx, short[b.id], p.x, p.y + 2, { size: 8, align: 'c', color: '#2a1608', outline: '#f4e8c0' });
       });
       // other players: small figures next to the pin of the place they are in, a roster in the corner, names when a pin is hovered
@@ -5006,6 +5006,7 @@ const Boxes = (() => {
         { id: 'auto', label: 'Авто', x: 168, y: 248, w: 52, h: 16, disabled: !cb || !this.nfree },
         { id: 'clear', label: 'Вынуть всё', x: 224, y: 248, w: 72, h: 16, disabled: !cb || !fillOf(cb) },
         { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
+        { id: 'lup', label: '↑', x: 114, y: 67, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 67, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
         { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 12) },
       ];
       this.slots = [];
@@ -5016,7 +5017,7 @@ const Boxes = (() => {
       Cab2.backdrop(ctx); UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
       this.tabBtns().forEach(b => { const on = b.id === this.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : UIK.hit(b, m.x, m.y) ? '#244a3c' : '#1a3228', border: on ? c.gold : c.line, shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: on ? '#fff' : c.dim }); });
       if (this.tab === 'nets') return nbench.draw(ctx, t, m);
-      this.layout();
+      this.mx = m.x; this.layout();
       T.draw(ctx, 'Мастерская коробок', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
       T.draw(ctx, 'Новая коробка:', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -5049,7 +5050,7 @@ const Boxes = (() => {
         if (b.id === 'close') return 'close';
         if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 24) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
-        if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++;
+        if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
         if (b.id === 'clear' && cb) { cb.items.forEach((u, i) => { if (u) Save.takeOut(cb, i); }); return 'changed'; }
@@ -5063,7 +5064,7 @@ const Boxes = (() => {
       if (sr && cb) { const i = cb.items.findIndex(u => !u); if (i < 0) { Snd.sfx.deny(); return null; } Save.putIn(cb, i, sr.s.uid); Snd.sfx.pin(); return 'changed'; }
       return null;
     },
-    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else this.sscroll += dy > 0 ? 1 : -1; },
+    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else if ((this.mx || 0) < 164) this.scroll += dy > 0 ? 1 : -1; else this.sscroll += dy > 0 ? 1 : -1; },
   };
 
   // ================================================================== PLACEMENT (wall / desk)
@@ -7088,7 +7089,10 @@ const SecretMarket = (() => {
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
-      else if (e.code >= 'Digit0' && e.code <= 'Digit9') { const i = (+e.code.slice(5) + 9) % 10; if (i < visibleBiomes().length) { S.wmap.sel = i; Snd.sfx.pin(); } }
+      else if (e.code >= 'Digit0' && e.code <= 'Digit9') {       // a digit picks that pin; a second digit within 0.8 s makes a two-digit number (1,1 = the 11th pin); 0 alone = the 10th
+        const d = +e.code.slice(5), now = performance.now(), nb = visibleBiomes().length; let i = (d + 9) % 10;
+        if (S.wmap.digV === 1 && now - (S.wmap.digT || 0) < 800 && 10 + d <= nb) i = 10 + d - 1;
+        S.wmap.digV = d === 1 ? 1 : 0; S.wmap.digT = now; if (i < nb) { S.wmap.sel = i; Snd.sfx.pin(); } }
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = (visibleBiomes()[S.wmap.sel] || {}).id; if (id) go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {

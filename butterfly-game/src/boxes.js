@@ -162,6 +162,7 @@ const Boxes = (() => {
         { id: 'auto', label: 'Авто', x: 168, y: 248, w: 52, h: 16, disabled: !cb || !this.nfree },
         { id: 'clear', label: 'Вынуть всё', x: 224, y: 248, w: 72, h: 16, disabled: !cb || !fillOf(cb) },
         { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
+        { id: 'lup', label: '↑', x: 114, y: 67, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 67, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
         { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 12) },
       ];
       this.slots = [];
@@ -172,7 +173,7 @@ const Boxes = (() => {
       Cab2.backdrop(ctx); UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
       this.tabBtns().forEach(b => { const on = b.id === this.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : UIK.hit(b, m.x, m.y) ? '#244a3c' : '#1a3228', border: on ? c.gold : c.line, shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: on ? '#fff' : c.dim }); });
       if (this.tab === 'nets') return nbench.draw(ctx, t, m);
-      this.layout();
+      this.mx = m.x; this.layout();
       T.draw(ctx, 'Мастерская коробок', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
       T.draw(ctx, 'Новая коробка:', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -205,7 +206,7 @@ const Boxes = (() => {
         if (b.id === 'close') return 'close';
         if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 24) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
-        if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++;
+        if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
         if (b.id === 'clear' && cb) { cb.items.forEach((u, i) => { if (u) Save.takeOut(cb, i); }); return 'changed'; }
@@ -219,7 +220,7 @@ const Boxes = (() => {
       if (sr && cb) { const i = cb.items.findIndex(u => !u); if (i < 0) { Snd.sfx.deny(); return null; } Save.putIn(cb, i, sr.s.uid); Snd.sfx.pin(); return 'changed'; }
       return null;
     },
-    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else this.sscroll += dy > 0 ? 1 : -1; },
+    wheel(dy) { if (this.tab === 'nets') nbench.wheel(dy); else if ((this.mx || 0) < 164) this.scroll += dy > 0 ? 1 : -1; else this.sscroll += dy > 0 ? 1 : -1; },
   };
 
   // ================================================================== PLACEMENT (wall / desk)

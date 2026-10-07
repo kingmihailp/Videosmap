@@ -919,15 +919,9 @@ const World = (() => {
         const [sx, sz, sa] = pts[0], sp = new THREE.Group(); const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.3, 6), mWood); post.position.y = 0.65; const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.04), mat('#4a6a44')); board.position.set(0, 1.15, 0.05); sp.add(post, board);
         addMesh(sp, sx - Math.sin(sa) * 0.9, heightAt(sx, sz), sz + Math.cos(sa) * 0.9, -sa, true);    // a trail sign at the start
       },
-      peatcut() {         // an old peat cutting: a wet trench and drying rows of peat bricks
-        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry, co = Math.cos(ry), si = Math.sin(ry), parts = [];
+      peatcut() {         // an old peat cutting: a wet dark trench in the moss
+        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry;
         const trench = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.2).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#2a2016' })); addMesh(trench, c.x, heightAt(c.x, c.z) + 0.05, c.z, -ry, false);
-        for (let row = 0; row < 3; row++) for (let i = 0; i < 6; i++) {
-          const lx = -2.2 + i * 0.9, lz = 2.2 + row * 0.9, wx = c.x + lx * co + lz * si, wz = c.z - lx * si + lz * co; if (inWater(wx, wz, 1)) continue; const y0 = heightAt(wx, wz);
-          for (let k = 0; k < 3; k++) for (let b = 0; b < 2 - (k === 2 ? 1 : 0); b++) parts.push({ g: new THREE.BoxGeometry(0.42, 0.13, 0.22), m: M(wx + (b - 0.5) * 0.22 * (k % 2 ? 1 : 0) + rng.range(-0.02, 0.02), y0 + 0.07 + k * 0.14, wz + (k % 2 ? 0.0 : (b - 0.5) * 0.26), 0, -ry + rng.range(-0.06, 0.06) + (k % 2) * Math.PI / 2, 0), c: ['#3a2a1c', '#44301f', '#32261a'][(i + k + b) % 3], j: 0.1 });
-          world.colliders.push({ x: wx, z: wz, r: 0.34 });
-        }
-        const gg = merge(parts, rng); const m = new THREE.Mesh(gg, treeMat); m.castShadow = true; m.receiveShadow = true; scene.add(m);
       },
       lavaflow() {        // columnar basalt: a cluster of hexagonal columns of cooled lava standing at the edge of the flow, moss and ferns on their tops
         if (!lava) return; const idx = rng.int(14, lava.pts.length - 14), P = lava.pts[idx], Q = lava.pts[idx + 1], ang = Math.atan2(Q.z - P.z, Q.x - P.x) + Math.PI / 2, off = P.w * 1.3; const cx = P.x + Math.cos(ang) * off, cz = P.z + Math.sin(ang) * off;

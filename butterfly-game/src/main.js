@@ -170,7 +170,10 @@
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
-      else if (e.code >= 'Digit0' && e.code <= 'Digit9') { const i = (+e.code.slice(5) + 9) % 10; if (i < visibleBiomes().length) { S.wmap.sel = i; Snd.sfx.pin(); } }
+      else if (e.code >= 'Digit0' && e.code <= 'Digit9') {       // a digit picks that pin; a second digit within 0.8 s makes a two-digit number (1,1 = the 11th pin); 0 alone = the 10th
+        const d = +e.code.slice(5), now = performance.now(), nb = visibleBiomes().length; let i = (d + 9) % 10;
+        if (S.wmap.digV === 1 && now - (S.wmap.digT || 0) < 800 && 10 + d <= nb) i = 10 + d - 1;
+        S.wmap.digV = d === 1 ? 1 : 0; S.wmap.digT = now; if (i < nb) { S.wmap.sel = i; Snd.sfx.pin(); } }
       else if ((e.code === 'Enter' || e.code === 'Space') && S.wmap.sel >= 0) { Snd.sfx.click(); const id = (visibleBiomes()[S.wmap.sel] || {}).id; if (id) go(() => App.start(id)); }
       else if (e.code === 'KeyJ' || e.code === 'Tab') openJournal('map'); else if (e.code === 'KeyK') go(() => App.toCabinet());
     } else if (sc === 'journal') {
