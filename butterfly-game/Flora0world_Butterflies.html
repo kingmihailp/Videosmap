@@ -1161,7 +1161,8 @@ const Art = (() => {
   const TAIL_OF = { 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
     'Graphium policenes': 'spoon', 'Charaxes jasius': 'twolong', 'Polyura athamas': 'twolong', 'Rhetus periander': 'twolong', 'Spindasis natalensis': 'two', 'Jamides celeno': 'short', 'Marpesia petreus': 'long', 'Eurytides marcellus': 'long', 'Lamproptera meges': 'long', 'Iphiclides podalirius': 'long',
     'Doleschallia bisaltide': 'short', 'Thecla betulae': 'short', 'Favonius orientalis': 'short', 'Strymon melinus': 'short', 'Lampides boeticus': 'short', 'Leptotes pirithous': 'short', 'Everes comyntas': 'short', 'Lycaena phlaeas': 'short', 'Zerynthia cerisyi': 'short', 'Luehdorfia japonica': 'none' };
-  const formOf = sp => { const la = sp.la || ''; return SPECIES_FORM[la] || GENUS_FORM[la.split(' ')[0]] || sp.art.t; };
+  const baseLa = sp => (sp.la || '').split(' ab. ')[0];      // an aberration keeps the wing form and tail of its species
+  const formOf = sp => { const la = baseLa(sp); return SPECIES_FORM[la] || GENUS_FORM[la.split(' ')[0]] || sp.art.t; };
   const tailPoly = (sh, mode) => mode === 'long' ? (sh.longTail || sh.tail) : mode === 'spoon' ? (sh.spoonTail || sh.longTail || sh.tail) : mode === 'two' ? (sh.twoTail || sh.tail) : mode === 'twolong' ? (sh.longTail && sh.tail && Array.isArray(sh.longTail[0][0]) ? sh.longTail : (sh.twoTail || sh.longTail || sh.tail)) : sh.tail;
 
   const cache = {};
@@ -1215,7 +1216,7 @@ const Art = (() => {
     const a = sp.art; const sh = SHAPES[formOf(sp)] || SHAPES[a.t] || SHAPES.std;
     const fM = maskOf(sh.f), hM = maskOf(sh.h);
     let tM = null;
-    const tmode = TAIL_OF[sp.la] || (a.tail !== undefined && a.tail !== false ? (a.longTail ? 'long' : 'short') : 'none'), tpoly = tmode === 'none' ? null : tailPoly(sh, tmode);
+    const tmode = TAIL_OF[baseLa(sp)] || (a.tail !== undefined && a.tail !== false ? (a.longTail ? 'long' : 'short') : 'none'), tpoly = tmode === 'none' ? null : tailPoly(sh, tmode);
     if (tpoly) tM = maskOf(tpoly);
     const fD = distMap(fM), hD = distMap(hM), tD = tM ? distMap(tM) : null;
     const fB = bbox(fM), hB = bbox(hM);
