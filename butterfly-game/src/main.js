@@ -131,6 +131,7 @@
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
   function lockLost() {
     if (Chat.open) { Chat.close(); lock(); return; }
+    if (Con.open) { Con.close(); lock(); return; }
     if (App.screen === 'play' && !App.overlay) { App.overlay = 'pause'; App.pauseT = performance.now(); }
     if (App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; App.pauseT = performance.now(); }
   }
@@ -143,6 +144,8 @@
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
+    if (Con.open) { e.preventDefault(); Snd.init(); Con.key(e); return; }
+    if (e.code === 'Backslash' && !e.repeat && Con.canOpen()) { e.preventDefault(); Snd.init(); Con.show(); return; }       // the hidden console
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
@@ -237,6 +240,7 @@
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
     if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
+    Con.draw(ctx, t);
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }

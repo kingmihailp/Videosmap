@@ -4539,6 +4539,55 @@ const Chat = (() => {
   return o;
 })();
 
+// ===== console.js =====
+// ---------------------------------------------------------------- the hidden console: the backslash key opens a line, Enter runs it, Esc or the backslash closes it
+// commands:  give gold <amount>   - gives that much gold to the player who typed it (an optional leading ":" is accepted)
+const Con = (() => {
+  const MAX = 80, W = 300, HIST_MAX = 30; let text = '', log = [], hist = [], hi = -1, shownAt = 0;
+  const A = () => window.F0W;
+  const say = (s, bad) => { log.push({ s, bad: !!bad }); if (log.length > 8) log.shift(); shownAt = performance.now(); };
+  const run = line => {
+    const raw = line.trim(); if (!raw) return;
+    say('> ' + raw); const parts = raw.replace(/^[:\s]+/, '').split(/\s+/).filter(Boolean).map(w => w.toLowerCase());
+    if (parts[0] === 'give' && parts[1] === 'gold') {
+      if (parts.length !== 3) { say('Использование: give gold <количество>', true); return; }
+      const n = Number(parts[2]); if (!/^\d+$/.test(parts[2]) || !Number.isSafeInteger(n) || n < 1) { say('Количество должно быть целым числом от 1', true); return; }
+      const give = Math.min(n, 1e9); Save.data.coins = Math.min(1e12, (Save.data.coins || 0) + give); Save.write(); Snd.sfx.coin();
+      say(`Выдано золота: ${give}. Теперь у вас: ${Save.data.coins}`); return;
+    }
+    say('Неизвестная команда: ' + (parts[0] || raw), true);
+  };
+  const o = {
+    open: false,
+    canOpen() { const a = A(); return !!(a && !Chat.open && !a.modal && a.screen !== 'loading'); },
+    show() { text = ''; hi = -1; o.open = true; A().chatOpen = true; A().inp.keys.clear(); if (A().kbFocus) A().kbFocus(true); },
+    close() { o.open = false; A().chatOpen = false; text = ''; if (A().kbFocus) A().kbFocus(false); },
+    key(e) {
+      if (e.code === 'Escape' || e.code === 'Backslash') { o.close(); return; }
+      if (e.code === 'Enter' || e.code === 'NumpadEnter') { const l = text; if (l.trim()) { hist.unshift(l); if (hist.length > HIST_MAX) hist.pop(); } run(l); text = ''; hi = -1; return; }
+      if (e.code === 'Backspace') { text = text.slice(0, -1); return; }
+      if (e.code === 'ArrowUp') { if (hi + 1 < hist.length) { hi++; text = hist[hi]; } return; }
+      if (e.code === 'ArrowDown') { if (hi > 0) { hi--; text = hist[hi]; } else { hi = -1; text = ''; } return; }
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && text.length < MAX) text += e.key;
+    },
+    draw(ctx, t) {
+      if (A().screen === 'loading') { if (o.open) o.close(); return; }
+      const c = UIK.col, now = performance.now(), recent = now - shownAt < 4500; if (!o.open && !recent) return;
+      const L = (o.open ? log : log.slice(-2)).slice(-6), baseY = 78, h = L.length * 10 + 6;
+      ctx.globalAlpha = o.open ? 1 : clamp((4500 - (now - shownAt)) / 900);
+      if (L.length) { ctx.fillStyle = 'rgba(8,16,14,0.78)'; ctx.fillRect(6, baseY, W, h); L.forEach((ln, i) => T.draw(ctx, fitStr(ln.s, W - 8), 10, baseY + 3 + i * 10, { size: 8, color: ln.bad ? '#e88a80' : '#b8e0c0' })); }
+      if (o.open) {
+        const y = baseY + (L.length ? h + 2 : 0); UIK.panel(ctx, 6, y, W, 14, { fill: 'rgba(16,32,28,0.97)', border: c.green, shadow: false });
+        let vis = '> ' + text; while (T.width(vis, 8) > W - 18 && vis.length > 1) vis = vis.slice(1);
+        T.draw(ctx, vis, 10, y + 3, { size: 8, color: '#fff' }); if (Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = c.green; ctx.fillRect(10 + T.width(vis, 8), y + 3, 1, 8); }
+        if (!text && !L.length) T.draw(ctx, 'Консоль. Enter — выполнить, Esc или \\ — закрыть', 10, y + 17, { size: 8, color: c.dim });
+      }
+      ctx.globalAlpha = 1;
+    },
+  };
+  return o;
+})();
+
 // ===== spread.js =====
 // ---------------------------------------------------------------- spreading board mini-game + specimen cards
 const Grade = q => q >= 95 ? { name: 'Музейный экземпляр', col: '#ffe27a' } : q >= 85 ? { name: 'Отлично', col: '#9af0a0' } : q >= 70 ? { name: 'Хорошо', col: '#b8e0f0' } : q >= 50 ? { name: 'Средне', col: '#e8d0a0' } : { name: 'Небрежно', col: '#e88a70' };
@@ -6963,6 +7012,7 @@ const SecretMarket = (() => {
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
   function lockLost() {
     if (Chat.open) { Chat.close(); lock(); return; }
+    if (Con.open) { Con.close(); lock(); return; }
     if (App.screen === 'play' && !App.overlay) { App.overlay = 'pause'; App.pauseT = performance.now(); }
     if (App.screen === 'cabinet' && App.cab && !App.cab.ov) { App.cab.ov = 'pause'; App.pauseT = performance.now(); }
   }
@@ -6975,6 +7025,8 @@ const SecretMarket = (() => {
   addEventListener('blur', () => inp.keys.clear());
   addEventListener('keyup', e => { inp.keys.delete(e.code); const c = Keys.tr(e.code); if (c) inp.keys.delete(c); });
   addEventListener('keydown', e => {
+    if (Con.open) { e.preventDefault(); Snd.init(); Con.key(e); return; }
+    if (e.code === 'Backslash' && !e.repeat && Con.canOpen()) { e.preventDefault(); Snd.init(); Con.show(); return; }       // the hidden console
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
@@ -7069,6 +7121,7 @@ const SecretMarket = (() => {
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
     if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
+    Con.draw(ctx, t);
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
