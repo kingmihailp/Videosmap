@@ -117,6 +117,16 @@ const World = (() => {
     const q = new THREE.Quaternion().setFromUnitVectors(new V3(0, 1, 0), b.clone().sub(a).normalize());
     return { g, m: new THREE.Matrix4().compose(a, q, new V3(1, 1, 1)) };
   }
+  // a buttress root: a thin ridge that is tall at the trunk (x = 0), falls away in a concave curve and tapers to nothing on the ground; it sways sideways along its length
+  function buttressG(L, hb, th, sway, r, segs = 9) {
+    const pos = [], idx = [];
+    for (let i = 0; i <= segs; i++) {
+      const u = i / segs, x = L * u, h = hb * Math.pow(1 - u, 2.3) + 0.06, t = th * (1 - u * 0.75) + 0.02, z0 = Math.sin(u * 2.4) * sway * u + Math.sin(u * 9 + r.range(0, 1)) * 0.03 * u, y0 = -0.15 * u;
+      pos.push(x, y0, z0 - t * (1 + 1.6 * (1 - u)), x, h, z0, x, y0, z0 + t * (1 + 1.6 * (1 - u)));
+      if (i < segs) { const a = i * 3, b = a + 3; idx.push(a, a + 1, b, a + 1, b + 1, b, a + 1, a + 2, b + 1, a + 2, b + 2, b + 1); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); return g;
+  }
   function frondG(len, wid, bend, segs = 6) {
     const pos = [], idx = [];
     for (let i = 0; i <= segs; i++) {
@@ -159,11 +169,11 @@ const World = (() => {
     return out;
   }
   // main trunk as a gently curved chain of connected limbs; returns top point
-  function trunk(parts, r, H, r0, r1, lean, col, segs = 5) {
+  function trunk(parts, r, H, r0, r1, lean, col, segs = 5, sides = 6) {
     let prev = new V3(0, 0, 0); const dir = r.range(0, 6.28); const pts = [prev];
     for (let i = 1; i <= segs; i++) {
       const t = i / segs; const off = lean * t * t * H; const p = new V3(Math.cos(dir) * off, H * t, Math.sin(dir) * off);
-      const L = limb(prev, p, lerp(r0, r1, (i - 1) / segs), lerp(r0, r1, t), 6); parts.push({ g: L.g, m: L.m, c: col, j: 0.06 }); prev = p; pts.push(p);
+      const L = limb(prev, p, lerp(r0, r1, (i - 1) / segs), lerp(r0, r1, t), sides); parts.push({ g: L.g, m: L.m, c: col, j: 0.06 }); prev = p; pts.push(p);
     }
     prev.pts = pts; prev.r0 = r0; prev.r1 = r1; return prev;
   }
@@ -372,9 +382,22 @@ const World = (() => {
     // ---- the relic forest of New Guinea
     relic(r) {      // an emergent giant: buttressed trunk, a fork, a few huge limbs that branch again, flat crowns of leaves, epiphytes and lianas
       const parts = []; const H = r.range(28, 38), F = H * r.range(0.4, 0.5);
-      const top = trunk(parts, r, F, 1.2, 0.74, r.range(-0.03, 0.03), ['#6e5e4a', '#463a2e', 0, F], 5);
-      for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28 + r.range(-0.15, 0.15), h = r.range(F * 0.5, F * 0.95), y0 = r.range(1, F - h), rr = lerp(1.2, 0.74, (y0 + h / 2) / F) * 0.96; parts.push({ g: new THREE.BoxGeometry(0.16, h, 0.2), m: M(Math.cos(a) * rr, y0 + h / 2, Math.sin(a) * rr, 0, -a + Math.PI / 2, 0), c: r.pick(['#5a4c3a', '#4a3e30', '#6a5a46']), j: 0.1 }); }     // bark ridges
-      const nb = r.int(6, 8); for (let i = 0; i < nb; i++) { const a = i / nb * 6.28 + r.range(-0.2, 0.2), hb = r.range(3.4, 6.0), lb = r.range(1.8, 3.0); parts.push({ g: new THREE.BoxGeometry(0.3, hb, lb), m: M(Math.cos(a) * (0.7 + lb * 0.5), hb * 0.46, Math.sin(a) * (0.7 + lb * 0.5), 0, Math.PI / 2 - a, 0.0), c: ['#5a4c3a', '#6e5e4a', 0, hb], j: 0.08 }); parts.push({ g: new THREE.BoxGeometry(0.22, hb * 0.55, lb * 1.35), m: M(Math.cos(a) * (0.7 + lb * 0.75), hb * 0.24, Math.sin(a) * (0.7 + lb * 0.75), 0, Math.PI / 2 - a, 0.0), c: '#4e4234', j: 0.08 }); }
+      const top = trunk(parts, r, F, 1.2, 0.74, r.range(-0.03, 0.03), ['#6e5e4a', '#463a2e', 0, F], 6, 11);
+      for (let i = 0; i < 18; i++) {          // bark ridges: thin tapering strands that follow the trunk and wander a little
+        const a = i / 18 * 6.28 + r.range(-0.15, 0.15), y0 = r.range(1.5, F * 0.5), y1 = y0 + r.range(F * 0.3, F * 0.55), w = r.range(-0.25, 0.25);
+        const rr = y => lerp(1.2, 0.74, y / F) * 0.97, A = new V3(Math.cos(a) * rr(y0), y0, Math.sin(a) * rr(y0)), B = new V3(Math.cos(a + w) * rr(Math.min(y1, F)), Math.min(y1, F), Math.sin(a + w) * rr(Math.min(y1, F)));
+        const L = limb(A, B, 0.07, 0.015, 3); parts.push({ g: L.g, m: L.m, c: r.pick(['#5a4c3a', '#4a3e30', '#6a5a46', '#3e342a']), j: 0.1 });
+      }
+      parts.push({ g: cylG(1.18, 1.95, 2.2, 11), c: ['#5a4c3a', '#6e5e4a', 0, 2.2], j: 0.07 });       // the flared foot of the trunk
+      const nb = r.int(6, 8);
+      for (let i = 0; i < nb; i++) {          // buttresses: thin curved fins that flare out of the trunk, sway, and sink into the ground
+        const a = i / nb * 6.28 + r.range(-0.2, 0.2), hb = r.range(3.4, 6.2), Lb = r.range(2.6, 4.4);
+        parts.push({ g: buttressG(Lb, hb, r.range(0.14, 0.26), r.range(-0.5, 0.5), r), m: M(Math.cos(a) * 0.45, -0.1, Math.sin(a) * 0.45, 0, -a, 0), c: ['#4a3e30', '#6e5e4a', 0, hb], j: 0.1 });
+      }
+      for (let i = 0; i < 6; i++) {           // surface roots snaking away over the ground between the buttresses
+        let a = (i + 0.5) / 6 * 6.28 + r.range(-0.25, 0.25), p = new V3(Math.cos(a) * 1.5, 0.5, Math.sin(a) * 1.5); const n = r.int(5, 7), rad0 = r.range(0.28, 0.4);
+        for (let k = 0; k < n; k++) { a += r.range(-0.22, 0.22); const q = new V3(p.x + Math.cos(a) * r.range(0.8, 1.2), Math.max(0.04, p.y - r.range(0.04, 0.12)) + r.range(-0.03, 0.05), p.z + Math.sin(a) * r.range(0.8, 1.2)); const L = limb(p, q, lerp(rad0, 0.05, k / n), lerp(rad0, 0.05, (k + 1) / n), 5); parts.push({ g: L.g, m: L.m, c: ['#4a3e30', '#5e5040', 0, 0.6], j: 0.08 }); p = q; }
+      }
       for (let i = 0; i < 7; i++) { const a = r.range(0, 6.28), y = r.range(0.6, F * 0.8); parts.push({ g: blobG(0.32, r, 0.3, 0), m: M(Math.cos(a) * 1.0 * (1 - y / F * 0.4), y, Math.sin(a) * 1.0 * (1 - y / F * 0.4), 0, 0, 0, 1.4, 0.45, 1.4), c: '#3a6a30', j: 0.1 }); }      // moss on the trunk
       const cols = ['#1e5a2c', '#2a6a34', '#16482a', '#347a3a', '#245a30'], nL = r.int(3, 4), base = top.clone();
       const crownAt = (p, big) => crown(parts, r, p.x, p.y + 0.4, p.z, big ? 5.4 : 4.6, 1.3, big ? 5.4 : 4.6, big ? 10 : 8, 1.7, big ? 3.1 : 2.8, cols, 0.5);
