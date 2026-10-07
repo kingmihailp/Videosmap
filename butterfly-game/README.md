@@ -216,3 +216,10 @@ Handles: Ручка из бамбука (500: +10% speed, +4% radius) · Тел�
 Hoops: Из углепластика (1300: +18% speed, −15% noise) · Из титана (1500: +20% speed, +5% radius) · Двойной (1700: +22% radius) · Из серебра (2000: +0.4% aberration).
 Meshes: Паутинный шёлк (900: −25% noise, +8% speed) · Глубокая (1200: +8% radius, 5% double catch) · Позолоченная (1800: +8 coins per catch).
 New effect kinds: **quiet** (less swing noise, so butterflies are scared less), **dbl** (a second specimen of the same butterfly), **coin** (coins per catch). The shop has tabs Ручки / Обручи / Сетки (Tab or ←/→ switch them). Test: `tools/test/nets2.js`.
+
+## Secret chain
+
+- Code lock door (8 digits, code `27378801`) in the NE corner of the market's north plaza.
+- Fragments: `27` – hooded trader in the strange stall (west end of the first alley); `37` – NE corner room of the abandoned chalet in the Alps; `88` – note on the ocean lighthouse; `01` – last page of the last tab of the butterfly journal.
+- Fragments can be moved to the stash (key `I`, or the pause button "Склад"). Fragments, the door state and the secret market are per player (stored in `Save.data.secret`); the server relays nothing about them.
+- After the code is entered the door opens into the secret market (several dusty rooms, curtained windows, a hooded seller with nothing to sell yet).

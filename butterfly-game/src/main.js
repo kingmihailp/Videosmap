@@ -67,11 +67,14 @@
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
     if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
   };
-  const enterMarket = () => { App.cab = new Market(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
-  App.toMarket = () => {
+  const enterMarket = at => { App.cab = new Market(cabHooks, at); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
+  App.toMarket = at => {
     leave(); App.screen = 'loading'; App.loadText = 'Идём на рынок насекомых…';
-    if (Net.on) Net.join('market').then(() => setTimeout(enterMarket, 40)).catch(netFail); else setTimeout(enterMarket, 60);
+    if (Net.on) Net.join('market').then(() => setTimeout(() => enterMarket(at), 40)).catch(netFail); else setTimeout(() => enterMarket(at), 60);
   };
+  // the secret market behind the code door of the insect market (personal: never joins a shared location)
+  const secretHooks = Object.assign({}, cabHooks, { exitSecret: () => go(() => App.toMarket({ x: 18, z: -30.1, yaw: Math.PI })) });
+  App.toSecret = () => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new SecretMarket(secretHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); };
   // a room behind a door in the world (currently an empty placeholder room); leaving brings you back to the same door
   const roomHooks = Object.assign({}, cabHooks, { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
@@ -103,14 +106,16 @@
   // ---------------- settings modal (opened from the pause menus) and key bindings
   App.modal = null;
   function openSettings() { App.modal = 'settings'; }
-  cabHooks.settings = openSettings;
+  cabHooks.settings = openSettings; cabHooks.stash = () => { App.modal = 'stash'; }; cabHooks.secret = () => go(() => App.toSecret());
   function modalKey(e) {
     e.preventDefault();
     if (App.modal === 'keys') { if (S.keys.key(e)) { App.modal = 'settings'; Save.write(); } return; }
+    if (App.modal === 'stash') { if (e.code === 'Escape' || e.code === 'KeyI' || e.code === 'Enter') { App.modal = null; Snd.sfx.page(); } return; }
     if (e.code === 'Escape' && !e.repeat) { App.modal = null; Snd.sfx.click(); }
   }
   function modalClick(x, y) {
     if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
+    if (App.modal === 'stash') { if (Secret.stash.click(x, y) === 'close') { App.modal = null; Snd.sfx.page(); } return; }
     const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
     if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
     else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
@@ -139,6 +144,7 @@
   addEventListener('keydown', e => {
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
     if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
@@ -156,7 +162,7 @@
       if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
-      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && App.play.doorNear) App.play.enterDoor(); else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
@@ -176,7 +182,7 @@
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'stash') App.modal = 'stash'; else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -230,7 +236,7 @@
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
     if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
-    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse);
+    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
   }

@@ -89,6 +89,12 @@ const Ocean = (() => {
       const pivot = new THREE.Group(); g.add(pivot); world.lighthouse = { g, pivot, tgt };
       beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 34, 14, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.075, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
       beam.geometry.translate(0, -17, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); pivot.add(beam);
+      // the third piece of the code note, glued to the tower wall (only for a player who has not found it yet)
+      if (!Secret.has(3)) {
+        const th = Math.atan2(-c.x, -c.z), face = Math.round(th / (Math.PI / 5) - 0.5), tm = (face + 0.5) * Math.PI / 5, u = new V3(Math.sin(tm), 0, Math.cos(tm)), py = 2.2, rad = 1.8 - 0.7 * py / 12, dist = rad * Math.cos(Math.PI / 10), slope = 0.7 / 12;
+        const nrm = new V3(u.x, slope, u.z).normalize(), P = new V3(u.x * dist, py, u.z * dist).addScaledVector(nrm, 0.012); const paper = Secret.paperMesh('88', 11); paper.position.copy(P); paper.lookAt(P.clone().add(nrm)); g.add(paper);
+        (world.pickups || (world.pickups = [])).push({ id: 3, x: c.x + P.x, y: c.y + py, z: c.z + P.z, r: 2.6, group: paper, label: 'E — взять обрывок записки' });
+      }
       add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
     // glowing fungi — perches for the butterflies
     { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;

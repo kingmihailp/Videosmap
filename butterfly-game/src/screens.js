@@ -233,6 +233,7 @@ const Screens = (() => {
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
+      this.fragRect = (this.tab === BIOMES.length - 1 && this.page === this.pages - 1 && !Secret.has(4)) ? { x: SW - 6 - 84, y: 204, w: 76, h: 56 } : null;     // the last piece of the note, taped to the last page
     },
     draw(ctx, t, m) {
       if (this.ab && this.ab.tab !== this.tab) this.ab = null;
@@ -267,7 +268,7 @@ const Screens = (() => {
       T.draw(ctx, 'Семейство', sx + 4, 72, { size: 8, color: dim }); T.draw(ctx, sp.fam, sx + 4, 81, { size: 8, color: ink });
       T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 50 + i * 8, py = 94; ctx.fillStyle = on ? '#d8a020' : '#cdbf94'; ctx.fillRect(px + 2, py, 3, 7); ctx.fillRect(px, py + 2, 7, 3); ctx.fillRect(px + 1, py + 1, 5, 5); }
       T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 106, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 115, { size: 8, color: ink });
-      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
+      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = this.fragRect ? 200 : abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
       if (abl.length) { this.abBtn = { id: 'ab', label: `Аберранты (${abl.length})`, x: x0 + 8, y: 244, w: w0 - 16, h: 15 }; UIK.btn(ctx, this.abBtn, UIK.hit(this.abBtn, m.x, m.y)); }
       const take = (str, want, reserve, col, fx = tx) => { const lines = T.wrap(str, tw, 8); const n = Math.max(1, Math.min(lines.length, want, left - reserve)); if (left <= 0) return; for (let i = 0; i < n; i++) { let l = lines[i]; if (i === n - 1 && n < lines.length) l = fit(l + ' ' + lines[i + 1], tw); T.draw(ctx, l, tx, y, { size: 8, color: col }); y += lh; left--; } y += 1; };
       if (has) {
@@ -279,6 +280,8 @@ const Screens = (() => {
         left = Math.floor((bottom - y) / lh);
         take(b.secret ? 'Где искать: ???. Что-то мерцает в темноте…' : `Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
       }
+      if (this.fragRect) { const f = this.fragRect, hv = UIK.hit(f, m.x, m.y); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(f.x + 3, f.y + 3, f.w, f.h); ctx.imageSmoothingEnabled = false; ctx.drawImage(Secret.paperCanvas('01'), f.x, f.y, f.w, f.h); ctx.fillStyle = 'rgba(216,200,128,0.85)'; ctx.fillRect(f.x + 4, f.y - 2, 16, 6); ctx.fillRect(f.x + f.w - 20, f.y - 2, 16, 6); if (hv) { ctx.strokeStyle = c.gold; ctx.strokeRect(f.x - 0.5, f.y - 0.5, f.w + 1, f.h + 1); T.draw(ctx, 'Забрать обрывок', f.x + f.w / 2, f.y - 12, { size: 8, align: 'c', color: '#2a1a0c' }); } }
+      if (this.msgUntil && performance.now() < this.msgUntil) T.draw(ctx, this.msg, 12, 252, { size: 8, color: c.gold, shadow: '#000' });
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
     },
@@ -306,6 +309,7 @@ const Screens = (() => {
     turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      if (!this.ab && this.fragRect && UIK.hit(this.fragRect, x, y)) { if (Secret.take(4)) { this.msg = 'Обрывок записки: 01. Он лежит на складе (I).'; this.msgUntil = performance.now() + 4500; Snd.sfx.coin(); } return 'frag'; }
       if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
       if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: BIOMES[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
@@ -323,7 +327,8 @@ const Screens = (() => {
         { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
         { id: 'journal', label: 'Журнал (Tab)', x, y: 104, w: 180, h: 16 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 124, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 144, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 144, w: 88, h: 16 },
+        { id: 'stash', label: 'Склад (I)', x: x + 92, y: 144, w: 88, h: 16 },
         { id: 'settings', label: 'Настройки', x, y: 164, w: 180, h: 16 },
         { id: 'regen', label: 'Сгенерировать новую местность', x, y: 184, w: 180, h: 16 },
         { id: 'map', label: 'Выбрать другое место', x, y: 204, w: 180, h: 16 },
@@ -362,7 +367,7 @@ const Screens = (() => {
   const keysScr = {
     wait: -1, btns: [], rows: [], msg: '',
     layout() {
-      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 14, w: 260, h: 12 }));
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 13, w: 260, h: 11 }));
       this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 235, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 235, w: 170, h: 16, size: 10 }];
     },
     draw(ctx, t, m) {
@@ -371,8 +376,8 @@ const Screens = (() => {
       this.rows.forEach(r => {
         const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
         UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
-        T.draw(ctx, a.ru, r.x + 6, r.y + 2, { size: 8, color: c.text });
-        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 2, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
+        T.draw(ctx, a.ru, r.x + 6, r.y + 1, { size: 8, color: c.text });
+        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 1, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
       });
       T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 222, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));

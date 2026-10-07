@@ -35,6 +35,8 @@ const StubRoom = (() => {
       const wx = -HX + 0.05; for (const [y, h] of [[1.3, 0.1], [1.55, 0.1], [1.8, 0.1], [2.05, 0.1]]) { const slit = new THREE.Mesh(new THREE.PlaneGeometry(1.0, h), new THREE.MeshBasicMaterial({ color: '#b8c8d8' })); slit.position.set(wx + 0.01, y, -0.6); slit.rotation.y = Math.PI / 2; S.add(slit); }
       for (const [y, h] of [[1.43, 0.16], [1.68, 0.16], [1.93, 0.16]]) box(0.1, h, 1.2, wx, y, -0.6, '#1a140e');
       const wl = new THREE.SpotLight('#9ab0c8', 1.6, 9, 0.7, 0.8, 1.4); wl.position.set(-HX + 0.3, 1.7, -0.6); this.wlTarget = new THREE.Object3D(); this.wlTarget.position.set(2.2, 0.0, -0.4); S.add(wl, this.wlTarget); wl.target = this.wlTarget; this.wl = wl;
+      // a torn scrap of paper stuck in the north-east corner (the second piece of the code note; personal, gone once taken)
+      if (!Secret.has(2)) { const m = Secret.paperMesh('37', 3); m.position.set(HX - 0.6, 1.0, -HZ + 0.012); m.rotation.z = 0.08; S.add(m); this.frag = m; const fl2 = new THREE.PointLight('#d8d0b8', 0.5, 3.2, 1.6); fl2.position.set(HX - 0.7, 1.3, -HZ + 0.7); S.add(fl2); this.fragLight = fl2; this.stations.push({ id: 'frag', x: HX - 0.8, z: -HZ + 0.7, r: 1.5, label: () => 'E — взять обрывок записки' }); }
       // dust in the light
       const n = 70, pos = new Float32Array(n * 3); this.dust0 = []; for (let i = 0; i < n; i++) { const a = [Math.random() * 4 - 1.8, Math.random() * 2.2 + 0.3, Math.random() * 3 - 2]; this.dust0.push(a); pos.set(a, i * 3); }
       const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: '#c8d0d8', size: 0.025, transparent: true, opacity: 0.55, depthWrite: false })); S.add(this.dust);
@@ -60,7 +62,10 @@ const StubRoom = (() => {
     }
     open(name) { this.ov = name; this.hooks.unlock(); }
     close() { this.ov = null; this.hooks.lock(); }
-    interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.hush(false); Snd.sfx.door(); this.hooks.exitRoom(); } }
+    interact() {
+      const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.hush(false); Snd.sfx.door(); this.hooks.exitRoom(); }
+      else if (s.id === 'frag') { if (Secret.take(2)) { this.toast('Обрывок записки: 37. Он лежит на складе (I).', 5); } if (this.frag) { this.frag.visible = false; if (this.fragLight) this.fragLight.visible = false; } this.stations = this.stations.filter(x => x.id !== 'frag'); }
+    }
     key(e) {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }

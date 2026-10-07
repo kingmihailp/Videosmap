@@ -322,6 +322,7 @@ class Play {
     for (const f of this.flies) { f.puppet = true; f.seen = now; f.netPos.copy(f.pos); f.netYaw = f.yaw; }
     if (list && list.length) this.netFlies(list);
   }
+  takePick() { const pk = this.pickNear; if (!pk) return; pk.taken = true; if (pk.group) pk.group.visible = false; const d = Secret.FRAGS.find(f => f.n === pk.id); if (Secret.take(pk.id)) { this.toast(`Обрывок записки: ${d ? d.digits : '??'}. Он лежит на складе (I).`, 5, true); Snd.sfx.coin(); } this.pickNear = null; }
   enterDoor() { if (this.entering || !this.world.door) return; this.entering = true; Snd.sfx.mystery(); F0W.enterRoom('chalet', { biome: this.biome.id, seed: this.seed, at: { x: this.world.door.x + Math.sin(this.world.door.yaw) * 0.9, z: this.world.door.z + Math.cos(this.world.door.yaw) * 0.9, yaw: this.world.door.yaw + Math.PI } }); }
   netCatch(f) { f.pendingCatch = true; f.releaseFlower(); f.state = CAUGHT; f.t = 2.0; Net.send('catch', { fid: f.id }); }
   netCatchOk(m) {
@@ -410,6 +411,7 @@ class Play {
   // ---------------------------------------------------------------- per-frame
   update(dt, inp) {
     this.t += dt; const P = this.player, w = this.world;
+    this.pickNear = null; if (w.pickups) { const fx0 = -Math.sin(P.yaw), fz0 = -Math.cos(P.yaw); for (const pk of w.pickups) { if (pk.taken) continue; const dx = pk.x - P.pos.x, dz = pk.z - P.pos.z, dd = Math.hypot(dx, dz); if (dd < pk.r && (dd < 1.4 || (dx * fx0 + dz * fz0) / (dd || 1) > 0.25)) { this.pickNear = pk; break; } } }
     this.doorNear = false; if (w.door && !this.entering) { const dx = w.door.x - P.pos.x, dz = w.door.z - P.pos.z, dd = Math.hypot(dx, dz); if (dd < 2.6) { const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); this.doorNear = dd < 1.1 || (dx * fx + dz * fz) / (dd || 1) > 0.2; } }
     // look
     P.yaw -= inp.dx * 0.0022 * (this.hasMod('mirror') ? -1 : 1); P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.45, 1.45); inp.dx = inp.dy = 0;
@@ -496,6 +498,7 @@ class Play {
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
+    if (this.pickNear && !this.doorNear) { const s2 = this.pickNear.label, w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
     const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';

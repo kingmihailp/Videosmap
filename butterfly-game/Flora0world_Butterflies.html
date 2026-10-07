@@ -860,7 +860,7 @@ const Batch = (() => {
   const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), V3 = new THREE.Vector3(), ONE = new THREE.Vector3(1, 1, 1), N3 = new THREE.Matrix3();
   const jit = (col, k) => { const a = hex2rgb(col); return [a[0] / 255 * k, a[1] / 255 * k, a[2] / 255 * k]; };
   class Batch {
-    constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); }
+    constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); this.rec = !!Batch.recAll; }
     geo(g, m, col, jitter = 0.07) {
       if (this.rec) {      // record oriented boxes (exact for boxes, the bounding box for other shapes) so the test can check that every part touches another
         const M = new THREE.Matrix4().multiplyMatrices(this.base, m), e = M.elements; let c, ax, h;
@@ -956,7 +956,7 @@ const Keys = (() => {
     { id: 'fwd', ru: 'Вперёд', def: ['KeyW'] }, { id: 'back', ru: 'Назад', def: ['KeyS'] }, { id: 'left', ru: 'Влево', def: ['KeyA'] }, { id: 'right', ru: 'Вправо', def: ['KeyD'] },
     { id: 'sprint', ru: 'Бег', def: ['ShiftLeft', 'ShiftRight'] }, { id: 'crouch', ru: 'Красться', def: ['ControlLeft', 'KeyC', 'ControlRight'] },
     { id: 'swing', ru: 'Взмах сачка (и ЛКМ)', def: ['Space'] }, { id: 'use', ru: 'Действие / войти', def: ['KeyE'] }, { id: 'journal', ru: 'Журнал', def: ['Tab'] },
-    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] },
+    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] }, { id: 'stash', ru: 'Склад', def: ['KeyI'] },
   ];
   const SYM = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Пробел', Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', CapsLock: 'Caps',
     ShiftLeft: 'Shift (лев.)', ShiftRight: 'Shift (прав.)', ControlLeft: 'Ctrl (лев.)', ControlRight: 'Ctrl (прав.)', AltLeft: 'Alt (лев.)', AltRight: 'Alt (прав.)',
@@ -1445,6 +1445,135 @@ Object.assign(Save, {
   },
   equipNet(uid) { if (uid && !this.netList().some(n => n.uid === uid)) return false; this.data.netEq = uid || 0; this.write(); return true; },
 });
+
+// ===== secret.js =====
+// ---------------------------------------------------------------- the secret market: code fragments, the code lock, the stash (everything here is personal, never shared in multiplayer)
+// The door code is 27378801 — four torn pieces of a note, each with two digits: 27 (hooded trader), 37 (abandoned house in the Alps), 88 (the lighthouse in the ocean), 01 (the last page of the journal).
+const Secret = (() => {
+  const CODE = '27378801';
+  const FRAGS = [
+    { n: 1, digits: '27', where: 'Дала странная торговка рынка' }, { n: 2, digits: '37', where: 'Лежала в углу заброшенного дома' },
+    { n: 3, digits: '88', where: 'Была приклеена к маяку' }, { n: 4, digits: '01', where: 'Была вложена в конец журнала' },
+  ];
+  const st = () => Save.data.secret || (Save.data.secret = { frags: {}, unlocked: false });
+  const has = n => !!st().frags[n], count = () => FRAGS.filter(f => has(f.n)).length, unlocked = () => !!st().unlocked;
+  function take(n) { if (has(n)) return false; st().frags[n] = true; Save.write(); Snd.sfx.page(); return true; }
+  function tryCode(s) { if (s !== CODE) return false; st().unlocked = true; Save.write(); return true; }
+  // a torn piece of paper (canvas, transparent outside the jagged edge) with two big digits
+  const cache = {};
+  function paperCanvas(digits, seed = 7) {
+    const k = digits + seed; if (cache[k]) return cache[k]; const W = 48, H = 36, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; const r = new Rng(seed * 131 + digits.charCodeAt(0));
+    for (let j = 0; j < H; j++) { const l = 1 + (r.next() < 0.5 ? 0 : 1) + (j % 7 === 3 ? 1 : 0), rr = W - 1 - (r.next() < 0.5 ? 0 : 1) - (j % 5 === 2 ? 2 : 0); const top = j < 2 ? 3 + r.int(0, 3) : 0, bot = j > H - 3 ? 3 + r.int(0, 4) : 0; if (j < 1 || j >= H - 1) continue; x.fillStyle = j % 2 ? '#e8dcb8' : '#e4d8b0'; x.fillRect(l + top, j, rr - l - top - bot, 1); }
+    { const d = x.getImageData(0, 0, W, H), o = new Uint8ClampedArray(d.data); for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) { const a = (j * W + i) * 4 + 3; if (o[a] && (!o[a - 4] || !o[a + 4] || !o[a - W * 4] || !o[a + W * 4])) { d.data[a - 3] = 120; d.data[a - 2] = 98; d.data[a - 1] = 62; } } x.putImageData(d, 0, 0); }   // a darker rim
+    x.fillStyle = '#c8b888'; for (let i = 0; i < 40; i++) x.fillRect(r.int(3, W - 4), r.int(3, H - 4), r.int(1, 3), 1);              // age spots
+    x.fillStyle = 'rgba(120,90,50,0.35)'; x.fillRect(W / 2 - 1, 2, 1, H - 4); x.fillRect(2, H / 2, W - 4, 1);                           // folds
+    x.fillStyle = 'rgba(40,24,10,0.5)'; for (let i = 0; i < 3; i++) x.fillRect(5, 6 + i * 3, 10 + r.int(0, 10), 1);                       // scribbles
+    T.draw(x, digits, W / 2, 10, { size: 22, align: 'c', color: '#2a1608' });                                                          // the digits
+    x.fillStyle = 'rgba(40,24,10,0.5)'; for (let i = 0; i < 2; i++) x.fillRect(8, H - 7 + i * 2, 14 + r.int(0, 12), 1);
+    cache[k] = cv; return cv;
+  }
+  // a taped note for a wall / floor (a plane with a transparent edge and two strips of tape)
+  function paperMesh(digits, seed = 7) {
+    const g = new THREE.Group(), tex = new THREE.CanvasTexture(paperCanvas(digits, seed)); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.27), new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, emissive: '#6a5a30', emissiveIntensity: 0.9 })); g.add(p);
+    for (const sx of [-1, 1]) { const tp = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.032), new THREE.MeshBasicMaterial({ color: '#d8c880', transparent: true, opacity: 0.85 })); tp.position.set(sx * 0.135, 0.1, 0.004); tp.rotation.z = -sx * 0.6; g.add(tp); }
+    g.userData.paper = p; return g;
+  }
+
+  // ------------------------------------------------------------ the stash (a modal window: fragments + net parts)
+  const stash = {
+    btns: [],
+    layout() { this.btns = [{ id: 'close', label: 'Закрыть', x: SW / 2 - 50, y: 232, w: 100, h: 18, size: 10 }]; },
+    draw(ctx, t, m) {
+      const c = UIK.col; this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.8)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 40, 14, 400, 242, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
+      T.draw(ctx, 'Склад', SW / 2, 20, { size: 14, align: 'c', color: c.gold });
+      T.draw(ctx, 'Обрывки записки', 54, 30, { size: 8, color: c.dim });
+      FRAGS.forEach((f, i) => {
+        const x = 54 + i * 92, y = 40, got = has(f.n); UIK.panel(ctx, x, y, 86, 62, { fill: '#10201c', border: got ? c.gold : c.line, shadow: false });
+        if (got) { ctx.imageSmoothingEnabled = false; ctx.drawImage(paperCanvas(f.digits), x + 4, y + 4, 78, 54); } else { ctx.globalAlpha = 0.35; ctx.imageSmoothingEnabled = false; ctx.drawImage(paperCanvas('??', 3), x + 4, y + 4, 78, 54); ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(8,16,14,0.6)'; ctx.fillRect(x + 4, y + 4, 78, 54); T.draw(ctx, '?', x + 43, y + 24, { size: 14, align: 'c', color: c.dim }); }
+        T.draw(ctx, `Обрывок ${f.n}`, x + 43, y + 66, { size: 8, align: 'c', color: got ? c.text : c.dim });
+      });
+      const full = count() === 4; T.draw(ctx, full ? 'Код: ' + FRAGS.map(f => f.digits).join('') : 'Код: ' + FRAGS.map(f => has(f.n) ? f.digits : '??').join(' '), SW / 2, 120, { size: 10, align: 'c', color: full ? '#9af0a0' : c.text });
+      let y = 136;
+      FRAGS.forEach(f => { if (has(f.n)) { T.draw(ctx, `${f.n}. ${f.where}`, 54, y, { size: 8, color: c.text }); y += 10; } });
+      if (!count()) T.para(ctx, 'Здесь будут лежать найденные обрывки. Говорят, они разбросаны по всему свету…', 54, y, 372, { size: 8, color: c.dim, lh: 10 });
+      T.draw(ctx, 'Детали сачков', 54, 182, { size: 8, color: c.dim });
+      const owned = Object.keys(NetParts.PARTS).filter(id => Save.partCount(id) > 0);
+      if (!owned.length) T.draw(ctx, 'Пока нет. Их продаёт продавец сачков на рынке насекомых.', 54, 194, { size: 8, color: c.dim });
+      owned.slice(0, 8).forEach((id, i) => { const col = i % 2, row = Math.floor(i / 2); T.draw(ctx, fitStr(`${NetParts.PARTS[id].ru} ×${Save.partCount(id)}`, 180), 54 + col * 190, 194 + row * 9, { size: 8, color: c.text }); });
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    },
+    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+  };
+
+  // ------------------------------------------------------------ the code lock: eight digit drums
+  const lock = {
+    d: [0, 0, 0, 0, 0, 0, 0, 0], sel: 0, shake: 0, ok: 0, msg: '', msgT: 0, mx: 0, my: 0, btns: [], drums: [],
+    reset() { this.d = [0, 0, 0, 0, 0, 0, 0, 0]; this.sel = 0; this.shake = 0; this.ok = 0; this.msg = ''; this.msgT = 0; },
+    layout() {
+      this.drums = this.d.map((v, i) => ({ i, x: 80 + i * 40, y: 90, w: 34, h: 44 }));
+      this.btns = [{ id: 'try', label: 'Открыть', x: SW / 2 - 52, y: 168, w: 104, h: 18, size: 10 }];
+      for (const dr of this.drums) { this.btns.push({ id: 'up' + dr.i, label: '^', x: dr.x, y: dr.y - 15, w: dr.w, h: 12, drum: dr.i, d: 1 }, { id: 'dn' + dr.i, label: 'v', x: dr.x, y: dr.y + dr.h + 3, w: dr.w, h: 12, drum: dr.i, d: -1 }); }
+    },
+    turn(i, d) { this.d[i] = (this.d[i] + d + 10) % 10; this.sel = i; Snd.sfx.click(); },
+    submit() {
+      if (this.ok) return; const s = this.d.join('');
+      if (tryCode(s)) { this.ok = 1.4; this.msg = 'Замок щёлкнул. Дверь поддалась…'; this.msgT = 3; Snd.sfx.door(); Snd.sfx.pin(); return 'ok'; }
+      this.shake = 0.5; this.msg = 'Замок не поддаётся…'; this.msgT = 2.5; Snd.sfx.deny(); return 'no';
+    },
+    key(e) {
+      if (this.ok) return; const k = e.key;
+      if (e.code === 'Enter') return this.submit(); if (/^[0-9]$/.test(k)) { this.d[this.sel] = +k; this.sel = Math.min(7, this.sel + 1); Snd.sfx.click(); return; }
+      if (e.code === 'Backspace') { this.sel = Math.max(0, this.sel - 1); this.d[this.sel] = 0; Snd.sfx.click(); } else if (e.code === 'ArrowLeft') this.sel = Math.max(0, this.sel - 1); else if (e.code === 'ArrowRight') this.sel = Math.min(7, this.sel + 1);
+      else if (e.code === 'ArrowUp') this.turn(this.sel, 1); else if (e.code === 'ArrowDown') this.turn(this.sel, -1);
+    },
+    click(x, y) {
+      if (this.ok) return; this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); if (b) { if (b.id === 'try') return this.submit(); this.turn(b.drum, b.d); return; }
+      const dr = this.drums.find(d => UIK.hit(d, x, y)); if (dr) { this.sel = dr.i; Snd.sfx.click(); }
+    },
+    wheel(dy) { if (this.ok) return; const dr = this.drums.find(d => UIK.hit(d, this.mx, this.my)); this.turn(dr ? dr.i : this.sel, dy > 0 ? -1 : 1); },
+    draw(ctx, t, m, dt) {
+      const c = UIK.col; this.mx = m.x; this.my = m.y; this.layout(); this.shake = Math.max(0, this.shake - dt); this.msgT = Math.max(0, this.msgT - dt); if (this.ok) this.ok = Math.max(0, this.ok - dt);
+      ctx.fillStyle = 'rgba(4,8,8,0.72)'; ctx.fillRect(0, 0, SW, SH);
+      const sx = this.shake > 0 ? Math.round(Math.sin(t * 60) * 3 * this.shake * 2) : 0, ox = sx, oy = 0, good = unlocked() && this.ok > 0;
+      // brass plate with rivets
+      const px = 56 + ox, py = 44 + oy, pw = 368, ph = 154; UIK.panel(ctx, px, py, pw, ph, { fill: '#8a6a30', border: '#3a2a10' }); ctx.fillStyle = '#a88440'; ctx.fillRect(px + 3, py + 3, pw - 6, 4); ctx.fillStyle = '#6a4a1c'; ctx.fillRect(px + 3, py + ph - 7, pw - 6, 4);
+      for (const [rx, ry] of [[6, 6], [pw - 10, 6], [6, ph - 10], [pw - 10, ph - 10]]) { ctx.fillStyle = '#c8a860'; ctx.fillRect(px + rx, py + ry, 4, 4); ctx.fillStyle = '#4a3010'; ctx.fillRect(px + rx + 3, py + ry + 3, 1, 1); }
+      T.draw(ctx, 'КОДОВЫЙ ЗАМОК', SW / 2 + ox, py + 8, { size: 10, align: 'c', color: '#2a1a08' });
+      T.draw(ctx, 'восемь цифр', SW / 2 + ox, py + 19, { size: 8, align: 'c', color: '#4a3010' });
+      this.drums.forEach(dr => {
+        const x = dr.x + ox, y = dr.y + oy, on = dr.i === this.sel, v = this.d[dr.i]; UIK.panel(ctx, x, y, dr.w, dr.h, { fill: '#e8e0c8', border: on ? c.gold : '#2a1a08', shadow: false });
+        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x + 1, y + 1, dr.w - 2, 10); ctx.fillRect(x + 1, y + dr.h - 11, dr.w - 2, 10); ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x + 1, y + 16, dr.w - 2, 12);
+        T.draw(ctx, String((v + 9) % 10), x + dr.w / 2, y + 2, { size: 8, align: 'c', color: '#9a8a68' }); T.draw(ctx, String((v + 1) % 10), x + dr.w / 2, y + dr.h - 10, { size: 8, align: 'c', color: '#9a8a68' });
+        T.draw(ctx, String(v), x + dr.w / 2, y + 15, { size: 14, align: 'c', color: good ? '#1a6a2a' : this.shake > 0 ? '#9a1a1a' : '#2a1a08' });
+      });
+      this.btns.forEach(b => { const bb = Object.assign({}, b, { x: b.x + ox, y: b.y + oy }); UIK.btn(ctx, bb, UIK.hit(b, m.x, m.y)); });
+      // the indicator lamp
+      ctx.fillStyle = '#2a1a08'; ctx.fillRect(px + pw - 26 + ox, py + 8, 12, 12); ctx.fillStyle = good ? '#40e060' : this.shake > 0 ? '#ff4040' : '#702020'; ctx.fillRect(px + pw - 24 + ox, py + 10, 8, 8);
+      // notes: the fragments found so far
+      T.draw(ctx, 'Обрывки записки:', 56, 213, { size: 8, color: c.dim }); FRAGS.forEach((f, i) => T.draw(ctx, has(f.n) ? f.digits : '??', 170 + i * 30, 213, { size: 8, color: has(f.n) ? c.gold : c.dim }));
+      T.draw(ctx, count() ? 'Все обрывки — на складе (I)' : 'Обрывков пока нет', 424, 213, { size: 8, align: 'r', color: c.dim });
+      T.draw(ctx, 'Цифры — с клавиатуры · стрелки — колёса · Enter — открыть · Esc — отойти', SW / 2, 228, { size: 8, align: 'c', color: c.dim });
+      if (this.msgT > 0) T.draw(ctx, this.msg, SW / 2, 201, { size: 8, align: 'c', color: good ? '#9af0a0' : '#ff9a8a', shadow: '#000' });
+    },
+  };
+
+  // ------------------------------------------------------------ speeches of the hooded traders
+  const LINES = {
+    first: ['…Ты пришёл. Я ждал. Или это ты ждал?..', 'Не оглядывайся. Здесь всё слышит… даже камни.', 'Я ничего не продаю. Я лишь храню то, что рассыпано.', 'Возьми. Это не моё — и не твоё. Часть двери. Первая.'],
+    gave: ['Остальное — там, где пыль помнит, где море светит и где страницы молчат. Иди.'],
+    again: ['Пыль помнит… а ты?', 'Дверь прячется в углу самого дальнего переулка.', 'Восемь цифр. Четыре голоса. Ни один не лжёт.', 'Я не продаю. Я напоминаю.'],
+    full: ['Ты собрал голоса. Теперь произнеси их… цифрами.'], opened: ['Дверь уже открыта. Не заставляй их ждать…'],
+    inside: ['Лавка закрыта… пока. Товар ещё в пути.', 'Приходи, когда пыль осядет.', 'Я продаю тишину. Сегодня её нет в наличии… шучу. Её не продают.', 'Здесь ничего нет. Пока. Но ты запомнишь это место.'],
+  };
+  const speech = who => {
+    if (who === 'inside') return { lines: [LINES.inside[(Math.random() * LINES.inside.length) | 0]], give: 0 };
+    if (!has(1)) return { lines: LINES.first.concat(LINES.gave), give: 1, giveAt: LINES.first.length - 1 };
+    if (unlocked()) return { lines: LINES.opened, give: 0 }; if (count() === 4) return { lines: LINES.full, give: 0 };
+    return { lines: [LINES.again[(Math.random() * LINES.again.length) | 0]], give: 0 };
+  };
+  return { CODE, FRAGS, has, count, unlocked, take, tryCode, paperCanvas, paperMesh, stash, lock, speech };
+})();
 
 // ===== audio.js =====
 // ---------------------------------------------------------------- procedural audio (WebAudio, no files)
@@ -2698,6 +2827,12 @@ const Ocean = (() => {
       const pivot = new THREE.Group(); g.add(pivot); world.lighthouse = { g, pivot, tgt };
       beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 34, 14, 1, true), new THREE.MeshBasicMaterial({ color: '#fff0c0', transparent: true, opacity: 0.075, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
       beam.geometry.translate(0, -17, 0); beam.rotation.x = Math.PI / 2 - 0.02; beam.position.set(0, 13.1, 0); pivot.add(beam);
+      // the third piece of the code note, glued to the tower wall (only for a player who has not found it yet)
+      if (!Secret.has(3)) {
+        const th = Math.atan2(-c.x, -c.z), face = Math.round(th / (Math.PI / 5) - 0.5), tm = (face + 0.5) * Math.PI / 5, u = new V3(Math.sin(tm), 0, Math.cos(tm)), py = 2.2, rad = 1.8 - 0.7 * py / 12, dist = rad * Math.cos(Math.PI / 10), slope = 0.7 / 12;
+        const nrm = new V3(u.x, slope, u.z).normalize(), P = new V3(u.x * dist, py, u.z * dist).addScaledVector(nrm, 0.012); const paper = Secret.paperMesh('88', 11); paper.position.copy(P); paper.lookAt(P.clone().add(nrm)); g.add(paper);
+        (world.pickups || (world.pickups = [])).push({ id: 3, x: c.x + P.x, y: c.y + py, z: c.z + P.z, r: 2.6, group: paper, label: 'E — взять обрывок записки' });
+      }
       add(g, c.x, c.y, c.z); world.colliders.push({ x: c.x, z: c.z, r: 2.1 }); world.lhPos = new V3(c.x, c.y + 13, c.z); }
     // glowing fungi — perches for the butterflies
     { const NF = 90, caps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', fog: true }), NF), stalk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.015, 0.025, 0.28, 4), new THREE.MeshLambertMaterial({ color: '#8aa0a0' }), NF); const m4 = new THREE.Matrix4(); const pal = ['#4af0e0', '#a070ff', '#ff70c0', '#7ae0ff'].map(h => new THREE.Color(h)); let k = 0;
@@ -3191,6 +3326,7 @@ class Play {
     for (const f of this.flies) { f.puppet = true; f.seen = now; f.netPos.copy(f.pos); f.netYaw = f.yaw; }
     if (list && list.length) this.netFlies(list);
   }
+  takePick() { const pk = this.pickNear; if (!pk) return; pk.taken = true; if (pk.group) pk.group.visible = false; const d = Secret.FRAGS.find(f => f.n === pk.id); if (Secret.take(pk.id)) { this.toast(`Обрывок записки: ${d ? d.digits : '??'}. Он лежит на складе (I).`, 5, true); Snd.sfx.coin(); } this.pickNear = null; }
   enterDoor() { if (this.entering || !this.world.door) return; this.entering = true; Snd.sfx.mystery(); F0W.enterRoom('chalet', { biome: this.biome.id, seed: this.seed, at: { x: this.world.door.x + Math.sin(this.world.door.yaw) * 0.9, z: this.world.door.z + Math.cos(this.world.door.yaw) * 0.9, yaw: this.world.door.yaw + Math.PI } }); }
   netCatch(f) { f.pendingCatch = true; f.releaseFlower(); f.state = CAUGHT; f.t = 2.0; Net.send('catch', { fid: f.id }); }
   netCatchOk(m) {
@@ -3279,6 +3415,7 @@ class Play {
   // ---------------------------------------------------------------- per-frame
   update(dt, inp) {
     this.t += dt; const P = this.player, w = this.world;
+    this.pickNear = null; if (w.pickups) { const fx0 = -Math.sin(P.yaw), fz0 = -Math.cos(P.yaw); for (const pk of w.pickups) { if (pk.taken) continue; const dx = pk.x - P.pos.x, dz = pk.z - P.pos.z, dd = Math.hypot(dx, dz); if (dd < pk.r && (dd < 1.4 || (dx * fx0 + dz * fz0) / (dd || 1) > 0.25)) { this.pickNear = pk; break; } } }
     this.doorNear = false; if (w.door && !this.entering) { const dx = w.door.x - P.pos.x, dz = w.door.z - P.pos.z, dd = Math.hypot(dx, dz); if (dd < 2.6) { const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); this.doorNear = dd < 1.1 || (dx * fx + dz * fz) / (dd || 1) > 0.2; } }
     // look
     P.yaw -= inp.dx * 0.0022 * (this.hasMod('mirror') ? -1 : 1); P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.45, 1.45); inp.dx = inp.dy = 0;
@@ -3365,6 +3502,7 @@ class Play {
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
+    if (this.pickNear && !this.doorNear) { const s2 = this.pickNear.label, w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
     const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
@@ -3666,6 +3804,7 @@ const Screens = (() => {
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
       this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
+      this.fragRect = (this.tab === BIOMES.length - 1 && this.page === this.pages - 1 && !Secret.has(4)) ? { x: SW - 6 - 84, y: 204, w: 76, h: 56 } : null;     // the last piece of the note, taped to the last page
     },
     draw(ctx, t, m) {
       if (this.ab && this.ab.tab !== this.tab) this.ab = null;
@@ -3700,7 +3839,7 @@ const Screens = (() => {
       T.draw(ctx, 'Семейство', sx + 4, 72, { size: 8, color: dim }); T.draw(ctx, sp.fam, sx + 4, 81, { size: 8, color: ink });
       T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 50 + i * 8, py = 94; ctx.fillStyle = on ? '#d8a020' : '#cdbf94'; ctx.fillRect(px + 2, py, 3, 7); ctx.fillRect(px, py + 2, 7, 3); ctx.fillRect(px + 1, py + 1, 5, 5); }
       T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 106, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 115, { size: 8, color: ink });
-      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
+      let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = this.fragRect ? 200 : abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
       if (abl.length) { this.abBtn = { id: 'ab', label: `Аберранты (${abl.length})`, x: x0 + 8, y: 244, w: w0 - 16, h: 15 }; UIK.btn(ctx, this.abBtn, UIK.hit(this.abBtn, m.x, m.y)); }
       const take = (str, want, reserve, col, fx = tx) => { const lines = T.wrap(str, tw, 8); const n = Math.max(1, Math.min(lines.length, want, left - reserve)); if (left <= 0) return; for (let i = 0; i < n; i++) { let l = lines[i]; if (i === n - 1 && n < lines.length) l = fit(l + ' ' + lines[i + 1], tw); T.draw(ctx, l, tx, y, { size: 8, color: col }); y += lh; left--; } y += 1; };
       if (has) {
@@ -3712,6 +3851,8 @@ const Screens = (() => {
         left = Math.floor((bottom - y) / lh);
         take(b.secret ? 'Где искать: ???. Что-то мерцает в темноте…' : `Где искать: ${b.name} (${b.place}). ${sp.look}.`, 4, 3, ink); take('Поймай бабочку сачком — и подробности о среде, ареале и повадках появятся в журнале.', 4, 0, '#8a6a3a');
       }
+      if (this.fragRect) { const f = this.fragRect, hv = UIK.hit(f, m.x, m.y); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(f.x + 3, f.y + 3, f.w, f.h); ctx.imageSmoothingEnabled = false; ctx.drawImage(Secret.paperCanvas('01'), f.x, f.y, f.w, f.h); ctx.fillStyle = 'rgba(216,200,128,0.85)'; ctx.fillRect(f.x + 4, f.y - 2, 16, 6); ctx.fillRect(f.x + f.w - 20, f.y - 2, 16, 6); if (hv) { ctx.strokeStyle = c.gold; ctx.strokeRect(f.x - 0.5, f.y - 0.5, f.w + 1, f.h + 1); T.draw(ctx, 'Забрать обрывок', f.x + f.w / 2, f.y - 12, { size: 8, align: 'c', color: '#2a1a0c' }); } }
+      if (this.msgUntil && performance.now() < this.msgUntil) T.draw(ctx, this.msg, 12, 252, { size: 8, color: c.gold, shadow: '#000' });
       this.pgBtns.forEach(bt => UIK.btn(ctx, bt, !bt.disabled && UIK.hit(bt, m.x, m.y))); T.draw(ctx, `стр. ${this.page + 1}/${this.pages}`, 317, 7, { size: 8, align: 'c', color: c.text });
       UIK.btn(ctx, this.close, UIK.hit(this.close, m.x, m.y));
     },
@@ -3739,6 +3880,7 @@ const Screens = (() => {
     turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = BIOMES[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      if (!this.ab && this.fragRect && UIK.hit(this.fragRect, x, y)) { if (Secret.take(4)) { this.msg = 'Обрывок записки: 01. Он лежит на складе (I).'; this.msgUntil = performance.now() + 4500; Snd.sfx.coin(); } return 'frag'; }
       if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
       if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: BIOMES[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
@@ -3756,7 +3898,8 @@ const Screens = (() => {
         { id: 'resume', label: 'Продолжить', x, y: 78, w: 180, h: 20, size: 10 },
         { id: 'journal', label: 'Журнал (Tab)', x, y: 104, w: 180, h: 16 },
         { id: 'cabinet', label: 'Кабинет энтомолога', x, y: 124, w: 180, h: 16 },
-        { id: 'help', label: 'Управление', x, y: 144, w: 180, h: 16 },
+        { id: 'help', label: 'Управление', x, y: 144, w: 88, h: 16 },
+        { id: 'stash', label: 'Склад (I)', x: x + 92, y: 144, w: 88, h: 16 },
         { id: 'settings', label: 'Настройки', x, y: 164, w: 180, h: 16 },
         { id: 'regen', label: 'Сгенерировать новую местность', x, y: 184, w: 180, h: 16 },
         { id: 'map', label: 'Выбрать другое место', x, y: 204, w: 180, h: 16 },
@@ -3795,7 +3938,7 @@ const Screens = (() => {
   const keysScr = {
     wait: -1, btns: [], rows: [], msg: '',
     layout() {
-      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 14, w: 260, h: 12 }));
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 13, w: 260, h: 11 }));
       this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 235, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 235, w: 170, h: 16, size: 10 }];
     },
     draw(ctx, t, m) {
@@ -3804,8 +3947,8 @@ const Screens = (() => {
       this.rows.forEach(r => {
         const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
         UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
-        T.draw(ctx, a.ru, r.x + 6, r.y + 2, { size: 8, color: c.text });
-        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 2, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
+        T.draw(ctx, a.ru, r.x + 6, r.y + 1, { size: 8, color: c.text });
+        T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 1, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
       });
       T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 222, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -4861,11 +5004,11 @@ const Cabinet = (() => {
     wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'stash') this.hooks.stash(); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
     static pauseButtons() {
       const s = Save.data.settings; const x = SW / 2 - 90; return [
-        { id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 },
+        { id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 },
         { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 },
         { id: 'market', label: 'На рынок насекомых', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }];
     }
@@ -4969,6 +5112,24 @@ const Portrait = (() => {
       mouth(ctx, ox, oy, { talk: o.talk, stubble: true });
       R(ctx, ox, oy, 8, 9, 24, 4, '#4a6a2a'); R(ctx, ox, oy, 10, 3, 20, 7, '#5a7a3a'); R(ctx, ox, oy, 12, 3, 4, 5, '#6a8a48'); R(ctx, ox, oy, 6, 11, 14, 2, '#3a5a20'); R(ctx, ox, oy, 8, 12, 24, 1, '#3a5a20'); R(ctx, ox, oy, 19, 5, 3, 3, '#e8d070');   // cap with visor and badge
     },
+    // the hooded trader: a deep hood with nothing but darkness inside, pale folded hands holding a glowing orb
+    hooded(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#2a2238'); R(ctx, ox, oy, 0, 30, 40, 18, '#1c1628'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(160,120,220,0.07)');
+      R(ctx, ox, oy, 0, 38, 12, 10, 'rgba(255,170,70,0.12)'); R(ctx, ox, oy, 2, 40, 6, 8, 'rgba(255,170,70,0.12)');                 // candle glow from the left
+      R(ctx, ox, oy, 3, 33, 34, 15, '#241a30'); R(ctx, ox, oy, 6, 31, 28, 4, '#241a30'); R(ctx, ox, oy, 3, 35, 3, 13, '#3a2c4c'); R(ctx, ox, oy, 34, 35, 3, 13, '#140e1c');   // cloak and shoulders
+      for (const [fx, fy, fh] of [[10, 36, 12], [16, 38, 10], [24, 38, 10], [30, 36, 12]]) R(ctx, ox, oy, fx, fy, 1, fh, '#16101e');                   // folds
+      const HOOD = [[3, 17, 23], [4, 14, 26], [5, 12, 28], [6, 10, 30], [7, 9, 31], [8, 8, 32], [9, 8, 32], [10, 7, 33], [11, 7, 33], [12, 6, 34], [13, 6, 34], [14, 6, 34], [15, 6, 34], [16, 6, 34], [17, 6, 34], [18, 6, 34], [19, 6, 34], [20, 6, 34], [21, 6, 34], [22, 6, 34], [23, 6, 34], [24, 6, 34], [25, 7, 33], [26, 7, 33], [27, 8, 32], [28, 8, 32], [29, 9, 31], [30, 10, 30], [31, 11, 29], [32, 12, 28]];
+      for (const [y, a, b] of HOOD) { R(ctx, ox, oy, a, y, b - a, 1, '#2e2440'); R(ctx, ox, oy, a, y, 2, 1, '#4a3a62'); R(ctx, ox, oy, b - 3, y, 3, 1, '#1a1224'); }
+      R(ctx, ox, oy, 17, 3, 6, 1, '#5a4a74'); R(ctx, ox, oy, 12, 5, 2, 1, '#5a4a74');                                                                       // light on the crown
+      for (const [fx, fy, fh] of [[10, 10, 8], [30, 10, 8], [8, 20, 6], [32, 20, 6]]) R(ctx, ox, oy, fx, fy, 1, fh, '#1c1428');                          // folds of the hood
+      // the opening: pure darkness
+      const VOID = [[10, 15, 25], [11, 13, 27], [12, 12, 28], [13, 11, 29], [14, 11, 29], [15, 11, 29], [16, 11, 29], [17, 11, 29], [18, 11, 29], [19, 11, 29], [20, 12, 28], [21, 12, 28], [22, 13, 27], [23, 14, 26], [24, 15, 25], [25, 16, 24], [26, 18, 22]];
+      for (const [y, a, b] of VOID) { R(ctx, ox, oy, a - 1, y, b - a + 2, 1, '#3a2c52'); R(ctx, ox, oy, a, y, b - a, 1, '#050308'); }
+      R(ctx, ox, oy, 15, 10, 10, 1, '#14101c');
+      // hands and the orb
+      R(ctx, ox, oy, 13, 40, 14, 5, '#241a30'); R(ctx, ox, oy, 15, 39, 4, 3, '#b8a898'); R(ctx, ox, oy, 21, 39, 4, 3, '#b8a898'); R(ctx, ox, oy, 15, 41, 10, 2, '#a89888');
+      const glow = o.talk ? '#d8b8ff' : '#a880f0'; R(ctx, ox, oy, 17, 35, 6, 5, glow); R(ctx, ox, oy, 18, 34, 4, 7, glow); R(ctx, ox, oy, 18, 35, 2, 2, '#f4e8ff'); R(ctx, ox, oy, 16, 34, 8, 8, o.talk ? 'rgba(200,150,255,0.22)' : 'rgba(170,120,240,0.14)');
+    },
   };
   // x, y: top-left corner; the frame is drawn around the picture
   function draw(ctx, kind, x, y, t, talking) {
@@ -5023,6 +5184,14 @@ const Market = (() => {
     }, 1, 1);
   }
   const signTex = (text, w, h, bg, fg, border) => ctex(w, h, (x) => { x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = border || '#2a1a0c'; x.fillRect(0, 0, w, 2); x.fillRect(0, h - 2, w, 2); x.fillRect(0, 0, 2, h); x.fillRect(w - 2, 0, 2, h); const lines = String(text).split('\n'); lines.forEach((l, i) => T.draw(x, l, w / 2, Math.round((h - lines.length * 10) / 2 + i * 10 + 1), { size: 8, align: 'c', color: fg })); });
+  // a golden eye on a dark ground (the sign of the strange stall and of the secret door)
+  const eyeTex = () => ctex(32, 16, (x, w, h) => {
+    x.fillStyle = '#1c1228'; x.fillRect(0, 0, w, h); x.fillStyle = '#e8c860'; x.fillRect(0, 0, w, 1); x.fillRect(0, h - 1, w, 1); x.fillRect(0, 0, 1, h); x.fillRect(w - 1, 0, 1, h);
+    const cx = 16, cy = 8; for (let i = -10; i <= 10; i++) { const hh = Math.round(4.5 * Math.sqrt(1 - (i / 10) ** 2)); x.fillStyle = '#e8c860'; x.fillRect(cx + i, cy - hh, 1, 1); x.fillRect(cx + i, cy + hh, 1, 1); x.fillStyle = '#e8e0d0'; x.fillRect(cx + i, cy - hh + 1, 1, Math.max(0, hh * 2 - 1)); }
+    x.fillStyle = '#7a40d0'; x.fillRect(cx - 3, cy - 3, 6, 6); x.fillStyle = '#4a2090'; x.fillRect(cx - 3, cy + 2, 6, 1); x.fillStyle = '#050308'; x.fillRect(cx - 1, cy - 1, 3, 3); x.fillStyle = '#ffffff'; x.fillRect(cx - 2, cy - 2, 1, 1);
+    x.fillStyle = '#e8c860'; for (const lx of [-8, -5, -2, 2, 5, 8]) x.fillRect(cx + lx, cy - 7 + Math.abs(lx) / 3, 1, 2);
+    x.fillStyle = '#c8a8f0'; for (const [sx, sy] of [[3, 3], [28, 4], [5, 12], [27, 12]]) x.fillRect(sx, sy, 1, 1);
+  });
   // a framed display box with pinned butterflies (cols x rows), chosen from every species (a few aberrants and rare ones for show)
   function boxTex(rng, cols, rows, bg) {
     return ctex(cols * 32, rows * 22 + 4, (x, w, h) => {
@@ -5049,6 +5218,13 @@ const Market = (() => {
     else if (o.hat === 'cap') { const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.18, 0.1, 10), lam(o.hatCol || '#4a5a8a')); h1.position.y = 0.12; const h2 = new THREE.Mesh(BOXG, lam(o.hatCol || '#4a5a8a')); h2.scale.set(0.2, 0.025, 0.12); h2.position.set(0, 0.09, -0.2); head.add(h1, h2); }
     else if (o.hat === 'top') { const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.025, 12), lam('#1c1820')); h1.position.y = 0.13; const h2 = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.24, 10), lam('#1c1820')); h2.position.y = 0.26; const h3 = new THREE.Mesh(new THREE.CylinderGeometry(0.141, 0.141, 0.04, 10), lam('#8a2a3a')); h3.position.y = 0.17; head.add(h1, h2, h3); }
     else if (o.hat === 'scarf') { const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.175, 8, 6, 0, 6.3, 0, 1.5), lam(o.hatCol || '#c8483a')); h1.position.y = 0.01; head.add(h1); }
+    if (o.hood) {                                       // a cloak down to the ground and a deep hood: the face is only darkness
+      const cl = o.body || '#2a2238', ch0 = o.sit ? 1.12 : 1.4, cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.27, o.sit ? 0.5 : 0.45, ch0, 10), lam(cl)); cloak.position.y = 1.45 - ch0 / 2; g.add(cloak);
+      head.children.forEach((ch, i) => { if (i > 0) ch.visible = false; }); head.children[0].material = lam('#050308');
+      const hood = new THREE.Mesh(new THREE.SphereGeometry(0.235, 12, 8, -Math.PI / 2 + 0.8, Math.PI * 2 - 1.6), lam(cl, { side: THREE.DoubleSide })); hood.scale.set(1.02, 1.14, 1.1); hood.position.set(0, 0.03, 0.03); head.add(hood);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 8), lam(cl)); tip.position.set(0, 0.2, 0.14); tip.rotation.x = 0.9; head.add(tip);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.12, 10), lam(cl)); col.position.y = 1.43; g.add(col);
+    }
     g.userData = { L, arms, head, torso }; return g;
   }
   function nameSprite(text, col = '#f0f0dc') {
@@ -5071,7 +5247,7 @@ const Market = (() => {
 
   // ------------------------------------------------------------ the market
   class Mkt {
-    constructor(hooks) {
+    constructor(hooks, at) {
       this.hooks = hooks; this.ov = null; this.t = 0; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#9ac4ea'); this.scene.fog = new THREE.Fog('#9ac4ea', 38, 110);
       this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 600); this.scene.add(this.camera);
       this.player = { pos: new THREE.Vector3(-23.5, 0, 0.5), yaw: -Math.PI / 2 + 0.05, pitch: -0.04, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
@@ -5080,6 +5256,7 @@ const Market = (() => {
       this.build(); this.applyTime(this.realHour());
       Snd.startAmbient('market'); this.toast('Рынок насекомых', 3);
       this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.pjoin = m => this.toast(`${m.name} пришёл на рынок`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} ушёл с рынка`, 2.5); Net.hooks.cab = () => { if (this.ov === 'sell') this.sellRefresh(); }; }
+      if (at) { this.player.pos.set(at.x, 0, at.z); this.player.yaw = at.yaw; this.player.pitch = 0; }
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
     toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
@@ -5099,7 +5276,7 @@ const Market = (() => {
       // ground
       const gt = cobble(); gt.repeat.set(26, 26); gt.wrapS = gt.wrapT = THREE.RepeatWrapping; this.ground = new THREE.Mesh(new THREE.PlaneGeometry(130, 130).rotateX(-Math.PI / 2), lam('#c4c0b6', { map: gt })); this.ground.receiveShadow = true; this.ground.position.set(0, 0, 0); S.add(this.ground);
       const hay = ctex(64, 64, (x, w, h) => { x.fillStyle = '#7ab04a'; x.fillRect(0, 0, w, h); for (let i = 0; i < 120; i++) { x.fillStyle = rng.chance(0.5) ? '#6a9a3a' : '#8ac05a'; x.fillRect(rng.int(0, 63), rng.int(0, 63), 1, 2); } }, 6, 6);
-      this.buildHouses(); this.buildGate(); this.buildPlazas(); this.buildStalls(); this.buildDecor();
+      this.buildHouses(); this.buildGate(); this.buildPlazas(); this.buildStalls(); this.buildDecor(); this.buildSecrets();
       // finish batches
       this.litMat = lam('#ffffff', { vertexColors: true, side: THREE.DoubleSide }); S.add(B.build(this.litMat)); const gm = new THREE.MeshBasicMaterial({ vertexColors: true }); S.add(G.build(gm, false));
       this.dynamic = new THREE.Group(); S.add(this.dynamic);
@@ -5179,8 +5356,8 @@ const Market = (() => {
       for (let i = 0; i < n; i++) { const cols = this.rng.chance(0.5) ? 3 : 2, rows = this.rng.chance(0.5) ? 2 : 3; const bw = (w / n) * 0.86, bh = bw * (rows * 22 + 4) / (cols * 32); const tex = this.boxTexFor(cols, rows); this.frame(g, bw, bh, tex, x0 + (i + 0.5) * (spreadW / n), y + bh / 2 * Math.cos(rx), z, rx); }
     }
     boxTexFor(cols, rows) { const k = cols + 'x' + rows, pool = this.boxTexPool || (this.boxTexPool = {}); const arr = pool[k] || (pool[k] = []); if (arr.length < 5) { const t = boxTex(this.rng, cols, rows, ['#d8cfa8', '#c8d8c0', '#d8c0b8', '#c0c8d8'][arr.length % 4]); arr.push(t); return t; } return this.rng.pick(arr); }
-    awning(w, d, y0, y1, zBack, ci, drop = 0.4) {      // a striped sloping awning over a stall (local coords): n stripes across the width
-      const B = this.B, cl = CLOTH[ci % CLOTH.length], n = Math.max(4, Math.round(w / 0.28)), sw = w / n, len = Math.hypot(d, y1 - y0), ang = Math.atan2(y0 - y1, d);
+    awning(w, d, y0, y1, zBack, ci, drop = 0.4, cols) {      // a striped sloping awning over a stall (local coords): n stripes across the width
+      const B = this.B, cl = cols || CLOTH[ci % CLOTH.length], n = Math.max(4, Math.round(w / 0.28)), sw = w / n, len = Math.hypot(d, y1 - y0), ang = Math.atan2(y0 - y1, d);
       for (let i = 0; i < n; i++) B.box(sw * 1.02, 0.04, len, -w / 2 + sw * (i + 0.5), (y0 + y1) / 2, zBack + d / 2, cl[i % 2], ang, 0, 0, 0.03);
       for (let i = 0; i < n; i++) B.box(sw * 1.02, drop, 0.03, -w / 2 + sw * (i + 0.5), y1 - drop / 2, zBack + d + 0.0, cl[i % 2], 0, 0, 0, 0.03);
       return cl;
@@ -5324,6 +5501,84 @@ const Market = (() => {
       // east plaza: round stalls around the fountain
       for (const [sx, sz] of [[26.7, 5.1], [26.7, -5.1], [21.3, 5.1], [21.3, -5.1]]) this.stallRound(sx, sz, Math.atan2(24 - sx, 0 - sz) + Math.PI * 0, { ci: Math.abs(Math.round(sx + sz)) % 7, sign: 'Бабочки' });
     }
+
+    // ------------------------------------------------------------ secrets: the strange stall in the first alley and the code door in the far corner of the north plaza
+    buildSecrets() {
+      this.stallStrange(-15.15, -26.3, Math.PI / 2); this.addCol(-16.7, -16.5, -28.5, -24.1);
+      this.buildSecretDoor(18, -31.98);
+    }
+    stallStrange(x, z, ry) {
+      const w = 3.0, d = 1.9; this.fp(x, z, w, d + 0.5, ry);
+      const eye = new THREE.MeshLambertMaterial({ map: eyeTex(), emissive: '#2a2a2a' });
+      const g = this.at(x, z, ry, g => {
+        const B = this.B, G = this.G, DK = '#1e1626', PL = '#2a1c34', rng = this.rng;
+        B.box(4.0, 3.3, 0.4, 0, 1.65, -1.0, '#706a60'); B.box(4.3, 0.2, 0.56, 0, 3.4, -1.0, '#8a847a'); for (const sx of [-1, 1]) { B.box(0.5, 3.5, 0.56, sx * 2.1, 1.75, -1.0, '#7a746a'); B.box(0.62, 0.14, 0.68, sx * 2.1, 3.57, -1.0, '#9a948a'); }     // an old stone wall closes the nook behind the stall
+        for (let i = 0; i < 14; i++) { const ix = -1.8 + i * 0.27 + rng.next() * 0.1, iy = 0.3 + rng.next() * 2.2; B.box(0.12 + rng.next() * 0.1, 0.1 + rng.next() * 0.12, 0.03, ix, iy, -0.78, ['#3a5a2a', '#4a6a30', '#2a4a24'][i % 3], 0, 0, rng.next(), 0.1); }   // ivy leaves on the wall
+        B.box(w + 0.5, 0.02, d + 0.7, 0, 0.01, 0.1, '#1c1224'); B.box(w + 0.1, 0.03, d + 0.3, 0, 0.025, 0.1, '#4a2050');              // rugs
+        B.box(w, 0.9, 0.7, 0, 0.45, 0.25, PL); B.box(w + 0.12, 0.06, 0.8, 0, 0.93, 0.25, '#2e2038');                                  // counter and its top
+        B.box(w + 0.08, 0.62, 0.04, 0, 0.5, 0.62, '#100a18'); for (let i = 0; i < 15; i++) B.box(0.06, 0.1, 0.03, -w / 2 + 0.05 + i * 0.2, 0.17, 0.64, '#a8883a');   // black cloth with a golden fringe
+        B.box(w, 2.5, 0.1, 0, 1.25, -0.85, '#1a1222');                                                                                // back wall of the stall
+        for (const sx of [-1, 1]) { B.cyl(0.05, 0.06, 2.65, sx * (w / 2 - 0.02), 1.325, -0.85, DK, 6); B.cyl(0.05, 0.06, 2.2, sx * (w / 2 - 0.02), 1.1, 0.95, DK, 6); }
+        this.awning(w + 0.2, d, 2.65, 2.2, -0.9, 0, 0.3, ['#2a1a3a', '#1a1024']);
+        // goods: nothing for sale, only strange things
+        B.cyl(0.13, 0.17, 0.09, -0.5, 1.005, 0.25, BRASS, 10); B.cyl(0.15, 0.15, 0.025, -0.5, 1.06, 0.25, BRASS, 10); G.sph(0.16, -0.5, 1.21, 0.25, '#a070ff', 1, 1, 1, 12, 8);
+        for (const [cx, cz, ch] of [[0.95, 0.15, 0.2], [1.2, 0.4, 0.14], [-1.25, 0.3, 0.17]]) { B.cyl(0.03, 0.036, ch, cx, 0.96 + ch / 2, cz, '#e8dcc0', 7); B.cyl(0.05, 0.05, 0.015, cx, 0.9675, cz, IRON, 8); G.sph(0.028, cx, 0.96 + ch + 0.04, cz, '#ffb050', 1, 1.7, 1, 6, 5); B.box(0.03, 0.05, 0.02, cx + 0.04, 0.96 + ch - 0.04, cz, '#f4ecd4'); }
+        B.box(0.36, 0.035, 0.26, 0.3, 0.9775, 0.35, '#3a1a22'); B.box(0.34, 0.025, 0.24, 0.3, 1.005, 0.35, '#e0d4b0'); B.box(0.005, 0.03, 0.24, 0.3, 1.015, 0.35, '#8a7a58');        // open book
+        B.cyl(0.04, 0.04, 0.3, -1.05, 1.0, 0.42, '#d8c898', 8, 0, 0, Math.PI / 2); B.cyl(0.035, 0.035, 0.28, -1.0, 1.08, 0.46, '#c8b888', 8, 0, 0.3, Math.PI / 2);                              // scrolls
+        B.cyl(0.07, 0.07, 0.015, 1.2, 0.9675, 0.45, DK, 10); B.cyl(0.07, 0.07, 0.015, 1.2, 1.2, 0.45, DK, 10); for (const a of [0, 2.1, 4.2]) B.cyl(0.008, 0.008, 0.23, 1.2 + Math.cos(a) * 0.06, 1.0835, 0.45 + Math.sin(a) * 0.06, '#8a6a30', 5);   // hourglass
+        B.cyl(0.05, 0.007, 0.095, 1.2, 1.1475, 0.45, '#c8d8e8', 8); B.cyl(0.007, 0.05, 0.095, 1.2, 1.0525, 0.45, '#c8d8e8', 8); B.cyl(0.04, 0.04, 0.04, 1.2, 0.99, 0.45, '#e8c870', 8);
+        for (let i = 0; i < 3; i++) { const jx = 0.55 + i * 0.22; B.cyl(0.08, 0.09, 0.2, jx, 1.06, -0.05, '#2a4a40', 9); G.cyl(0.065, 0.075, 0.14, jx, 1.05, -0.05, ['#70ff90', '#a0e0ff', '#ff90e0'][i], 9); B.cyl(0.085, 0.085, 0.03, jx, 1.175, -0.05, '#5a3a20', 9); }   // glowing jars
+        // back shelves with books, bottles and bundles
+        for (const sy of [1.45, 1.95]) { B.box(w - 0.3, 0.05, 0.3, 0, sy, -0.65, DK); for (const sx of [-1, 1]) B.box(0.05, 0.22, 0.28, sx * (w / 2 - 0.35), sy - 0.13, -0.66, DK); }
+        for (let i = 0; i < 9; i++) { const bh = 0.2 + rng.next() * 0.12; B.box(0.07, bh, 0.2, -1.2 + i * 0.075, 1.475 + bh / 2, -0.66, ['#4a1a2a', '#1a2a4a', '#2a4a2a', '#5a4a1a', '#3a2a4a'][i % 5]); }
+        for (let i = 0; i < 4; i++) { B.cyl(0.05, 0.06, 0.2, 0.2 + i * 0.2, 1.575, -0.66, ['#3a5a4a', '#5a3a5a', '#4a4a2a', '#2a3a5a'][i], 8); B.cyl(0.02, 0.02, 0.06, 0.2 + i * 0.2, 1.7, -0.66, '#6a4a2a', 6); }
+        B.sph(0.11, -0.9, 2.06, -0.66, '#d8d0b8', 1, 1.1, 1, 8, 6); B.box(0.1, 0.08, 0.1, -0.9, 1.995, -0.58, '#c8c0a8'); G.sph(0.018, -0.935, 2.075, -0.55, '#ff4040', 1, 1, 0.5, 5, 4); G.sph(0.018, -0.865, 2.075, -0.55, '#ff4040', 1, 1, 0.5, 5, 4);   // a skull with red sparks in its eyes
+        B.cyl(0.07, 0.07, 0.015, 0.7, 1.9825, -0.66, DK, 8); G.sph(0.05, 0.7, 2.04, -0.66, '#c0a0ff', 1, 1, 1, 8, 6);
+        for (const hx of [-1.1, -0.5, 0.3, 0.9, 1.3]) { B.seg([hx, 2.62, -0.7], [hx, 2.34, -0.7], 0.015, '#5a4a2a'); B.cyl(0.02, 0.075, 0.3, hx, 2.19, -0.7, ['#5a6a3a', '#6a5a2a', '#4a5a3a'][Math.abs(Math.round(hx * 5)) % 3], 6); }   // dried herbs
+        // the sign with an eye: hangs from the front edge of the awning
+        for (const sx of [-1, 1]) { B.seg([sx * 0.45, 2.2, 1.0], [sx * 0.45, 2.1, 1.0], 0.016, '#3a2a1c'); B.box(0.06, 0.52, 0.06, sx * 0.48, 1.86, 1.0, DK); }
+        B.box(1.02, 0.07, 0.06, 0, 2.1, 1.0, DK); B.box(1.02, 0.07, 0.06, 0, 1.62, 1.0, DK); const sg = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), eye); sg.position.set(0, 1.86, 1.0); g.add(sg);
+        for (const sx of [-1, 1]) { B.box(0.3, 0.04, 0.04, sx * (w / 2 + 0.1), 2.13, 0.95, DK); this.lamp(sx * (w / 2 + 0.2), 1.87, 0.95, 0.11, '#b080ff', 0.1); }
+        B.cyl(0.2, 0.2, 0.05, 0, 0.47, -0.45, WOOD, 10); for (const a of [0.5, 2.6, 4.7]) B.cyl(0.025, 0.03, 0.45, Math.cos(a) * 0.14, 0.225, -0.45 + Math.sin(a) * 0.14, DWOOD, 5);   // the stool
+        const p = person({ hood: true, sit: true, body: '#2a2238', skin: '#b8a898', pants: '#14101c' }); p.position.set(0, -0.28, -0.45); p.rotation.y = Math.PI; p.userData.L.forEach(l => { l.scale.y = 0.6; }); p.userData.arms.forEach(a => { a.rotation.x = 1.35; }); g.add(p); this.strange = p;
+        const pl = new THREE.PointLight('#a070ff', 0.9, 5, 1.8); pl.position.set(-0.5, 1.5, 0.45); g.add(pl); this.strangeLight = pl;
+      });
+      const wp = { x: x + Math.sin(ry) * 1.6, z: z + Math.cos(ry) * 1.6 };
+      this.stations.push({ id: 'strange', x: wp.x, z: wp.z, r: 2.0, label: () => 'E — поговорить с торговцем в капюшоне' });
+    }
+    buildSecretDoor(cx, cz) {
+      const B = this.B, G = this.G, S = this.scene, DK = '#3a2a1c';
+      this.at(cx, cz, 0, g => {                                       // local frame: +z is the plaza, the wall face is at z = -0.02
+        for (const sx of [-1, 1]) B.box(0.22, 2.75, 0.2, sx * 0.99, 1.375, 0.08, DK);
+        B.box(2.4, 0.28, 0.24, 0, 2.89, 0.1, '#8a847a'); B.box(0.5, 0.2, 0.28, 0, 3.12, 0.12, '#9a948a'); B.box(2.0, 0.06, 0.2, 0, 2.72, 0.08, DK);
+        B.box(2.2, 0.1, 0.5, 0, 0.05, 0.23, STONE); B.box(1.9, 0.07, 0.3, 0, 0.12, 0.12, '#7a746a');              // the step
+        B.box(1.78, 2.62, 0.02, 0, 1.31, -0.01, '#030203');                                                         // the black opening behind the leaf
+        for (const sx of [-1, 1]) { B.box(0.4, 0.04, 0.04, sx * 1.45, 2.6, 0.17, IRON); this.lamp(sx * 1.55, 2.32, 0.17, 0.12, '#a070ff', 0.1); B.box(0.04, 0.04, 0.2, sx * 1.55 - sx * 0.2, 2.6, 0.07, IRON); }
+        // the code lock beside the door: a plate on the wall with a window of eight digits and a lamp
+        B.box(0.62, 0.4, 0.05, 1.5, 1.3, 0.005, '#5a4a2a'); B.box(0.56, 0.34, 0.02, 1.5, 1.3, 0.04, '#8a6a30'); for (const [dx, dy] of [[-0.26, 0.15], [0.26, 0.15], [-0.26, -0.15], [0.26, -0.15]]) B.box(0.03, 0.03, 0.02, 1.5 + dx, 1.3 + dy, 0.06, '#c8a860');
+        B.box(0.5, 0.16, 0.02, 1.5, 1.25, 0.055, '#14100a'); B.box(0.5, 0.025, 0.03, 1.5, 1.345, 0.06, '#6a4a1c');
+        const kc = document.createElement('canvas'); kc.width = 64; kc.height = 20; const ktex = new THREE.CanvasTexture(kc); ktex.magFilter = ktex.minFilter = THREE.NearestFilter; ktex.generateMipmaps = false; this.keypadTex = ktex;
+        const kp = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.14), new THREE.MeshBasicMaterial({ map: ktex })); kp.position.set(1.5, 1.25, 0.068); g.add(kp);
+        const light = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: '#c02020' })); light.position.set(1.5, 1.405, 0.07); g.add(light);
+        const eyeP = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshLambertMaterial({ map: eyeTex() })); eyeP.position.set(0, 3.38, -0.015 + 0.0); g.add(eyeP); B.box(0.66, 0.36, 0.01, 0, 3.38, -0.025, DK);
+        // the leaf: planks, iron bands, rivets, a ring and a keyhole plate, hinged on the left
+        const pivot = new THREE.Group(); pivot.position.set(-0.88, 0, 0.07); g.add(pivot); const leaf = new THREE.Group(); leaf.position.x = 0.88; pivot.add(leaf);
+        const mk = (w, h, d, x, y, z, col) => { const m = new THREE.Mesh(BOXG, lam(col)); m.scale.set(w, h, d); m.position.set(x, y, z); m.castShadow = true; leaf.add(m); return m; };
+        for (let i = 0; i < 7; i++) mk(0.25, 2.6, 0.1, -0.75 + i * 0.25, 1.3, 0, ['#4a3220', '#523824', '#463020', '#4e3622'][i % 4]);
+        for (const y of [0.35, 1.3, 2.25]) { mk(1.76, 0.12, 0.02, 0, y, 0.06, IRON); for (let i = 0; i < 6; i++) mk(0.04, 0.04, 0.03, -0.7 + i * 0.28, y, 0.075, '#4a4a54'); }
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.015, 6, 14), lam(IRON)); ring.position.set(0.62, 1.15, 0.09); leaf.add(ring); mk(0.16, 0.2, 0.02, 0.62, 1.3, 0.065, IRON); mk(0.03, 0.06, 0.02, 0.62, 1.3, 0.08, '#d8b050');
+        for (const y of [0.35, 2.25]) mk(0.3, 0.1, 0.04, -0.72, y, 0.08, '#2a2a30');
+        this.secretDoor = { pivot, light, open: null }; const open = Secret.unlocked(); pivot.rotation.y = open ? -1.75 : 0; this.setDoorState(open, true);
+      });
+      this.stations.push({ id: 'codedoor', x: cx, z: cz + 1.55, r: 2.1, label: () => Secret.unlocked() ? 'E — войти в потайную дверь' : 'E — кодовый замок' });
+      this.addCol(cx - 1.2, cx + 1.9, cz - 0.1, cz + 0.55);       // the step and the wall plate: nothing behind the door to walk into
+    }
+    setDoorState(open, first) {
+      const sd = this.secretDoor; if (!sd) return; sd.open = open; sd.light.material.color.set(open ? '#40e060' : '#c02020');
+      const kc = this.keypadTex.image, x = kc.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = '#0a0806'; x.fillRect(0, 0, 64, 20);
+      for (let i = 0; i < 8; i++) { x.fillStyle = open ? '#102a14' : '#1a1410'; x.fillRect(1 + i * 8, 2, 7, 16); T.draw(x, open ? Secret.CODE[i] : '-', 4 + i * 8, 6, { size: 8, align: 'c', color: open ? '#60ff80' : '#6a5a40' }); }
+      this.keypadTex.needsUpdate = true; if (open && !sd.col) { sd.col = true; this.addCol(17.0, 17.25, -31.9, -30.15); }
+    }
     teaTable(x, z) { const B = this.B, ci = this.rng.int(0, CLOTH.length - 1), cl = CLOTH[ci]; B.cyl(0.55, 0.55, 0.05, x, 0.76, z, WOOD, 12); B.cyl(0.06, 0.08, 0.76, x, 0.38, z, DWOOD, 6); B.cyl(0.06, 0.06, 2.4, x, 1.2, z, DWOOD, 6); for (let i = 0; i < 8; i++) B.geo(new THREE.ConeGeometry(1.3, 0.5, 1, 1, true, i * Math.PI / 4, Math.PI / 4), B.mat(x, 2.35, z), cl[i % 2], 0.02); for (const [dx, dz] of [[0.85, 0], [-0.85, 0]]) { B.cyl(0.2, 0.2, 0.05, x + dx, 0.45, z + dz, LWOOD, 8); B.cyl(0.03, 0.03, 0.45, x + dx, 0.22, z + dz, DWOOD, 5); } B.cyl(0.07, 0.05, 0.1, x, 0.84, z, '#f0f0e8', 8); this.addCircle(x, z, 0.62); }
 
     buildDecor() {
@@ -5406,6 +5661,9 @@ const Market = (() => {
       // the sun's shadow box follows the player
       this.sun.target.position.set(Math.round(P.pos.x), 0, Math.round(P.pos.z)); this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDir, 70); this.moonL.target.position.copy(this.sun.target.position); this.dome.position.copy(this.camera.position);
       if (this.waterTex) { this.waterTex.offset.x = t * 0.03; this.waterTex.offset.y = t * 0.02; }
+      if (this.codeCloseT > 0) { this.codeCloseT -= dt; if (this.codeCloseT <= 0 && this.ov === 'code') this.close(); }
+      if (this.secretDoor) { const sd = this.secretDoor, open = Secret.unlocked(); if (open !== sd.open) this.setDoorState(open); const target = open ? -1.75 : 0; sd.pivot.rotation.y += (target - sd.pivot.rotation.y) * Math.min(1, dt * 3); }
+      if (this.strange) { const p = this.strange; p.position.y = -0.28 + Math.sin(t * 1.1) * 0.006; p.userData.head.rotation.y = Math.sin(t * 0.35) * 0.25; p.userData.head.rotation.x = 0.1 + Math.sin(t * 0.5) * 0.03; p.userData.arms[0].rotation.x = 1.35 + Math.sin(t * 0.8) * 0.03; p.userData.arms[1].rotation.x = 1.35 + Math.sin(t * 0.8 + 1) * 0.03; if (this.strangeLight) this.strangeLight.intensity = 0.8 + Math.sin(t * 3.1) * 0.12; }
       for (const v of this.vendors) { v.position.y = Math.sin(t * 1.4 + v.userData.ph) * 0.01; v.userData.head.rotation.y = Math.sin(t * 0.6 + v.userData.ph) * 0.35; v.userData.arms[1].rotation.x = Math.sin(t * 1.1 + v.userData.ph) * 0.06; }
       if (this.merchant) { const m = this.merchant; m.userData.head.rotation.y = Math.sin(t * 0.7) * 0.3; m.userData.arms[0].rotation.x = Math.sin(t * 1.3) * 0.08; m.userData.arms[1].rotation.x = Math.sin(t * 1.3 + 1) * 0.08; }
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0 , nt: NetParts.code(Save.curNet()) }); } }
@@ -5414,10 +5672,18 @@ const Market = (() => {
     // ------------------------------------------------------------ interaction
     open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); }
     close() { this.ov = null; this.hooks.lock(); }
+    openTalk(who) { const sp = Secret.speech(who); this.talk = { who, lines: sp.lines, give: sp.give, giveAt: sp.giveAt, i: 0, chars: 0 }; this.open('talk'); }
+    talkNext() {
+      const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; }
+      if (T0.give && T0.i === T0.giveAt) { T0.give = 0; if (Secret.take(1)) { this.toast('Получен обрывок записки: 27. Он лежит на складе (I).', 5); Snd.sfx.coin(); } }
+      if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; Snd.sfx.page(); } else this.close();
+    }
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'sell') { Snd.sfx.page(); this.open('sell'); }
       else if (s.id === 'netshop') { Snd.sfx.page(); this.open('shop'); }
+      else if (s.id === 'strange') { Snd.sfx.page(); this.openTalk('strange'); }
+      else if (s.id === 'codedoor') { if (Secret.unlocked()) { Snd.sfx.door(); this.hooks.secret(); } else { Secret.lock.reset(); this.open('code'); } }
       else if (s.id === 'chat') { this.toast(`${s.line[0]}: «${s.line[1]}»`, 5); Snd.sfx.click(); }
       else if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exit(); }
       else if (s.id === 'cabinet') { Snd.sfx.door(); this.hooks.cabinet(); }
@@ -5428,6 +5694,8 @@ const Market = (() => {
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }
       if (ov === 'journal') { const J = Screens.journal, nb = BIOMES.length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
+      if (ov === 'code') { if (e.code === 'Escape') this.close(); else if (Secret.lock.key(e) === 'ok') this.codeCloseT = 1.5; return; }
+      if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
       if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
@@ -5438,13 +5706,15 @@ const Market = (() => {
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'sell') this.sellClick(x, y);
       else if (ov === 'shop') this.shopClick(x, y);
+      else if (ov === 'code') { if (Secret.lock.click(x, y) === 'ok') this.codeCloseT = 1.5; }
+      else if (ov === 'talk') this.talkNext();
     }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
-    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 180, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
+    pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
-      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
+      if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'stash') this.hooks.stash(); else if (id === 'cabinet') this.hooks.cabinet(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
     }
 
     // ------------------------------------------------------------ selling
@@ -5559,6 +5829,7 @@ const Market = (() => {
       if (ov === 'shop') return this.drawShop(ctx, t, m, dt);
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       this.hud(ctx, t);
+      if (ov === 'code') Secret.lock.draw(ctx, t, m, dt); else if (ov === 'talk') this.drawTalk(ctx, t, dt);
       if (ov === 'pause') this.drawPause(ctx, m); else if (ov === 'help') this.drawHelp(ctx);
     }
     hud(ctx, t) {
@@ -5568,6 +5839,12 @@ const Market = (() => {
       if (this.prompt && !this.ov) { const s = this.prompt.label(); const w = T.width(s, 8) + 20; UIK.panel(ctx, SW / 2 - w / 2, SH - 54, w, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s, SW / 2, SH - 49, { size: 8, align: 'c', color: '#fff' }); }
       if (this.toastT > 0) { T.para(ctx, this.toastText, SW / 2 - 150, 62, 300, { size: 8, color: c.gold, shadow: '#000', lh: 10 }); }
       T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · Tab — журнал · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.7)', shadow: '#000' });
+    }
+    drawTalk(ctx, t, dt) {
+      const T0 = this.talk; if (!T0) return; const c2 = UIK.col, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); const shown = line.slice(0, Math.floor(T0.chars));
+      UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length);
+      T.draw(ctx, T0.who === 'inside' ? 'Торговец в капюшоне' : '???', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, shown, 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 });
+      T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : T0.i < T0.lines.length - 1 ? 'E — дальше' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' });
     }
     drawPause(ctx, m) {
       ctx.fillStyle = 'rgba(4,12,10,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 38, 212, 180, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
@@ -5584,6 +5861,7 @@ const Market = (() => {
     dispose() { if (this.remotes) { this.remotes.dispose(); Net.hooks.cab = Net.hooks.pjoin = Net.hooks.pleave = null; } Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
   }
   const fitTxt = (s, maxW) => { if (T.width(s, 8) <= maxW) return s; while (s.length > 1 && T.width(s + '…', 8) > maxW) s = s.slice(0, -1); return s + '…'; };
+  Mkt.person = person; Mkt.eyeTex = eyeTex; Mkt.ctex = ctex;
   return Mkt;
 })();
 
@@ -5625,6 +5903,8 @@ const StubRoom = (() => {
       const wx = -HX + 0.05; for (const [y, h] of [[1.3, 0.1], [1.55, 0.1], [1.8, 0.1], [2.05, 0.1]]) { const slit = new THREE.Mesh(new THREE.PlaneGeometry(1.0, h), new THREE.MeshBasicMaterial({ color: '#b8c8d8' })); slit.position.set(wx + 0.01, y, -0.6); slit.rotation.y = Math.PI / 2; S.add(slit); }
       for (const [y, h] of [[1.43, 0.16], [1.68, 0.16], [1.93, 0.16]]) box(0.1, h, 1.2, wx, y, -0.6, '#1a140e');
       const wl = new THREE.SpotLight('#9ab0c8', 1.6, 9, 0.7, 0.8, 1.4); wl.position.set(-HX + 0.3, 1.7, -0.6); this.wlTarget = new THREE.Object3D(); this.wlTarget.position.set(2.2, 0.0, -0.4); S.add(wl, this.wlTarget); wl.target = this.wlTarget; this.wl = wl;
+      // a torn scrap of paper stuck in the north-east corner (the second piece of the code note; personal, gone once taken)
+      if (!Secret.has(2)) { const m = Secret.paperMesh('37', 3); m.position.set(HX - 0.6, 1.0, -HZ + 0.012); m.rotation.z = 0.08; S.add(m); this.frag = m; const fl2 = new THREE.PointLight('#d8d0b8', 0.5, 3.2, 1.6); fl2.position.set(HX - 0.7, 1.3, -HZ + 0.7); S.add(fl2); this.fragLight = fl2; this.stations.push({ id: 'frag', x: HX - 0.8, z: -HZ + 0.7, r: 1.5, label: () => 'E — взять обрывок записки' }); }
       // dust in the light
       const n = 70, pos = new Float32Array(n * 3); this.dust0 = []; for (let i = 0; i < n; i++) { const a = [Math.random() * 4 - 1.8, Math.random() * 2.2 + 0.3, Math.random() * 3 - 2]; this.dust0.push(a); pos.set(a, i * 3); }
       const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: '#c8d0d8', size: 0.025, transparent: true, opacity: 0.55, depthWrite: false })); S.add(this.dust);
@@ -5650,7 +5930,10 @@ const StubRoom = (() => {
     }
     open(name) { this.ov = name; this.hooks.unlock(); }
     close() { this.ov = null; this.hooks.lock(); }
-    interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.hush(false); Snd.sfx.door(); this.hooks.exitRoom(); } }
+    interact() {
+      const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.hush(false); Snd.sfx.door(); this.hooks.exitRoom(); }
+      else if (s.id === 'frag') { if (Secret.take(2)) { this.toast('Обрывок записки: 37. Он лежит на складе (I).', 5); } if (this.frag) { this.frag.visible = false; if (this.fragLight) this.fragLight.visible = false; } this.stations = this.stations.filter(x => x.id !== 'frag'); }
+    }
     key(e) {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
@@ -5673,6 +5956,232 @@ const StubRoom = (() => {
     dispose() { Snd.hush(false); Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
   }
   return Room;
+})();
+
+// ===== secretroom.js =====
+// ---------------------------------------------------------------- the secret market: five dusty rooms of an old house with curtained windows; a hooded trader sits behind a table (nothing to buy yet).
+// Same interface as the Cabinet / Market (App.cab). The geometry comes from SecretMarket.buildGeo(B, G, rng, X), which a test can run with a recording Batch.
+const SecretMarket = (() => {
+  const c = UIK.col, H = 3.0, TW = 0.2, IX = TW / 2 + 0.02;
+  const lam = (col, o = {}) => new THREE.MeshLambertMaterial(Object.assign({ color: col }, o));
+  const ctex = (w, h, draw, rx, ry) => { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; draw(x, w, h); const t = new THREE.CanvasTexture(cv); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; if (rx) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry || rx); } return t; };
+  const floorTex = (rx, ry, seed) => ctex(64, 64, (x, w, h) => {
+    const r = new Rng(seed); for (let i = 0; i < 8; i++) { const g = r.int(-10, 10); x.fillStyle = `rgb(${70 + g},${54 + g},${40 + g})`; x.fillRect(i * 8, 0, 7, h); x.fillStyle = 'rgba(0,0,0,0.45)'; x.fillRect(i * 8 + 7, 0, 1, h); for (let k = 0; k < 4; k++) { x.fillStyle = 'rgba(20,12,6,0.3)'; x.fillRect(i * 8 + r.int(1, 5), r.int(0, 56), 1, r.int(4, 14)); } }
+    for (let i = 0; i < 90; i++) { x.fillStyle = r.chance(0.5) ? 'rgba(170,162,148,0.28)' : 'rgba(110,104,94,0.3)'; x.fillRect(r.int(0, 62), r.int(0, 62), r.int(1, 4), r.int(1, 2)); }     // dust and dirt
+    for (let i = 0; i < 4; i++) { x.fillStyle = 'rgba(20,14,10,0.35)'; x.fillRect(r.int(0, 56), r.int(0, 60), r.int(4, 9), 2); }
+  }, rx, ry);
+  const stainTex = seed => ctex(32, 32, (x, w, h) => { const r = new Rng(seed); x.clearRect(0, 0, w, h); for (let i = 0; i < 140; i++) { const a = r.next(); x.fillStyle = `rgba(${150 + (a * 30) | 0},${146 + (a * 30) | 0},${136 + (a * 28) | 0},${0.1 + r.next() * 0.22})`; const px = r.int(2, 28), py = r.int(2, 28); if (Math.hypot(px - 16, py - 16) < 14) x.fillRect(px, py, r.int(1, 4), r.int(1, 3)); } });
+  const sigilTex = () => ctex(64, 64, (x, w, h) => { x.clearRect(0, 0, w, h); x.strokeStyle = 'rgba(200,190,170,0.55)'; x.lineWidth = 1; x.beginPath(); x.arc(32, 32, 28, 0, 6.3); x.stroke(); x.beginPath(); x.arc(32, 32, 24, 0, 6.3); x.stroke(); for (let i = 0; i < 5; i++) { const a = i * 4 * Math.PI / 5 - Math.PI / 2, b = (i + 1) * 4 * Math.PI / 5 - Math.PI / 2; x.beginPath(); x.moveTo(32 + Math.cos(a) * 24, 32 + Math.sin(a) * 24); x.lineTo(32 + Math.cos(b) * 24, 32 + Math.sin(b) * 24); x.stroke(); } x.fillStyle = 'rgba(200,190,170,0.55)'; for (let i = 0; i < 12; i++) x.fillRect(32 + Math.cos(i * 0.5236) * 26 - 1, 32 + Math.sin(i * 0.5236) * 26 - 1, 2, 2); });
+
+  const ROOMS = { hall: [-2, 2, 2.5, 5.5], main: [-5.5, 5.5, -3, 2.5], west: [-9.5, -5.5, -3, 2.5], east: [5.5, 9.5, -3, 2.5], study: [-3.5, 3.5, -6.5, -3] };
+  const PAPER = { hall: '#4a3a44', main: '#5a3c34', west: '#4a4438', east: '#3c4650', study: '#34443c' };
+  const darker = (hex, k) => { const a = hex2rgb(hex); return '#' + a.map(v => Math.max(0, Math.round(v * k)).toString(16).padStart(2, '0')).join(''); };
+
+  function buildGeo(B, G, rng, X) {
+    const WOOD = '#4a3626', DW = '#2e2118', LW = '#6a4c34', IRON = '#2a2a30', BR = '#a88840', DUST = '#8c867a', SHEET = '#9a968c';
+    const box = (w, h, d, x, y, z, col, rx, ry, rz, j) => B.box(w, h, d, x, y, z, col, rx, ry, rz, j === undefined ? 0.04 : j);
+    const col = (x0, x1, z0, z1) => X.cols.push({ x0, x1, z0, z1 });
+    const dust = (x, y, z, w, d) => box(w, 0.012, d, x, y + 0.006, z, DUST, 0, 0, 0, 0.1);
+    // ---------------------------------------------------------- walls with doors and windows
+    const wall = (axis, cc, a0, a1, opens, cA, cB) => {
+      if (axis === 'x') { a0 -= TW / 2; a1 += TW / 2; }
+      const put = (u0, u1, y0, y1) => {
+        const L = u1 - u0, hy = y1 - y0, u = (u0 + u1) / 2, y = (y0 + y1) / 2, full = y0 === 0 && y1 >= H;
+        const sk = (side, colr) => { if (!colr) return; const off = side * (TW / 2 + 0.01); if (axis === 'x') box(L, hy, 0.02, u, y, cc + off, colr, 0, 0, 0, 0.05); else box(0.02, hy, L, cc + off, y, u, colr, 0, 0, 0, 0.05); if (full) { const o2 = side * (TW / 2 + 0.0225); if (axis === 'x') { box(L, 0.95, 0.045, u, 0.475, cc + o2, darker(colr, 0.62), 0, 0, 0, 0.04); box(L, 0.05, 0.075, u, 0.97, cc + side * (TW / 2 + 0.0375), darker(colr, 0.45), 0, 0, 0, 0.04); } else { box(0.045, 0.95, L, cc + o2, 0.475, u, darker(colr, 0.62), 0, 0, 0, 0.04); box(0.075, 0.05, L, cc + side * (TW / 2 + 0.0375), 0.97, u, darker(colr, 0.45), 0, 0, 0, 0.04); } } };
+        if (axis === 'x') box(L, hy, TW, u, y, cc, '#3a2e26', 0, 0, 0, 0.03); else box(TW, hy, L, cc, y, u, '#3a2e26', 0, 0, 0, 0.03); sk(-1, cA); sk(1, cB);
+      };
+      const solid = (u0, u1) => { put(u0, u1, 0, H); if (axis === 'x') col(u0, u1, cc - TW / 2, cc + TW / 2); else col(cc - TW / 2, cc + TW / 2, u0, u1); };
+      let cur = a0; opens.sort((p, q) => p.c - q.c);
+      for (const o of opens) {
+        const l = o.c - o.w / 2, r = o.c + o.w / 2; if (l > cur + 0.01) solid(cur, l);
+        if (o.y0 > 0) put(l, r, 0, o.y0); put(l, r, o.y1, H);
+        const post = (u, hh, y) => { if (axis === 'x') box(0.08, hh, TW + 0.08, u, y, cc, DW, 0, 0, 0, 0.03); else box(TW + 0.08, hh, 0.08, cc, y, u, DW, 0, 0, 0, 0.03); };
+        const beam = (u0, u1, y, th) => { if (axis === 'x') box(u1 - u0, th, TW + 0.08, (u0 + u1) / 2, y, cc, DW, 0, 0, 0, 0.03); else box(TW + 0.08, th, u1 - u0, cc, y, (u0 + u1) / 2, DW, 0, 0, 0, 0.03); };
+        if (o.win) {
+          const hh = o.y1 - o.y0; post(l + 0.04, hh, (o.y0 + o.y1) / 2); post(r - 0.04, hh, (o.y0 + o.y1) / 2); beam(l, r, o.y0 + 0.03, 0.06); beam(l, r, o.y1 - 0.03, 0.06);
+          if (axis === 'x') { box(o.w - 0.1, hh - 0.1, 0.03, o.c, (o.y0 + o.y1) / 2, cc, '#0c0e14', 0, 0, 0, 0); box(o.w - 0.08, 0.03, 0.06, o.c, (o.y0 + o.y1) / 2, cc, DW, 0, 0, 0, 0); box(0.03, hh - 0.08, 0.06, o.c, (o.y0 + o.y1) / 2, cc, DW, 0, 0, 0, 0); box(o.w + 0.2, 0.05, TW + 0.16, o.c, o.y0 - 0.025, cc + o.side * 0.04, '#3a2c22'); }
+          else { box(0.03, hh - 0.1, o.w - 0.1, cc, (o.y0 + o.y1) / 2, o.c, '#0c0e14', 0, 0, 0, 0); box(0.06, 0.03, o.w - 0.08, cc, (o.y0 + o.y1) / 2, o.c, DW, 0, 0, 0, 0); box(0.06, hh - 0.08, 0.03, cc, (o.y0 + o.y1) / 2, o.c, DW, 0, 0, 0, 0); box(TW + 0.16, 0.05, o.w + 0.2, cc + o.side * 0.04, o.y0 - 0.025, o.c, '#3a2c22'); }
+          if (axis === 'x') col(l, r, cc - TW / 2, cc + TW / 2); else col(cc - TW / 2, cc + TW / 2, l, r);
+          X.windows.push({ axis, cc, u: o.c, w: o.w, side: o.side });
+        } else { post(l - 0.04 + 0.0, o.y1, o.y1 / 2); post(r + 0.04, o.y1, o.y1 / 2); beam(l - 0.08, r + 0.08, o.y1 + 0.04, 0.08); }
+        cur = r;
+      }
+      if (a1 > cur + 0.01) solid(cur, a1);
+    };
+    const d1 = (cc, w = 1.4) => ({ c: cc, w, y0: 0, y1: 2.2 }), win = (cc, side, w = 1.1) => ({ c: cc, w, y0: 0.9, y1: 2.3, win: true, side });
+    wall('x', 2.5, -9.5, 9.5, [d1(0)], PAPER.main, null);                                               // south wall of the rooms; the door of the hall at x = 0
+    wall('x', -3, -9.5, 9.5, [d1(0), win(-4.6, 1), win(4.6, 1), win(-7.5, 1), win(7.5, 1)], PAPER.main, PAPER.study);
+    wall('z', -5.5, -3, 2.5, [d1(-0.2)], PAPER.west, PAPER.main); wall('z', 5.5, -3, 2.5, [d1(-0.2)], PAPER.main, PAPER.east);
+    wall('z', -9.5, -3, 2.5, [win(-0.2, 1)], null, PAPER.west); wall('z', 9.5, -3, 2.5, [win(-0.2, -1)], PAPER.east, null);
+    wall('z', -2, 2.5, 5.5, [], null, PAPER.hall); wall('z', 2, 2.5, 5.5, [], PAPER.hall, null); wall('x', 5.5, -2, 2, [d1(0, 1.2)], PAPER.hall, null);
+    wall('z', -3.5, -6.5, -3, [], null, PAPER.study); wall('z', 3.5, -6.5, -3, [], PAPER.study, null); wall('x', -6.5, -3.5, 3.5, [win(-1.7, 1), win(1.7, 1)], null, PAPER.study);
+    // the exit door in the south wall of the hall (closed)
+    box(1.1, 2.15, 0.08, 0, 1.075, 5.46, '#3a281a'); for (const y of [0.4, 1.1, 1.8]) box(1.04, 0.1, 0.02, 0, y, 5.4, IRON); box(0.1, 0.1, 0.06, 0.4, 1.05, 5.4, BR); box(0.05, 0.12, 0.03, 0.4, 1.05, 5.37, IRON);
+    // ceilings with beams
+    for (const k in ROOMS) { const [x0, x1, z0, z1] = ROOMS[k]; box(x1 - x0 + TW, 0.12, z1 - z0 + TW, (x0 + x1) / 2, H + 0.06, (z0 + z1) / 2, '#2a2018', 0, 0, 0, 0.03); for (let x = x0 + 0.9; x < x1 - 0.4; x += 1.6) box(0.16, 0.2, z1 - z0, x, H - 0.1, (z0 + z1) / 2, '#201710'); }
+    // ---------------------------------------------------------- curtains over every window (drawn shut), with rods fixed to the wall
+    for (const wn of X.windows) {
+      const Lc = wn.w + 0.5, n = Math.round(Lc / 0.14), sw = Lc / n, off = TW / 2 + 0.07, cl = ['#5a1a24', '#3a2a5a', '#2a4a3a', '#5a4a1a'][Math.abs(Math.round(wn.u * 3 + wn.cc)) % 4];
+      for (let i = 0; i < n; i++) { const u = wn.u - Lc / 2 + sw * (i + 0.5), dz = (i % 2 ? 0.025 : -0.01); if (wn.axis === 'x') box(sw * 0.96, 1.98, 0.06, u, 1.51, wn.cc + wn.side * (off + dz), i % 3 === 0 ? darker(cl, 0.8) : cl, 0, 0, 0, 0.08); else box(0.06, 1.98, sw * 0.96, wn.cc + wn.side * (off + dz), 1.51, u, i % 3 === 0 ? darker(cl, 0.8) : cl, 0, 0, 0, 0.08); }
+      if (wn.axis === 'x') { B.cyl(0.022, 0.022, Lc + 0.2, wn.u, 2.52, wn.cc + wn.side * off, BR, 6, 0, 0, Math.PI / 2); for (const sx of [-1, 1]) box(0.04, 0.04, off - TW / 2 + 0.02, wn.u + sx * (Lc / 2 + 0.05), 2.52, wn.cc + wn.side * (TW / 2 + (off - TW / 2 + 0.02) / 2), BR); }
+      else { B.cyl(0.022, 0.022, Lc + 0.2, wn.cc + wn.side * off, 2.52, wn.u, BR, 6, Math.PI / 2, 0, 0); for (const sx of [-1, 1]) box(off - TW / 2 + 0.02, 0.04, 0.04, wn.cc + wn.side * (TW / 2 + (off - TW / 2 + 0.02) / 2), 2.52, wn.u + sx * (Lc / 2 + 0.05), BR); }
+      X.leaks.push({ x: wn.axis === 'x' ? wn.u : wn.cc + wn.side * 0.7, z: wn.axis === 'x' ? wn.cc + wn.side * 0.7 : wn.u });
+    }
+    // ---------------------------------------------------------- helpers for furniture
+    const table = (x, z, w, d, h, colr, legs = 0.07) => { box(w, 0.06, d, x, h - 0.03, z, colr); for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(legs, h - 0.06, legs, x + sx * (w / 2 - legs / 2 - 0.02), (h - 0.06) / 2, z + sz * (d / 2 - legs / 2 - 0.02), DW); box(w - 0.2, 0.06, 0.04, x, h - 0.12, z - d / 2 + 0.06, DW); box(w - 0.2, 0.06, 0.04, x, h - 0.12, z + d / 2 - 0.06, DW); col(x - w / 2 - 0.05, x + w / 2 + 0.05, z - d / 2 - 0.05, z + d / 2 + 0.05); dust(x, h, z, w - 0.1, d - 0.1); };
+    const chair = (x, z, ry, colr = LW) => { const m = (lx, y, lz, w, h, d, cc) => { const s = Math.sin(ry), c0 = Math.cos(ry); box(w, h, d, x + lx * c0 + lz * s, y, z - lx * s + lz * c0, cc, 0, ry, 0); }; m(0, 0.45, 0, 0.42, 0.05, 0.42, colr); for (const sx of [-1, 1]) for (const sz of [-1, 1]) m(sx * 0.18, 0.21, sz * 0.18, 0.05, 0.42, 0.05, DW); m(0, 0.78, -0.2, 0.42, 0.55, 0.04, colr); for (const sx of [-1, 1]) m(sx * 0.18, 0.78, -0.2, 0.04, 0.6, 0.04, DW); col(x - 0.28, x + 0.28, z - 0.28, z + 0.28); };
+    const crate = (x, y, z, s, ry = 0) => { box(s, s, s, x, y + s / 2, z, '#6a4c2c', 0, ry, 0, 0.08); box(s + 0.02, 0.05, s + 0.02, x, y + 0.04, z, '#4a341c', 0, ry, 0); box(s + 0.02, 0.05, s + 0.02, x, y + s - 0.04, z, '#4a341c', 0, ry, 0); };
+    const barrel = (x, z, h = 0.9) => { B.cyl(0.32, 0.32, h, x, h / 2, z, '#6a4a2a', 10); for (const y of [0.15, h / 2, h - 0.15]) B.cyl(0.335, 0.335, 0.05, x, y, z, IRON, 10); B.cyl(0.3, 0.3, 0.02, x, h + 0.01, z, '#5a3c20', 10); col(x - 0.36, x + 0.36, z - 0.36, z + 0.36); };
+    const sheet = (x, z, w, h, d) => { box(w + 0.08, h + 0.05, d + 0.08, x, (h + 0.05) / 2, z, SHEET, 0, 0, 0, 0.08); box(w + 0.26, 0.3, d + 0.26, x, 0.15, z, '#8e8a80', 0, 0, 0, 0.08); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) box(0.12, h * 0.8, 0.12, x + sx * (w / 2 + 0.1), h * 0.4 + 0.15, z + sz * (d / 2 + 0.1), '#a29e94', 0, 0.3, 0, 0.08); dust(x, h + 0.05, z, w, d); col(x - w / 2 - 0.15, x + w / 2 + 0.15, z - d / 2 - 0.15, z + d / 2 + 0.15); };
+    const books = (x0, y, z, n, axis = 'x', dir = 1, depth = 0.22) => { for (let i = 0; i < n; i++) { const bh = 0.2 + rng.next() * 0.14, bw = 0.04 + rng.next() * 0.04, cc = ['#4a1a2a', '#1a2a4a', '#2a4a2a', '#5a4a1a', '#3a2a4a', '#5a2a1a', '#2a3a3a'][(i * 3 + (rng.next() * 3 | 0)) % 7]; if (axis === 'x') { box(bw, bh, depth, x0 + dir * i * 0.075, y + bh / 2, z, cc, 0, 0, 0, 0.1); } else box(depth, bh, bw, x0, y + bh / 2, z + dir * i * 0.075, cc, 0, 0, 0, 0.1); } };
+    const jar = (x, y, z, h = 0.2, cc = '#3a5a4a') => { B.cyl(0.07, 0.08, h, x, y + h / 2, z, cc, 8); B.cyl(0.075, 0.075, 0.03, x, y + h + 0.015, z, '#5a3a20', 8); };
+    const candle = (x, y, z, lit, h = 0.16) => { B.cyl(0.05, 0.06, 0.02, x, y + 0.01, z, BR, 8); B.cyl(0.028, 0.034, h, x, y + 0.02 + h / 2, z, '#d8ceb0', 7); if (lit) { G.sph(0.026, x, y + 0.02 + h + 0.035, z, '#ffb050', 1, 1.7, 1, 6, 5); X.candles.push({ x, y: y + h + 0.1, z }); } else box(0.01, 0.025, 0.01, x, y + 0.02 + h + 0.012, z, '#1a1410', 0, 0, 0, 0); };
+    const web = (px, py, pz, A, Bv, Cv, L = 0.55) => {      // a cobweb in a corner: three threads out of the corner and chords between them
+      const P = [px, py, pz], at = (d, t) => [px + d[0] * t, py + d[1] * t, pz + d[2] * t]; for (const d of [A, Bv, Cv]) B.seg(P, at(d, L), 0.006, '#bcbcb4');
+      for (const t of [0.22, 0.38, 0.54 * L / 0.55]) { B.seg(at(A, t), at(Bv, t), 0.005, '#c4c4bc'); B.seg(at(Bv, t), at(Cv, t), 0.005, '#c4c4bc'); B.seg(at(A, t), at(Cv, t), 0.005, '#c4c4bc'); }
+    };
+    // ---------------------------------------------------------- cobwebs in the upper corners of every room
+    for (const k in ROOMS) { const [x0, x1, z0, z1] = ROOMS[k]; for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { if (rng.next() < 0.25) continue; const px = sx < 0 ? x0 + IX : x1 - IX, pz = sz < 0 ? z0 + IX : z1 - IX; web(px, H, pz, [-sx, 0, 0], [0, 0, -sz], [0, -1, 0], 0.45 + rng.next() * 0.35); } }
+    // ================= the hall (x -2..2, z 2.5..5.5)
+    box(2.4, 0.02, 1.4, 0, 0.011, 4.3, '#3a1c24', 0, 0, 0, 0.05); box(2.2, 0.025, 1.2, 0, 0.0125, 4.3, '#52262e', 0, 0, 0, 0.05);                          // runner
+    B.cyl(0.04, 0.05, 1.95, -1.5, 0.975, 3.1, DW, 6); B.cyl(0.2, 0.22, 0.06, -1.5, 0.03, 3.1, DW, 8); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + 0.4; box(0.2, 0.04, 0.04, -1.5 + Math.cos(a) * 0.1, 1.82, 3.1 + Math.sin(a) * 0.1, DW, 0, -a, 0); }
+    for (const [dx, dz, hh] of [[0.19, 0, 1.15], [-0.17, 0.12, 1.0], [0.0, -0.2, 1.1]]) { box(0.3, hh, 0.1, -1.5 + dx, 1.84 - hh / 2 - 0.03, 3.1 + dz, '#1a1622', 0, 0.4, 0, 0.06); }           // hooded cloaks on the hooks
+    col(-1.75, -1.25, 2.85, 3.35);
+    box(1.4, 0.07, 0.4, 1.65, 0.45, 4.6, LW); for (const sx of [-1, 1]) box(0.07, 0.42, 0.34, 1.65 + sx * 0.6, 0.21, 4.6, DW); box(1.4, 0.4, 0.05, 1.65, 0.7, 4.8, LW); dust(1.65, 0.485, 4.6, 1.3, 0.35); col(0.9, 2.0, 4.35, 4.95);
+    B.cyl(0.14, 0.12, 0.5, -1.55, 0.25, 5.1, IRON, 8); for (const [dx, tilt] of [[-0.05, 0.08], [0.05, -0.06], [0, 0.0]]) B.cyl(0.015, 0.015, 0.9, -1.55 + dx, 0.62, 5.1, '#3a2a1c', 5, 0, 0, tilt); col(-1.75, -1.35, 4.9, 5.3);   // umbrella stand
+    table(-1.55, 4.1, 0.5, 0.4, 0.7, WOOD, 0.05); candle(-1.55, 0.72, 4.1, true); col(-1.85, -1.25, 3.85, 4.35);
+    box(0.7, 1.0, 0.04, 1.96, 1.55, 3.6, '#3a2c22', 0, 0, 0, 0); box(0.62, 0.92, 0.02, 1.93, 1.55, 3.6, '#4a5258', 0, 0, 0, 0.02);                                   // a dusty mirror on the east wall
+    box(0.05, 0.05, 0.5, 1.93, 1.5, 3.6, '#8a8478', 0, 0, 0, 0.1);
+    box(0.16, 0.16, 0.16, 0, 2.3, 4.2, IRON, 0, 0.78, 0, 0); B.seg([0, 3.0, 4.2], [0, 2.38, 4.2], 0.02, IRON); G.sph(0.11, 0, 2.15, 4.2, '#ffb868', 1, 1.2, 1, 8, 6); box(0.2, 0.04, 0.2, 0, 2.28, 4.2, IRON); B.seg([0, 2.3, 4.2], [0, 2.26, 4.2], 0.03, IRON);   // hanging lantern
+    X.candles.push({ x: 0, y: 2.1, z: 4.2 });
+    // ================= the main room (x -5.5..5.5, z -3..2.5): the trader's table, shelves, covered furniture
+    box(5.6, 0.02, 3.4, 0, 0.011, -0.2, '#2a1620', 0, 0, 0, 0.05); box(5.3, 0.025, 3.1, 0, 0.0125, -0.2, '#4a2430', 0, 0, 0, 0.05); box(4.4, 0.03, 2.2, 0, 0.0155, -0.2, '#3a1c28', 0, 0, 0, 0.05);
+    table(0, -0.95, 3.2, 0.8, 0.96, '#3a2418');                                                                                                                  // the trader's table
+    box(3.1, 0.7, 0.03, 0, 0.5, -0.54, '#4a1620', 0, 0, 0, 0.05); for (let i = 0; i < 16; i++) box(0.05, 0.1, 0.02, -1.5 + i * 0.2, 0.13, -0.545, '#a8883a', 0, 0, 0, 0.03); for (const sx of [-1, 1]) box(0.03, 0.7, 0.7, sx * 1.56, 0.5, -0.95, '#4a1620', 0, 0, 0, 0.05);   // tablecloth
+    for (let i = 0; i < 4; i++) { box(0.52, 0.04, 0.36, -1.2 + i * 0.58, 0.98, -0.78, '#5a3a22'); box(0.46, 0.012, 0.3, -1.2 + i * 0.58, 1.006, -0.78, '#28123a', 0, 0, 0, 0.02); }   // empty velvet trays
+    B.cyl(0.14, 0.17, 0.05, 1.2, 0.985, -1.05, BR, 10); B.cyl(0.02, 0.02, 0.5, 1.2, 1.26, -1.05, BR, 6); box(0.7, 0.03, 0.03, 1.2, 1.52, -1.05, BR); for (const sx of [-1, 1]) { B.seg([1.2 + sx * 0.33, 1.52, -1.05], [1.2 + sx * 0.33, 1.2, -1.05 - 0.05], 0.008, BR); B.cyl(0.11, 0.09, 0.015, 1.2 + sx * 0.33, 1.2, -1.05 - 0.05, BR, 10); }   // balance
+    candle(-1.4, 0.96, -1.2, true, 0.2); candle(-1.15, 0.96, -1.05, true, 0.12); box(0.2, 0.05, 0.14, -0.5, 0.985, -1.1, '#4a1a1a'); B.cyl(0.04, 0.045, 0.07, -0.2, 0.995, -1.15, '#1a1a22', 8); B.seg([-0.2, 1.03, -1.15], [-0.12, 1.28, -1.2], 0.008, '#c8c0a8');
+    box(0.32, 0.06, 0.24, 0.5, 0.99, -1.15, '#2a1a22'); box(0.3, 0.02, 0.22, 0.5, 1.03, -1.15, '#d8ccb0', 0, 0.1, 0, 0.03); B.cyl(0.035, 0.04, 0.05, -0.8, 0.985, -0.75, BR, 8);
+    chair(0, -1.95, Math.PI, '#4a3022');                                                                                                                       // the trader's seat
+    for (const sx of [-1, 1]) { const x0 = sx * 2.2; for (let k = 0; k < 4; k++) box(2.0, 0.05, 0.34, x0, 0.4 + k * 0.6, -2.7, WOOD); for (const dx of [-1, 1]) box(0.06, 2.4, 0.34, x0 + dx * 1.0, 1.2, -2.7, DW); box(2.0, 2.4, 0.03, x0, 1.2, -2.86, DW);     // shelves along the north wall
+      col(x0 - 1.05, x0 + 1.05, -2.9, -2.5); for (let k = 0; k < 4; k++) { const y = 0.425 + k * 0.6; if (k === 3) { for (let j = 0; j < 5; j++) jar(x0 - 0.8 + j * 0.4, y, -2.7, 0.18, ['#3a5a4a', '#5a3a5a', '#4a4a2a', '#2a3a5a', '#5a4a3a'][j]); } else if (k === 2) books(x0 - 0.9, y, -2.7, 22); else if (k === 1) { for (let j = 0; j < 4; j++) crate(x0 - 0.7 + j * 0.45, y, -2.7, 0.32 + (j % 2) * 0.05); } else for (let j = 0; j < 6; j++) jar(x0 - 0.85 + j * 0.34, y, -2.7, 0.14 + (j % 3) * 0.04); dust(x0, y, -2.7, 1.9, 0.3); } }
+    // the chandelier: an octagon ring on three chains
+    { const R = 0.55, cy = 2.1, cx = 0, cz = 0.5, pts = []; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; pts.push([cx + Math.cos(a) * R, cz + Math.sin(a) * R]); } for (let i = 0; i < 8; i++) { const a = pts[i], b = pts[(i + 1) % 8]; B.seg([a[0], cy, a[1]], [b[0], cy, b[1]], 0.04, IRON); }
+      for (const i of [0, 3, 6]) B.seg([pts[i][0], cy, pts[i][1]], [cx, H, cz], 0.02, IRON); for (let i = 0; i < 8; i += 1) { B.cyl(0.025, 0.03, 0.14, pts[i][0], cy + 0.09, pts[i][1], '#cfc6aa', 6); } X.candles.push({ x: 0, y: cy - 0.2, z: 0.5 }); }
+    sheet(-4.2, 1.7, 1.2, 0.9, 0.7); sheet(4.2, 1.7, 1.2, 0.9, 0.7); sheet(-4.7, -0.6, 0.8, 1.4, 0.8);                                                              // covered furniture
+    box(0.6, 2.1, 0.38, 4.8, 1.05, 2.15, '#3a2a1c'); box(0.5, 0.5, 0.32, 4.8, 1.55, 2.2, '#c8c0a8'); B.cyl(0.2, 0.2, 0.02, 4.8, 1.55, 2.0, '#d8d0b8', 14, Math.PI / 2, 0, 0); box(0.012, 0.16, 0.012, 4.8, 1.6, 1.99, '#1a1410'); box(0.1, 0.012, 0.012, 4.83, 1.6, 1.99, '#1a1410'); col(4.45, 5.15, 1.95, 2.4);   // a stopped grandfather clock
+    B.cyl(0.18, 0.2, 0.05, -4.9, 0.025, 2.0, DW, 8); B.cyl(0.04, 0.06, 0.9, -4.9, 0.5, 2.0, DW, 6); B.sph(0.33, -4.9, 1.3, 2.0, '#4a6a5a', 1, 1, 1, 12, 9); B.cyl(0.36, 0.36, 0.03, -4.9, 1.3, 2.0, BR, 14, Math.PI / 2, 0, 0.0); col(-5.2, -4.6, 1.7, 2.3);   // a globe on a stand
+    crate(4.9, 0, -2.45, 0.55, 0.3); crate(4.35, 0, -2.5, 0.45, -0.2); crate(4.7, 0.55, -2.45, 0.4, 0.1); col(4.0, 5.2, -2.8, -2.1); barrel(-5.0, -2.45); col(-5.4, -4.6, -2.8, -2.0);
+    // ================= the west storeroom (x -9.5..-5.5)
+    box(3.0, 0.02, 3.4, -7.5, 0.011, -0.2, '#2e2a22', 0, 0, 0, 0.05);
+    for (const z of [-2.35, 1.75]) { for (let k = 0; k < 3; k++) box(0.34, 0.05, 1.5, -9.18, 0.4 + k * 0.7, z, WOOD); for (const dz of [-0.72, 0.72]) box(0.34, 2.1, 0.06, -9.18, 1.05, z + dz, DW); box(0.03, 2.1, 1.5, -9.33, 1.05, z, DW); col(-9.4, -8.98, z - 0.78, z + 0.78);
+      for (let k = 0; k < 3; k++) { const y = 0.425 + k * 0.7; for (let j = 0; j < 4; j++) { if ((j + k + (z > 0 ? 1 : 0)) % 3 === 0) crate(-9.18, y, z - 0.55 + j * 0.37, 0.3, 0); else jar(-9.18, y, z - 0.55 + j * 0.37, 0.16, ['#3a4a3a', '#4a3a3a', '#3a3a4a'][j % 3]); } dust(-9.18, y - 0.025 + 0.025, z, 0.3, 1.4); } }
+    crate(-7.0, 0, -2.3, 0.7, 0.2); crate(-7.0, 0.7, -2.3, 0.55, -0.1); crate(-6.3, 0, -2.4, 0.6, 0.0); crate(-7.8, 0, -2.4, 0.5, 0.4); col(-8.2, -5.9, -2.8, -1.9); barrel(-6.1, 1.9); barrel(-6.1, 1.2, 0.8); barrel(-6.7, 2.0, 0.95); col(-7.1, -5.7, 0.8, 2.3);
+    sheet(-7.4, 0.5, 1.0, 1.1, 0.9);
+    B.seg([-5.72, 2.0, 2.3], [-5.6, 0.04, 2.1], 0.04, '#6a4a2a'); B.cyl(0.05, 0.1, 0.22, -5.6, 0.11, 2.1, '#8a7a4a', 7);                // a broom leaning on the wall
+    B.cyl(0.2, 0.17, 0.28, -6.6, 0.14, -2.5, '#4a4a54', 10); B.seg([-6.78, 0.28, -2.5], [-6.6, 0.55, -2.5], 0.02, IRON); B.seg([-6.42, 0.28, -2.5], [-6.6, 0.55, -2.5], 0.02, IRON);   // a bucket
+    for (const [lx, lz] of [[-7.5, -2.0], [-7.5, 1.5]]) { B.seg([lx, H, lz], [lx, 2.4, lz], 0.02, IRON); box(0.2, 0.04, 0.2, lx, 2.38, lz, IRON); G.sph(0.09, lx, 2.28, lz, '#ffa858', 1, 1.2, 1, 8, 6); X.candles.push({ x: lx, y: 2.2, z: lz }); }
+    // ================= the east bedroom (x 5.5..9.5)
+    box(3.2, 0.02, 3.2, 7.5, 0.011, -0.2, '#26323a', 0, 0, 0, 0.05); box(2.6, 0.025, 2.6, 7.5, 0.0125, -0.2, '#3a2e44', 0, 0, 0, 0.05);
+    { const bx = 8.4, bz = -1.25; for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.09, 0.5, 0.09, bx + sx * 0.97, 0.25, bz + sz * 0.97, DW); box(1.94, 0.12, 2.06, bx, 0.52, bz, WOOD); box(1.8, 0.2, 1.92, bx, 0.68, bz, '#8a8070', 0, 0, 0, 0.08); box(1.82, 0.04, 1.2, bx, 0.8, bz + 0.35, '#5a3a3a', 0, 0, 0, 0.08); box(0.9, 0.12, 0.4, bx, 0.84, bz - 0.7, '#a89c88', 0, 0, 0, 0.08);
+      box(2.0, 0.9, 0.08, bx, 0.7, bz - 1.05, DW); box(0.08, 0.32, 0.08, bx - 0.97, 0.98, bz - 1.05, DW); box(0.08, 0.32, 0.08, bx + 0.97, 0.98, bz - 1.05, DW); dust(bx, 0.9, bz, 1.7, 1.8); col(bx - 1.1, bx + 1.1, bz - 1.15, bz + 1.1); }
+    box(0.8, 0.5, 0.45, 8.4, 0.25, 0.35, '#4a3222'); box(0.84, 0.08, 0.5, 8.4, 0.54, 0.35, '#3a2618'); for (const y of [0.2, 0.35]) box(0.82, 0.04, 0.02, 8.4, y, 0.585, IRON); box(0.1, 0.1, 0.03, 8.4, 0.32, 0.6, BR); dust(8.4, 0.58, 0.35, 0.8, 0.45); col(7.95, 8.85, 0.1, 0.62);   // chest at the foot of the bed
+    table(6.15, -2.4, 0.5, 0.45, 0.62, WOOD, 0.05); candle(6.15, 0.62, -2.4, false); box(0.2, 0.04, 0.15, 6.2, 0.64, -2.3, '#3a2a4a');
+    box(1.1, 2.3, 0.55, 9.1, 1.15, 1.9, '#3a2a1e'); box(0.52, 2.2, 0.02, 8.84, 1.15, 1.61, '#2a1c12'); box(0.52, 2.2, 0.02, 9.38, 1.15, 1.61, '#2a1c12'); box(0.03, 0.2, 0.03, 9.08, 1.15, 1.6, BR); col(8.5, 9.65, 1.6, 2.2);   // wardrobe
+    table(6.3, 1.7, 1.2, 0.6, 0.78, WOOD); chair(6.3, 1.0, 0, '#4a3022'); for (let i = 0; i < 3; i++) box(0.3, 0.012, 0.22, 6.05 + i * 0.12, 0.806 + i * 0.012, 1.7, '#d8ccb0', 0, 0.2 * i, 0, 0.02); candle(6.75, 0.78, 1.75, true, 0.12); B.cyl(0.03, 0.035, 0.07, 6.55, 0.815, 1.55, '#1a1a22', 8);
+    box(0.7, 1.6, 0.04, 6.8, 0.9, 2.2, DW); box(0.6, 1.45, 0.02, 6.8, 0.9, 2.17, '#4a5258'); for (const sx of [-1, 1]) box(0.05, 0.12, 0.3, 6.8 + sx * 0.28, 0.06, 2.05, DW); col(6.4, 7.2, 1.9, 2.3);   // a standing mirror
+    // ================= the study (x -3.5..3.5, z -6.5..-3)
+    box(6.4, 0.02, 3.2, 0, 0.011, -4.8, '#262e2a', 0, 0, 0, 0.05);
+    for (let k = 0; k < 5; k++) box(0.34, 0.05, 3.0, -3.2, 0.3 + k * 0.52, -4.85, WOOD); for (const dz of [-1, 1]) box(0.34, 2.7, 0.06, -3.2, 1.35, -4.85 + dz * 1.5, DW); box(0.03, 2.7, 3.0, -3.33, 1.35, -4.85, DW); col(-3.38, -3.02, -6.4, -3.3);
+    for (let k = 0; k < 5; k++) { books(-3.2, 0.325 + k * 0.52, -6.2, 18, 'z', 1, 0.28); dust(-3.2, 0.325 + k * 0.52 - 0.025 + 0.025, -4.85, 0.3, 2.9); }
+    for (let k = 0; k < 4; k++) box(1.2, 0.05, 0.3, 2.45, 0.4 + k * 0.6, -6.3, WOOD); for (const dx of [-1, 1]) box(0.06, 2.4, 0.3, 2.45 + dx * 0.6, 1.2, -6.3, DW); box(1.2, 2.4, 0.03, 2.45, 1.2, -6.4, DW); col(1.82, 3.08, -6.45, -6.1); for (let k = 0; k < 4; k++) books(1.9, 0.425 + k * 0.6, -6.3, 14, 'x', 1, 0.22);
+    table(-0.6, -5.2, 1.8, 0.9, 0.78, '#3a2a1c'); chair(-0.6, -4.3, 0, '#4a3022'); for (let i = 0; i < 4; i++) box(0.34, 0.012, 0.24, -1.2 + i * 0.16, 0.806 + i * 0.012, -5.1, '#d8ccb0', 0, 0.35 * i - 0.5, 0, 0.02); candle(0.1, 0.78, -5.4, true, 0.2); B.cyl(0.03, 0.035, 0.07, -0.1, 0.815, -4.95, '#1a1a22', 8);
+    // an armillary sphere on the desk: a stand, an axis and three rings made of short segments
+    { const ax = -0.05, ay = 0.84, az = -5.35; B.cyl(0.08, 0.1, 0.06, ax, 0.81, az, BR, 10); B.cyl(0.015, 0.015, 0.22, ax, 0.94, az, BR, 6); B.sph(0.05, ax, 1.08, az, '#4a6a8a', 1, 1, 1, 8, 6); for (const tilt of [0, 1.1, 2.2]) { const pts = []; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; pts.push([ax + Math.cos(a) * 0.17, 1.08 + Math.sin(a) * 0.17 * Math.cos(tilt), az + Math.sin(a) * 0.17 * Math.sin(tilt)]); } for (let i = 0; i < 12; i++) B.seg(pts[i], pts[(i + 1) % 12], 0.012, BR); } }
+    // a telescope on a tripod under the north window
+    { const tx = 1.2, tz = -5.7; for (const a of [0.3, 2.4, 4.5]) B.seg([tx, 1.0, tz], [tx + Math.cos(a) * 0.4, 0.0, tz + Math.sin(a) * 0.4], 0.03, DW); B.cyl(0.05, 0.05, 0.12, tx, 1.03, tz, BR, 8); B.cyl(0.06, 0.05, 0.9, tx - 0.15, 1.25, tz - 0.2, '#6a5a3a', 8, -0.7, 0, 0); B.cyl(0.075, 0.075, 0.06, tx - 0.15 - 0.0, 1.58, tz - 0.55, BR, 8, -0.7, 0, 0.0); col(tx - 0.45, tx + 0.45, tz - 0.45, tz + 0.45); }
+    sheet(2.0, -3.9, 0.8, 0.7, 0.8);
+    X.chalk = { x: 0, z: -4.9 };                                  // a sigil on the floor (a textured plane, added by the class)
+    for (const [lx, lz] of [[-1.6, -4.3], [1.6, -4.3]]) { B.seg([lx, H, lz], [lx, 2.5, lz], 0.02, IRON); box(0.2, 0.04, 0.2, lx, 2.48, lz, IRON); G.sph(0.09, lx, 2.38, lz, '#c8a8ff', 1, 1.2, 1, 8, 6); X.candles.push({ x: lx, y: 2.3, z: lz, violet: true }); }
+  }
+
+  // ------------------------------------------------------------ the room
+  class SecretMarket {
+    constructor(hooks) {
+      this.hooks = hooks; this.ov = null; this.t = 0; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#07050a'); this.scene.fog = new THREE.Fog('#07050a', 7, 24);
+      this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 80); this.scene.add(this.camera);
+      this.player = { pos: new THREE.Vector3(0, 0, 4.8), yaw: 0, pitch: -0.02, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
+      this.toastT = 0; this.toastText = ''; this.prompt = null; this.stations = [{ id: 'exit', x: 0, z: 4.75, r: 1.6, label: () => 'E — выйти на рынок' }, { id: 'seller', x: 0, z: 0.1, r: 1.8, label: () => 'E — поговорить с торговцем' }];
+      this.cols = []; this.build(); Snd.startAmbient('stub'); this.toast('Тайный рынок. Здесь давно никого не было… почти.', 4);
+      this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
+    }
+    toast(s, d = 2.5) { this.toastText = s; this.toastT = d; }
+    build() {
+      const S = this.scene, rng = new Rng(777), B = new Batch(31), G = new Batch(32), X = { cols: this.cols, windows: [], leaks: [], candles: [] }; this.X = X;
+      this.hemi = new THREE.HemisphereLight('#6a5c78', '#2a2028', 1.0); S.add(this.hemi);
+      buildGeo(B, G, rng, X); S.add(B.build(lam('#ffffff', { vertexColors: true, side: THREE.DoubleSide }), false)); S.add(G.build(new THREE.MeshBasicMaterial({ vertexColors: true }), false));
+      for (const k in ROOMS) { const [x0, x1, z0, z1] = ROOMS[k]; const fl = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2), lam('#ffffff', { map: floorTex((x1 - x0) / 2, (z1 - z0) / 2, 90 + x0 * 3 + z0) })); fl.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); S.add(fl);
+        const ds = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 - 0.2, z1 - z0 - 0.2).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: stainTex(5 + (x0 | 0)), transparent: true, depthWrite: false, opacity: 0.55 })); ds.position.set((x0 + x1) / 2, 0.035, (z0 + z1) / 2); S.add(ds); }
+      const sg = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: sigilTex(), transparent: true, depthWrite: false })); sg.position.set(X.chalk.x, 0.04, X.chalk.z); sg.rotation.y = 0.4; S.add(sg);
+      // lights: candles (flicker), the cold strips of light leaking round the curtains
+      this.lights = []; const warm = new Set(); X.candles.forEach((cd, i) => { if (i % 2 && !cd.violet) return; const L = new THREE.PointLight(cd.violet ? '#a880ff' : '#ffb068', 1.25, 7, 1.6); L.position.set(cd.x, cd.y, cd.z); S.add(L); this.lights.push({ L, base: 1.25, ph: i * 1.7 }); });
+      X.leaks.forEach(lk => { const L = new THREE.PointLight('#6a7a98', 0.5, 4.5, 1.8); L.position.set(lk.x, 1.7, lk.z); S.add(L); this.lights.push({ L, base: 0.5, ph: 0, leak: true }); });
+      // the hooded trader sits behind the table
+      const p = Market.person({ hood: true, sit: true, body: '#2a2238', skin: '#b8a898', pants: '#14101c' }); p.position.set(0, -0.28, -1.95); p.rotation.y = Math.PI; p.userData.L.forEach(l => { l.scale.y = 0.6; }); p.userData.arms.forEach(a => { a.rotation.x = 1.35; }); S.add(p); this.seller = p;
+      // dust floating in the candle light
+      const n = 220, pos = new Float32Array(n * 3); this.dust0 = []; for (let i = 0; i < n; i++) { const a = [Math.random() * 18 - 9, Math.random() * 2.6 + 0.2, Math.random() * 11 - 6]; this.dust0.push(a); pos.set(a, i * 3); }
+      const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); this.dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: '#c8c0b0', size: 0.012, transparent: true, opacity: 0.45, depthWrite: false })); S.add(this.dust);
+    }
+    update(dt, inp) {
+      this.t += dt; const P = this.player;
+      P.yaw -= inp.dx * 0.0022; P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.3, 1.3); inp.dx = inp.dy = 0;
+      P.yaw += ((inp.keys.has('ArrowLeft') ? 1 : 0) - (inp.keys.has('ArrowRight') ? 1 : 0)) * dt * 1.9; P.pitch = clamp(P.pitch + ((inp.keys.has('ArrowUp') ? 1 : 0) - (inp.keys.has('ArrowDown') ? 1 : 0)) * dt * 1.4, -1.3, 1.3);
+      let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
+      const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
+      const spd = inp.keys.has('ShiftLeft') ? 3.6 : 2.0; const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
+      P.vel.x = damp(P.vel.x, (fx * -mz + rx * mx) * spd, 12, dt); P.vel.y = damp(P.vel.y, (fz * -mz + rz * mx) * spd, 12, dt);
+      let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt; const pr = 0.28;
+      for (let it = 0; it < 2; it++) for (const k of this.cols) { if (nx > k.x0 - pr && nx < k.x1 + pr && nz > k.z0 - pr && nz < k.z1 + pr) { const l = nx - (k.x0 - pr), r = (k.x1 + pr) - nx, tp = nz - (k.z0 - pr), bt = (k.z1 + pr) - nz; const m = Math.min(l, r, tp, bt); if (m === l) nx = k.x0 - pr; else if (m === r) nx = k.x1 + pr; else if (m === tp) nz = k.z0 - pr; else nz = k.z1 + pr; } }
+      const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002; P.bob += moved * 2.1; P.stepD += moved; if (P.stepD > 0.75) { P.stepD = 0; Snd.sfx.step('wood'); }
+      this.camera.position.set(P.pos.x, 1.62 + Math.sin(P.bob) * 0.022, P.pos.z); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+      this.prompt = this.nearest(); this.toastT = Math.max(0, this.toastT - dt); this.animate(dt);
+    }
+    nearest() { const P = this.player; let best = null, bd = 1e9; for (const s of this.stations) { const d = Math.hypot(s.x - P.pos.x, s.z - P.pos.z); if (d < s.r && d < bd) { bd = d; best = s; } } return best; }
+    animate(dt) {
+      const t = this.t; for (const l of this.lights) l.L.intensity = l.base * (l.leak ? 0.9 + Math.sin(t * 0.4) * 0.1 : 0.9 + Math.sin(t * 7.3 + l.ph) * 0.08 + Math.sin(t * 3.1 + l.ph * 2) * 0.06);
+      if (this.seller) { const p = this.seller; p.position.y = -0.28 + Math.sin(t * 1.1) * 0.006; p.userData.head.rotation.y = Math.sin(t * 0.35) * 0.22; p.userData.head.rotation.x = 0.1 + Math.sin(t * 0.5) * 0.03; p.userData.arms[0].rotation.x = 1.35 + Math.sin(t * 0.8) * 0.03; p.userData.arms[1].rotation.x = 1.35 + Math.sin(t * 0.8 + 1) * 0.03; }
+      if (this.dust) { const p = this.dust.geometry.attributes.position; for (let i = 0; i < this.dust0.length; i++) { const a = this.dust0[i]; p.setXYZ(i, a[0] + Math.sin(t * 0.2 + i) * 0.15, a[1] + Math.sin(t * 0.13 + i * 1.7) * 0.1, a[2] + Math.cos(t * 0.17 + i) * 0.15); } p.needsUpdate = true; }
+    }
+    open(name) { this.ov = name; this.hooks.unlock(); }
+    close() { this.ov = null; this.hooks.lock(); }
+    openTalk() { const sp = Secret.speech('inside'); this.talk = { who: 'inside', lines: sp.lines, i: 0, chars: 0 }; this.open('talk'); }
+    talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else this.close(); }
+    interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
+    key(e) {
+      const ov = this.ov;
+      if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
+      if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
+      if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
+    }
+    pauseButtons() { const x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на рынок', x, y: 126, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 148, w: 180, h: 16 }]; }
+    click(x, y) {
+      if (this.ov === 'talk') { this.talkNext(); return; } if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
+      if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'stash') this.hooks.stash(); else if (b.id === 'exit') this.hooks.exitSecret(); else if (b.id === 'title') this.hooks.title();
+    }
+    wheel() {}
+    draw(ctx, t, m, dt) {
+      UIK.panel(ctx, 6, 6, 150, 20, { fill: 'rgba(16,28,24,0.82)', border: c.line }); T.draw(ctx, 'Тайный рынок', 12, 12, { size: 8, color: '#c8a8f0' });
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(SW / 2 - 1, SH / 2 - 1, 2, 2);
+      if (this.prompt && !this.ov) { const s = this.prompt.label(), w = T.width(s, 8) + 20; UIK.panel(ctx, SW / 2 - w / 2, SH - 54, w, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s, SW / 2, SH - 49, { size: 8, align: 'c', color: '#fff' }); }
+      if (this.toastT > 0) { ctx.globalAlpha = Math.min(1, this.toastT); T.draw(ctx, this.toastText, SW / 2, 62, { size: 8, align: 'c', color: '#d8c8f0', shadow: '#000' }); ctx.globalAlpha = 1; }
+      T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · I — склад · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.5)', shadow: '#000' });
+      if (this.ov === 'talk') { const T0 = this.talk, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length); T.draw(ctx, 'Торговец в капюшоне', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, line.slice(0, Math.floor(T0.chars)), 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 }); T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' }); }
+      if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }
+    }
+    dispose() { Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
+  }
+  SecretMarket.buildGeo = buildGeo;
+  return SecretMarket;
 })();
 
 // ===== main.js =====
@@ -5745,11 +6254,14 @@ const StubRoom = (() => {
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
     if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
   };
-  const enterMarket = () => { App.cab = new Market(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
-  App.toMarket = () => {
+  const enterMarket = at => { App.cab = new Market(cabHooks, at); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
+  App.toMarket = at => {
     leave(); App.screen = 'loading'; App.loadText = 'Идём на рынок насекомых…';
-    if (Net.on) Net.join('market').then(() => setTimeout(enterMarket, 40)).catch(netFail); else setTimeout(enterMarket, 60);
+    if (Net.on) Net.join('market').then(() => setTimeout(() => enterMarket(at), 40)).catch(netFail); else setTimeout(() => enterMarket(at), 60);
   };
+  // the secret market behind the code door of the insect market (personal: never joins a shared location)
+  const secretHooks = Object.assign({}, cabHooks, { exitSecret: () => go(() => App.toMarket({ x: 18, z: -30.1, yaw: Math.PI })) });
+  App.toSecret = () => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new SecretMarket(secretHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); };
   // a room behind a door in the world (currently an empty placeholder room); leaving brings you back to the same door
   const roomHooks = Object.assign({}, cabHooks, { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
@@ -5781,14 +6293,16 @@ const StubRoom = (() => {
   // ---------------- settings modal (opened from the pause menus) and key bindings
   App.modal = null;
   function openSettings() { App.modal = 'settings'; }
-  cabHooks.settings = openSettings;
+  cabHooks.settings = openSettings; cabHooks.stash = () => { App.modal = 'stash'; }; cabHooks.secret = () => go(() => App.toSecret());
   function modalKey(e) {
     e.preventDefault();
     if (App.modal === 'keys') { if (S.keys.key(e)) { App.modal = 'settings'; Save.write(); } return; }
+    if (App.modal === 'stash') { if (e.code === 'Escape' || e.code === 'KeyI' || e.code === 'Enter') { App.modal = null; Snd.sfx.page(); } return; }
     if (e.code === 'Escape' && !e.repeat) { App.modal = null; Snd.sfx.click(); }
   }
   function modalClick(x, y) {
     if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
+    if (App.modal === 'stash') { if (Secret.stash.click(x, y) === 'close') { App.modal = null; Snd.sfx.page(); } return; }
     const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
     if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
     else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
@@ -5817,6 +6331,7 @@ const StubRoom = (() => {
   addEventListener('keydown', e => {
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
     if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
@@ -5834,7 +6349,7 @@ const StubRoom = (() => {
       if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
-      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && App.play.doorNear) App.play.enterDoor(); else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
@@ -5854,7 +6369,7 @@ const StubRoom = (() => {
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'stash') App.modal = 'stash'; else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -5908,7 +6423,7 @@ const StubRoom = (() => {
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
     if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
-    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse);
+    if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }
     if (App.fade > 0.001) { ctx.fillStyle = `rgba(2,6,6,${App.fade})`; ctx.fillRect(0, 0, SW, SH); }
   }

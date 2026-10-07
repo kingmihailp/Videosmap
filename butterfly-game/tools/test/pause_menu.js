@@ -24,7 +24,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   let b = await ev(() => { Screens.pause.layout(F0W.play); const x = Screens.pause.btns.find(b => b.id === 'settings'); return [x.x + 20, x.y + 8]; }); await click(...b);
   console.log('settings ->', await st()); await pg.screenshot({ path: '/tmp/p_settings.png' });
   await pg.keyboard.press('Escape'); await pg.waitForTimeout(300); console.log('Esc in settings ->', await st());
-  b = await ev(() => { const x = Screens.pause.btns.find(b => b.id === 'title'); return [x.x + 20, x.y + 8]; }); await click(...b); await pg.waitForTimeout(1500);
+  b = await ev(() => { const x = Screens.pause.btns.find(b => b.id === 'title'); return [x.x + 20, x.y + 8]; }); await click(...b); for (let i=0;i<40 && (await ev(()=>F0W.screen))!=='title';i++) await pg.waitForTimeout(500);
   console.log('exit ->', await ev(() => ({ screen: F0W.screen, play: !!F0W.play })));
   await br.close();
 })();

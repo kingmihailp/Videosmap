@@ -54,6 +54,24 @@ const Portrait = (() => {
       mouth(ctx, ox, oy, { talk: o.talk, stubble: true });
       R(ctx, ox, oy, 8, 9, 24, 4, '#4a6a2a'); R(ctx, ox, oy, 10, 3, 20, 7, '#5a7a3a'); R(ctx, ox, oy, 12, 3, 4, 5, '#6a8a48'); R(ctx, ox, oy, 6, 11, 14, 2, '#3a5a20'); R(ctx, ox, oy, 8, 12, 24, 1, '#3a5a20'); R(ctx, ox, oy, 19, 5, 3, 3, '#e8d070');   // cap with visor and badge
     },
+    // the hooded trader: a deep hood with nothing but darkness inside, pale folded hands holding a glowing orb
+    hooded(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#2a2238'); R(ctx, ox, oy, 0, 30, 40, 18, '#1c1628'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(160,120,220,0.07)');
+      R(ctx, ox, oy, 0, 38, 12, 10, 'rgba(255,170,70,0.12)'); R(ctx, ox, oy, 2, 40, 6, 8, 'rgba(255,170,70,0.12)');                 // candle glow from the left
+      R(ctx, ox, oy, 3, 33, 34, 15, '#241a30'); R(ctx, ox, oy, 6, 31, 28, 4, '#241a30'); R(ctx, ox, oy, 3, 35, 3, 13, '#3a2c4c'); R(ctx, ox, oy, 34, 35, 3, 13, '#140e1c');   // cloak and shoulders
+      for (const [fx, fy, fh] of [[10, 36, 12], [16, 38, 10], [24, 38, 10], [30, 36, 12]]) R(ctx, ox, oy, fx, fy, 1, fh, '#16101e');                   // folds
+      const HOOD = [[3, 17, 23], [4, 14, 26], [5, 12, 28], [6, 10, 30], [7, 9, 31], [8, 8, 32], [9, 8, 32], [10, 7, 33], [11, 7, 33], [12, 6, 34], [13, 6, 34], [14, 6, 34], [15, 6, 34], [16, 6, 34], [17, 6, 34], [18, 6, 34], [19, 6, 34], [20, 6, 34], [21, 6, 34], [22, 6, 34], [23, 6, 34], [24, 6, 34], [25, 7, 33], [26, 7, 33], [27, 8, 32], [28, 8, 32], [29, 9, 31], [30, 10, 30], [31, 11, 29], [32, 12, 28]];
+      for (const [y, a, b] of HOOD) { R(ctx, ox, oy, a, y, b - a, 1, '#2e2440'); R(ctx, ox, oy, a, y, 2, 1, '#4a3a62'); R(ctx, ox, oy, b - 3, y, 3, 1, '#1a1224'); }
+      R(ctx, ox, oy, 17, 3, 6, 1, '#5a4a74'); R(ctx, ox, oy, 12, 5, 2, 1, '#5a4a74');                                                                       // light on the crown
+      for (const [fx, fy, fh] of [[10, 10, 8], [30, 10, 8], [8, 20, 6], [32, 20, 6]]) R(ctx, ox, oy, fx, fy, 1, fh, '#1c1428');                          // folds of the hood
+      // the opening: pure darkness
+      const VOID = [[10, 15, 25], [11, 13, 27], [12, 12, 28], [13, 11, 29], [14, 11, 29], [15, 11, 29], [16, 11, 29], [17, 11, 29], [18, 11, 29], [19, 11, 29], [20, 12, 28], [21, 12, 28], [22, 13, 27], [23, 14, 26], [24, 15, 25], [25, 16, 24], [26, 18, 22]];
+      for (const [y, a, b] of VOID) { R(ctx, ox, oy, a - 1, y, b - a + 2, 1, '#3a2c52'); R(ctx, ox, oy, a, y, b - a, 1, '#050308'); }
+      R(ctx, ox, oy, 15, 10, 10, 1, '#14101c');
+      // hands and the orb
+      R(ctx, ox, oy, 13, 40, 14, 5, '#241a30'); R(ctx, ox, oy, 15, 39, 4, 3, '#b8a898'); R(ctx, ox, oy, 21, 39, 4, 3, '#b8a898'); R(ctx, ox, oy, 15, 41, 10, 2, '#a89888');
+      const glow = o.talk ? '#d8b8ff' : '#a880f0'; R(ctx, ox, oy, 17, 35, 6, 5, glow); R(ctx, ox, oy, 18, 34, 4, 7, glow); R(ctx, ox, oy, 18, 35, 2, 2, '#f4e8ff'); R(ctx, ox, oy, 16, 34, 8, 8, o.talk ? 'rgba(200,150,255,0.22)' : 'rgba(170,120,240,0.14)');
+    },
   };
   // x, y: top-left corner; the frame is drawn around the picture
   function draw(ctx, kind, x, y, t, talking) {

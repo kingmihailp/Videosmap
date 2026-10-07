@@ -4,7 +4,7 @@ const Batch = (() => {
   const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), V3 = new THREE.Vector3(), ONE = new THREE.Vector3(1, 1, 1), N3 = new THREE.Matrix3();
   const jit = (col, k) => { const a = hex2rgb(col); return [a[0] / 255 * k, a[1] / 255 * k, a[2] / 255 * k]; };
   class Batch {
-    constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); }
+    constructor(seed) { this.P = []; this.N = []; this.C = []; this.base = new THREE.Matrix4(); this.rng = new Rng(seed || 1); this.rec = !!Batch.recAll; }
     geo(g, m, col, jitter = 0.07) {
       if (this.rec) {      // record oriented boxes (exact for boxes, the bounding box for other shapes) so the test can check that every part touches another
         const M = new THREE.Matrix4().multiplyMatrices(this.base, m), e = M.elements; let c, ax, h;
