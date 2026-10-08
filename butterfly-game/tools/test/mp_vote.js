@@ -16,13 +16,13 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   const seedOf = pg => pg.evaluate(() => F0W.play && F0W.play.seed), vote = pg => pg.evaluate(() => Net.vote && { by: Net.vote.by, yes: Net.vote.yes, need: Net.vote.need, mine: Net.vote.mine });
   const s0 = await seedOf(A); ok(s0 && s0 === await seedOf(B), 'same landscape', s0);
   // 1. Alice proposes, Bob refuses
-  await A.evaluate(() => Net.send('regen')); await B.waitForTimeout(1500);
-  const vb = await vote(B); ok(vb && vb.by === 'Alice' && vb.need === 2 && vb.yes === 1, 'Bob sees the vote card', vb);
+  await A.evaluate(() => Net.send('regen')); let vb = null; for (let i = 0; i < 20 && !vb; i++) { await B.waitForTimeout(500); vb = await vote(B); }
+  ok(vb && vb.by === 'Alice' && vb.need === 2 && vb.yes === 1, 'Bob sees the vote card', vb);
   ok((await vote(A)).mine === 'yes', 'the proposer has already voted yes');
   await B.keyboard.press('KeyN'); await B.waitForTimeout(1500);
   ok(!(await vote(A)) && !(await vote(B)) && await seedOf(A) === s0, 'a refusal ends the vote, the landscape stays');
   // 2. again, Bob agrees (the click path: the card's button)
-  await A.waitForTimeout(15500); await A.evaluate(() => Net.send('regen')); await B.waitForTimeout(1500);
+  await A.waitForTimeout(15500); await A.evaluate(() => Net.send('regen')); for (let i = 0; i < 20 && !(await vote(B)); i++) await B.waitForTimeout(500); await B.waitForTimeout(500);
   await B.evaluate(() => { const b = Chat.vbtns.find(q => q.id === 'yes'); window.__hit = Chat.voteClick(b.x + 2, b.y + 2); });
   ok(await B.evaluate(() => window.__hit === true), 'the Yes button of the card is clickable');
   let sa = s0, sb = s0; for (let i = 0; i < 80 && (sa === s0 || sb === s0 || sa !== sb); i++) { await A.waitForTimeout(500); sa = await seedOf(A).catch(() => s0); sb = await seedOf(B).catch(() => s0); }
