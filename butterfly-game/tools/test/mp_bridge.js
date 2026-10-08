@@ -23,6 +23,7 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   ok(['fall', 'gone'].includes(sb[worn]), 'Bob sees it snap', sb);
   // a newcomer finds it already broken
   const C = await open('Carol'); ok(await go(C), 'Carol arrives later'); const sc = await st(C);
+  const seeds = await Promise.all([A, B, C].map(pg => pg.evaluate(() => F0W.play ? [F0W.play.seed, F0W.play.world.bridges.length] : null))); console.log('seeds/bridges', JSON.stringify(seeds));
   ok(['fall', 'gone'].includes(sc[worn]), 'Carol finds the bridge broken', sc);
   console.log(bad ? 'FAILED ' + bad : 'ALL PASS'); await browser.close(); srv.kill(); process.exit(bad ? 1 : 0);
 })();
