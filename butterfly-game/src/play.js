@@ -55,7 +55,7 @@ class Fly {
       let x, z;
       if (near) { const a = p.player.yaw + (Math.random() - 0.5) * 1.6; const d = 7 + Math.random() * 9; x = p.player.pos.x - Math.sin(a) * d; z = p.player.pos.z - Math.cos(a) * d; }
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
-      if (Math.hypot(x, z) > R || p.world.inWater(x, z)) continue;
+      if (Math.hypot(x, z) > R || p.world.inWater(x, z) || (p.world.noFly && p.world.noFly(x, z))) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
       this.pos.set(x, p.world.flyH(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
     }
@@ -77,7 +77,7 @@ class Fly {
     }
     for (let i = 0; i < 20; i++) {
       const a = Math.random() * 6.28, d = 6 + Math.random() * 14; const x = this.pos.x + Math.cos(a) * d, z = this.pos.z + Math.sin(a) * d;
-      if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z)) continue;
+      if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z) || (w.noFly && w.noFly(x, z))) continue;
       if (awayFrom && Math.hypot(x - awayFrom.x, z - awayFrom.z) < 10) continue;
       this.tgt.set(x, w.flyH(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
     }

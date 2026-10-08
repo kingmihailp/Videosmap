@@ -70,7 +70,7 @@ const BIOMES = [
   { id: 'papua', name: 'Реликтовые джунгли Ламингтона', place: 'Провинция Оро, Папуа — Новая Гвинея', lat: -8.95, lon: 148.15, alt: '250 м', map: 'papua', poolSize: 9,
     climate: 'экваториальный, влажный, под густым пологом', desc: 'Древний лес у подножия вулкана Ламингтон: гигантские ветвистые деревья смыкают кроны почти над всем небом, внизу — папоротники, цикады, ручьи и чёрные потоки застывшей лавы.' },
   { id: 'vietnam', name: 'Высокогорья Хоангльеншон', place: 'Север Вьетнама, провинция Лаокай', lat: 22.35, lon: 103.8, alt: '1900 м', map: 'vietnam', poolSize: 9,
-    climate: 'субтропический горный, солнечно, по утрам и в ущельях — туман', desc: 'Известняковые горы и зелёные гряды на севере Вьетнама: террасы, горный лес с древовидными папоротниками, рододендронами и бамбуком, глубокие ущелья и старые верёвочные мосты между вершинами. Солнечно, но в низинах стоит туман.' },
+    climate: 'субтропический горный, солнечно, внизу — море тумана', desc: 'Цепочка горных островов над морем тумана: скальные вершины разного размера с рисовыми террасами, древовидными папоротниками, рододендронами и бамбуком. Их разделяют пропасти, а соединяют старые верёвочные мосты — иногда ветхие. Край карты — обрыв, уходящий в туман.' },
   { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 12,
     climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
 ];
@@ -1869,7 +1869,7 @@ const Maps = (() => {
   const LIST = [
     { id: 'bog', biome: 'bog', name: 'Карта торфяных болот', price: 4500, blurb: 'Васюганское болото в Западной Сибири: кочки, мочажины, пушица и бабочки, которые не летают нигде больше.' },
     { id: 'papua', biome: 'papua', name: 'Карта Новой Гвинеи', price: 10500, blurb: 'Реликтовые джунгли у вулкана Ламингтон: гигантские деревья, застывшая лава и самая крупная бабочка мира.' },
-    { id: 'vietnam', biome: 'vietnam', name: 'Карта высокогорий Вьетнама', price: 8000, blurb: 'Скальные горы Хоангльеншон на севере Вьетнама: подъёмы, туман в ущельях, шаткие мосты и золотой кайзер-и-хинд.' },
+    { id: 'vietnam', biome: 'vietnam', name: 'Карта высокогорий Вьетнама', price: 8000, blurb: 'Горные острова Хоангльеншон над морем тумана: мосты через пропасти (не все надёжны), подъёмы и золотой кайзер-и-хинд.' },
   ];
   const ids = () => { const d = Save.data; if (!d.maps) d.maps = {}; return d.maps; };
   const api = {
@@ -2965,41 +2965,65 @@ const World = (() => {
     }
     const lavaNear = (x, z) => { let bd = 1e9, bi = 0, bt = 0; for (let i = 0; i < lava.pts.length - 1; i++) { const A = lava.pts[i], B = lava.pts[i + 1], sd = lSeg(x, z, A.x, A.z, B.x, B.z); if (sd[0] < bd) { bd = sd[0]; bi = i; bt = sd[1]; } } const A = lava.pts[bi], B = lava.pts[bi + 1]; return [bd, bi + bt, lerp(A.w, B.w, bt)]; };
     const reserve = [];          // ground kept free for landmarks planned in advance (the bog's boardwalk and peat cutting, the bridges)
-    // ---- the highlands of northern Vietnam: two gorges (each crossed by a rope bridge between two mountains), peaks, rice terraces
+    // ---- the highlands of northern Vietnam: an archipelago of mountain islands of different sizes, parted by chasms and joined by rope bridges.
+    //      The edge of the map is the cliff at the end of the chain of islands: it falls into the mist.
+    const VOID = -34;
     const hl = env.highland ? (() => {
-      const sites = [], a0 = rng.range(0, 6.283);
-      [a0, a0 + Math.PI + rng.range(-0.6, 0.6)].forEach(a => {
-        const cr = 33 + rng.range(-1.5, 1.5), W = rng.range(6.5, 8.2);
-        sites.push({ a, cx: Math.cos(a) * cr, cz: Math.sin(a) * cr, nx: Math.cos(a), nz: Math.sin(a), tx: -Math.sin(a), tz: Math.cos(a), W, Hs: 0, Lg: 54, weak: false, state: 'ok', t: 0, touched: false });
+      const nzf = (a, k) => noise.at(Math.cos(a) * 1.3 + k * 11.7 + 50, Math.sin(a) * 1.3 + k * 5.3 + 50);
+      const Rb = (o, a) => o.R * (1 + 0.3 * (nzf(a, o.k) - 0.5));                         // the irregular outline of an island
+      const mk = (x, z, R, k) => ({ x, z, R, k, terr: rng.chance(0.4), Hr: 0, hillH: 0, hillR: 0, hx: 0, hz: 0 });
+      let isl, edges, used;
+      const ends = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a), r1 = Rb(I, a) - 7, r2 = Rb(J, a + Math.PI) - 7; return { a, A: { x: I.x + dx * r1, z: I.z + dz * r1 }, B: { x: J.x - dx * r2, z: J.z - dz * r2 } }; };
+      const free = E => used.every(q => Math.hypot(q.x - E.A.x, q.z - E.A.z) > 10 && Math.hypot(q.x - E.B.x, q.z - E.B.z) > 10);      // two bridges never land near each other
+      const clear = (A, B, skip) => isl.every((Q, q) => skip.includes(q) || (() => { const dx = B.x - A.x, dz = B.z - A.z, L2 = dx * dx + dz * dz, t = clamp(((Q.x - A.x) * dx + (Q.z - A.z) * dz) / L2); return Math.hypot(A.x + dx * t - Q.x, A.z + dz * t - Q.z) > Q.R * 1.2 + 2; })());
+      for (let attempt = 0; attempt < 8; attempt++) {         // lay the islands out again if the chain came out too short
+        isl = [mk(0, 0, rng.range(15, 18), 0)]; edges = []; used = [];
+        for (let tries = 0; tries < 3000 && isl.length < 9; tries++) {
+          const par = rng.chance(0.75) ? isl.length - 1 : rng.int(0, isl.length - 1), P = isl[par], a = rng.range(0, 6.283), o = mk(0, 0, [8, 10, 12, 14, 17][rng.int(0, 4)] + rng.range(-1, 1), isl.length), gap = rng.range(7, 12), d = Rb(P, a) + Rb(o, a + Math.PI) + gap;
+          o.x = P.x + Math.cos(a) * d; o.z = P.z + Math.sin(a) * d;
+          if (Math.hypot(o.x, o.z) + o.R * 1.18 > 57) continue;
+          if (isl.some((Q, q) => q !== par && Math.hypot(Q.x - o.x, Q.z - o.z) < Q.R * 1.18 + o.R * 1.18 + 8)) continue;
+          if (!clear(P, o, [par])) continue;
+          { const E = ends(P, o); if (!free(E)) continue; used.push(E.A, E.B); }
+          isl.push(o); edges.push({ i: par, j: isl.length - 1, loop: false });
+        }
+        if (isl.length >= 6) break;
+      }
+      const gapOf = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x); return Math.hypot(J.x - I.x, J.z - I.z) - Rb(I, a) - Rb(J, a + Math.PI); };
+      const cand = []; for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (!edges.some(e => (e.i === i && e.j === j) || (e.i === j && e.j === i))) { const g = gapOf(isl[i], isl[j]); if (g > 6 && g < 14 && clear(isl[i], isl[j], [i, j])) cand.push({ i, j, loop: true }); }
+      for (let k = 0; k < 2 && cand.length; k++) { const c = cand.splice(rng.int(0, cand.length - 1), 1)[0], E = ends(isl[c.i], isl[c.j]); if (!free(E)) { k--; continue; } used.push(E.A, E.B); edges.push(c); }
+      isl.forEach((o, k) => { o.Hr = k === 0 ? 14 : rng.range(9, 21); o.hillH = k === 0 ? 5.5 : rng.range(3, Math.min(11, o.R * 0.55)); o.hillR = o.R * 0.8; const ha = rng.range(0, 6.283), hd = o.R * (k === 0 ? 0.45 : rng.range(0, 0.3)); o.hx = o.x + Math.cos(ha) * hd; o.hz = o.z + Math.sin(ha) * hd; });
+      const kids = isl.map(() => 0); edges.forEach(e => { if (!e.loop) kids[e.i]++; });
+      const sites = edges.map(e => {
+        const I = isl[e.i], J = isl[e.j], a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a);
+        const A = { x: I.x + dx * (Rb(I, a) - 7), z: I.z + dz * (Rb(I, a) - 7) }, B = { x: J.x - dx * (Rb(J, a + Math.PI) - 7), z: J.z - dz * (Rb(J, a + Math.PI) - 7) }, L = Math.hypot(B.x - A.x, B.z - A.z);
+        const leaf = !e.loop && kids[e.j] === 0 && e.j !== 0;
+        return { a, cx: (A.x + B.x) / 2, cz: (A.z + B.z) / 2, nx: (B.x - A.x) / L, nz: (B.z - A.z) / L, tx: -(B.z - A.z) / L, tz: (B.x - A.x) / L, W: L / 2 - 3.8, isl: [e.i, e.j], loop: e.loop, leaf, A, B, weak: false, state: 'ok', t: 0, touched: false, Hin: 0, Hout: 0, Hs: 0 };
       });
-      sites[0].weak = rng.chance(0.5); sites[1].weak = rng.chance(0.5); if (!sites[0].weak && !sites[1].weak) sites[rng.int(0, 1)].weak = true;
-      const peaks = []; for (let tries = 0; tries < 80 && peaks.length < 4; tries++) { const a = rng.range(0, 6.283), d = rng.range(40, 50), x = Math.cos(a) * d, z = Math.sin(a) * d; if (sites.some(q => Math.abs((x - q.cx) * q.tx + (z - q.cz) * q.tz) < 30 && Math.abs((x - q.cx) * q.nx + (z - q.cz) * q.nz) < 22) || peaks.some(q => Math.hypot(q.x - x, q.z - z) < 22)) continue; peaks.push({ x, z, R: rng.range(9, 13), H: rng.range(7, 11) }); }
-      return { sites, peaks };
+      // a worn bridge: the spare (loop) bridges often, the ones to a dead-end island sometimes, a bridge that holds the chain together never; at least one worn bridge always
+      sites.forEach(b => { b.weak = b.loop ? rng.chance(0.65) : b.leaf ? rng.chance(0.4) : false; });
+      if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
+      return { isl, sites, Rb, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3 };
     })() : null;
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
-    const gorgeInfo = (x, z) => { let g = 0, Hs = 0; if (hl) for (const s of hl.sites) { const [u, v] = siteUV(s, x, z), q = smooth(s.W + 2.0, s.W, Math.abs(u)) * smooth(s.Lg, s.Lg - 8, Math.abs(v)); if (q > g) { g = q; Hs = s.Hs; } } return [g, Hs]; };
-    const gorgeAt = (x, z) => gorgeInfo(x, z)[0];
-    const gorgeMargin = (x, z, m) => { for (let k = 0; k < 8; k++) { const a = k * 0.7854; if (gorgeAt(x + Math.cos(a) * m, z + Math.sin(a) * m) > 0.02) return true; } return false; };
-    const terraceMask = (x, z, r) => smooth(0.5, 0.62, noise.fbm(x * 0.022 + 7, z * 0.022 + 3, 2)) * smooth(14, 19, r) * smooth(39, 33, r);
-    // ---- base relief
-    const hlNat = (x, z) => {
-      const r = Math.hypot(x, z), ridge = noise.fbm(x * 0.028 + 31, z * 0.028 + 17, 4);
-      let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP * smooth(4, 14, r);
-      h += smooth(15, 42, r) * (11 + 7 * ridge) + smooth(44, 66, r) * (7 + 5 * noise.fbm(x * 0.035 + 3, z * 0.035 + 9, 3));
-      for (const p of hl.peaks) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.R) h += p.H * 0.5 * (1 + Math.cos(Math.PI * d / p.R)); }
-      const tm = terraceMask(x, z, r); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); }      // rice terraces: flat steps with rounded risers
-      return h;
+    const isTop = (o, x, z) => {
+      const d = Math.hypot(x - o.x, z - o.z), dh = Math.hypot(x - o.hx, z - o.hz);
+      let h = o.Hr + o.hillH * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, dh / o.hillR))) + (noise.fbm(x * 0.05 + o.k * 9, z * 0.05 + o.k * 4, 3) - 0.5) * 3.4 + (noise.at(x * 0.3 + o.k, z * 0.3) - 0.5) * 0.6;
+      let tm = 0; if (o.terr) { tm = smooth(0.3, 0.5, d / o.R) * smooth(0.95, 0.78, d / o.R); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); } }       // rice terraces: flat steps with rounded risers
+      return [h, tm];
     };
-    if (hl) for (const s of hl.sites) { s.Hin = hlNat(s.cx - s.nx * (s.W + 3.5), s.cz - s.nz * (s.W + 3.5)); s.Hout = hlNat(s.cx + s.nx * (s.W + 3.5), s.cz + s.nz * (s.W + 3.5)); s.Hs = (s.Hin + s.Hout) / 2; }      // each end of a bridge rests on the natural height of its own side: the deck slopes, nothing is cut into the mountain
-    const hlH = (x, z) => {
-      const r = Math.hypot(x, z); let h = hlNat(x, z);
-      for (const s of hl.sites) {
-        const [u, v] = siteUV(s, x, z), au = Math.abs(u), av = Math.abs(v);
-        const wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0) h = lerp(h, u < 0 ? s.Hin : s.Hout, wp);        // the landing pads at both ends of the bridge
-        const g = smooth(s.W + 2.0, s.W, au) * smooth(s.Lg, s.Lg - 8, av); if (g > 0) h = lerp(h, Math.min(s.Hin, s.Hout) - 17.5 + (noise.at(x * 0.4, z * 0.4) - 0.5) * 1.2 + noise.at(x * 0.09 + 4, z * 0.09) * 1.5, g);   // the gorge
+    // [height, how much of a point is island (1) rather than void (0), terrace mask]
+    const islandField = (x, z) => {
+      let best = VOID, F = 0, TM = 0;
+      for (const o of hl.isl) {
+        const d = Math.hypot(x - o.x, z - o.z) + (noise.at(x * 0.35, z * 0.35) - 0.5) * 1.4, rb = hl.Rb(o, Math.atan2(z - o.z, x - o.x)), f = smooth(rb, rb - 3.5, d); if (f <= 0) continue;
+        const [t, tm] = isTop(o, x, z), hh = VOID + f * (t - VOID); if (f > F) F = f; if (hh > best) { best = hh; TM = tm; }
       }
-      return h + Math.pow(clamp((r - 56) / 30), 2) * (AMP * 2.6 + 12);
+      for (const s of hl.sites) { const [u, v] = siteUV(s, x, z), au = Math.abs(u), av = Math.abs(v), wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0 && F > 0.95) best = lerp(best, u < 0 ? s.Hin : s.Hout, wp); }       // the landing pads at the ends of a bridge
+      return [best, F, TM];
     };
+    if (hl) for (const s of hl.sites) { s.Hin = isTop(hl.isl[s.isl[0]], s.A.x, s.A.z)[0]; s.Hout = isTop(hl.isl[s.isl[1]], s.B.x, s.B.z)[0]; s.Hs = (s.Hin + s.Hout) / 2; }
+    const hlH = (x, z) => islandField(x, z)[0];
     const baseH = (x, z) => {
       if (hl) return hlH(x, z);
       let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP;
@@ -3012,6 +3036,12 @@ const World = (() => {
     };
     const N1 = SEG + 1; const H = new Float32Array(N1 * N1);
     for (let iz = 0; iz < N1; iz++) for (let ix = 0; ix < N1; ix++) H[iz * N1 + ix] = baseH(-HALF + ix * CELL, -HALF + iz * CELL);
+    let FG = null, TG = null;       // highlands: the island fraction and the terrace mask of every grid point
+    if (hl) { FG = new Float32Array(N1 * N1); TG = new Float32Array(N1 * N1); for (let iz = 0; iz < N1; iz++) for (let ix = 0; ix < N1; ix++) { const r = islandField(-HALF + ix * CELL, -HALF + iz * CELL); FG[iz * N1 + ix] = r[1]; TG[iz * N1 + ix] = r[2]; } }
+    const fgAt = (x, z) => { const fx = (x + HALF) / CELL, fz = (z + HALF) / CELL, ix = clamp(Math.floor(fx), 0, SEG - 1), iz = clamp(Math.floor(fz), 0, SEG - 1), tx = clamp(fx - ix), tz = clamp(fz - iz); return lerp(lerp(FG[iz * N1 + ix], FG[iz * N1 + ix + 1], tx), lerp(FG[(iz + 1) * N1 + ix], FG[(iz + 1) * N1 + ix + 1], tx), tz); };
+    const gorgeInfo = (x, z) => hl ? [1 - fgAt(x, z), hl.flyLevel] : [0, 0];       // [how much of a point is chasm, the height butterflies keep over it]
+    const gorgeAt = (x, z) => hl ? 1 - fgAt(x, z) : 0;
+    const gorgeMargin = (x, z, m) => { for (let k = 0; k < 8; k++) { const a = k * 0.7854; if (gorgeAt(x + Math.cos(a) * m, z + Math.sin(a) * m) > 0.02) return true; } return false; };
 
     // ---- water features (procedural placement + carved channels so water always sits in the ground)
     const waters = world.waters;
@@ -3118,9 +3148,9 @@ const World = (() => {
       if (env.bog) { const hv = noise.fbm(x * 0.11 + 20, z * 0.11 + 8, 3), hr = noise.at(x * 0.23 + 50, z * 0.23 + 30), red = smooth(0.6, 0.74, hv); c = mixc(c, hex2rgb('#8a4a30'), red * 0.5); c = mixc(c, hex2rgb('#8e8a44'), smooth(0.5, 0.62, hr) * 0.4 * (1 - red)); c = mixc(c, hex2rgb('#3e3220'), smooth(0.4, 0.3, hv) * 0.6); }   // red / yellow sphagnum, brown peat moss, bare dark peat
       const sl = slopeAt(x, z);
       if (env.slopeRock && sl > (env.rockSlope || 0.55)) c = mixc(c, rockc, clamp((sl - (env.rockSlope || 0.55)) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
-      if (hl) { const r = Math.hypot(x, z), tm = terraceMask(x, z, r), [g] = gorgeInfo(x, z);
+      if (hl) { const tm = TG[i], g = 1 - FG[i]; if (g > 0.6) { c = mixc(c, hex2rgb('#d6e2e6'), smooth(0.6, 0.95, g)); }
         if (tm > 0.2) { if (sl < 0.5) c = mixc(c, hex2rgb(n2 > 0.62 ? '#d4bc58' : n2 > 0.3 ? '#9cc84e' : '#78b044'), tm * 0.85); else c = mixc(c, hex2rgb('#6c5a3a'), tm * 0.75); }
-        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 24) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 24) / 8) * 0.6); }
+        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 22) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 22) / 8) * 0.6); }
       const sd = SD[i]; if (sd < 3.2) { c = mixc(c, sandc, smooth(3.2, 0.2, sd) * (env.sand ? 0.95 : 0.55)); if (sd < 0.3) c = mixc(c, mudc, smooth(0.3, -1, sd) * 0.8); }
       const k = 0.92 + n2 * 0.16; colArr[i * 3] = c[0] / 255 * k; colArr[i * 3 + 1] = c[1] / 255 * k; colArr[i * 3 + 2] = c[2] / 255 * k;
     }
@@ -3167,11 +3197,11 @@ const World = (() => {
       const deckAt = (x, z) => { for (const b of hl.sites) { if (b.state === 'fall' || b.state === 'gone') continue; const [u, v] = siteUV(b, x, z); if (Math.abs(v) < b.hw && Math.abs(u) < b.Lh) return b.deckBase(u) + 0.06 - b.sag * (1 - (u / b.Lh) * (u / b.Lh)); } return null; };
       world.bridges = hl.sites; world.events = []; world.pendingFall = null;
       world.groundAt = (x, z) => { const d = deckAt(x, z); return d !== null ? d : heightAt(x, z); };
-      world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.12 && slopeAt(x, z) < 1.7);
-      world.deepMsg = 'Тут не пройти: обрыв. Ищите тропу или мост.';
-      world.edgeMsg = 'Дальше — только скалы и туман.';
-      world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.siteUV = siteUV;
-      world.flyH = (x, z) => { const h = heightAt(x, z), [g, Hs] = gorgeInfo(x, z); return g > 0 ? h + g * (Hs - h) : h; };      // butterflies glide across a gorge at the height of its rims
+      world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.2 && slopeAt(x, z) < 1.7);
+      world.deepMsg = 'Здесь обрыв: дальше только туман. Ищите тропу или мост.';
+      world.edgeMsg = 'Дальше — только туман.';
+      world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.noFly = (x, z) => gorgeAt(x, z) > 0.6; world.siteUV = siteUV; world.islands = hl.isl;
+      world.flyH = (x, z) => { const h = heightAt(x, z), [g, Hs] = gorgeInfo(x, z); return g > 0 ? h + g * (Hs - h) : h; };      // butterflies glide across a chasm at the height of the islands
       world.moveK = (x, z, dx, dz) => { const l = Math.hypot(dx, dz); if (l < 1e-4) return 1; const gr = (world.groundAt(x + dx / l * 1.2, z + dz / l * 1.2) - world.groundAt(x, z)) / 1.2; return clamp(1 - 0.5 * gr, 0.42, 1.18); };    // climbing is slow, going down is quick
       hl.sites.forEach((b, i) => { b.i = i; });
       // a bridge that shakes or snaps for one player does so for everybody in the location: the local simulation is the same on every client, and the one who triggers it tells the others (Play sends the event)
@@ -3201,8 +3231,11 @@ const World = (() => {
       const mistTex = canvasTex(32, 32, (x, w, h) => { const d = x.createImageData(w, h); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const dx = (xx + 0.5) / w * 2 - 1, dy = (yy + 0.5) / h * 2 - 1, a = Math.max(0, 1 - Math.hypot(dx, dy)); const i = (yy * w + xx) * 4; d.data[i] = 244; d.data[i + 1] = 248; d.data[i + 2] = 252; d.data[i + 3] = Math.round(Math.pow(a, 0.8) * 255); } x.putImageData(d, 0, 0); });
       const mist = [], mrng = new Rng(seed ^ 0x3157);
       const addMist = (x, y, z, w, h, op) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: op, color: 0xffffff })); sp.position.set(x, y, z); sp.scale.set(w, h, 1); sp.userData = { x, z, ph: mrng.range(0, 6.28), sp: mrng.range(0.05, 0.12), amp: mrng.range(2, 5) }; scene.add(sp); mist.push(sp); };
-      for (const b of hl.sites) { const fy = b.Hs - 17.5; for (let v = -b.Lg; v <= b.Lg; v += 6) for (let k = 0; k < 2; k++) { const p = new V3(b.cx + b.tx * v + b.nx * mrng.range(-3, 3), 0, b.cz + b.tz * v + b.nz * mrng.range(-3, 3)); if (Math.hypot(p.x, p.z) > 62) continue; addMist(p.x, fy + (k ? 11 : 6.5) + mrng.range(-1, 1), p.z, mrng.range(20, 30), mrng.range(7, 11), k ? 0.38 : 0.52); } }
-      for (let i = 0; i < 30; i++) { const a = mrng.range(0, 6.28), d = mrng.range(14, 54), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.8), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.2, 0.34)); }
+      // the sea of mist the islands stand in (two layers, they follow the player so that the edge of the world is always fog), banks of mist among the islands
+      const sea = [[0, 0.93], [-11, 0.7]].map(([y, op]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#eaf1f4', transparent: true, opacity: op, depthWrite: false })); m.position.y = y; m.renderOrder = 2; scene.add(m); return m; });
+      for (let i = 0; i < 46; i++) { const a = mrng.range(0, 6.28), d = Math.sqrt(mrng.range(0, 64 * 64)), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) < 0.35) continue; addMist(x, mrng.range(-1, 7), z, mrng.range(24, 38), mrng.range(7, 11), mrng.range(0.3, 0.45)); }
+      for (let i = 0; i < 16; i++) { const a = mrng.range(0, 6.28), d = mrng.range(6, 54), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.6), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.18, 0.3)); }
+      world.updaters.push((dt, t, focus) => { for (const m of sea) { m.position.x = focus.x; m.position.z = focus.z; } });
       world.updaters.push((dt, t) => { for (const sp of mist) { const d = sp.userData; sp.position.x = d.x + Math.sin(t * d.sp + d.ph) * d.amp; sp.position.z = d.z + Math.cos(t * d.sp * 0.8 + d.ph) * d.amp * 0.7; } });
     }
 
@@ -3248,14 +3281,16 @@ const World = (() => {
     }
     // ---- far mountains
     const [mc0, mc1, snow, hMin, hMax] = env.mount; const mparts = []; const mrng = new Rng(seed ^ 0x77);
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < (env.highland ? 0 : 46); i++) {
       const a = i / 46 * 6.283 + mrng.range(-0.05, 0.05), d = mrng.range(235, 300), h = mrng.range(hMin, hMax) * (snow ? 2.0 : 1.8), w = Math.min(h * mrng.range(0.6, 0.95), 62);
       const g = new THREE.ConeGeometry(w, h, 5 + mrng.int(0, 2), 3); g.translate(0, h / 2, 0); jitterGeo(g, w * 0.14, mrng);
       mparts.push({ g, m: M(Math.cos(a) * d, -6, Math.sin(a) * d, 0, mrng.range(0, 6)), c: [mc0, snow ? '#f2f6fa' : mc1, 0, h * (snow ? 0.95 : 1.0)], j: 0.07 });
     }
+    if (mparts.length) {
     const mg = merge(mparts, mrng);
     if (snow) { const p = mg.attributes.position, c = mg.attributes.color; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y > hMax * 0.9) { const t = smooth(hMax * 0.9, hMax * 1.6, y); c.setXYZ(i, lerp(c.getX(i), 0.96, t), lerp(c.getY(i), 0.97, t), lerp(c.getZ(i), 1.0, t)); } } }
     scene.add(new THREE.Mesh(mg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+    }
 
     // ---- placement helpers ---------------------------------------------------
     const placed = []; const tox = rng.range(0, 99), toz = rng.range(0, 99);
@@ -3336,7 +3371,7 @@ const World = (() => {
         const a = rng.range(0, 6.28); let x = Math.cos(a) * rng.range(14, 24), z = Math.sin(a) * rng.range(14, 24), dir = rng.range(0, 6.28); const pts = [];
         for (let i = 0; i < n; i++) { dir += rng.range(-0.12, 0.12); x += Math.cos(dir) * 5.4; z += Math.sin(dir) * 5.4; if (Math.hypot(x, z) > 54 || Math.hypot(x, z) < 7 || inWater(x, z, 2)) break; for (const s of [-1, 1]) { const px = x + Math.cos(dir + 1.5708) * 2.1 * s, pz = z + Math.sin(dir + 1.5708) * 2.1 * s; pts.push({ x: px, z: pz, y: heightAt(px, pz) }); placed.push({ x: px, z: pz, r: 1.2 }); } }
         instanceAt(type, pts, {});
-      } else addTrees(type, n, Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
+      } else addTrees(type, hl ? Math.round(n * 1.6) : n, Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
     }
     // rocks (+ big outcrops in the Alps, kopje in Kenya)
     instanceAt('rock', scatter(env.rocks, 1.2, 6, 56, { anySlope: true, field: env.slopeRock ? 'upland' : 'sparse' }), {});
@@ -3859,7 +3894,7 @@ class Fly {
       let x, z;
       if (near) { const a = p.player.yaw + (Math.random() - 0.5) * 1.6; const d = 7 + Math.random() * 9; x = p.player.pos.x - Math.sin(a) * d; z = p.player.pos.z - Math.cos(a) * d; }
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
-      if (Math.hypot(x, z) > R || p.world.inWater(x, z)) continue;
+      if (Math.hypot(x, z) > R || p.world.inWater(x, z) || (p.world.noFly && p.world.noFly(x, z))) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
       this.pos.set(x, p.world.flyH(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
     }
@@ -3881,7 +3916,7 @@ class Fly {
     }
     for (let i = 0; i < 20; i++) {
       const a = Math.random() * 6.28, d = 6 + Math.random() * 14; const x = this.pos.x + Math.cos(a) * d, z = this.pos.z + Math.sin(a) * d;
-      if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z)) continue;
+      if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z) || (w.noFly && w.noFly(x, z))) continue;
       if (awayFrom && Math.hypot(x - awayFrom.x, z - awayFrom.z) < 10) continue;
       this.tgt.set(x, w.flyH(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
     }
