@@ -58,7 +58,7 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, aberr: {}, coins: 0, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  data: { caught: {}, aberr: {}, coins: 0, settings: { sound: true, music: true, quality: 'high', volume: 1, volSfx: 1, volMusic: 1 }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
@@ -66,7 +66,7 @@ const Save = {
       const s = localStorage.getItem(SAVE_KEY);
       if (s) {
         const d = JSON.parse(s); this.data = Object.assign(this.data, d);
-        this.data.settings = Object.assign({ sound: true, music: true, quality: 'high' }, d.settings);
+        this.data.settings = Object.assign({ sound: true, music: true, quality: 'high', volume: 1, volSfx: 1, volMusic: 1 }, d.settings);
         if (!d.specimens) { // older save: make a few raw specimens from the journal
           this.data.specimens = []; this.data.boxes = [];
           for (const id in this.data.caught) { const c = this.data.caught[id]; for (let i = 0; i < Math.min(c.count, 3); i++) this.data.specimens.push({ uid: this.nextUid(), sp: id, biome: c.place, date: c.first, q: null, pose: null, box: null }); }

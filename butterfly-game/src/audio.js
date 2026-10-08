@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------- procedural audio (WebAudio, no files)
 const Snd = (() => {
   let ac = null, master, sfxG, ambG, musG, noiseBuf, timer = null, ambKind = null, nextEvt = 0, musNext = 0, musStep = 0, amb = null, lastT = 0;
-  const A = { enabled: true, music: true };
+  const A = { enabled: true, music: true }, K = { m: 1, s: 1, mu: 1 }, vv = x => typeof x === 'number' && isFinite(x) ? Math.max(0, Math.min(1, x)) : 1;      // K: the volume sliders of the settings (master, sounds and surroundings, music)
+  let hushed = false;
 
   function init() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
@@ -17,9 +18,11 @@ const Snd = (() => {
   }
   function applySettings() {
     if (!ac) return;
-    const s = Save.data.settings; A.enabled = s.sound; A.music = s.music;
-    master.gain.setTargetAtTime(A.enabled ? 0.8 : 0, ac.currentTime, 0.05);
-    musG.gain.setTargetAtTime(A.music && ambKind ? 0.5 : 0, ac.currentTime, 0.4);
+    const s = Save.data.settings; A.enabled = s.sound; A.music = s.music; K.m = vv(s.volume); K.s = vv(s.volSfx); K.mu = vv(s.volMusic);
+    master.gain.setTargetAtTime(A.enabled ? 0.8 * K.m : 0, ac.currentTime, 0.05);
+    sfxG.gain.setTargetAtTime(hushed ? 0 : 0.9 * K.s, ac.currentTime, 0.05);
+    if (ambKind) ambG.gain.setTargetAtTime(0.9 * K.s, ac.currentTime, 0.1);
+    musG.gain.setTargetAtTime(A.music && ambKind ? 0.5 * K.mu : 0, ac.currentTime, ambKind ? 0.1 : 0.4);
   }
   const now = () => ac.currentTime;
   function noiseSrc(loop = false) { const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = loop; if (loop) s.loopStart = Math.random(); return s; }
@@ -58,6 +61,9 @@ const Snd = (() => {
       for (let i = 0; i < 8; i++) osc('triangle', midi(88 + (i % 4) * 3) * 2, t + 0.75 + i * 0.09, 0.5, 0.05);
       if (first) [0, 4, 7, 12].forEach((n, i) => bell(midi(76 + n), t + 1.4 + i * 0.12, 0.2, 2.2));
     },
+    // the antique clock of the museum: a soft tick (v: how near you are) and the strokes of the hour
+    clockTick(hi, v = 1) { if (!ac || v <= 0.02) return; const t = now(); osc('square', hi ? 1500 : 1150, t, 0.02, 0.05 * v); noiseBurst(t, 0.03, 3000, 1500, 0.04 * v, 'bandpass', 2); },
+    clockChime(n) { if (!ac) return; const t = now(); for (let i = 0; i < n; i++) { const tt = t + i * 1.8; bell(196, tt, 0.26, 2.8); bell(392.5, tt, 0.1, 2.0); bell(294, tt + 0.01, 0.07, 1.6); } },
     complete() { if (!ac) return; const t = now(); [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => { bell(midi(67 + n), t + i * 0.1, 0.2, 2.2); }); osc('triangle', midi(43), t, 1.6, 0.12); osc('triangle', midi(50), t, 1.6, 0.1); },
     pin() { if (!ac) return; const t = now(); osc('sine', 900, t, 0.2, 0.15, null, 300); bell(midi(88), t + 0.14, 0.12, 0.8); },
     page() { if (!ac) return; noiseBurst(now(), 0.12, 2400, 900, 0.1, 'bandpass', 0.8); },
@@ -123,8 +129,8 @@ const Snd = (() => {
       const [kind2, fq, vol] = cfg.insect; const o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), amg = ac.createGain();
       o.frequency.value = fq; am.frequency.value = kind2 === 'cicada' ? 38 : 9; amg.gain.value = vol * 0.5; g.gain.value = vol * 0.5; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(ambG); o.start(); am.start(); amb.nodes.push(o, am);
     }
-    ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(0.0001, t); ambG.gain.linearRampToValueAtTime(0.9, t + 2.0);
-    musG.gain.cancelScheduledValues(t); musG.gain.setTargetAtTime(A.music ? 0.5 : 0, t, 0.8);
+    ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(0.0001, t); ambG.gain.linearRampToValueAtTime(0.9 * K.s, t + 2.0);
+    musG.gain.cancelScheduledValues(t); musG.gain.setTargetAtTime(A.music ? 0.5 * K.mu : 0, t, 0.8);
     nextEvt = t + 1; musNext = t + 1.5; musStep = 0;
   }
   function stopAmbient() {
@@ -195,7 +201,7 @@ const Snd = (() => {
   }
   function jazz(t) {
     const J = amb.jz || (amb.jz = { next: t + 0.4, n: 0, lastM: 69, bassLast: 38 }); const beat = 0.92; // ~65 bpm
-    musG.gain.setTargetAtTime(A.music ? 0.9 : 0, now(), 0.3);
+    musG.gain.setTargetAtTime(A.music ? 0.9 * K.mu : 0, now(), 0.3);
     while (J.next < t + 0.3) {
       const bt = J.next, n = J.n, bar = Math.floor(n / 4) % (JZ.length * 2), chord = JZ[Math.floor(bar / 2) % JZ.length], nxt = JZ[(Math.floor(bar / 2) + (bar % 2 === 1 ? 1 : 0)) % JZ.length], b = n % 4, swing = beat * 0.64;
       // bass walk
@@ -221,6 +227,6 @@ const Snd = (() => {
     if (amb.cfg.jazz) jazz(t + 0.05); else music(t + 0.05);
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
-  function hush(on) { if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
-  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
+  function hush(on) { hushed = !!on; if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9 * K.s, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
+  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, levels() { return ac ? { master: master.gain.value, sfx: sfxG.gain.value, amb: ambG.gain.value, music: musG.gain.value } : null; }, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();

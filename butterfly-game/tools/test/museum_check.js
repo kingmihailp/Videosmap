@@ -37,6 +37,11 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const ov = await pg.evaluate(() => [F0W.cab.ov, Boxes.place.tab]); T('E opens the placement window on that tab', ov[0] === 'place' && ov[1] === 'mw', ov);
   await pg.waitForTimeout(500); await pg.screenshot({ path: '/tmp/m_place.png' });
   await pg.evaluate(() => F0W.cab.key({ code: 'Escape' })); T('Esc closes it', await pg.evaluate(() => F0W.cab.ov === null));
+  // the antique clock
+  const ck = await pg.evaluate(() => { const c = F0W.cab; c.player.pos.set(0, 0, -6.5); c.player.yaw = 0; c.prompt = c.nearest(); const id = c.prompt && c.prompt.id, lab = c.prompt && c.prompt.label(); c.key({ code: 'KeyE' }); return { id, lab, toast: c.toastText, hands: !!c.clockHands, pend: !!c.pendulum }; });
+  T('at the north wall there is the clock: E shows the time and the strokes', ck.id === 'clock' && /\d\d:\d\d/.test(ck.lab) && /Часы бьют/.test(ck.toast) && ck.hands && ck.pend, ck);
+  const hands = await pg.evaluate(() => { const c = F0W.cab, d = new Date(); c.animate(0.016); const H = c.clockHands; return { min: H.m.rotation.z, want: -(d.getMinutes() + d.getSeconds() / 60) / 60 * 6.2832 }; });
+  T('the minute hand shows the real minutes', Math.abs(hands.min - hands.want) < 0.12, hands);
   // back to the cabinet
   await pg.evaluate(() => { const c = F0W.cab; c.player.pos.set(-11.0, 0, 0); c.player.yaw = Math.PI / 2; c.prompt = c.nearest(); });
   const ex = await pg.evaluate(() => F0W.cab.prompt && F0W.cab.prompt.id); T('at the door of the museum the prompt is «exit»', ex === 'exit', ex);

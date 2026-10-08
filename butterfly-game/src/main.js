@@ -126,7 +126,7 @@
   function modalClick(x, y) {
     if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
     if (App.modal === 'stash') { if (Secret.stash.click(x, y) === 'close') { App.modal = null; Snd.sfx.page(); } return; }
-    const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
+    const id = S.settings.click(x, y); if (!id) return; if (id.startsWith('vol:')) { App.sliderDrag = id.slice(4); S.settings.set(App.sliderDrag, x); Snd.applySettings(); return; } Snd.sfx.click();
     if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
     else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
     else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.modal = 'keys'; }
@@ -134,7 +134,7 @@
     else if (id === 'back') App.modal = null;
   }
   // ---------------- input
-  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.sliderDrag) { S.settings.set(App.sliderDrag, mouse.x); Snd.applySettings(); } if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
   // The Esc that closes the pause menu is also the key that makes the browser drop a pointer lock it has just granted again: that lost lock must
   // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
@@ -215,7 +215,7 @@
       if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = (visibleBiomes()[S.wmap.sel] || {}).id; if (b) go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
-  addEventListener('mouseup', () => S.cardpos.release());
+  addEventListener('mouseup', () => { S.cardpos.release(); if (App.sliderDrag) { App.sliderDrag = null; Save.write(); Snd.sfx.click(); } });
   ui.addEventListener('contextmenu', e => e.preventDefault());
   ui.addEventListener('wheel', e => { if (App.screen === 'play' && App.overlay === 'cardpos') { S.cardpos.step(App.play, e.deltaY < 0 ? 1 : -1); return; } if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
 

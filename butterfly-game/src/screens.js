@@ -348,10 +348,11 @@ const Screens = (() => {
   };
   // ------------------------------------------------------------------ SETTINGS (modal over any pause menu)
   const settings = {
-    btns: [],
+    btns: [], sliders: [],
     layout() {
       const s = Save.data.settings, x = SW / 2 - 90, inPlay = !!(window.F0W && F0W.screen === 'play' && F0W.play); let y = 76; const out = [];
       out.push({ id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y, w: 88, h: 16 }); y += 22;
+      this.sliders = [['volume', 'Общая', s.volume], ['volSfx', 'Звуки', s.volSfx], ['volMusic', 'Музыка', s.volMusic]].map(([id, label, v], i) => ({ id, label, v: v === undefined ? 1 : v, x, y: y + i * 18, w: 180, h: 14, tx: x + 58, tw: 90 })); y += 3 * 18 + 4;
       if (inPlay) { out.push({ id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y, w: 180, h: 16 }); y += 22; }
       out.push({ id: 'keys', label: 'Клавиши управления', x, y, w: 180, h: 16 }); y += 22;
       if (inPlay) { out.push({ id: 'card', label: 'Карточка улова: положение и размер', x, y, w: 180, h: 16 }); y += 22; }
@@ -362,8 +363,14 @@ const Screens = (() => {
       UIK.panel(ctx, SW / 2 - 106, 52, 212, this.h, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
       T.draw(ctx, 'Настройки', SW / 2, 58, { size: 14, align: 'c', color: c.gold });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+      for (const sl of this.sliders) {                      // volume sliders: a track with a filled part and a knob
+        const hv = UIK.hit(sl, m.x, m.y) || (window.F0W && F0W.sliderDrag === sl.id), ty = sl.y + 3; T.draw(ctx, sl.label, sl.x + 2, sl.y + 3, { size: 8, color: hv ? c.gold : c.text });
+        ctx.fillStyle = '#0a1a14'; ctx.fillRect(sl.tx, ty, sl.tw, 8); ctx.strokeStyle = hv ? c.gold : c.line; ctx.strokeRect(sl.tx + 0.5, ty + 0.5, sl.tw - 1, 7); ctx.fillStyle = hv ? '#7ee08a' : '#4aa86a'; ctx.fillRect(sl.tx + 1, ty + 1, Math.round((sl.tw - 2) * sl.v), 6);
+        const kx = sl.tx + Math.round((sl.tw - 4) * sl.v); ctx.fillStyle = '#efe6c8'; ctx.fillRect(kx, ty - 2, 4, 12); T.draw(ctx, Math.round(sl.v * 100) + '%', sl.x + sl.w, sl.y + 3, { size: 8, align: 'r', color: c.dim });
+      }
     },
-    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+    set(id, mx) { const sl = this.sliders.find(s => s.id === id); if (!sl) return; Save.data.settings[id] = Math.round(clamp((mx - sl.tx) / sl.tw) * 20) / 20; },
+    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); if (b) return b.id; const sl = this.sliders.find(s => UIK.hit(s, x, y)); return sl ? 'vol:' + sl.id : null; },
   };
   // ------------------------------------------------------------------ KEY BINDINGS
   const keysScr = {

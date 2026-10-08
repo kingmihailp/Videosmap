@@ -79,7 +79,7 @@ const Museum = (() => {
     for (let i = 0; i < 8; i++) mw(-10.5 + 3 * i, HZ, Math.PI);
     for (const z of [-6, -2.2, 2.2, 6]) mw(HX, z, -Math.PI / 2);
     for (const z of [-6.2, -3.3, 3.3, 6.2]) mw(-HX, z, Math.PI / 2);
-    for (let i = 0; i < 8; i++) { const end = i === 0 || i === 7, x = end ? (i ? 10.25 : -10.25) : -10.5 + 3 * i, w = end ? 2.0 : 2.5; L.lowcases.push({ x, z: -HZ + 0.3, w, d: 0.5, ry: 0 }); L.lowcases.push({ x, z: HZ - 0.3, w, d: 0.5, ry: Math.PI }); }      // the outer ones are shorter: the corner columns stand there
+    for (let i = 0; i < 8; i++) { const end = i === 0 || i === 7, x = end ? (i ? 10.25 : -10.25) : -10.5 + 3 * i, w = end ? 2.0 : 2.5; const cx = !end && i === 3 ? -1.75 : !end && i === 4 ? 1.75 : x, cw = !end && (i === 3 || i === 4) ? 2.0 : w; L.lowcases.push({ x: cx, z: -HZ + 0.3, w: cw, d: 0.5, ry: 0 }); L.lowcases.push({ x, z: HZ - 0.3, w, d: 0.5, ry: Math.PI }); }      // the outer ones are shorter: the corner columns stand there
     for (const [z, w] of [[-4.1, 1.7], [0, 1.7], [4.1, 1.7]]) L.cases.push({ x: HX - 0.25, z, w, d: 0.45, h: 3.5, ry: -Math.PI / 2 });      // tall bookcases
     for (const z of [-4.75, 4.75]) L.cases.push({ x: -HX + 0.25, z, w: 1.2, d: 0.45, h: 3.5, ry: Math.PI / 2 });
     return L;
@@ -91,6 +91,10 @@ const Museum = (() => {
     x.fillStyle = '#d0b060'; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, r = i % 2 ? 26 : 40; x.beginPath(); x.moveTo(64, 64); x.lineTo(64 + Math.cos(a - 0.14) * r * 0.5, 64 + Math.sin(a - 0.14) * r * 0.5); x.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); x.lineTo(64 + Math.cos(a + 0.14) * r * 0.5, 64 + Math.sin(a + 0.14) * r * 0.5); x.fill(); }
     x.fillStyle = '#2c4a5a'; x.beginPath(); x.arc(64, 64, 8, 0, 6.3); x.fill(); x.fillStyle = '#efe6c8'; x.fillRect(62, 62, 4, 4); }, 0, 0, true);
   const T_SKY = () => ctex(32, 32, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fffbe8'); g.addColorStop(1, '#e8f4ff'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillRect(4, 8, 14, 3); x.fillRect(10, 18, 16, 3); }, 0, 0, true);
+  const T_DIAL = () => ctex(128, 128, (x, w, h) => { x.fillStyle = '#efe6c8'; x.fillRect(0, 0, w, h); x.strokeStyle = '#2a1a0e'; x.lineWidth = 2; x.beginPath(); x.arc(64, 64, 58, 0, 6.3); x.stroke(); x.lineWidth = 1; x.beginPath(); x.arc(64, 64, 49, 0, 6.3); x.stroke();
+    for (let i = 0; i < 60; i++) { const a = i / 60 * 6.2832, r0 = i % 5 ? 52 : 49, r1 = 57; x.lineWidth = i % 5 ? 1 : 2; x.beginPath(); x.moveTo(64 + Math.sin(a) * r0, 64 - Math.cos(a) * r0); x.lineTo(64 + Math.sin(a) * r1, 64 - Math.cos(a) * r1); x.stroke(); }
+    const R = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']; R.forEach((t, i) => { const a = i / 12 * 6.2832; T.draw(x, t, 64 + Math.sin(a) * 38, 64 - Math.cos(a) * 38 - 4, { size: 8, align: 'c', color: '#2a1a0e' }); });
+    x.fillStyle = '#8a6a22'; x.beginPath(); x.arc(64, 64, 3, 0, 6.3); x.fill(); }, 0, 0, true);
   function wallTex(L) {
     const k = 40, w = Math.round(L * k), h = Math.round(RH * k);
     const t = ctex(w, h, (x) => {
@@ -150,7 +154,8 @@ const Museum = (() => {
         const sg = z === 0 ? -Math.sign(x) : -Math.sign(z); const horiz = !ry;
         for (let i = 0; i < 3; i++) { const dpt = 0.1 + i * 0.07, hh = 0.07; if (horiz) B.box(lw, hh, dpt, x, RH - 0.035 - i * 0.07 + 0, z + sg * dpt / 2, i === 1 ? brassC : '#c8b88a'); else B.box(dpt, hh, lw, x + sg * dpt / 2, RH - 0.035 - i * 0.07, z, i === 1 ? brassC : '#c8b88a'); }
       }
-      for (const x of [-6, 0, 6]) for (const sgz of [-1, 1]) {      // pilasters on the long walls: base, fluted shaft, capital
+      for (const x of [-6, 0, 6]) for (const sgz of [-1, 1]) {      // pilasters (on the north wall the middle one is the clock's place)
+        if (x === 0 && sgz === -1) continue;      // base, fluted shaft, capital
         const z = sgz * (HZ - 0.07); B.box(0.5, 0.35, 0.14, x, 0.175, z, '#b8a678'); B.box(0.36, 4.0, 0.1, x, 2.35, z, '#d8c8a0'); for (const fx of [-0.12, 0, 0.12]) B.box(0.04, 3.9, 0.12, x + fx, 2.3, z - sgz * 0.005, '#c4b48c'); B.box(0.5, 0.2, 0.14, x, 4.45, z, '#b8a678'); B.box(0.58, 0.07, 0.17, x, 4.6, z, brassC);
       }
       for (const [x, z] of [[-HX + 0.27, -HZ + 0.27], [HX - 0.27, -HZ + 0.27], [-HX + 0.27, HZ - 0.27], [HX - 0.27, HZ - 0.27]]) { B.box(0.4, 4.6, 0.4, x, 2.3, z, '#d8c8a0'); B.box(0.46, 0.3, 0.46, x, 0.15, z, '#b8a678'); B.box(0.5, 0.16, 0.5, x, 4.52, z, brassC); }
@@ -226,6 +231,24 @@ const Museum = (() => {
         B.lathe([[0.001, 0], [0.11, 0], [0.11, 0.04], [0.05, 0.08], [0.04, 0.3]], wx - sg * 0.02, bc.h + 0.14, wz, DARK, 8); B.ball(0.2, wx - sg * 0.02, bc.h + 0.14 + 0.5, wz, '#3a78a8', 10);
         this.addCol(wx - dd / 2, wx + dd / 2, wz - wd / 2, wz + wd / 2);
       });
+      // --- the antique longcase clock on the north wall: plinth, a waist with a glass door (pendulum and weights inside), a hood with an arched top and a dial; the hands and the pendulum follow the real time
+      B.unit = 'clock'; { const cz = -HZ + 0.25, fz = cz + 0.22;
+        B.box(0.7, 0.28, 0.46, 0, 0.14, cz, '#2a1a0e'); B.box(0.78, 0.06, 0.5, 0, 0.31, cz, '#4a2c18'); B.box(0.5, 0.04, 0.4, 0, 0.36, cz, brassD);
+        B.box(0.5, 1.28, 0.38, 0, 1.0, cz - 0.0, '#5a3820'); B.box(0.36, 0.98, 0.02, 0, 1.02, fz - 0.02, '#1a0e06');       // the door recess (dark) and its frame
+        for (const sx of [-1, 1]) B.box(0.035, 1.02, 0.03, sx * 0.19, 1.02, fz + 0.0, brassC); B.box(0.4, 0.035, 0.03, 0, 1.54, fz, brassC); B.box(0.4, 0.035, 0.03, 0, 0.5, fz, brassC); B.ball(0.025, 0.15, 1.02, fz + 0.03, brassC, 6);
+        for (const sx of [-1, 1]) { B.cyl(0.04, 0.04, 0.3, sx * 0.1, 0.78, cz - 0.02, brassD, 8); B.cyl(0.045, 0.045, 0.03, sx * 0.1, 0.945, cz - 0.02, brassC, 8); B.limb(V(sx * 0.1, 0.96, cz - 0.02), V(sx * 0.1, 1.58, cz - 0.02), 0.004, 0.004, '#c8c8d0', 4); }       // two weights on chains
+        B.box(0.6, 0.09, 0.44, 0, 1.69, cz, '#4a2c18'); B.box(0.66, 0.04, 0.48, 0, 1.745, cz, brassD);
+        B.box(0.58, 0.8, 0.42, 0, 2.15, cz, '#5a3820'); for (const sx of [-1, 1]) { B.cyl(0.035, 0.035, 0.76, sx * 0.3, 2.15, fz - 0.01, brassC, 8); B.cyl(0.05, 0.05, 0.04, sx * 0.3, 1.77, fz - 0.01, brassD, 8); B.cyl(0.05, 0.05, 0.04, sx * 0.3, 2.55, fz - 0.01, brassD, 8); }
+        B.box(0.66, 0.05, 0.46, 0, 2.575, cz, '#4a2c18'); B.geo(new THREE.CylinderGeometry(0.31, 0.31, 0.42, 16, 1, false, Math.PI / 2, Math.PI), (() => { const m = M4(0, 2.6, cz); m.multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)); return m; })(), '#5a3820');
+        B.box(0.05, 0.08, 0.05, 0, 2.935, cz, brassC); B.ball(0.05, 0, 3.0, cz, brassC, 8); B.cyl(0.006, 0.006, 0.14, 0, 3.12, cz, brassC, 4); for (const sx of [-1, 1]) { B.cyl(0.03, 0.03, 0.04, sx * 0.3, 2.6, cz, brassD, 8); B.ball(0.04, sx * 0.3, 2.66, cz, brassC, 8); }
+        B.limb(V(0, 2.1, fz + 0.002), V(0, 2.1, fz + 0.012), 0.2, 0.2, '#efe6c8', 20);            // the dial: an ivory disc with a brass rim
+        B.geo(new THREE.TorusGeometry(0.205, 0.012, 6, 24), M4(0, 2.1, fz + 0.012), brassC);
+        const dial = mesh(new THREE.CircleGeometry(0.2, 28), bas('#ffffff', { map: T_DIAL() }), 0, 2.1, fz + 0.0135); S.add(dial);
+        const hand = (len, w, col) => { const g = new THREE.BoxGeometry(w, len, 0.004); g.translate(0, len / 2 - 0.02, 0); const m = new THREE.Mesh(g, bas(col)); const hg = new THREE.Group(); hg.add(m); hg.position.set(0, 2.1, fz + 0.016); S.add(hg); return hg; };
+        const hh = hand(0.11, 0.018, '#14100c'), mh = hand(0.17, 0.012, '#14100c'), sh2 = hand(0.18, 0.005, '#8a1c1c'); this.clockHands = { h: hh, m: mh, s: sh2 };
+        const pg = new THREE.Group(); pg.position.set(0, 1.5, fz - 0.03); const rod = mesh(new THREE.BoxGeometry(0.012, 0.8, 0.008), bas('#c8a040'), 0, -0.4, 0); const bob = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.012, 16), bas('#d8b050'), 0, -0.8, 0); bob.rotation.x = Math.PI / 2; pg.add(rod, bob); S.add(pg); this.pendulum = pg;
+        const gl = mesh(new THREE.PlaneGeometry(0.34, 0.94), bas('#cfe8ff', { transparent: true, opacity: 0.1, depthWrite: false }), 0, 1.02, fz + 0.012); S.add(gl);
+        this.addCol(-0.42, 0.42, -HZ, -HZ + 0.56); this.clockPos = { x: 0, z: -HZ + 1.5 }; }
       // --- plants: potted palms / ficus in the corners, ferns on pedestals between the bookcases, dracaenas by the door
       const bl = (len, wid, bend, x, y, z, az, tilt, col, segs) => { const d = len * (0.88 * Math.sin(tilt) + bend * Math.cos(tilt)) + wid / 2 + 0.05; if (Math.abs(x + Math.sin(az) * d) < HX - 0.04 && Math.abs(z + Math.cos(az) * d) < HZ - 0.04) B.blade(len, wid, bend, x, y, z, az, tilt, col, segs); };      // a leaf that would poke through a wall is left out
       let pk = 0; const plant = (kind, x, z, y0 = 0, sc = 1) => {
@@ -283,7 +306,7 @@ const Museum = (() => {
       const sg = mesh(new THREE.PlaneGeometry(2.4, 0.4), bas('#ffffff', { map: signTex('МУЗЕЙ КОЛЛЕКЦИИ', 220, 24, '#2a1a0e', '#f0d890') }), 0, 3.85, -HZ + 0.025); S.add(sg);
       const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#14281e', '#9af0a0', '#7a8a50') }), -HX + 0.03, 2.88, 0); sd.rotation.y = Math.PI / 2; S.add(sd);
       // --- stations: leave, and the zones where boxes are placed (the nearest one decides which tab opens)
-      this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }];
+      this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }, { id: 'clock', x: 0, z: -HZ + 1.5, r: 1.7, label: () => { const d = new Date(); return `E — старинные часы: ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} (послушать бой)`; } }];
       const zone = (tab, x, z, r, name) => this.stations.push({ id: 'place', tab, x, z, r, label: () => `E — расставить коробки: ${name} (на экспозиции: ${Save.data.boxes.filter(b => b.loc && b.loc.t === tab).length} из ${MUS[tab]})` });
       LAYOUT.tables.forEach(t => zone('mt', t.x, t.z + (t.z < 0 ? 1.1 : -1.1), 2.0, 'столы-витрины'));
       LAYOUT.large.forEach(t => zone('ml', t.x, t.z + 1.4, 1.9, 'большие столы'));
@@ -339,6 +362,10 @@ const Museum = (() => {
       this.animate(dt);
     }
     animate(dt) {
+      if (this.clockHands) { const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000, min = d.getMinutes() + sec / 60, hr = d.getHours() % 12 + min / 60, H = this.clockHands;
+        H.h.rotation.z = -hr / 12 * 6.2832; H.m.rotation.z = -min / 60 * 6.2832; H.s.rotation.z = -Math.floor(sec) / 60 * 6.2832 - (sec % 1 < 0.15 ? (0.15 - sec % 1) * 0.3 : 0); this.pendulum.rotation.z = 0.2 * Math.sin(Math.PI * sec);
+        const whole = Math.floor(sec); if (this.lastSec !== whole) { this.lastSec = whole; const P = this.player, dd = Math.hypot(P.pos.x - this.clockPos.x, P.pos.z + HZ - 0.25); Snd.sfx.clockTick(whole % 2 === 0, clamp(1 - dd / 12)); }
+        if (d.getMinutes() === 0 && sec < 1.5 && this.lastChime !== d.getHours()) { this.lastChime = d.getHours(); Snd.sfx.clockChime(d.getHours() % 12 || 12); } else if (d.getMinutes() !== 0) this.lastChime = undefined; }
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0, nt: NetParts.code(Save.curNet()) }); } }
     }
     // ------------------------------------------------------------ overlays / input
@@ -347,6 +374,7 @@ const Museum = (() => {
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitMuseum(); }
+      else if (s.id === 'clock') { const n = new Date().getHours() % 12 || 12; Snd.sfx.clockChime(n); this.toast(`Часы бьют: ${n}`, 3); }
       else if (s.id === 'place') { Snd.sfx.page(); Boxes.place.open(s.tab); this.open('place'); }
     }
     key(e) {

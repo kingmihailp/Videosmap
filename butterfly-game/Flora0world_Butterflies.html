@@ -958,7 +958,7 @@ function shadeHex(a, k) { const A = hex2rgb(a); return rgb2hex(A[0] * k, A[1] * 
 // persistent save (guarded: localStorage may be blocked on file://)
 const SAVE_KEY = 'flora0world_butterflies_v1';
 const Save = {
-  data: { caught: {}, aberr: {}, coins: 0, settings: { sound: true, music: true, quality: 'high' }, specimens: [], boxes: [], uid: 1 },
+  data: { caught: {}, aberr: {}, coins: 0, settings: { sound: true, music: true, quality: 'high', volume: 1, volSfx: 1, volMusic: 1 }, specimens: [], boxes: [], uid: 1 },
   CAP: { S: 1, M: 4, L: 9 },
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
@@ -966,7 +966,7 @@ const Save = {
       const s = localStorage.getItem(SAVE_KEY);
       if (s) {
         const d = JSON.parse(s); this.data = Object.assign(this.data, d);
-        this.data.settings = Object.assign({ sound: true, music: true, quality: 'high' }, d.settings);
+        this.data.settings = Object.assign({ sound: true, music: true, quality: 'high', volume: 1, volSfx: 1, volMusic: 1 }, d.settings);
         if (!d.specimens) { // older save: make a few raw specimens from the journal
           this.data.specimens = []; this.data.boxes = [];
           for (const id in this.data.caught) { const c = this.data.caught[id]; for (let i = 0; i < Math.min(c.count, 3); i++) this.data.specimens.push({ uid: this.nextUid(), sp: id, biome: c.place, date: c.first, q: null, pose: null, box: null }); }
@@ -1891,7 +1891,8 @@ const visibleBiomes = () => Maps.visible();
 // ---------------------------------------------------------------- procedural audio (WebAudio, no files)
 const Snd = (() => {
   let ac = null, master, sfxG, ambG, musG, noiseBuf, timer = null, ambKind = null, nextEvt = 0, musNext = 0, musStep = 0, amb = null, lastT = 0;
-  const A = { enabled: true, music: true };
+  const A = { enabled: true, music: true }, K = { m: 1, s: 1, mu: 1 }, vv = x => typeof x === 'number' && isFinite(x) ? Math.max(0, Math.min(1, x)) : 1;      // K: the volume sliders of the settings (master, sounds and surroundings, music)
+  let hushed = false;
 
   function init() {
     if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
@@ -1907,9 +1908,11 @@ const Snd = (() => {
   }
   function applySettings() {
     if (!ac) return;
-    const s = Save.data.settings; A.enabled = s.sound; A.music = s.music;
-    master.gain.setTargetAtTime(A.enabled ? 0.8 : 0, ac.currentTime, 0.05);
-    musG.gain.setTargetAtTime(A.music && ambKind ? 0.5 : 0, ac.currentTime, 0.4);
+    const s = Save.data.settings; A.enabled = s.sound; A.music = s.music; K.m = vv(s.volume); K.s = vv(s.volSfx); K.mu = vv(s.volMusic);
+    master.gain.setTargetAtTime(A.enabled ? 0.8 * K.m : 0, ac.currentTime, 0.05);
+    sfxG.gain.setTargetAtTime(hushed ? 0 : 0.9 * K.s, ac.currentTime, 0.05);
+    if (ambKind) ambG.gain.setTargetAtTime(0.9 * K.s, ac.currentTime, 0.1);
+    musG.gain.setTargetAtTime(A.music && ambKind ? 0.5 * K.mu : 0, ac.currentTime, ambKind ? 0.1 : 0.4);
   }
   const now = () => ac.currentTime;
   function noiseSrc(loop = false) { const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = loop; if (loop) s.loopStart = Math.random(); return s; }
@@ -1948,6 +1951,9 @@ const Snd = (() => {
       for (let i = 0; i < 8; i++) osc('triangle', midi(88 + (i % 4) * 3) * 2, t + 0.75 + i * 0.09, 0.5, 0.05);
       if (first) [0, 4, 7, 12].forEach((n, i) => bell(midi(76 + n), t + 1.4 + i * 0.12, 0.2, 2.2));
     },
+    // the antique clock of the museum: a soft tick (v: how near you are) and the strokes of the hour
+    clockTick(hi, v = 1) { if (!ac || v <= 0.02) return; const t = now(); osc('square', hi ? 1500 : 1150, t, 0.02, 0.05 * v); noiseBurst(t, 0.03, 3000, 1500, 0.04 * v, 'bandpass', 2); },
+    clockChime(n) { if (!ac) return; const t = now(); for (let i = 0; i < n; i++) { const tt = t + i * 1.8; bell(196, tt, 0.26, 2.8); bell(392.5, tt, 0.1, 2.0); bell(294, tt + 0.01, 0.07, 1.6); } },
     complete() { if (!ac) return; const t = now(); [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => { bell(midi(67 + n), t + i * 0.1, 0.2, 2.2); }); osc('triangle', midi(43), t, 1.6, 0.12); osc('triangle', midi(50), t, 1.6, 0.1); },
     pin() { if (!ac) return; const t = now(); osc('sine', 900, t, 0.2, 0.15, null, 300); bell(midi(88), t + 0.14, 0.12, 0.8); },
     page() { if (!ac) return; noiseBurst(now(), 0.12, 2400, 900, 0.1, 'bandpass', 0.8); },
@@ -2013,8 +2019,8 @@ const Snd = (() => {
       const [kind2, fq, vol] = cfg.insect; const o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), amg = ac.createGain();
       o.frequency.value = fq; am.frequency.value = kind2 === 'cicada' ? 38 : 9; amg.gain.value = vol * 0.5; g.gain.value = vol * 0.5; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(ambG); o.start(); am.start(); amb.nodes.push(o, am);
     }
-    ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(0.0001, t); ambG.gain.linearRampToValueAtTime(0.9, t + 2.0);
-    musG.gain.cancelScheduledValues(t); musG.gain.setTargetAtTime(A.music ? 0.5 : 0, t, 0.8);
+    ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(0.0001, t); ambG.gain.linearRampToValueAtTime(0.9 * K.s, t + 2.0);
+    musG.gain.cancelScheduledValues(t); musG.gain.setTargetAtTime(A.music ? 0.5 * K.mu : 0, t, 0.8);
     nextEvt = t + 1; musNext = t + 1.5; musStep = 0;
   }
   function stopAmbient() {
@@ -2085,7 +2091,7 @@ const Snd = (() => {
   }
   function jazz(t) {
     const J = amb.jz || (amb.jz = { next: t + 0.4, n: 0, lastM: 69, bassLast: 38 }); const beat = 0.92; // ~65 bpm
-    musG.gain.setTargetAtTime(A.music ? 0.9 : 0, now(), 0.3);
+    musG.gain.setTargetAtTime(A.music ? 0.9 * K.mu : 0, now(), 0.3);
     while (J.next < t + 0.3) {
       const bt = J.next, n = J.n, bar = Math.floor(n / 4) % (JZ.length * 2), chord = JZ[Math.floor(bar / 2) % JZ.length], nxt = JZ[(Math.floor(bar / 2) + (bar % 2 === 1 ? 1 : 0)) % JZ.length], b = n % 4, swing = beat * 0.64;
       // bass walk
@@ -2111,8 +2117,8 @@ const Snd = (() => {
     if (amb.cfg.jazz) jazz(t + 0.05); else music(t + 0.05);
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
-  function hush(on) { if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
-  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
+  function hush(on) { hushed = !!on; if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9 * K.s, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
+  return { init, sfx, hush, startAmbient, stopAmbient, applySettings, levels() { return ac ? { master: master.gain.value, sfx: sfxG.gain.value, amb: ambG.gain.value, music: musG.gain.value } : null; }, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();
 
 // ===== chalet.js =====
@@ -4885,10 +4891,11 @@ const Screens = (() => {
   };
   // ------------------------------------------------------------------ SETTINGS (modal over any pause menu)
   const settings = {
-    btns: [],
+    btns: [], sliders: [],
     layout() {
       const s = Save.data.settings, x = SW / 2 - 90, inPlay = !!(window.F0W && F0W.screen === 'play' && F0W.play); let y = 76; const out = [];
       out.push({ id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y, w: 88, h: 16 }); y += 22;
+      this.sliders = [['volume', 'Общая', s.volume], ['volSfx', 'Звуки', s.volSfx], ['volMusic', 'Музыка', s.volMusic]].map(([id, label, v], i) => ({ id, label, v: v === undefined ? 1 : v, x, y: y + i * 18, w: 180, h: 14, tx: x + 58, tw: 90 })); y += 3 * 18 + 4;
       if (inPlay) { out.push({ id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y, w: 180, h: 16 }); y += 22; }
       out.push({ id: 'keys', label: 'Клавиши управления', x, y, w: 180, h: 16 }); y += 22;
       if (inPlay) { out.push({ id: 'card', label: 'Карточка улова: положение и размер', x, y, w: 180, h: 16 }); y += 22; }
@@ -4899,8 +4906,14 @@ const Screens = (() => {
       UIK.panel(ctx, SW / 2 - 106, 52, 212, this.h, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
       T.draw(ctx, 'Настройки', SW / 2, 58, { size: 14, align: 'c', color: c.gold });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+      for (const sl of this.sliders) {                      // volume sliders: a track with a filled part and a knob
+        const hv = UIK.hit(sl, m.x, m.y) || (window.F0W && F0W.sliderDrag === sl.id), ty = sl.y + 3; T.draw(ctx, sl.label, sl.x + 2, sl.y + 3, { size: 8, color: hv ? c.gold : c.text });
+        ctx.fillStyle = '#0a1a14'; ctx.fillRect(sl.tx, ty, sl.tw, 8); ctx.strokeStyle = hv ? c.gold : c.line; ctx.strokeRect(sl.tx + 0.5, ty + 0.5, sl.tw - 1, 7); ctx.fillStyle = hv ? '#7ee08a' : '#4aa86a'; ctx.fillRect(sl.tx + 1, ty + 1, Math.round((sl.tw - 2) * sl.v), 6);
+        const kx = sl.tx + Math.round((sl.tw - 4) * sl.v); ctx.fillStyle = '#efe6c8'; ctx.fillRect(kx, ty - 2, 4, 12); T.draw(ctx, Math.round(sl.v * 100) + '%', sl.x + sl.w, sl.y + 3, { size: 8, align: 'r', color: c.dim });
+      }
     },
-    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+    set(id, mx) { const sl = this.sliders.find(s => s.id === id); if (!sl) return; Save.data.settings[id] = Math.round(clamp((mx - sl.tx) / sl.tw) * 20) / 20; },
+    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); if (b) return b.id; const sl = this.sliders.find(s => UIK.hit(s, x, y)); return sl ? 'vol:' + sl.id : null; },
   };
   // ------------------------------------------------------------------ KEY BINDINGS
   const keysScr = {
@@ -6192,7 +6205,7 @@ const Museum = (() => {
     for (let i = 0; i < 8; i++) mw(-10.5 + 3 * i, HZ, Math.PI);
     for (const z of [-6, -2.2, 2.2, 6]) mw(HX, z, -Math.PI / 2);
     for (const z of [-6.2, -3.3, 3.3, 6.2]) mw(-HX, z, Math.PI / 2);
-    for (let i = 0; i < 8; i++) { const end = i === 0 || i === 7, x = end ? (i ? 10.25 : -10.25) : -10.5 + 3 * i, w = end ? 2.0 : 2.5; L.lowcases.push({ x, z: -HZ + 0.3, w, d: 0.5, ry: 0 }); L.lowcases.push({ x, z: HZ - 0.3, w, d: 0.5, ry: Math.PI }); }      // the outer ones are shorter: the corner columns stand there
+    for (let i = 0; i < 8; i++) { const end = i === 0 || i === 7, x = end ? (i ? 10.25 : -10.25) : -10.5 + 3 * i, w = end ? 2.0 : 2.5; const cx = !end && i === 3 ? -1.75 : !end && i === 4 ? 1.75 : x, cw = !end && (i === 3 || i === 4) ? 2.0 : w; L.lowcases.push({ x: cx, z: -HZ + 0.3, w: cw, d: 0.5, ry: 0 }); L.lowcases.push({ x, z: HZ - 0.3, w, d: 0.5, ry: Math.PI }); }      // the outer ones are shorter: the corner columns stand there
     for (const [z, w] of [[-4.1, 1.7], [0, 1.7], [4.1, 1.7]]) L.cases.push({ x: HX - 0.25, z, w, d: 0.45, h: 3.5, ry: -Math.PI / 2 });      // tall bookcases
     for (const z of [-4.75, 4.75]) L.cases.push({ x: -HX + 0.25, z, w: 1.2, d: 0.45, h: 3.5, ry: Math.PI / 2 });
     return L;
@@ -6204,6 +6217,10 @@ const Museum = (() => {
     x.fillStyle = '#d0b060'; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, r = i % 2 ? 26 : 40; x.beginPath(); x.moveTo(64, 64); x.lineTo(64 + Math.cos(a - 0.14) * r * 0.5, 64 + Math.sin(a - 0.14) * r * 0.5); x.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); x.lineTo(64 + Math.cos(a + 0.14) * r * 0.5, 64 + Math.sin(a + 0.14) * r * 0.5); x.fill(); }
     x.fillStyle = '#2c4a5a'; x.beginPath(); x.arc(64, 64, 8, 0, 6.3); x.fill(); x.fillStyle = '#efe6c8'; x.fillRect(62, 62, 4, 4); }, 0, 0, true);
   const T_SKY = () => ctex(32, 32, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fffbe8'); g.addColorStop(1, '#e8f4ff'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillRect(4, 8, 14, 3); x.fillRect(10, 18, 16, 3); }, 0, 0, true);
+  const T_DIAL = () => ctex(128, 128, (x, w, h) => { x.fillStyle = '#efe6c8'; x.fillRect(0, 0, w, h); x.strokeStyle = '#2a1a0e'; x.lineWidth = 2; x.beginPath(); x.arc(64, 64, 58, 0, 6.3); x.stroke(); x.lineWidth = 1; x.beginPath(); x.arc(64, 64, 49, 0, 6.3); x.stroke();
+    for (let i = 0; i < 60; i++) { const a = i / 60 * 6.2832, r0 = i % 5 ? 52 : 49, r1 = 57; x.lineWidth = i % 5 ? 1 : 2; x.beginPath(); x.moveTo(64 + Math.sin(a) * r0, 64 - Math.cos(a) * r0); x.lineTo(64 + Math.sin(a) * r1, 64 - Math.cos(a) * r1); x.stroke(); }
+    const R = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']; R.forEach((t, i) => { const a = i / 12 * 6.2832; T.draw(x, t, 64 + Math.sin(a) * 38, 64 - Math.cos(a) * 38 - 4, { size: 8, align: 'c', color: '#2a1a0e' }); });
+    x.fillStyle = '#8a6a22'; x.beginPath(); x.arc(64, 64, 3, 0, 6.3); x.fill(); }, 0, 0, true);
   function wallTex(L) {
     const k = 40, w = Math.round(L * k), h = Math.round(RH * k);
     const t = ctex(w, h, (x) => {
@@ -6263,7 +6280,8 @@ const Museum = (() => {
         const sg = z === 0 ? -Math.sign(x) : -Math.sign(z); const horiz = !ry;
         for (let i = 0; i < 3; i++) { const dpt = 0.1 + i * 0.07, hh = 0.07; if (horiz) B.box(lw, hh, dpt, x, RH - 0.035 - i * 0.07 + 0, z + sg * dpt / 2, i === 1 ? brassC : '#c8b88a'); else B.box(dpt, hh, lw, x + sg * dpt / 2, RH - 0.035 - i * 0.07, z, i === 1 ? brassC : '#c8b88a'); }
       }
-      for (const x of [-6, 0, 6]) for (const sgz of [-1, 1]) {      // pilasters on the long walls: base, fluted shaft, capital
+      for (const x of [-6, 0, 6]) for (const sgz of [-1, 1]) {      // pilasters (on the north wall the middle one is the clock's place)
+        if (x === 0 && sgz === -1) continue;      // base, fluted shaft, capital
         const z = sgz * (HZ - 0.07); B.box(0.5, 0.35, 0.14, x, 0.175, z, '#b8a678'); B.box(0.36, 4.0, 0.1, x, 2.35, z, '#d8c8a0'); for (const fx of [-0.12, 0, 0.12]) B.box(0.04, 3.9, 0.12, x + fx, 2.3, z - sgz * 0.005, '#c4b48c'); B.box(0.5, 0.2, 0.14, x, 4.45, z, '#b8a678'); B.box(0.58, 0.07, 0.17, x, 4.6, z, brassC);
       }
       for (const [x, z] of [[-HX + 0.27, -HZ + 0.27], [HX - 0.27, -HZ + 0.27], [-HX + 0.27, HZ - 0.27], [HX - 0.27, HZ - 0.27]]) { B.box(0.4, 4.6, 0.4, x, 2.3, z, '#d8c8a0'); B.box(0.46, 0.3, 0.46, x, 0.15, z, '#b8a678'); B.box(0.5, 0.16, 0.5, x, 4.52, z, brassC); }
@@ -6339,6 +6357,24 @@ const Museum = (() => {
         B.lathe([[0.001, 0], [0.11, 0], [0.11, 0.04], [0.05, 0.08], [0.04, 0.3]], wx - sg * 0.02, bc.h + 0.14, wz, DARK, 8); B.ball(0.2, wx - sg * 0.02, bc.h + 0.14 + 0.5, wz, '#3a78a8', 10);
         this.addCol(wx - dd / 2, wx + dd / 2, wz - wd / 2, wz + wd / 2);
       });
+      // --- the antique longcase clock on the north wall: plinth, a waist with a glass door (pendulum and weights inside), a hood with an arched top and a dial; the hands and the pendulum follow the real time
+      B.unit = 'clock'; { const cz = -HZ + 0.25, fz = cz + 0.22;
+        B.box(0.7, 0.28, 0.46, 0, 0.14, cz, '#2a1a0e'); B.box(0.78, 0.06, 0.5, 0, 0.31, cz, '#4a2c18'); B.box(0.5, 0.04, 0.4, 0, 0.36, cz, brassD);
+        B.box(0.5, 1.28, 0.38, 0, 1.0, cz - 0.0, '#5a3820'); B.box(0.36, 0.98, 0.02, 0, 1.02, fz - 0.02, '#1a0e06');       // the door recess (dark) and its frame
+        for (const sx of [-1, 1]) B.box(0.035, 1.02, 0.03, sx * 0.19, 1.02, fz + 0.0, brassC); B.box(0.4, 0.035, 0.03, 0, 1.54, fz, brassC); B.box(0.4, 0.035, 0.03, 0, 0.5, fz, brassC); B.ball(0.025, 0.15, 1.02, fz + 0.03, brassC, 6);
+        for (const sx of [-1, 1]) { B.cyl(0.04, 0.04, 0.3, sx * 0.1, 0.78, cz - 0.02, brassD, 8); B.cyl(0.045, 0.045, 0.03, sx * 0.1, 0.945, cz - 0.02, brassC, 8); B.limb(V(sx * 0.1, 0.96, cz - 0.02), V(sx * 0.1, 1.58, cz - 0.02), 0.004, 0.004, '#c8c8d0', 4); }       // two weights on chains
+        B.box(0.6, 0.09, 0.44, 0, 1.69, cz, '#4a2c18'); B.box(0.66, 0.04, 0.48, 0, 1.745, cz, brassD);
+        B.box(0.58, 0.8, 0.42, 0, 2.15, cz, '#5a3820'); for (const sx of [-1, 1]) { B.cyl(0.035, 0.035, 0.76, sx * 0.3, 2.15, fz - 0.01, brassC, 8); B.cyl(0.05, 0.05, 0.04, sx * 0.3, 1.77, fz - 0.01, brassD, 8); B.cyl(0.05, 0.05, 0.04, sx * 0.3, 2.55, fz - 0.01, brassD, 8); }
+        B.box(0.66, 0.05, 0.46, 0, 2.575, cz, '#4a2c18'); B.geo(new THREE.CylinderGeometry(0.31, 0.31, 0.42, 16, 1, false, Math.PI / 2, Math.PI), (() => { const m = M4(0, 2.6, cz); m.multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)); return m; })(), '#5a3820');
+        B.box(0.05, 0.08, 0.05, 0, 2.935, cz, brassC); B.ball(0.05, 0, 3.0, cz, brassC, 8); B.cyl(0.006, 0.006, 0.14, 0, 3.12, cz, brassC, 4); for (const sx of [-1, 1]) { B.cyl(0.03, 0.03, 0.04, sx * 0.3, 2.6, cz, brassD, 8); B.ball(0.04, sx * 0.3, 2.66, cz, brassC, 8); }
+        B.limb(V(0, 2.1, fz + 0.002), V(0, 2.1, fz + 0.012), 0.2, 0.2, '#efe6c8', 20);            // the dial: an ivory disc with a brass rim
+        B.geo(new THREE.TorusGeometry(0.205, 0.012, 6, 24), M4(0, 2.1, fz + 0.012), brassC);
+        const dial = mesh(new THREE.CircleGeometry(0.2, 28), bas('#ffffff', { map: T_DIAL() }), 0, 2.1, fz + 0.0135); S.add(dial);
+        const hand = (len, w, col) => { const g = new THREE.BoxGeometry(w, len, 0.004); g.translate(0, len / 2 - 0.02, 0); const m = new THREE.Mesh(g, bas(col)); const hg = new THREE.Group(); hg.add(m); hg.position.set(0, 2.1, fz + 0.016); S.add(hg); return hg; };
+        const hh = hand(0.11, 0.018, '#14100c'), mh = hand(0.17, 0.012, '#14100c'), sh2 = hand(0.18, 0.005, '#8a1c1c'); this.clockHands = { h: hh, m: mh, s: sh2 };
+        const pg = new THREE.Group(); pg.position.set(0, 1.5, fz - 0.03); const rod = mesh(new THREE.BoxGeometry(0.012, 0.8, 0.008), bas('#c8a040'), 0, -0.4, 0); const bob = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.012, 16), bas('#d8b050'), 0, -0.8, 0); bob.rotation.x = Math.PI / 2; pg.add(rod, bob); S.add(pg); this.pendulum = pg;
+        const gl = mesh(new THREE.PlaneGeometry(0.34, 0.94), bas('#cfe8ff', { transparent: true, opacity: 0.1, depthWrite: false }), 0, 1.02, fz + 0.012); S.add(gl);
+        this.addCol(-0.42, 0.42, -HZ, -HZ + 0.56); this.clockPos = { x: 0, z: -HZ + 1.5 }; }
       // --- plants: potted palms / ficus in the corners, ferns on pedestals between the bookcases, dracaenas by the door
       const bl = (len, wid, bend, x, y, z, az, tilt, col, segs) => { const d = len * (0.88 * Math.sin(tilt) + bend * Math.cos(tilt)) + wid / 2 + 0.05; if (Math.abs(x + Math.sin(az) * d) < HX - 0.04 && Math.abs(z + Math.cos(az) * d) < HZ - 0.04) B.blade(len, wid, bend, x, y, z, az, tilt, col, segs); };      // a leaf that would poke through a wall is left out
       let pk = 0; const plant = (kind, x, z, y0 = 0, sc = 1) => {
@@ -6396,7 +6432,7 @@ const Museum = (() => {
       const sg = mesh(new THREE.PlaneGeometry(2.4, 0.4), bas('#ffffff', { map: signTex('МУЗЕЙ КОЛЛЕКЦИИ', 220, 24, '#2a1a0e', '#f0d890') }), 0, 3.85, -HZ + 0.025); S.add(sg);
       const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#14281e', '#9af0a0', '#7a8a50') }), -HX + 0.03, 2.88, 0); sd.rotation.y = Math.PI / 2; S.add(sd);
       // --- stations: leave, and the zones where boxes are placed (the nearest one decides which tab opens)
-      this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }];
+      this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }, { id: 'clock', x: 0, z: -HZ + 1.5, r: 1.7, label: () => { const d = new Date(); return `E — старинные часы: ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} (послушать бой)`; } }];
       const zone = (tab, x, z, r, name) => this.stations.push({ id: 'place', tab, x, z, r, label: () => `E — расставить коробки: ${name} (на экспозиции: ${Save.data.boxes.filter(b => b.loc && b.loc.t === tab).length} из ${MUS[tab]})` });
       LAYOUT.tables.forEach(t => zone('mt', t.x, t.z + (t.z < 0 ? 1.1 : -1.1), 2.0, 'столы-витрины'));
       LAYOUT.large.forEach(t => zone('ml', t.x, t.z + 1.4, 1.9, 'большие столы'));
@@ -6452,6 +6488,10 @@ const Museum = (() => {
       this.animate(dt);
     }
     animate(dt) {
+      if (this.clockHands) { const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000, min = d.getMinutes() + sec / 60, hr = d.getHours() % 12 + min / 60, H = this.clockHands;
+        H.h.rotation.z = -hr / 12 * 6.2832; H.m.rotation.z = -min / 60 * 6.2832; H.s.rotation.z = -Math.floor(sec) / 60 * 6.2832 - (sec % 1 < 0.15 ? (0.15 - sec % 1) * 0.3 : 0); this.pendulum.rotation.z = 0.2 * Math.sin(Math.PI * sec);
+        const whole = Math.floor(sec); if (this.lastSec !== whole) { this.lastSec = whole; const P = this.player, dd = Math.hypot(P.pos.x - this.clockPos.x, P.pos.z + HZ - 0.25); Snd.sfx.clockTick(whole % 2 === 0, clamp(1 - dd / 12)); }
+        if (d.getMinutes() === 0 && sec < 1.5 && this.lastChime !== d.getHours()) { this.lastChime = d.getHours(); Snd.sfx.clockChime(d.getHours() % 12 || 12); } else if (d.getMinutes() !== 0) this.lastChime = undefined; }
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0, nt: NetParts.code(Save.curNet()) }); } }
     }
     // ------------------------------------------------------------ overlays / input
@@ -6460,6 +6500,7 @@ const Museum = (() => {
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitMuseum(); }
+      else if (s.id === 'clock') { const n = new Date().getHours() % 12 || 12; Snd.sfx.clockChime(n); this.toast(`Часы бьют: ${n}`, 3); }
       else if (s.id === 'place') { Snd.sfx.page(); Boxes.place.open(s.tab); this.open('place'); }
     }
     key(e) {
@@ -7951,7 +7992,7 @@ const SecretMarket = (() => {
   function modalClick(x, y) {
     if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
     if (App.modal === 'stash') { if (Secret.stash.click(x, y) === 'close') { App.modal = null; Snd.sfx.page(); } return; }
-    const id = S.settings.click(x, y); if (!id) return; Snd.sfx.click();
+    const id = S.settings.click(x, y); if (!id) return; if (id.startsWith('vol:')) { App.sliderDrag = id.slice(4); S.settings.set(App.sliderDrag, x); Snd.applySettings(); return; } Snd.sfx.click();
     if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
     else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
     else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.modal = 'keys'; }
@@ -7959,7 +8000,7 @@ const SecretMarket = (() => {
     else if (id === 'back') App.modal = null;
   }
   // ---------------- input
-  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.sliderDrag) { S.settings.set(App.sliderDrag, mouse.x); Snd.applySettings(); } if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
   // The Esc that closes the pause menu is also the key that makes the browser drop a pointer lock it has just granted again: that lost lock must
   // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
@@ -8040,7 +8081,7 @@ const SecretMarket = (() => {
       if (id === 'back') { Snd.sfx.click(); go(() => { App.screen = 'title'; }); } else if (id === 'journal') openJournal('map'); else if (id === 'cabinet') { Snd.sfx.click(); go(() => App.toCabinet()); } else if (id === 'market') { Snd.sfx.click(); go(() => App.toMarket()); } else if (id === 'go' && S.wmap.sel >= 0) { Snd.sfx.click(); const b = (visibleBiomes()[S.wmap.sel] || {}).id; if (b) go(() => App.start(b)); }
     } else if (sc === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); }
   });
-  addEventListener('mouseup', () => S.cardpos.release());
+  addEventListener('mouseup', () => { S.cardpos.release(); if (App.sliderDrag) { App.sliderDrag = null; Save.write(); Snd.sfx.click(); } });
   ui.addEventListener('contextmenu', e => e.preventDefault());
   ui.addEventListener('wheel', e => { if (App.screen === 'play' && App.overlay === 'cardpos') { S.cardpos.step(App.play, e.deltaY < 0 ? 1 : -1); return; } if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
 
