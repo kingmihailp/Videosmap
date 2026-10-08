@@ -252,7 +252,8 @@ const Screens = (() => {
         ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.5; ctx.fillStyle = '#000'; ctx.fillRect(s.x + 12, s.y + 44, 78, 2); ctx.globalAlpha = 1;
         ctx.drawImage(Art.specimen(s.sp, !has), s.x + 11, s.y + 5, 80, 40);
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
-        if (has && Save.aberrants(s.sp.id).length) { ctx.fillStyle = '#c0309a'; ctx.fillRect(s.x + s.w - 9, s.y + 5, 1, 5); ctx.fillRect(s.x + s.w - 11, s.y + 7, 5, 1); ctx.fillStyle = '#ff9ae8'; ctx.fillRect(s.x + s.w - 9, s.y + 7, 1, 1); }
+        { const plus = (cx, c1, c2) => { ctx.fillStyle = c1; ctx.fillRect(cx, s.y + 5, 1, 5); ctx.fillRect(cx - 2, s.y + 7, 5, 1); ctx.fillStyle = c2; ctx.fillRect(cx, s.y + 7, 1, 1); };      // a purple cross: an aberration is caught; a red one: a rare find (both side by side)
+          const ab = has && Save.aberrants(s.sp.id).length > 0, rare = has && Rare.is(s.sp); if (ab) plus(s.x + s.w - 9, '#c0309a', '#ff9ae8'); if (rare) plus(s.x + s.w - 9 - (ab ? 8 : 0), '#d02028', '#ff8a8a'); }
         ctx.fillStyle = '#f2ead0'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 14); ctx.fillStyle = '#8a7650'; ctx.fillRect(s.x + 4, s.y + 63, s.w - 8, 1);
         T.draw(ctx, has ? fit(s.sp.ru, s.w - 12) : '??? Не найдено', s.x + s.w / 2, s.y + 52, { size: 8, align: 'c', color: has ? '#2a1a0c' : '#8a7a5a' });
       });
