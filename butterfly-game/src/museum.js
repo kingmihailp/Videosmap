@@ -169,7 +169,7 @@ const Museum = (() => {
       // --- the door (west wall): a frame with a pediment, a panelled leaf, hinges and a brass plate
       B.unit = 'door';
       B.box(0.16, 2.4, 0.12, -HX + 0.08, 1.2, -0.62, DARK); B.box(0.16, 2.4, 0.12, -HX + 0.08, 1.2, 0.62, DARK); B.box(0.16, 0.14, 1.36, -HX + 0.08, 2.37, 0, DARK); B.box(0.2, 0.08, 1.6, -HX + 0.1, 2.5, 0, brassD); B.box(0.18, 0.2, 1.3, -HX + 0.09, 2.64, 0, DARK);
-      B.box(0.05, 2.28, 1.1, -HX + 0.1, 1.14, 0, '#5a3820'); for (const [y, h] of [[1.75, 0.8], [0.6, 0.9]]) B.box(0.03, h, 0.76, -HX + 0.13, y, 0, '#6e4a2c'); B.box(0.07, 0.07, 0.07, -HX + 0.16, 1.1, 0.4, brassC); for (const y of [0.4, 1.9]) B.box(0.04, 0.16, 0.05, -HX + 0.1, y, -0.58, brassD);
+      B.box(0.05, 2.28, 1.1, -HX + 0.1, 1.14, 0, '#5a1626'); for (const [y, h] of [[1.75, 0.8], [0.6, 0.9]]) { B.box(0.03, h, 0.76, -HX + 0.13, y, 0, '#46101e'); B.box(0.035, 0.03, 0.8, -HX + 0.135, y + h / 2 + 0.02, 0, '#e8c048'); B.box(0.035, 0.03, 0.8, -HX + 0.135, y - h / 2 - 0.02, 0, '#e8c048'); } B.box(0.03, 0.2, 0.07, -HX + 0.14, 1.1, 0.4, '#e8c048'); B.ball(0.05, -HX + 0.18, 1.1, 0.4, '#e8c048', 8); for (const y of [0.4, 1.9]) B.box(0.04, 0.16, 0.05, -HX + 0.1, y, -0.58, brassD);
       // --- 12 display tables: turned legs, apron with carving, a green leather top, brass rims, little glass cover posts and a plate
       B.unit = 'tables';
       LAYOUT.tables.forEach((t, k) => {
@@ -307,7 +307,7 @@ const Museum = (() => {
       const furniture = B.build(); S.add(furniture); this.furniture = furniture; qb.forEach(q => { if (q.P.length) S.add(q.build()); }); this.glow = glow;
       // --- signs: the name of the hall on the north wall, the way back over the door
       const sg = mesh(new THREE.PlaneGeometry(2.4, 0.4), bas('#ffffff', { map: signTex('МУЗЕЙ КОЛЛЕКЦИИ', 220, 24, '#2a1a0e', '#f0d890') }), 0, 3.85, -HZ + 0.025); sg.userData.sign = true; S.add(sg);
-      const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#14281e', '#9af0a0', '#7a8a50') }), -HX + 0.03, 2.88, 0); sd.rotation.y = Math.PI / 2; sd.userData.sign = true; S.add(sd);
+      const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#4a1020', '#f4d878', '#e0b848') }), -HX + 0.03, 2.88, 0); sd.rotation.y = Math.PI / 2; sd.userData.sign = true; S.add(sd);
       // --- stations: leave, and the zones where boxes are placed (the nearest one decides which tab opens)
       this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }, { id: 'clock', x: 0, z: -HZ + 1.5, r: 1.7, label: () => { const d = new Date(); return `E — старинные часы: ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} (послушать бой)`; } }];
       const zone = (tab, x, z, r, name) => this.stations.push({ id: 'place', tab, x, z, r, label: () => `E — расставить коробки: ${name} (на экспозиции: ${Save.data.boxes.filter(b => b.loc && b.loc.t === tab).length} из ${MUS[tab]})` });

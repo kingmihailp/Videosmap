@@ -194,10 +194,14 @@ const Cabinet = (() => {
       const dz = -1.6; cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, dz - 0.55, darkWood); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, dz + 0.55, darkWood); cube(S, 0.12, 0.08, 1.18, HX - 0.05, 2.39, dz, darkWood);
       const door = cube(S, 0.05, 2.32, 1.02, HX - 0.04, 1.16, dz, lam('#6a4426', { map: T_WOOD('#6a4426', '#4a2c18') })); cube(S, 0.02, 0.9, 0.64, HX - 0.07, 1.65, dz, lam('#5a3820')); cube(S, 0.02, 0.9, 0.64, HX - 0.07, 0.62, dz, lam('#5a3820'));
       cube(S, 0.05, 0.05, 0.05, HX - 0.1, 1.15, dz + 0.4, brass); const dsg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('ВЫХОД · на карту', 150, 22, '#14281e', '#9af0a0', '#7a8a50', false) }), HX - 0.03, 2.62, dz, { cast: false, recv: false }); dsg.rotation.y = -Math.PI / 2; S.add(dsg);
-      // --- the door of the museum (east wall, between the way out and the workshop)
-      { const mz = 0.1; cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz - 0.55, darkWood); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz + 0.55, darkWood); cube(S, 0.12, 0.08, 1.18, HX - 0.05, 2.39, mz, darkWood);
-        cube(S, 0.05, 2.32, 1.0, HX - 0.04, 1.16, mz, lam('#3a2a4a', { map: T_WOOD('#4a3260', '#2e2040') })); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 1.65, mz, lam('#2e2040')); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 0.62, mz, lam('#2e2040')); cube(S, 0.05, 0.05, 0.05, HX - 0.1, 1.15, mz - 0.38, brass);
-        const msg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('МУЗЕЙ коллекций', 150, 22, '#2a1a3e', '#f0d890', '#c8a040', false) }), HX - 0.03, 2.62, mz, { cast: false, recv: false }); msg.rotation.y = -Math.PI / 2; S.add(msg); }
+      // --- the door of the museum (east wall, between the way out and the workshop): dark burgundy with raised panels and a golden handle and lock plate
+      { const mz = 0.1, gold = lam('#e8c048'), burg = lam('#5a1626', { map: T_WOOD('#6a1a2c', '#46101e') }), burgD = lam('#3e0e1a'); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz - 0.55, darkWood); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz + 0.55, darkWood); cube(S, 0.12, 0.08, 1.18, HX - 0.05, 2.39, mz, darkWood);
+        cube(S, 0.05, 2.32, 1.0, HX - 0.04, 1.16, mz, burg); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 1.65, mz, burgD); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 0.62, mz, burgD);
+        for (const y of [1.65, 0.62]) { cube(S, 0.02, 0.04, 0.66, HX - 0.075, y + 0.47, mz, gold, { cast: false }); cube(S, 0.02, 0.04, 0.66, HX - 0.075, y - 0.47, mz, gold, { cast: false }); }      // gold beading around the panels
+        cube(S, 0.02, 0.2, 0.07, HX - 0.075, 1.15, mz - 0.38, gold, { cast: false });                                                             // the lock plate
+        cyl(S, 0.028, 0.028, 0.07, HX - 0.1, 1.15, mz - 0.38, gold, 10).rotation.z = Math.PI / 2; const knob = mesh(new THREE.SphereGeometry(0.05, 10, 8), gold, HX - 0.14, 1.15, mz - 0.38); S.add(knob);       // the golden handle: a rose and a round knob
+        for (const y of [0.3, 2.0]) cube(S, 0.04, 0.12, 0.05, HX - 0.075, y, mz + 0.5, gold, { cast: false });                                       // hinges
+        const msg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('МУЗЕЙ коллекций', 150, 22, '#4a1020', '#f4d878', '#e0b848', false) }), HX - 0.03, 2.62, mz, { cast: false, recv: false }); msg.rotation.y = -Math.PI / 2; S.add(msg); }
       // --- display desk (centre)
       const dd = new THREE.Group(); S.add(dd); const ddx = 0, ddz = 0.4;
       cube(dd, 2.5, 0.08, 1.3, ddx, 0.86, ddz, wood); cube(dd, 2.36, 0.62, 1.16, ddx, 0.5, ddz, darkWood);
