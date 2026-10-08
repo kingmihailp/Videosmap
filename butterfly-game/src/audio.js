@@ -58,6 +58,8 @@ const Snd = (() => {
     grab() { if (!ac) return; osc('triangle', 520, now(), 0.05, 0.05, null, 700); },
     stick(q) { if (!ac) return; const t = now(); noiseBurst(t, 0.05, 3200, 1200, 0.22, 'bandpass', 2); osc('sine', 150, t, 0.12, 0.2, null, 70); if (q > 0.75) bell(midi(96), t + 0.05, 0.05, 0.6); },
     tear() { if (!ac) return; noiseBurst(now(), 0.22, 2600, 5200, 0.16, 'highpass', 0.8); },
+    creak() { if (!ac) return; const t = now(); noiseBurst(t, 0.5, 260, 520, 0.16, 'bandpass', 6); osc('sawtooth', 120, t, 0.45, 0.05, null, 190); noiseBurst(t + 0.28, 0.25, 420, 280, 0.1, 'bandpass', 5); },
+    snap() { if (!ac) return; const t = now(); noiseBurst(t, 0.08, 2600, 900, 0.4, 'highpass', 0.8); noiseBurst(t + 0.05, 0.9, 700, 90, 0.5, 'lowpass', 0.6); osc('sine', 80, t, 0.7, 0.3, null, 38); },
     thud() { if (!ac) return; const t = now(); osc('sine', 120, t, 0.16, 0.25, null, 55); noiseBurst(t, 0.06, 700, 300, 0.12, 'lowpass', 0.7); },
     grade(q) { if (!ac) return; const t = now(); const n = q >= 95 ? 7 : q >= 85 ? 5 : q >= 70 ? 4 : q >= 50 ? 3 : 2; const sc = [0, 4, 7, 12, 16, 19, 24]; for (let i = 0; i < n; i++) bell(midi(60 + sc[i] + (q < 50 ? -5 : 0)), t + i * 0.11, 0.17, 1.8); },
     door() { if (!ac) return; const t = now(); noiseBurst(t, 0.3, 300, 120, 0.18, 'lowpass', 0.7); osc('sine', 90, t, 0.25, 0.15, null, 60); },
@@ -96,6 +98,7 @@ const Snd = (() => {
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     bog:        { wind: 0.45, bird: 'sparse', insect: ['cricket', 3200, 0.025], frog: true, base: 45, scale: [0, 2, 3, 7, 8], mus: 0.7 },
     papua:      { wind: 0.12, bird: 'tropic', insect: ['cicada', 4800, 0.075], frog: true, base: 49, scale: [0, 2, 3, 7, 10], mus: 0.8 },
+    vietnam:    { wind: 0.55, bird: 'song', insect: ['cicada', 5000, 0.06], water: true, base: 53, scale: [0, 2, 3, 7, 9], mus: 0.85 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {

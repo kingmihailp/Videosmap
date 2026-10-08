@@ -2,8 +2,8 @@
 const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); const have = mine.filter(s => Save.has(s.id)).length; return `${have}/${mine.length}`; };
 const Screens = (() => {
   const c = UIK.col;
-  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея' };
-  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея', vietnam: 'Вьетнам' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070', vietnam: '#e0903a' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -163,6 +163,7 @@ const Screens = (() => {
       // wooden desk
       for (let i = 0; i < 24; i++) { ctx.fillStyle = i % 2 ? '#2e2018' : '#34261c'; ctx.fillRect(i * 20, 0, 20, SH); } ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, SW, SH);
       T.draw(ctx, 'Выбери место для ловли', 266, 11, { size: 8, align: 'c', color: c.gold, shadow: '#000' });
+      if (window.F0W && F0W.mapNote && performance.now() < F0W.mapNote.until) { const w = T.width(F0W.mapNote.text, 8) + 16; UIK.panel(ctx, 266 - w / 2, 22, w, 16, { fill: 'rgba(60,16,16,0.94)', border: '#c85a3a' }); T.draw(ctx, F0W.mapNote.text, 266, 26, { size: 8, align: 'c', color: '#ffd8c0' }); }
       // parchment frame
       UIK.panel(ctx, MAPX - 8, MAPY - 6, MAP_W * MS + 16, MAP_H * MS + 12, { fill: c.parch, border: '#5a3a1c' }); ctx.strokeStyle = '#8a6a3a'; ctx.strokeRect(MAPX - 5.5, MAPY - 3.5, MAP_W * MS + 11, MAP_H * MS + 6);
       ctx.imageSmoothingEnabled = false; ctx.drawImage(mapCanvas, MAPX, MAPY, MAP_W * MS, MAP_H * MS);

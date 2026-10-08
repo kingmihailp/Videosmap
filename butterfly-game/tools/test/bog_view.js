@@ -4,7 +4,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const br = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
   const pg = await br.newPage({ viewport: { width: 960, height: 540 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'warning' || m.type() === 'error') errs.push(m.text().slice(0, 200)); });
   await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(2500);
-  await pg.evaluate(([seed, bid]) => { Save.data.maps = { bog: true, papua: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(bid, seed); }, [process.argv[3] || 'BOG1', process.argv[4] || 'bog']);
+  await pg.evaluate(([seed, bid]) => { Save.data.maps = { bog: true, papua: true, vietnam: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(bid, seed); }, [process.argv[3] || 'BOG1', process.argv[4] || 'bog']);
   for (let i = 0; i < 120; i++) { if (await pg.evaluate(() => !!(F0W.play && F0W.screen === 'play')).catch(() => false)) break; await pg.waitForTimeout(500); }
   await pg.evaluate(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.overlay = null; F0W.locked = true; });
   const views = JSON.parse(process.argv[2] || '[[0,0,0,-0.1]]');

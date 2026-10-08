@@ -6,7 +6,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(2500);
   const ev = f => pg.evaluate(f); let ok = 0, bad = 0; const T = (n, c, x) => { if (c) ok++; else bad++; console.log(c ? 'PASS' : 'FAIL', n, x === undefined ? '' : JSON.stringify(x)); };
   T('no map: bog hidden', await ev(() => !Maps.has('bog') && !visibleBiomes().some(b => b.id === 'bog') && !Maps.allowed('bog')));
-  T('journal/collection hides bog species', await ev(() => { const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); return mine.length === SPECIES.filter(s => !s.mystery).length - BIOME_BY_ID.bog.species.length - BIOME_BY_ID.papua.species.length; }));
+  T('journal/collection hides bog species', await ev(() => { const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); return mine.length === SPECIES.filter(s => !s.mystery).length - BIOME_BY_ID.bog.species.length - BIOME_BY_ID.papua.species.length - BIOME_BY_ID.vietnam.species.length; }));
   await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.start('bog', 'X'); }); await pg.waitForTimeout(1500);
   T('start(bog) without the map is refused (back to the map)', await ev(() => F0W.screen !== 'play'), await ev(() => F0W.screen));
   // the shop

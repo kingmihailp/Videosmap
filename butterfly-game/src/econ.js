@@ -5,7 +5,7 @@
 //  * a spread and pinned specimen is worth more than a raw one of the same species: from 1.45x (poorly spread) up to 3x (perfect, quality 100)
 //  * the butterflies of the secret locations Bog and New Guinea are worth twice as much (except Queen Alexandra's birdwing, which has a fixed price)
 const Econ = (() => {
-  const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, SPREAD_LO = 1.45, SPREAD_HI = 3, AB_K = 6, LOC_K = { bog: 2, papua: 2, ocean: 2 };
+  const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, SPREAD_LO = 1.45, SPREAD_HI = 3, AB_K = 6, LOC_K = { bog: 2, papua: 2, vietnam: 2, ocean: 2 };
   const h = id => (strSeed(id) % 1000) / 1000;
   const baseValue = sp => sp.fixedPrice ? sp.fixedPrice : (sp.biome === 'ocean' || sp.mystery) ? Math.round(55 + h(sp.id) * 18) : Math.round(BASE[sp.rar || 1] * (0.85 + 0.3 * h(sp.id)));
   const isSpread = spec => spec.q !== null && spec.q !== undefined;

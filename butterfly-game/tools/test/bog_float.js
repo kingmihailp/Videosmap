@@ -8,10 +8,10 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const pg = await br.newPage({ viewport: { width: 400, height: 300 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(2500);
   const seed = process.argv[2] || 'BOGF', bid = process.argv[3] || 'bog';
-  await pg.evaluate(([sd, b]) => { Save.data.maps = { bog: true, papua: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(b, sd); }, [seed, bid]);
+  await pg.evaluate(([sd, b]) => { Save.data.maps = { bog: true, papua: true, vietnam: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(b, sd); }, [seed, bid]);
   for (let i = 0; i < 120; i++) { if (await pg.evaluate(() => !!(F0W.play && F0W.screen === 'play')).catch(() => false)) break; await pg.waitForTimeout(500); }
   const r = await pg.evaluate(() => {
-    const w = F0W.play.world, H = w.heightAt, out = { single: [], inst: [], parts: [], checked: { mesh: 0, inst: 0, merged: 0 } }, scene = w.scene;
+    const w = F0W.play.world, H = w.heightAt, out = { single: [], inst: [], parts: [], checked: { mesh: 0, inst: 0, merged: 0 } }, scene = w.scene, singles = [];
     scene.updateMatrixWorld(true);
     const groundMax = (b) => { let m = -1e9; for (let i = 0; i <= 2; i++) for (let k = 0; k <= 2; k++) m = Math.max(m, H(b.min.x + (b.max.x - b.min.x) * i / 2, b.min.z + (b.max.z - b.min.z) * k / 2)); return m; };
     const wp = (mesh, i, v) => { v.fromBufferAttribute(mesh.geometry.attributes.position, i).applyMatrix4(mesh.matrixWorld); return v; };
@@ -24,10 +24,9 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
         return;
       }
       const box = /* a mesh in a group (a flower: stem + head) stands as long as the group does */ new THREE.Box3().setFromObject(o.parent && o.parent !== scene && o.parent.type === 'Group' ? o.parent : o); if (!isFinite(box.min.x)) return; const sx = box.max.x - box.min.x, sz = box.max.z - box.min.z; if (sx > 120 || sz > 120) return;
-      out.checked.mesh++; const gm = groundMax(box), gap = box.min.y - gm;
-      const tris = o.geometry.attributes.position.count / 3;
-      if (gap > 0.35 && !(o.material && o.material.transparent && sx > 20)) out.single.push({ at: [+((box.min.x + box.max.x) / 2).toFixed(1), +box.min.y.toFixed(2), +((box.min.z + box.max.z) / 2).toFixed(1)], gap: +gap.toFixed(2), size: [+sx.toFixed(1), +(box.max.y - box.min.y).toFixed(1), +sz.toFixed(1)], tris });
-      if (tris > 12 && tris < 25000 && sx < 60 && sz < 60) {      // merged model: components of touching triangles
+      out.checked.mesh++; const gm = groundMax(box), gap = box.min.y - gm; singles.push({ box, gap, o });
+      const tris = o.geometry.attributes.position.count / 3; singles[singles.length - 1].info = { at: [+((box.min.x + box.max.x) / 2).toFixed(1), +box.min.y.toFixed(2), +((box.min.z + box.max.z) / 2).toFixed(1)], gap: +gap.toFixed(2), size: [+sx.toFixed(1), +(box.max.y - box.min.y).toFixed(1), +sz.toFixed(1)], tris, transparentBig: !!(o.material && o.material.transparent && sx > 20), skip: !!(o.userData && o.userData.noFloat) };
+      if (tris > 60 && tris < 25000 && sx < 60 && sz < 60) {      // merged model: components of touching triangles
         out.checked.merged++; const P = o.geometry.attributes.position, n = Math.floor(P.count / 3), v = new THREE.Vector3(), B = [];
         for (let i = 0; i < n; i++) { const b = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let k = 0; k < 3; k++) { wp(o, i * 3 + k, v); b[0] = Math.min(b[0], v.x); b[1] = Math.min(b[1], v.y); b[2] = Math.min(b[2], v.z); b[3] = Math.max(b[3], v.x); b[4] = Math.max(b[4], v.y); b[5] = Math.max(b[5], v.z); } B.push(b); }
         const par = Array.from({ length: n }, (_, i) => i), f = a => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; }, e = 0.03, ord = B.map((b, i) => i).sort((a, b) => B[a][0] - B[b][0]);
@@ -36,6 +35,12 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
         for (const k in comp) { const c = comp[k]; if (c.low > 0.35 && c.n >= 2) out.parts.push({ tris: c.n, lift: +c.low.toFixed(2), at: [+c.cx.toFixed(1), +c.cz.toFixed(1)], mesh: tris }); }
       }
     });
+    {       // single meshes: a mesh is held up when it touches (box to box) a chain of meshes that reaches the ground (a cairn, a sap cup on its stump)
+      const n = singles.length, par = Array.from({ length: n }, (_, i) => i), f = a => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; }, e = 0.06;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const A = singles[i].box, B = singles[j].box; if (A.min.x <= B.max.x + e && B.min.x <= A.max.x + e && A.min.y <= B.max.y + e && B.min.y <= A.max.y + e && A.min.z <= B.max.z + e && B.min.z <= A.max.z + e) par[f(i)] = f(j); }
+      const comp = {}; singles.forEach((q, i) => { const k = f(i); (comp[k] = comp[k] || []).push(q); });
+      for (const k in comp) { const L = comp[k]; if (L.every(q => q.gap > 0.35) && !L.every(q => q.info.skip || q.info.transparentBig)) out.single.push(L.map(q => q.info).sort((a, b) => a.gap - b.gap)[0]); }
+    }
     return { out, lm: w.landmarks, pos: w.lmPos };
   });
   const o = r.out; console.log('checked', JSON.stringify(o.checked), 'landmarks', JSON.stringify(r.lm));

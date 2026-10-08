@@ -57,9 +57,9 @@ class Fly {
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
       if (Math.hypot(x, z) > R || p.world.inWater(x, z)) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
-      this.pos.set(x, p.world.heightAt(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
+      this.pos.set(x, p.world.flyH(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
     }
-    this.pos.set(5, p.world.heightAt(5, 5) + 1.2, 5);
+    this.pos.set(5, p.world.flyH(5, 5) + 1.2, 5);
   }
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
@@ -79,9 +79,9 @@ class Fly {
       const a = Math.random() * 6.28, d = 6 + Math.random() * 14; const x = this.pos.x + Math.cos(a) * d, z = this.pos.z + Math.sin(a) * d;
       if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z)) continue;
       if (awayFrom && Math.hypot(x - awayFrom.x, z - awayFrom.z) < 10) continue;
-      this.tgt.set(x, w.heightAt(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
+      this.tgt.set(x, w.flyH(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
     }
-    this.tgt.set(0, w.heightAt(0, 0) + 1.5, 0);
+    this.tgt.set(0, w.flyH(0, 0) + 1.5, 0);
   }
   startFlee(dir) {
     this.releaseFlower(); this.state = FLEE; this.t = 2.0 + Math.random() * 1.6; this.perchTarget = false;
@@ -93,12 +93,12 @@ class Fly {
     const p = this.play, b = this.beh, w = p.world, pl = p.nearestPlayer(this.pos);
     if (this.state === CAUGHT && this.remote) { this.t -= dt; this.mesh.scale.setScalar(Math.max(0.01, this.t / 0.4) * this.baseScale); if (this.t <= 0) this.alive = false; return; }
     if (this.state === CAUGHT) { // glued to the net hoop
-      this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.heightAt(this.pos.x, this.pos.z));
+      this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.flyH(this.pos.x, this.pos.z));
       if (this.t <= 0) this.alive = false; return;
     }
     if (this.puppet) { // another client simulates this butterfly: follow its last reported state
       const k = Math.min(1, dt * 12); this.pos.lerp(this.netPos, k); let dyw = this.netYaw - this.yaw; dyw = Math.atan2(Math.sin(dyw), Math.cos(dyw)); this.yaw += dyw * k;
-      this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1); const gyp = w.heightAt(this.pos.x, this.pos.z);
+      this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1); const gyp = w.flyH(this.pos.x, this.pos.z);
       if (this.state === PERCH) { Art.setFlap(this.mesh, b.flutterPerch ? 0.35 + 0.35 * Math.abs(Math.sin(this.ph * 1.2)) : 0.75 + 0.5 * Math.sin(this.ph * 0.18 + this.sway)); this.mesh.rotation.set(-0.1, this.yaw, 0); }
       else { Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); this.mesh.rotation.set(0, this.yaw, 0); }
       this.mesh.visible = !this.hid && (this.kind !== 'dread' || p.lit(this.pos)); this.mesh.position.copy(this.pos); this.updateShadow(gyp); return;
@@ -107,7 +107,7 @@ class Fly {
     this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1);
     const dx = this.pos.x - pl.pos.x, dz = this.pos.z - pl.pos.z, dist = Math.hypot(dx, dz, this.pos.y - pl.pos.y);
     // ---- senses
-    if (p.hasMod('teleport') && this.state !== CAUGHT && this.kind !== 'rush' && this.kind !== 'ambush' && Math.random() < dt * 0.45) { const a = Math.random() * 6.28, d = 3 + Math.random() * 5, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d; if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); } }
+    if (p.hasMod('teleport') && this.state !== CAUGHT && this.kind !== 'rush' && this.kind !== 'ambush' && Math.random() < dt * 0.45) { const a = Math.random() * 6.28, d = 3 + Math.random() * 5, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d; if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.flyH(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); } }
     if (this.kind && this.special(this.kind, dt, t, dx, dz, dist)) return;
     const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
@@ -154,7 +154,7 @@ class Fly {
   }
   post(skipBounds) {
     const p = this.play, w = p.world;
-    const gy = w.heightAt(this.pos.x, this.pos.z);
+    const gy = w.flyH(this.pos.x, this.pos.z);
  if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
     if (!skipBounds) { const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); } }
     if (this.state !== PERCH) for (const c of w.colliders) { const cx = this.pos.x - c.x, cz = this.pos.z - c.z; const d2 = cx * cx + cz * cz, mr = c.r + 0.25; if (d2 < mr * mr && this.pos.y < gy + 4 + c.r * 5) { const d = Math.sqrt(d2) || 0.01; this.pos.x += cx / d * (mr - d); this.pos.z += cz / d * (mr - d); } }
@@ -167,14 +167,14 @@ class Fly {
   steer(dt, tx, ty, tz, spd, k = 3) { _w.set(tx - this.pos.x, ty - this.pos.y, tz - this.pos.z); const L = _w.length(); if (L > 0.02) _w.multiplyScalar(spd * this.play.speedMul() / L * Math.min(1, L * 0.6)); this.vel.lerp(_w, Math.min(1, dt * k)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); }
   // special rules of the secret-ocean butterflies. Returns true when the butterfly has moved itself this frame.
   special(kind, dt, t, dx, dz, dist) {
-    const p = this.play, w = p.world, pl = p.nearestPlayer(this.pos), ground = w.heightAt(this.pos.x, this.pos.z);
+    const p = this.play, w = p.world, pl = p.nearestPlayer(this.pos), ground = w.flyH(this.pos.x, this.pos.z);
     if (kind === 'dread') { this.mesh.visible = p.lit(this.pos); return false; }
     if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
     if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
       if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 0.45 + Math.random() * 0.6; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
-        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
+        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.flyH(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
       return false;
     }
     if (kind === 'halt') { if (p.litAny(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
@@ -188,7 +188,7 @@ class Fly {
     if (kind === 'eyes') {
       this.cool -= dt;
       const stare = p.lookedAny(this.pos, 0.965) && dist < 26;
-      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
+      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.flyH(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
       if (p.lookedAny(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
         const fx = p.fwd.x, fz = p.fwd.z, side = ((this.pos.x - pl.pos.x) * fz - (this.pos.z - pl.pos.z) * fx) >= 0 ? 1 : -1;
         this.vel.lerp(_w.set(-fz * side * 7.5, 0.4, fx * side * 7.5), Math.min(1, dt * 9)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
@@ -198,13 +198,13 @@ class Fly {
     if (kind === 'rush' || kind === 'ambush') {
       const S = this.rs; S.t -= dt;
       if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
-      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.flyH(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
       if (S.ph === 'dash') {
         this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
         if (S.dist > 64) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
         this.post(true); return true;
       }
-      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
+      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.flyH(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
     }
     if (kind === 'guiding') {
       let tg = null, bd = 1e9; for (const f of p.flies) { if (f === this || f.state === CAUGHT || Save.has(f.sp.id) || f.kind === 'guiding') continue; const d = f.pos.distanceTo(pl.pos); if (d < bd) { bd = d; tg = f; } }
@@ -226,7 +226,7 @@ class Fly {
 // ---------------------------------------------------------------- the play session
 class Play {
   constructor(biome, seed, mp, at) {
-    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
+    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); if (!this.world.flyH) this.world.flyH = this.world.heightAt; if (!this.world.groundAt) this.world.groundAt = this.world.heightAt; this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
@@ -260,6 +260,17 @@ class Play {
     const d = PLAY_MODS[id]; this.mod = { id, t: 90, name: d.name, good: d.good };
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
+  }
+  bridgeEvent(e) {
+    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят и качаются под ногами — мост ветхий…', 3.5); }
+    else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
+    else if (e.k === 'snap') { Snd.sfx.snap(); this.toast('Мост оборвался!', 2.5); }
+  }
+  stepFall(dt, w, x, z) {         // the bridge snapped: free fall into the gorge, then the fall ends the trip
+    const f = this.fall; f.t += dt; f.vy += 16 * dt; let y = this.player.y - f.vy * dt; const floor = w.heightAt(x, z) + 1.65;
+    if (y < floor) { y = floor; if (!f.hit) { f.hit = true; Snd.sfx.thud(); } }
+    if (f.t > 1.0 && !f.out) { f.out = true; if (window.F0W && F0W.fall) F0W.fall(this); }
+    return y;
   }
   spawnInitial() {
     // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
@@ -424,12 +435,14 @@ class Play {
     const lu = (inp.keys.has('ArrowUp') ? 1 : 0) - (inp.keys.has('ArrowDown') ? 1 : 0); P.pitch = clamp(P.pitch + lu * dt * 1.4, -1.45, 1.45);
     // move
     let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
+    if (this.fall) { mx = 0; mz = 0; }       // falling into a gorge: no steering
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
     const slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight'), sprint = !slow && (inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'));      // creeping wins over running (on a phone the stick's edge also means Shift)
     const wading = w.inWater(P.pos.x, P.pos.z, 0);
     const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1);
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
-    const tx = (fx * -mz + rx * mx) * spd, tz = (fz * -mz + rz * mx) * spd;
+    const mk = w.moveK ? w.moveK(P.pos.x, P.pos.z, fx * -mz + rx * mx, fz * -mz + rz * mx) : 1;      // mountains: climbing is slow
+    const tx = (fx * -mz + rx * mx) * spd * mk, tz = (fz * -mz + rz * mx) * spd * mk;
     P.vel.x = damp(P.vel.x, tx, 11, dt); P.vel.y = damp(P.vel.y, tz, 11, dt);
     let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt;
     const deep = (x, z) => w.canWalk && !w.canWalk(x, z); let hitDeep = false;
@@ -438,7 +451,7 @@ class Play {
     for (const c of w.colliders) { const cx = nx - c.x, cz = nz - c.z, mr = c.r + 0.38, d2 = cx * cx + cz * cz; if (d2 < mr * mr) { const d = Math.sqrt(d2) || 0.01; nx += cx / d * (mr - d); nz += cz / d * (mr - d); } }
     const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
-    const gy = w.heightAt(nx, nz) + 1.65; P.y = damp(P.y, gy, 14, dt);
+    const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
     const speedNow = moved / Math.max(dt, 1e-4);
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
     const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
@@ -470,6 +483,8 @@ class Play {
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
     // world
     w.update(dt, this.t, P.pos);
+    if (w.events && w.events.length) for (const e of w.events.splice(0)) this.bridgeEvent(e);
+    if (w.pendingFall && !this.fall) { this.fall = { t: 0, vy: 0 }; w.pendingFall = null; }
     // HUD timers
     this.hintT = Math.max(0, this.hintT - dt);
     for (const c of this.cards) c.t -= dt; this.cards = this.cards.filter(c => c.t > 0);

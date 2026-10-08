@@ -69,6 +69,8 @@ const BIOMES = [
     climate: 'умеренно-холодный, влажный, пасмурно', desc: 'Верховое сфагновое болото: кочки с клюквой и морошкой, мочажины с бурой водой, пушица, багульник и чахлые сосны-рям. Под низким небом всё тихо и сыро.' },
   { id: 'papua', name: 'Реликтовые джунгли Ламингтона', place: 'Провинция Оро, Папуа — Новая Гвинея', lat: -8.95, lon: 148.15, alt: '250 м', map: 'papua', poolSize: 9,
     climate: 'экваториальный, влажный, под густым пологом', desc: 'Древний лес у подножия вулкана Ламингтон: гигантские ветвистые деревья смыкают кроны почти над всем небом, внизу — папоротники, цикады, ручьи и чёрные потоки застывшей лавы.' },
+  { id: 'vietnam', name: 'Высокогорья Хоангльеншон', place: 'Север Вьетнама, провинция Лаокай', lat: 22.35, lon: 103.8, alt: '1900 м', map: 'vietnam', poolSize: 9,
+    climate: 'субтропический горный, солнечно, по утрам и в ущельях — туман', desc: 'Известняковые горы и зелёные гряды на севере Вьетнама: террасы, горный лес с древовидными папоротниками, рододендронами и бамбуком, глубокие ущелья и старые верёвочные мосты между вершинами. Солнечно, но в низинах стоит туман.' },
   { id: 'ocean', name: '???', place: '??? · Открытый океан', lat: -48.9, lon: -123.4, alt: '0 м', secret: true, poolSize: 12,
     climate: 'ночь · ливень · ???', desc: 'На карте здесь ничего нет. Но радио ловит странный сигнал, а в воде что-то мерцает. Возьми фонарь. Не гаси его надолго.' },
 ];
@@ -752,6 +754,67 @@ rebuildSpeciesIndex();
   // Queen Alexandra's birdwing: paid a fixed 1500 coins by the merchant (an aberration multiplies it) and many times rarer than anything else
   { const q = ROWS.papua[0]; q.fixed = 1500; q.scarce = 0.18; }
 
+  // ============================================================ VIETNAM (Hoang Lien Son / Sa Pa highlands)
+  ROWS.vietnam = [
+    ['Teinopalpus aureus', 'Золотой кайзер-и-хинд', 'Golden Kaiser-i-Hind', 'P', 90, 110, 3, 'swallow', A('papilio', ['#6a8a1c', '#d8c82c'], ['#d8c02a', '#e8d440'], { edge: ['#0c0a06', 2], veins: '#0c0a06', tail: '#14100a', longTail: true, sp: sp('h', [[.8, .82, 1.8, '#e0501c']]) }),
+      'Облачные широколиственные леса на высоте 1500-2500 м, гребни и просеки', 'Горы севера Вьетнама, юг Китая, Лаос, Мьянма, Восточные Гималаи', 'точно не известны; предположительно магнолиевые и лавровые', 'Одна из самых желанных и охраняемых бабочек Азии: самцы кружат на гребнях гор, а гусеницы в природе почти не найдены.'],
+    ['Troides aeacus', 'Золотая птицекрылка', 'Golden birdwing', 'P', 140, 170, 2, 'bird', A('birdwing', ['#0e0c08', '#2a2418'], ['#f0c428', '#e0a818'], { edge: ['#060504', 2], veins: '#e8e0b0', sp: sp('h', [[.35, .55, 2.0, '#14100a'], [.55, .5, 2.2, '#14100a'], [.72, .6, 1.8, '#14100a'], [.5, .78, 1.6, '#14100a']]) }),
+      'Опушки и кроны лесов предгорий и среднегорий, цветущие кусты', 'Индия, юг Китая, Юго-Восточная Азия', 'лианы рода Aristolochia', 'Крупнейшая из бабочек региона: самки заметно крупнее самцов, а парящий полёт напоминает полёт птицы.'],
+    ['Papilio paris', 'Парис', 'Paris peacock', 'P', 90, 120, 2, 'swallow', A('papilio', ['#0c1008', '#243018'], ['#14180e', '#1c2814'], { edge: ['#050505', 1], dots: '#6ad0a8', tail: '#0a0c08', patch: ['h', .55, .4, 6.5, '#2ac0a0'], sp: [...sp('f', [[.5, .5, 3, '#3a6a30']]), ...sp('h', [[.85, .78, 1.6, '#d83030']])] }),
+      'Лесные опушки и тропы, речные долины в предгорьях и горах', 'Индия, юг Китая, Таиланд, Вьетнам, Лаос', 'рутовые (Rutaceae), в том числе цитрусовые', 'Блестящее зелёно-голубое пятно на заднем крыле состоит не из пигмента, а из особой структуры чешуек, дающей игру света.'],
+    ['Papilio castor', 'Чёрный парусник кастор', 'Common raven', 'P', 90, 110, 1, 'swallow', A('papilio', ['#14100e', '#2a221c'], ['#100c0a', '#1c1612'], { edge: ['#050404', 1], tail: '#0a0806', band: ['f', .5, .74, '#6a6258'], sp: sp('h', [[.8, .8, 1.6, '#d83a30'], [.55, .75, 1.3, '#d83a30']]) }),
+      'Лесные опушки, просеки и речные долины в предгорьях и горах', 'Гималаи, юг Китая, Индокитай', 'рутовые (Rutaceae)', 'Тёмная бабочка с серой перевязью на передних крыльях и красными пятнами у края задних.'],
+    ['Papilio helenus', 'Красная елена', 'Red Helen', 'P', 100, 130, 2, 'swallow', A('papilio', ['#0c0a08', '#221a14'], ['#0e0c0a', '#1a1612'], { edge: ['#040404', 1], tail: '#0a0806', patch: ['h', .45, .36, 7, '#f4f0dc'], sp: sp('h', [[.82, .8, 1.6, '#d83030']]) }),
+      'Лесные опушки, просеки и речные долины', 'Индия, юг Китая, Юго-Восточная Азия, Япония', 'рутовые (Rutaceae), в том числе цитрусовые', 'Крупное белое пятно на задних крыльях заметно издали и хорошо видно даже в полумраке леса.'],
+    ['Graphium cloanthus', 'Графиум клоантус', 'Glassy bluebottle', 'P', 70, 90, 2, 'swallow', A('kite', ['#102018', '#1c4a3c'], ['#142a22', '#103a2c'], { edge: ['#060a08', 2], band: ['fh', .32, .62, '#84e8c8'], tail: '#0a1410', sp: sp('h', [[.2, .45, 2, '#c8f4e0']]) }),
+      'Влажные леса вдоль ручьёв и дорог, горные склоны', 'Гималаи, юг и запад Китая, Вьетнам, Таиланд', 'лавровые (Lauraceae), магнолиевые', 'Полупрозрачная сине-зелёная полоса на крыльях похожа на стекло, отсюда английское название.'],
+    ['Graphium eurous', 'Графиум эуроус', 'Eurous bluebottle', 'P', 70, 85, 1, 'swallow', A('kite', ['#1a1a14', '#2a2a1c'], ['#18180f', '#262616'], { edge: ['#060604', 2], band: ['fh', .28, .66, '#a8d8a0'], sp: sp('h', [[.2, .45, 2, '#c8e8b8']]) }),
+      'Лесные опушки, берега ручьёв, влажные участки в горах', 'Гималаи, юг Китая, север Индокитая', 'лавровые (Lauraceae)', 'Как и многие графиумы, собирается стайками на влажной земле и пьёт воду с минералами.'],
+    ['Byasa polyeuctes', 'Бяса полиевкт', 'Common windmill', 'P', 90, 110, 2, 'swallow', A('aristolochia', ['#12100e', '#2a2420'], ['#14110f', '#1e1a16'], { edge: ['#050404', 1], tail: '#0a0807', longTail: true, veins: '#4a4038', band: ['h', .3, .55, '#f0ecd8'], sp: sp('h', [[.62, .74, 1.6, '#d8302c'], [.8, .66, 1.5, '#d8302c']]) }),
+      'Горные леса, опушки, влажные овраги', 'Гималаи, юг Китая, север Вьетнама, Тайвань', 'кирказоновые (Aristolochia)', 'Гусеницы питаются ядовитыми кирказоновыми, и ядовитость сохраняется у взрослых бабочек, о чём сигналят красные пятна.'],
+    ['Lamproptera curius', 'Белохвост-стрекоза', 'White dragontail', 'P', 40, 50, 2, 'swallow', A('lamproptera', ['#1a1a18', '#2e2c28'], ['#141412', '#201e1c'], { edge: ['#050505', 1], band: ['fh', .38, .6, '#f4f2e8'], tail: '#f4f2e8', longTail: true }),
+      'Прохладные берега лесных ручьёв, влажная глина и камни', 'Северо-восток Индии, юг Китая, Юго-Восточная Азия', 'гернандиевые (Hernandia), реже родственные лавровым', 'Зависает над землёй как стрекоза и очень быстро машет крыльями; длинные хвостики с белыми кончиками выглядят как капельки.'],
+    ['Delias pasithoe', 'Делия пазитея', 'Red-base jezebel', 'W', 70, 85, 1, 'pierid', A('delias', ['#16100e', '#2a2018'], ['#16100e', '#2a1c14'], { edge: ['#060404', 1], rays: ['f', '#f0eadc'], sp: [...sp('f', [[.3, .5, 2, '#e0402c']]), ...sp('h', [[.15, .45, 3.2, '#e8402c'], [.6, .6, 2, '#f2e070'], [.45, .72, 1.8, '#f2e070']])] }),
+      'Опушки лесов, поляны, дороги и цветущие кусты в горах', 'Индия, юг Китая, Юго-Восточная Азия', 'ремнецветниковые (Loranthaceae), омеловые', 'Ярко-красное основание крыльев, видимое снизу, предупреждает хищников о том, что бабочка несъедобна.'],
+    ['Gonepteryx amintha', 'Лимонница амина', 'Chinese brimstone', 'W', 55, 70, 2, 'pierid', A('brimstone', ['#d8d430', '#e8e468'], ['#d0d02c', '#e0e060'], { edge: ['#8a8018', 1], sp: [...sp('f', [[.5, .3, 1.5, '#e07a1c']]), ...sp('h', [[.5, .5, 1.3, '#e07a1c']])], veins: '#a8a424' }),
+      'Лиственные и смешанные леса, опушки в средних горах', 'Китай, Тайвань, север Вьетнама, Гималаи', 'крушиновые (Rhamnus)', 'Крылья формой и цветом похожи на лист, поэтому зимующая бабочка прекрасно маскируется в листве.'],
+    ['Appias lyncida', 'Аппиас линсида', 'Chocolate albatross', 'W', 55, 70, 1, 'pierid', A('pierid', [WH, '#f2f0e6'], [WH, '#f0eede'], { edge: ['#2a2018', 2], tip: ['#2a2018', .78], veins: '#7a7468', sp: sp('h', [[.35, .5, 2.8, '#f0e070']]) }),
+      'Открытые леса, опушки, берега ручьёв, цветущие поляны', 'Индия, юг Китая, Юго-Восточная Азия, Индонезия', 'каперсовые (Capparaceae)', 'Самцы часто собираются большими группами у влажной земли и луж.'],
+    ['Aporia agathon', 'Боярышница агатон', 'Great blackvein', 'W', 60, 75, 1, 'pierid', A('pierid', ['#f4f2e8', '#ecebdc'], ['#f4f2e8', '#ecebdc'], { edge: ['#1c1a16', 1], veins: '#1c1a16', dots: '#1c1a16' }),
+      'Горные луга, опушки и склоны с кустарником', 'Гималаи, юг Китая, север Индокитая', 'барбарисовые (Berberis), монимиевые', 'Белые крылья с густым чёрным жилкованием делают её похожей на витраж.'],
+    ['Kallima inachus', 'Каллима инахус (оранжевый листовидный)', 'Orange oakleaf', 'N', 80, 100, 2, 'nymph', A('leaf', ['#14182c', '#241e3a'], ['#2a1c18', '#3a2a22'], { edge: ['#1a1008', 1], band: ['f', .38, .66, '#f0902c'], sp: sp('f', [[.82, .12, 1.4, '#f4f0e0']]) }),
+      'Влажные леса, овраги, нижние и средние горные пояса', 'Индия, юг Китая, Тайвань, Юго-Восточная Азия', 'акантовые (Acanthaceae), например Strobilanthes', 'Сложив крылья, неотличима от сухого листа: у неё есть даже «черешок» и «прожилки».'],
+    ['Stichophthalma howqua', 'Стихофтальма хоуква', 'Chinese Jungle Queen', 'N', 100, 130, 2, 'morph', A('caligo', ['#6a4a2c', '#8a6a3c'], ['#6a4a2c', '#7a5a34'], { edge: ['#2a1c10', 1], band: ['fh', .52, .66, '#e8d8a8'], eye: [['h', .3, .5, 2.6, '#e8d8a8', '#2a1a14'], ['h', .6, .55, 2.2, '#e8d8a8', '#2a1a14']] }),
+      'Влажные горные леса, заросли бамбука и папоротников', 'Юг и центр Китая, север Вьетнама, Тайвань', 'бамбуки и другие злаки, пальмы', 'Взрослые бабочки почти не посещают цветы и питаются сочными перебродившими плодами.'],
+    ['Charaxes polyxena', 'Харакс поликсена', 'Common nawab', 'N', 80, 95, 2, 'emperor', A('charaxes', ['#d88a28', '#e8a840'], ['#d88a28', '#c07020'], { edge: ['#1a1008', 2], tip: ['#1a1008', .8], tail: '#1a1008', sp: sp('f', [[.82, .2, 1.3, '#f4ecd0'], [.88, .32, 1.1, '#f4ecd0']]) }),
+      'Лесные опушки и просеки, часто у перебродившего сока и падалицы', 'Индия, юг Китая, Юго-Восточная Азия', 'бобовые и некоторые другие деревья', 'Быстрый и сильный летун, любит перебродивший сок деревьев и фруктов, а к цветам слетается редко.'],
+    ['Polyura eudamippus', 'Великий наваб', 'Great nawab', 'N', 80, 100, 3, 'emperor', A('charaxes', ['#d8e6c0', '#e8f0d0'], ['#d8e6c0', '#e0d890'], { edge: ['#14140c', 2], tip: ['#14140c', .74], band: ['h', .6, .76, '#e8b030'], tail: '#14140c', longTail: true }),
+      'Горные широколиственные леса, опушки и лесные тропы', 'Индия, юг Китая, север Индокитая, Тайвань', 'бобовые (Fabaceae), например альбиция', 'Одна из самых крупных и мощных нимфалид региона: быстро кружит над кронами и садится на падаль и сок.'],
+    ['Calinaga buddha', 'Калинага будда', 'Freak', 'N', 90, 110, 3, 'morph', A('danaid', ['#1a1410', '#2a2018'], ['#1a1410', '#241c14'], { edge: ['#0a0806', 1], rays: ['f', '#f2e8c8'], wedges: ['#f0e6c4', 5], band: ['h', .35, .55, '#ece0b8'] }),
+      'Горные леса, ущелья и влажные долины', 'Гималаи, юг Китая, север Вьетнама', 'тутовые (Moraceae), в том числе Maclura', 'Редкая высокогорная бабочка, летающая рано весной; своим странным хлопающим полётом заслужила английское название Freak.'],
+    ['Neope bhadra', 'Неопа бхадра', 'Tailed labyrinth', 'S', 65, 80, 1, 'owl', A('satyr', ['#6a4828', '#8a6034'], ['#5a3c22', '#7a5430'], { edge: ['#241608', 1], band: ['f', .52, .62, '#c89a52'], eye: [['f', .78, .55, 2, '#d8b060', '#1a1008'], ['h', .5, .55, 2.2, '#d8b060', '#1a1008'], ['h', .78, .6, 1.9, '#d8b060', '#1a1008']] }),
+      'Тенистые горные леса, заросли бамбука, лесные тропы', 'Гималаи, юг Китая, север Индокитая', 'бамбуки и другие злаки', 'Любит сидеть на стволах и на тропинке с раскрытыми крыльями, а чуть что — перепархивает ближе к земле.'],
+    ['Lethe confusa', 'Лете смешанная', 'Banded treebrown', 'S', 50, 60, 1, 'owl', A('satyr', ['#5a4028', '#7a5a38'], ['#503820', '#6a4c30'], { edge: ['#20140a', 1], band: ['fh', .62, .7, '#c8aa78'], eye: [['f', .8, .5, 1.6, '#d4b880', '#1a1008'], ['h', .4, .6, 1.6, '#d4b880', '#1a1008'], ['h', .7, .65, 1.6, '#d4b880', '#1a1008']] }),
+      'Тенистые леса и бамбуковые заросли, лесные дороги', 'Южный Китай, Индокитай, Малайский полуостров', 'бамбуки и другие злаки', 'Предпочитает полумрак под пологом леса и в дневную жару держится в тени.'],
+    ['Cyrestis thyodamas', 'Картовая (карта)', 'Common map', 'N', 50, 60, 1, 'nymph', A('sailor', ['#f0ead0', '#e8dfc0'], ['#f0ead0', '#e8dfc0'], { edge: ['#4a3018', 1], veins: '#6a4a28', band: ['fh', .24, .3, '#7a5430'], sp: sp('h', [[.82, .82, 1.6, '#d86a1c']]) }),
+      'Опушки, берега лесных ручьёв, влажная земля', 'Индия, юг Китая, Юго-Восточная Азия, Япония', 'фикусы (Ficus)', 'Тонкий рисунок из коричневых линий напоминает контурную карту.'],
+    ['Neptis hylas', 'Непрерывная нептис', 'Common sailer', 'N', 50, 60, 1, 'nymph', A('sailor', ['#1e1814', '#2a2018'], ['#1e1814', '#241c16'], { edge: ['#0a0806', 1], band: ['h', .4, .6, WH], sp: sp('f', [[.4, .35, 1.8, WH], [.55, .5, 1.4, WH], [.78, .38, 1.3, WH]]) }),
+      'Опушки, поляны, лесные тропы и сады в предгорьях', 'Индия, Китай, Юго-Восточная Азия, Австралия', 'бобовые (Fabaceae)', 'Планирует на неподвижно расправленных крыльях, за что получила английское название Sailer, «мореход».'],
+    ['Euploea core', 'Эуплея кора', 'Common crow', 'D', 75, 95, 1, 'heli', A('danaid', ['#4a3224', '#5c4030'], ['#4a3224', '#5a3c2c'], { edge: ['#e8dcc8', 1], sheen: ['#6a5a8a', .25], sp: [...sp('f', [[.9, .22, 1.2, WH], [.8, .12, 1.0, WH], [.92, .4, 1.0, WH]]), ...sp('h', [[.78, .5, 1.3, WH], [.7, .72, 1.3, WH], [.45, .8, 1.2, WH]])] }),
+      'Опушки, сады, поляны в предгорьях и среднегорьях', 'Индия, Китай, Юго-Восточная Азия, Австралия', 'олеандровые, фикусы', 'Ядовитая для птиц, летает медленно и спокойно, зная, что её не тронут.'],
+    ['Parantica melaneus', 'Парантика меланей', 'Chocolate tiger', 'D', 80, 105, 2, 'heli', A('danaid', ['#1a1612', '#2a2218'], ['#c8a85a', '#a8803a'], { edge: ['#0a0806', 2], rays: ['f', '#a8dcd0'], wedges: ['#a8dcd0', 5], band: ['h', .2, .52, '#c09448'] }),
+      'Горные леса и опушки, ущелья', 'Гималаи, юг Китая, север Индокитая, Тайвань', 'ваточниковые (Asclepiadaceae)', 'Зелёные и голубоватые полупрозрачные полосы на тёмном фоне — предупреждающий окрас ядовитой бабочки.'],
+    ['Danaus genutia', 'Данаида полосатая', 'Common tiger', 'D', 70, 85, 1, 'heli', A('danaid', ['#e48a2c', '#f0a448'], ['#e48a2c', '#d87a20'], { edge: ['#1a1008', 2], veins: '#1c1208', tip: ['#16100a', .78], sp: [...sp('f', [[.88, .16, 1.2, WH], [.9, .32, 1.1, WH], [.78, .1, 1.0, WH]]), ...sp('h', [[.55, .55, 1.3, '#1a1008']])] }),
+      'Открытые места, опушки, сады, долины', 'Южная и Юго-Восточная Азия, Австралия', 'ваточниковые (Asclepiadaceae)', 'Одна из самых заметных данаид: яркая оранжевая окраска предупреждает о ядовитости.'],
+    ['Heliophorus epicles', 'Гелиофорус эпикл', 'Purple sapphire', 'L', 35, 45, 2, 'blue', A('hairstreak', ['#e8782a', '#f0a040'], ['#1c1a2a', '#3a2c5a'], { edge: ['#1a1008', 1], tail: '#1a1410', sheen: ['#6a50d0', .5], sp: sp('f', [[.5, .5, 1.2, '#1a1410']]) }),
+      'Горные луга, поляны и опушки, высота 1200-2800 м', 'Гималаи, юг Китая, север Вьетнама', 'гречишные (Polygonaceae), щавель и горцы', 'Над тёмными крыльями самца переливается пурпурно-синий отлив, видимый только при определённом свете.'],
+    ['Dodona eugenes', 'Додона евгена', 'Tailed punch', 'R', 40, 50, 2, 'blue', A('hairstreak', ['#d88a30', '#e8a448'], ['#c07a2c', '#a86220'], { edge: ['#2a1608', 1], band: ['fh', .5, .62, '#2a1608'], tail: '#2a1608', sp: sp('f', [[.2, .45, 1.2, '#2a1608'], [.35, .6, 1.2, '#2a1608']]) }),
+      'Лесные опушки и просеки в горах', 'Гималаи, юг Китая, север Индокитая', 'первоцветные (Primulaceae), мирсиновые', 'Риодиниды водятся в основном в Америке, а Додона относится к азиатским представителям семейства.'],
+    ['Pieris canidia', 'Индийская капустница', 'Indian cabbage white', 'W', 45, 60, 1, 'pierid', A('pierid', [WH, '#f2efe0'], [WH, '#ecebd8'], { edge: ['#2a2820', 1], tip: ['#1c1a16', .8], sp: [...sp('f', [[.55, .38, 1.8, '#1c1a16'], [.5, .7, 1.6, '#1c1a16']]), ...sp('h', [[.82, .15, 1.4, '#1c1a16']])] }),
+      'Поля, огороды, опушки и луга от равнин до среднегорий', 'Индия, Китай, Юго-Восточная Азия', 'крестоцветные (капуста и дикие виды)', 'Близкая родственница нашей капустницы: на горных склонах заселяет и огороды местных жителей.'],
+  ];
+  { const q = ROWS.vietnam[0]; q.fixed = 1400; }
+
   // ============================================================ assemble
   const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_|_$/g, '');
   for (const bid in ROWS) {
@@ -1225,14 +1288,15 @@ const Art = (() => {
     Agraulis: 'dryas', Dryas: 'dryas', Philaethria: 'dryas', Mechanitis: 'ithomiine', Methona: 'ithomiine', Acraea: 'acraea',
     Danaus: 'danaid', Tirumala: 'danaid', Parantica: 'danaid', Euploea: 'danaid', Amauris: 'danaid', Elymnias: 'danaid', Idea: 'idea',
     Morpho: 'morpho', Caligo: 'caligo', Zeuxidia: 'caligo', Amathusia: 'caligo',
-    Maniola: 'satyr', Pararge: 'satyr', Lasiommata: 'satyr', Hipparchia: 'satyr', Brintesia: 'satyr', Chazara: 'satyr', Kirinia: 'satyr', Minois: 'satyr', Melanargia: 'satyr', Erebia: 'satyr', Oeneis: 'satyr', Cercyonis: 'satyr', Lethe: 'satyr',
+    Maniola: 'satyr', Pararge: 'satyr', Lasiommata: 'satyr', Hipparchia: 'satyr', Brintesia: 'satyr', Chazara: 'satyr', Kirinia: 'satyr', Minois: 'satyr', Melanargia: 'satyr', Erebia: 'satyr', Oeneis: 'satyr', Cercyonis: 'satyr', Lethe: 'satyr', Neope: 'satyr',
     Coenonympha: 'ringlet', Ypthima: 'ringlet', Mycalesis: 'ringlet', Bicyclus: 'ringlet', Melanitis: 'dryad',
+    Teinopalpus: 'papilio', Appias: 'pierid', Aporia: 'pierid', Pieris: 'pierid', Kallima: 'leaf', Stichophthalma: 'caligo', Calinaga: 'danaid', Cyrestis: 'sailor', Heliophorus: 'hairstreak', Dodona: 'hairstreak',
     Callophrys: 'hairstreak', Ornithoptera: 'birdwing', Troides: 'birdwing', Taenaris: 'caligo', Parthenos: 'sailor', Vindula: 'fritillary', Ideopsis: 'idea', Danis: 'blue', Carterocephalus: 'skipper', Leptidea: 'leptosia', Aphantopus: 'satyr', Phengaris: 'blue', Pyrgus: 'skipper', Ochlodes: 'skipper', Epargyreus: 'skipper', Erynnis: 'skipper', Carcharodus: 'skipper', Thymelicus: 'skipper', Parnara: 'skipper',
   };
   const SPECIES_FORM = { 'Ornithoptera alexandrae': 'trog', 'Ornithoptera chimaera': 'trog', 'Ornithoptera paradisea': 'papilio', 'Papilio machaon': 'swallow', 'Papilio alexanor': 'swallow', 'Parnassius mnemosyne': 'apollo', 'Pieris krueperi': 'pierid', 'Euchloe ausonia': 'pierid', 'Jamides celeno': 'blue', 'Cupido minimus': 'blue', 'Cupido': 'blue', 'Eurema mandarina': 'leptosia', 'Pontia callidice': 'pierid', 'Phyciodes tharos': 'ringlet',
     'Lycaena ottomana': 'copper', 'Libythea celtis': 'snout', 'Byblia ilithyia': 'sailor', 'Argynnis pandora': 'fritillary' };
   // tail of a species: the data rows say whether there is one; these are the corrections / special kinds ('none', 'short', 'long', 'spoon', 'two', 'twolong')
-  const TAIL_OF = { 'Ornithoptera paradisea': 'long', 'Papilio ulysses': 'short', 'Papilio aegeus': 'none', 'Papilio euchenor': 'none', 'Graphium weiskei': 'none', 'Polyura jupiter': 'twolong', 'Pachliopta polydorus': 'short', 'Graphium eurypylus': 'short', 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
+  const TAIL_OF = { 'Teinopalpus aureus': 'spoon', 'Graphium cloanthus': 'none', 'Polyura eudamippus': 'twolong', 'Heliophorus epicles': 'short', 'Dodona eugenes': 'short', 'Ornithoptera paradisea': 'long', 'Papilio ulysses': 'short', 'Papilio aegeus': 'none', 'Papilio euchenor': 'none', 'Graphium weiskei': 'none', 'Polyura jupiter': 'twolong', 'Pachliopta polydorus': 'short', 'Graphium eurypylus': 'short', 'Papilio nireus': 'none', 'Papilio demoleus': 'none', 'Graphium leonidas': 'none', 'Graphium sarpedon': 'none', 'Battus polydamas': 'none', 'Parides sesostris': 'none', 'Zerynthia polyxena': 'none',
     'Graphium policenes': 'spoon', 'Charaxes jasius': 'twolong', 'Polyura athamas': 'twolong', 'Rhetus periander': 'twolong', 'Spindasis natalensis': 'two', 'Jamides celeno': 'short', 'Marpesia petreus': 'long', 'Eurytides marcellus': 'long', 'Lamproptera meges': 'long', 'Iphiclides podalirius': 'long',
     'Doleschallia bisaltide': 'short', 'Thecla betulae': 'short', 'Favonius orientalis': 'short', 'Strymon melinus': 'short', 'Lampides boeticus': 'short', 'Leptotes pirithous': 'short', 'Everes comyntas': 'short', 'Lycaena phlaeas': 'short', 'Zerynthia cerisyi': 'short', 'Luehdorfia japonica': 'none' };
   const baseLa = sp => (sp.la || '').split(' ab. ')[0];      // an aberration keeps the wing form and tail of its species
@@ -1561,7 +1625,7 @@ SPECIES_BY_ID = new Proxy(RAW_BY_ID, { get(t, k) { return typeof k === 'string' 
 //  * a spread and pinned specimen is worth more than a raw one of the same species: from 1.45x (poorly spread) up to 3x (perfect, quality 100)
 //  * the butterflies of the secret locations Bog and New Guinea are worth twice as much (except Queen Alexandra's birdwing, which has a fixed price)
 const Econ = (() => {
-  const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, SPREAD_LO = 1.45, SPREAD_HI = 3, AB_K = 6, LOC_K = { bog: 2, papua: 2, ocean: 2 };
+  const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, SPREAD_LO = 1.45, SPREAD_HI = 3, AB_K = 6, LOC_K = { bog: 2, papua: 2, vietnam: 2, ocean: 2 };
   const h = id => (strSeed(id) % 1000) / 1000;
   const baseValue = sp => sp.fixedPrice ? sp.fixedPrice : (sp.biome === 'ocean' || sp.mystery) ? Math.round(55 + h(sp.id) * 18) : Math.round(BASE[sp.rar || 1] * (0.85 + 0.3 * h(sp.id)));
   const isSpread = spec => spec.q !== null && spec.q !== undefined;
@@ -1805,6 +1869,7 @@ const Maps = (() => {
   const LIST = [
     { id: 'bog', biome: 'bog', name: 'Карта торфяных болот', price: 4500, blurb: 'Васюганское болото в Западной Сибири: кочки, мочажины, пушица и бабочки, которые не летают нигде больше.' },
     { id: 'papua', biome: 'papua', name: 'Карта Новой Гвинеи', price: 5000, blurb: 'Реликтовые джунгли у вулкана Ламингтон: гигантские деревья, застывшая лава и самая крупная бабочка мира.' },
+    { id: 'vietnam', biome: 'vietnam', name: 'Карта высокогорий Вьетнама', price: 5500, blurb: 'Скальные горы Хоангльеншон на севере Вьетнама: подъёмы, туман в ущельях, шаткие мосты и золотой кайзер-и-хинд.' },
   ];
   const ids = () => { const d = Save.data; if (!d.maps) d.maps = {}; return d.maps; };
   const api = {
@@ -1881,6 +1946,8 @@ const Snd = (() => {
     grab() { if (!ac) return; osc('triangle', 520, now(), 0.05, 0.05, null, 700); },
     stick(q) { if (!ac) return; const t = now(); noiseBurst(t, 0.05, 3200, 1200, 0.22, 'bandpass', 2); osc('sine', 150, t, 0.12, 0.2, null, 70); if (q > 0.75) bell(midi(96), t + 0.05, 0.05, 0.6); },
     tear() { if (!ac) return; noiseBurst(now(), 0.22, 2600, 5200, 0.16, 'highpass', 0.8); },
+    creak() { if (!ac) return; const t = now(); noiseBurst(t, 0.5, 260, 520, 0.16, 'bandpass', 6); osc('sawtooth', 120, t, 0.45, 0.05, null, 190); noiseBurst(t + 0.28, 0.25, 420, 280, 0.1, 'bandpass', 5); },
+    snap() { if (!ac) return; const t = now(); noiseBurst(t, 0.08, 2600, 900, 0.4, 'highpass', 0.8); noiseBurst(t + 0.05, 0.9, 700, 90, 0.5, 'lowpass', 0.6); osc('sine', 80, t, 0.7, 0.3, null, 38); },
     thud() { if (!ac) return; const t = now(); osc('sine', 120, t, 0.16, 0.25, null, 55); noiseBurst(t, 0.06, 700, 300, 0.12, 'lowpass', 0.7); },
     grade(q) { if (!ac) return; const t = now(); const n = q >= 95 ? 7 : q >= 85 ? 5 : q >= 70 ? 4 : q >= 50 ? 3 : 2; const sc = [0, 4, 7, 12, 16, 19, 24]; for (let i = 0; i < n; i++) bell(midi(60 + sc[i] + (q < 50 ? -5 : 0)), t + i * 0.11, 0.17, 1.8); },
     door() { if (!ac) return; const t = now(); noiseBurst(t, 0.3, 300, 120, 0.18, 'lowpass', 0.7); osc('sine', 90, t, 0.25, 0.15, null, 60); },
@@ -1919,6 +1986,7 @@ const Snd = (() => {
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     bog:        { wind: 0.45, bird: 'sparse', insect: ['cricket', 3200, 0.025], frog: true, base: 45, scale: [0, 2, 3, 7, 8], mus: 0.7 },
     papua:      { wind: 0.12, bird: 'tropic', insect: ['cicada', 4800, 0.075], frog: true, base: 49, scale: [0, 2, 3, 7, 10], mus: 0.8 },
+    vietnam:    { wind: 0.55, bird: 'song', insect: ['cicada', 5000, 0.06], water: true, base: 53, scale: [0, 2, 3, 7, 9], mus: 0.85 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
   function startAmbient(kind) {
@@ -2268,6 +2336,17 @@ const World = (() => {
       rocks: 10, water: ['stream'], waterCol: '#2e6a5a', mount: ['#2c4a3a', '#6a7e70', false, 26, 50],
       particles: ['spores', '#dfffb0', 1.0], amb: 'papua', clouds: 0.25, bait: ['fruit', 'sap'], lm: ['lavaflow', 'biglog', 'boulders'], tf: 0.42,
     },
+    vietnam: {      // the limestone highlands of Hoang Lien Son (Sa Pa), northern Vietnam: sunny, with mountain mist in the gorges
+      sky: ['#2c7fe6', '#c4def2'], fog: ['#e6eef2', 0.0105], sun: ['#fff6e0', [0.3, 0.95, 0.25]], hemi: ['#dcecff', '#5a7a48', 1.0], highland: true, mist: true,
+      amp: 3.4, freq: 0.03, ground: ['#5a8a3a', '#4a7a32', '#8a9a4c'], rock: '#a09d90', slopeRock: true,
+      grass: { col: ['#6a9a3c', '#527f32', '#8ab04a', '#a6b858'], h: [0.3, 0.7], n: 9500 },
+      flowers: [['#e0284a', 'cluster', 1.5], ['#f8f4ec', 'daisy', 1.0], ['#ffcc2a', 'daisy', 0.8], ['#8a4ad8', 'spike', 0.8], ['#ff8a2a', 'spike', 0.7], ['#f080b0', 'bell', 0.9]],
+      veg: [['kesiya', 26, 'upland', { variants: 4, maxSlope: 1.1 }], ['montoak', 30, 'grove', { variants: 4, maxSlope: 1.0 }], ['treefern', 44, 'dense', { variants: 3, maxSlope: 1.2 }], ['bamboo', 12, 'grove', { maxSlope: 1.0 }],
+        ['rhodo', 50, 'uniform', { variants: 5, maxSlope: 1.3 }], ['musa', 16, 'dense', { variants: 3 }], ['alocasia', 40, 'dense', { variants: 3 }], ['fern', 46, 'dense'], ['groundfern', 160, 'uniform', { variants: 4, maxSlope: 1.5 }], ['bush', 26, 'edge'],
+        ['karst', 16, 'uniform', { variants: 4, maxSlope: 1.6, minR: 14 }]],
+      rockSlope: 1.05, rocks: 26, water: [], waterCol: '#4a8aa0', mount: ['#4a6a5a', '#9ab0a8', false, 24, 52],
+      particles: ['spores', '#fff8d0', 0.6], amb: 'vietnam', clouds: 0.8, bait: ['fruit', 'sap'], lm: ['cairn', 'boulders'], tf: 0.48,
+    },
     japan: {
       sky: ['#5ba8dc', '#dcecec'], fog: ['#c8e0e0', 0.013], sun: ['#fff4dc', [0.4, 0.85, 0.3]], hemi: ['#d4ecec', '#4a7a38', 0.82],
       amp: 2.4, freq: 0.026, ground: ['#5a8a42', '#4a7a38', '#6a9a4a'], rock: '#7a7c78', moss: true,
@@ -2597,6 +2676,78 @@ const World = (() => {
       for (let i = 0; i < 5; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.2), h = r.range(0.7, 1.05), lx = Math.cos(a) * 0.12, lz = Math.sin(a) * 0.12; const L = limb(new V3(Math.cos(a) * d, 0.12, Math.sin(a) * d), new V3(Math.cos(a) * d + lx, h, Math.sin(a) * d + lz), 0.022, 0.014, 4); parts.push({ g: L.g, m: L.m, c: '#9a9a58', j: 0.04 }); parts.push({ g: blobG(0.085, r, 0.3, 1), m: M(Math.cos(a) * d + lx, h + 0.06, Math.sin(a) * d + lz, 0, 0, 0, 1, 1.2, 1), c: '#f4f2ea', j: 0.05 }); }   // cotton-grass heads
       return { g: merge(parts, r), rad: 0, h: 1.1 };
     },
+    // ---- the highlands of northern Vietnam
+    kesiya(r) {     // Khasi pine: a tall straight reddish trunk, a few whorls of branches that carry brushes of long needles
+      const parts = [], H = r.range(13, 18), top = trunk(parts, r, H, 0.34, 0.06, r.range(-0.05, 0.05), ['#7a4a34', '#4a3a30', 0, H], 6, 7);
+      const at = y => { const t = clamp(y / H), k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1)); return new V3(lerp(A.x, B.x, u), y, lerp(A.z, B.z, u)); };
+      const cols = ['#4a7a30', '#5a8a38', '#6a9a44', '#7aa850'];
+      for (let i = 0; i < 7; i++) {
+        const y = H * (0.5 + i * 0.07) + r.range(-0.2, 0.2), c0 = at(y), nb = r.int(3, 5), a0 = r.range(0, 6.28), Lm = lerp(3.2, 1.0, i / 6) * r.range(0.85, 1.15);
+        for (let b = 0; b < nb; b++) {
+          const a = a0 + b / nb * 6.28 + r.range(-0.3, 0.3), L = Lm * r.range(0.8, 1.15), tip = new V3(c0.x + Math.cos(a) * L, c0.y + L * r.range(0.15, 0.5), c0.z + Math.sin(a) * L);
+          const l = limb(c0, tip, 0.1 * lerp(1, 0.5, i / 6), 0.03, 5); parts.push({ g: l.g, m: l.m, c: '#6a4a38', j: 0.05 });
+          for (const u of [0.6, 0.85, 1.0]) { const p = c0.clone().lerp(tip, u), sz = r.range(0.45, 0.75) * (u > 0.9 ? 0.85 : 1); parts.push({ g: blobG(sz, r, 0.35, 0), m: M(p.x, p.y + 0.08, p.z, 0, r.range(0, 6), 0, 1.15, 0.5, 1.15), c: shadeHex(r.pick(cols), 0.85 + 0.3 * (i / 6)), j: 0.1 }); }
+          for (let k = 0; k < 4; k++) parts.push({ g: coneG(0.035, r.range(0.7, 1.1), 3), m: M(tip.x, tip.y + 0.05, tip.z, r.range(-0.9, 0.9), r.range(0, 6.28), r.range(-0.9, 0.9)), c: ['#4a7a30', '#9ac05a', 0, 1.1], j: 0.1 });
+        }
+      }
+      for (let i = 0; i < 3; i++) { const y = H * (0.28 + i * 0.07), c0 = at(y), a = r.range(0, 6.28), tip = new V3(c0.x + Math.cos(a) * 0.8, c0.y + 0.2, c0.z + Math.sin(a) * 0.8), l = limb(c0, tip, 0.05, 0.02, 4); parts.push({ g: l.g, m: l.m, c: '#5a4030', j: 0.05 }); }      // dead stubs
+      parts.push({ g: coneG(0.3, 0.9, 6), m: M(top.x, H * 0.96, top.z), c: ['#5a8a38', '#8ab850', 0, 1], j: 0.1 });
+      return { g: merge(parts, r), rad: 0.42, h: H + 1 };
+    },
+    montoak(r) {    // a montane evergreen oak: short fluted trunk, broad dark crown, moss on trunk and limbs, grey-green lichen beards hanging from the limbs
+      const parts = [], H = r.range(7, 10.5), Ht = H * 0.62, top = trunk(parts, r, Ht, 0.42, 0.2, r.range(-0.08, 0.08), ['#4a3c30', '#6a5a48', 0, Ht], 5, 7);
+      const at = y => { const t = clamp(y / Ht), k = Math.min(top.pts.length - 2, Math.floor(t * (top.pts.length - 1))), A = top.pts[k], B = top.pts[k + 1], u = clamp((y - A.y) / (B.y - A.y || 1)); return new V3(lerp(A.x, B.x, u), y, lerp(A.z, B.z, u)); };
+      const cols = ['#2e5a2c', '#3a6a32', '#2a502a', '#46783a'];
+      for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + r.range(-0.3, 0.3), L = r.range(0.7, 1.2); parts.push({ g: buttressG(L, r.range(0.5, 0.8), 0.1, r.range(-0.3, 0.3), r), m: M(top.pts[0].x, 0.02, top.pts[0].z, 0, -a, 0), c: ['#3a2c22', '#5a4a38', 0, 0.8], j: 0.05 }); }
+      const A = at(Ht * 0.92);
+      parts.push({ g: blobG(r.range(1.6, 2.1), r, 0.3, 1), m: M(top.x, Ht + 0.9, top.z, 0, 0, 0, 1, 0.75, 1), c: r.pick(cols), j: 0.1 });
+      for (let i = 0; i < 5; i++) {
+        const a = i / 5 * 6.28 + r.range(-0.3, 0.3), tip = new V3(A.x + Math.cos(a) * r.range(1.6, 2.8), A.y + r.range(1.0, 2.2), A.z + Math.sin(a) * r.range(1.6, 2.8)), l = limb(A, tip, 0.16, 0.07, 5); parts.push({ g: l.g, m: l.m, c: '#4a3c30', j: 0.05 });
+        parts.push({ g: blobG(r.range(1.3, 1.9), r, 0.3, 1), m: M(tip.x, tip.y + 0.4, tip.z, 0, 0, 0, 1, 0.72, 1), c: r.pick(cols), j: 0.1 });
+        const m = A.clone().lerp(tip, 0.5); parts.push({ g: blobG(0.22, r, 0.3, 0), m: M(m.x, m.y + 0.06, m.z, 0, 0, 0, 1.6, 0.55, 1.2), c: '#5a8a3a', j: 0.1 });       // moss on the limb
+        for (let k = 0; k < 4; k++) { const p = A.clone().lerp(tip, r.range(0.45, 0.95)); parts.push({ g: coneG(0.07, r.range(0.5, 1.0), 4), m: M(p.x, p.y - 0.04, p.z, Math.PI, 0, 0), c: ['#9ab07a', '#d0dcb0', 0, 1], j: 0.08 }); }      // lichen beards
+      }
+      for (let i = 0; i < 6; i++) { const y = r.range(0.3, Ht * 0.8), P = at(y), a = r.range(0, 6.28), rr = lerp(0.42, 0.2, y / Ht) * 0.92; parts.push({ g: blobG(0.18, r, 0.3, 0), m: M(P.x + Math.cos(a) * rr, y, P.z + Math.sin(a) * rr, 0, 0, 0, 1.2, 1.1, 1.2), c: '#5a8a3a', j: 0.1 }); }     // moss on the trunk
+      return { g: merge(parts, r), rad: 0.55, h: H + 2.5 };
+    },
+    treefern(r) {   // a tree fern (Cyathea): a slender fibrous trunk and a crown of arching fronds
+      const parts = [], H = r.range(1.8, 4.2); parts.push({ g: cylG(0.13, 0.22, H, 6), c: ['#3a2a1e', '#5a4632', 0, H], j: 0.08 });
+      for (let k = 0; k < 6; k++) parts.push({ g: new THREE.TorusGeometry(0.17, 0.035, 4, 7), m: M(0, 0.3 + k * H / 6.5, 0, Math.PI / 2, 0, 0), c: '#2a2016', j: 0.04 });
+      for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28 + r.range(-0.12, 0.12); parts.push({ g: frondG(r.range(2.0, 2.8), 0.7, r.range(0.35, 0.85), 6), m: M(0, H, 0, 0, a, r.range(0.0, 0.3)), c: ['#1e5a2a', '#5aa844', 0, H + 2], j: 0.1 }); }
+      parts.push({ g: coneG(0.1, 0.45, 5), m: M(0, H - 0.02, 0), c: '#8ab048', j: 0.08 });
+      return { g: merge(parts, r), rad: 0.25, h: H + 1.8 };
+    },
+    rhodo(r) {      // a rhododendron: a big shrub with leathery leaves and a truss of flowers at the tip of each branch
+      const parts = [], n = r.int(5, 8), fc = r.pick([['#d8203c', '#e8405a', '#f06a80'], ['#f0a0c0', '#f8c0d4', '#e880a8'], ['#fdfaf2', '#f4ead8', '#f8e0e8']]), lc = ['#2a5a30', '#336a38', '#244e2a'];
+      for (let i = 0; i < n; i++) {
+        const a = r.range(0, 6.28), d = r.range(0.0, 0.7), hh = r.range(1.2, 2.3), B = new V3(Math.cos(a) * d, hh, Math.sin(a) * d), A = new V3(Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08), l = limb(A, B, 0.055, 0.025, 5); parts.push({ g: l.g, m: l.m, c: '#5a4034', j: 0.05 });
+        parts.push({ g: blobG(r.range(0.45, 0.7), r, 0.3, 1), m: M(B.x, B.y - 0.12, B.z, 0, 0, 0, 1, 0.7, 1), c: r.pick(lc), j: 0.1 });
+        const m = A.clone().lerp(B, 0.65); parts.push({ g: blobG(r.range(0.3, 0.45), r, 0.3, 0), m: M(m.x, m.y, m.z, 0, 0, 0, 1, 0.75, 1), c: r.pick(lc), j: 0.1 });
+        if (r.chance(0.85)) { const F = B.clone().add(new V3(r.range(-0.08, 0.08), 0.42, r.range(-0.08, 0.08))), pl = limb(B, F, 0.03, 0.02, 4); parts.push({ g: pl.g, m: pl.m, c: '#6a5a3a', j: 0.04 }); for (let k = 0; k < 6; k++) parts.push({ g: blobG(0.13, r, 0.25, 0), m: M(F.x + r.range(-0.17, 0.17), F.y + r.range(-0.05, 0.12), F.z + r.range(-0.17, 0.17), 0, 0, 0, 1, 0.85, 1), c: r.pick(fc), j: 0.05 }); }
+      }
+      return { g: merge(parts, r), rad: 0, h: 2.6 };
+    },
+    musa(r) {       // a wild banana: a pseudostem of leaf sheaths and big torn leaves, a hanging maroon flower bud
+      const parts = [], H = r.range(2.2, 3.4); parts.push({ g: cylG(0.17, 0.25, H, 7), c: ['#7a8a4a', '#9aaa5c', 0, H], j: 0.06 });
+      for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + r.range(-0.2, 0.2); parts.push({ g: frondG(r.range(2.0, 2.8), 1.0, r.range(0.4, 0.9), 6), m: M(0, H, 0, 0, a, r.range(0, 0.2)), c: ['#2a6a2a', '#5aa046', 0, H + 1.6], j: 0.1 }); }
+      const E = new V3(0.35, H - 0.7, 0.1), l = limb(new V3(0, H, 0), E, 0.05, 0.035, 4); parts.push({ g: l.g, m: l.m, c: '#5a4a2a', j: 0.04 }); parts.push({ g: blobG(0.17, r, 0.2, 0), m: M(E.x, E.y - 0.12, E.z, 0, 0, 0, 0.8, 1.5, 0.8), c: '#6a1a2a', j: 0.06 });
+      return { g: merge(parts, r), rad: 0.35, h: H + 1.8 };
+    },
+    karst(r) {      // limestone spires: jagged grey towers, stained and striated, with moss, ferns and shrubs on the ledges
+      const parts = [], n = r.int(3, 5);
+      parts.push({ g: blobG(3.2, r, 0.25, 1), m: M(0, 0.2, 0, 0, 0, 0, 1.15, 0.38, 1.15), c: '#5a6a4a', j: 0.1 });
+      for (let i = 0; i < n; i++) {
+        const a = r.range(0, 6.28), d = i === 0 ? 0 : r.range(1.5, 3.2), cx = Math.cos(a) * d, cz = Math.sin(a) * d, R0 = r.range(1.1, 2.0), Hh = r.range(4.5, 9.5) * (i === 0 ? 1.2 : 1), nt = 4, th = Hh / nt;
+        let lx = 0, lz = 0; for (let k = 0; k < nt; k++) {
+          const rb = R0 * (1 - 0.72 * k / nt) * r.range(0.85, 1.12), rt = R0 * (1 - 0.72 * (k + 1) / nt) * r.range(0.8, 1.05); const g = cylG(rt, rb, th, 6); jitterGeo(g, 0.22, r);
+          parts.push({ g, m: M(cx + lx, k * th - 0.1, cz + lz), c: k === 0 ? ['#5a6450', '#8a8a7c', 0, th] : ['#7a7a70', '#c4c0b0', 0, th], j: 0.1 });
+          if (k < nt - 1 && r.chance(0.8)) { const q = r.range(0, 6.28); parts.push({ g: blobG(rt * 0.55, r, 0.3, 0), m: M(cx + lx + Math.cos(q) * rt * 0.55, (k + 1) * th - 0.05, cz + lz + Math.sin(q) * rt * 0.55, 0, 0, 0, 1, 0.5, 1), c: r.pick(['#3a6a30', '#4a7a38', '#5a8a3a']), j: 0.1 }); }      // a shrub on the ledge
+          lx += r.range(-0.12, 0.12); lz += r.range(-0.12, 0.12);
+        }
+        parts.push({ g: coneG(Math.max(0.2, R0 * 0.3), 1.1, 6), m: M(cx + lx, Hh - 0.15, cz + lz), c: '#c8c4b4', j: 0.1 });
+      }
+      return { g: merge(parts, r), rad: 2.8, h: 11 };
+    },
     // ---- the relic forest of New Guinea
     relic(r) {      // an emergent giant: buttressed trunk, a fork, a few huge limbs that branch again, flat crowns of leaves, epiphytes and lianas
       const parts = []; const H = r.range(28, 38), F = H * r.range(0.4, 0.5);
@@ -2787,7 +2938,7 @@ const World = (() => {
     const env = Object.assign({}, ENV[biome.id]);
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
-    env._bush = ({ papua: ['#2a6a30', '#3a7a34'], russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
+    env._bush = ({ papua: ['#2a6a30', '#3a7a34'], vietnam: ['#2e6a34', '#3a7a3a'], russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
 
     // ---- per-visit variation (time of day, weather, relief)
     const OC = !!env.overcast;      // a grey, overcast day (the bog): no golden hour, no sun disc, soft light
@@ -2813,8 +2964,43 @@ const World = (() => {
       lava = { pts };
     }
     const lavaNear = (x, z) => { let bd = 1e9, bi = 0, bt = 0; for (let i = 0; i < lava.pts.length - 1; i++) { const A = lava.pts[i], B = lava.pts[i + 1], sd = lSeg(x, z, A.x, A.z, B.x, B.z); if (sd[0] < bd) { bd = sd[0]; bi = i; bt = sd[1]; } } const A = lava.pts[bi], B = lava.pts[bi + 1]; return [bd, bi + bt, lerp(A.w, B.w, bt)]; };
+    const reserve = [];          // ground kept free for landmarks planned in advance (the bog's boardwalk and peat cutting, the bridges)
+    // ---- the highlands of northern Vietnam: two gorges (each crossed by a rope bridge between two mountains), peaks, rice terraces
+    const hl = env.highland ? (() => {
+      const sites = [], a0 = rng.range(0, 6.283);
+      [a0, a0 + Math.PI + rng.range(-0.6, 0.6)].forEach(a => {
+        const cr = 33 + rng.range(-1.5, 1.5), W = rng.range(6.5, 8.2);
+        sites.push({ a, cx: Math.cos(a) * cr, cz: Math.sin(a) * cr, nx: Math.cos(a), nz: Math.sin(a), tx: -Math.sin(a), tz: Math.cos(a), W, Hs: 0, Lg: 54, weak: false, state: 'ok', t: 0, touched: false });
+      });
+      sites[0].weak = rng.chance(0.5); sites[1].weak = rng.chance(0.5); if (!sites[0].weak && !sites[1].weak) sites[rng.int(0, 1)].weak = true;
+      const peaks = []; for (let tries = 0; tries < 80 && peaks.length < 4; tries++) { const a = rng.range(0, 6.283), d = rng.range(40, 50), x = Math.cos(a) * d, z = Math.sin(a) * d; if (sites.some(q => Math.abs((x - q.cx) * q.tx + (z - q.cz) * q.tz) < 30 && Math.abs((x - q.cx) * q.nx + (z - q.cz) * q.nz) < 22) || peaks.some(q => Math.hypot(q.x - x, q.z - z) < 22)) continue; peaks.push({ x, z, R: rng.range(9, 13), H: rng.range(7, 11) }); }
+      return { sites, peaks };
+    })() : null;
+    const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
+    const gorgeInfo = (x, z) => { let g = 0, Hs = 0; if (hl) for (const s of hl.sites) { const [u, v] = siteUV(s, x, z), q = smooth(s.W + 2.0, s.W, Math.abs(u)) * smooth(s.Lg, s.Lg - 8, Math.abs(v)); if (q > g) { g = q; Hs = s.Hs; } } return [g, Hs]; };
+    const gorgeAt = (x, z) => gorgeInfo(x, z)[0];
+    const terraceMask = (x, z, r) => smooth(0.5, 0.62, noise.fbm(x * 0.022 + 7, z * 0.022 + 3, 2)) * smooth(14, 19, r) * smooth(39, 33, r);
     // ---- base relief
+    const hlNat = (x, z) => {
+      const r = Math.hypot(x, z), ridge = noise.fbm(x * 0.028 + 31, z * 0.028 + 17, 4);
+      let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP * smooth(4, 14, r);
+      h += smooth(15, 42, r) * (11 + 7 * ridge) + smooth(44, 58, r) * (6 + 5 * noise.fbm(x * 0.035 + 3, z * 0.035 + 9, 3));
+      for (const p of hl.peaks) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.R) h += p.H * 0.5 * (1 + Math.cos(Math.PI * d / p.R)); }
+      const tm = terraceMask(x, z, r); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); }      // rice terraces: flat steps with rounded risers
+      return h;
+    };
+    if (hl) for (const s of hl.sites) s.Hs = (hlNat(s.cx - s.nx * (s.W + 3.5), s.cz - s.nz * (s.W + 3.5)) + hlNat(s.cx + s.nx * (s.W + 3.5), s.cz + s.nz * (s.W + 3.5))) / 2;
+    const hlH = (x, z) => {
+      const r = Math.hypot(x, z); let h = hlNat(x, z);
+      for (const s of hl.sites) {
+        const [u, v] = siteUV(s, x, z), au = Math.abs(u), av = Math.abs(v);
+        const wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0) h = lerp(h, s.Hs, wp);        // the landing pads at both ends of the bridge
+        const g = smooth(s.W + 2.0, s.W, au) * smooth(s.Lg, s.Lg - 8, av); if (g > 0) h = lerp(h, s.Hs - 17.5 + (noise.at(x * 0.4, z * 0.4) - 0.5) * 1.2 + noise.at(x * 0.09 + 4, z * 0.09) * 1.5, g);   // the gorge
+      }
+      return h + Math.pow(clamp((r - 56) / 30), 2) * (AMP * 2.6 + 12);
+    };
     const baseH = (x, z) => {
+      if (hl) return hlH(x, z);
       let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP;
       const r = Math.hypot(x, z);
       h *= smooth(5, 16, r);
@@ -2898,7 +3084,7 @@ const World = (() => {
     const ld = (x, z) => LDG ? LDG[clamp(Math.round((z + HALF) / CELL), 0, SEG) * N1 + clamp(Math.round((x + HALF) / CELL), 0, SEG)] : 99;
     world.ld = ld; world.lava = lava;
     const slopeAt = (x, z) => Math.hypot(heightAt(x + 1, z) - heightAt(x - 1, z), heightAt(x, z + 1) - heightAt(x, z - 1)) / 2;
-    world.slopeAt = slopeAt;
+    world.slopeAt = slopeAt; world.groundAt = heightAt; world.flyH = heightAt;
 
     // signed-distance grid to the water edge (1 m cells): negative inside water
     const SD = new Float32Array(N1 * N1).fill(999);
@@ -2930,7 +3116,10 @@ const World = (() => {
       if (LDG) { const l0 = LDG[i]; if (l0 < 4) c = mixc(c, hex2rgb('#2e2c2a'), smooth(4, 0.6, l0) * 0.45); if (l0 < 0.8) { const st = Math.sin(((x * 0.7 + z * 0.4) * 1.9) + n2 * 6) * 0.5 + 0.5; c = mixc(c, hex2rgb(n2 > 0.66 ? '#5a3428' : n2 > 0.5 ? '#403834' : n2 > 0.28 ? '#2c2825' : '#181514'), smooth(0.8, -0.4, l0) * (0.9 + st * 0.08)); if (l0 > -0.3 && l0 < 0.8 && n2 > 0.7) c = mixc(c, hex2rgb('#4a6a36'), 0.5); } }      // black crust with rusty patches
       if (env.bog) { const hv = noise.fbm(x * 0.11 + 20, z * 0.11 + 8, 3), hr = noise.at(x * 0.23 + 50, z * 0.23 + 30), red = smooth(0.6, 0.74, hv); c = mixc(c, hex2rgb('#8a4a30'), red * 0.5); c = mixc(c, hex2rgb('#8e8a44'), smooth(0.5, 0.62, hr) * 0.4 * (1 - red)); c = mixc(c, hex2rgb('#3e3220'), smooth(0.4, 0.3, hv) * 0.6); }   // red / yellow sphagnum, brown peat moss, bare dark peat
       const sl = slopeAt(x, z);
-      if (env.slopeRock && sl > 0.55) c = mixc(c, rockc, clamp((sl - 0.55) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
+      if (env.slopeRock && sl > (env.rockSlope || 0.55)) c = mixc(c, rockc, clamp((sl - (env.rockSlope || 0.55)) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
+      if (hl) { const r = Math.hypot(x, z), tm = terraceMask(x, z, r), [g] = gorgeInfo(x, z);
+        if (tm > 0.2) { if (sl < 0.5) c = mixc(c, hex2rgb(n2 > 0.62 ? '#d4bc58' : n2 > 0.3 ? '#9cc84e' : '#78b044'), tm * 0.85); else c = mixc(c, hex2rgb('#6c5a3a'), tm * 0.75); }
+        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 24) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 24) / 8) * 0.6); }
       const sd = SD[i]; if (sd < 3.2) { c = mixc(c, sandc, smooth(3.2, 0.2, sd) * (env.sand ? 0.95 : 0.55)); if (sd < 0.3) c = mixc(c, mudc, smooth(0.3, -1, sd) * 0.8); }
       const k = 0.92 + n2 * 0.16; colArr[i * 3] = c[0] / 255 * k; colArr[i * 3 + 1] = c[1] / 255 * k; colArr[i * 3 + 2] = c[2] / 255 * k;
     }
@@ -2938,6 +3127,76 @@ const World = (() => {
     const gtex = groundTex(rng); gtex.repeat.set(SIZE / 2.4, SIZE / 2.4);
     const terrain = new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ map: gtex, vertexColors: true }));
     terrain.receiveShadow = true; scene.add(terrain);
+
+
+    // ---- bridges across the gorges (highlands): a plank deck on ropes; a worn one may snap under the player, who then falls into the gorge
+    if (hl) {
+      const bmat = c => new THREE.MeshLambertMaterial({ color: c });
+      for (const b of hl.sites) {
+        const brng = new Rng(seed ^ Math.floor(b.a * 1000) ^ (b.weak ? 0x1234 : 0x4321)), Lh = b.W + 3.8, hw = 0.88; b.Lh = Lh; b.hw = hw; b.sag = b.weak ? 0.5 : 0.22; b.planks = []; b.ropes = [];
+        const grp = new THREE.Group(); scene.add(grp); b.group = grp;
+        const deckY = u => b.Hs + 0.06 - b.sag * (1 - (u / Lh) * (u / Lh)), W3 = (u, v, y) => new V3(b.cx + b.nx * u + b.tx * v, y, b.cz + b.nz * u + b.tz * v);
+        const woods = b.weak ? ['#6a5238', '#5a4630', '#7a6444', '#4a5236'] : ['#9a7a4a', '#a88858', '#8e6e42', '#a07e50'], wm = woods.map(bmat), ropeM = bmat(b.weak ? '#6a5a3c' : '#c4aa72'), postM = bmat('#4a3626');
+        const plankG = new THREE.BoxGeometry(0.27, 0.07, 1.78), n = Math.floor(2 * Lh / 0.34), sp = 2 * Lh / n;
+        for (let i = 0; i < n; i++) {
+          const u = -Lh + (i + 0.5) * sp; if (b.weak && i > 1 && i < n - 2 && brng.chance(0.14)) continue;
+          const m = new THREE.Mesh(plankG, wm[brng.int(0, wm.length - 1)]); m.castShadow = true; m.receiveShadow = true; const y0 = deckY(u) + 0.035, pos = W3(u, brng.range(-0.03, 0.03), y0);
+          m.userData.noFloat = true; m.position.copy(pos); m.rotation.set(0, -b.a + brng.range(-0.04, 0.04), b.weak && brng.chance(0.25) ? brng.range(-0.12, 0.12) : 0, 'YXZ'); grp.add(m);
+          if (b.weak && brng.chance(0.22)) m.scale.z = brng.range(0.5, 0.8);
+          b.planks.push({ m, u, y0, vy: 0, vx: 0, sx: brng.range(-3, 3), sz: brng.range(-3, 3), delay: Math.abs(u) * 0.025 + brng.range(0, 0.25) });
+        }
+        const seg = (A, B, r0, r1, mat, tag, uMid) => { const l = limb(A, B, r0, r1, 4), m = new THREE.Mesh(l.g, mat); m.matrixAutoUpdate = false; m.userData.noFloat = true; m.matrix.copy(l.m); m.castShadow = true; grp.add(m); b.ropes.push({ m, u: uMid, tag }); return m; };
+        const NS = 18;
+        for (const sd of [-1, 1]) {
+          for (let k = 0; k < NS; k++) {                                   // the hand rope and the rope under the deck edge
+            const u0 = -Lh + 2 * Lh * k / NS, u1 = -Lh + 2 * Lh * (k + 1) / NS, um = (u0 + u1) / 2;
+            const gap = b.weak && k > 2 && k < NS - 3 && brng.chance(0.14);
+            if (!gap) seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u1, sd * 0.95, deckY(u1) + 1.05), 0.032, 0.032, ropeM, 'hand', um);
+            else { seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u0 + 0.12, sd * 0.95, deckY(u0) + 0.45), 0.03, 0.012, ropeM, 'hand', um); seg(W3(u1, sd * 0.95, deckY(u1) + 1.05), W3(u1 - 0.12, sd * 0.95, deckY(u1) + 0.4), 0.03, 0.012, ropeM, 'hand', um); }
+            seg(W3(u0, sd * 0.82, deckY(u0) - 0.03), W3(u1, sd * 0.82, deckY(u1) - 0.03), 0.05, 0.05, ropeM, 'edge', um);
+            if (k > 0) seg(W3(u0, sd * 0.9, deckY(u0) + 0.04), W3(u0, sd * 0.95, deckY(u0) + 1.05), 0.016, 0.016, ropeM, 'vert', u0);
+          }
+          for (const e of [-1, 1]) { const u = e * (Lh - 0.2); seg(W3(u, sd * 0.95, b.Hs - 0.3), W3(u, sd * 0.95, b.Hs + 1.3), 0.1, 0.09, postM, 'post', u); }
+        }
+        for (const e of [-1, 1]) seg(W3(e * (Lh - 0.2), -0.95, b.Hs + 1.22), W3(e * (Lh - 0.2), 0.95, b.Hs + 1.22), 0.05, 0.05, postM, 'post', e * Lh);
+        for (const e of [-1, 1]) for (const sd of [-1, 1]) { const pos = W3(e * (Lh + 0.9), sd * 1.7, b.Hs); const st = new THREE.Mesh(blobG(0.55, brng, 0.3, 1), bmat('#8a877c')); st.position.set(pos.x, heightAt(pos.x, pos.z) + 0.1, pos.z); st.scale.set(1, 0.7, 1); st.castShadow = true; scene.add(st); world.colliders.push({ x: pos.x, z: pos.z, r: 0.45 }); }
+        if (b.weak) for (let i = 0; i < 5; i++) { const u = brng.range(-Lh + 2, Lh - 2), m = new THREE.Mesh(blobG(0.16, brng, 0.3, 0), bmat('#5a7a3a')); const pos = W3(u, brng.range(-0.6, 0.6), deckY(u) + 0.1); m.userData.noFloat = true; m.position.copy(pos); m.scale.set(1.4, 0.35, 1.2); grp.add(m); b.planks.push({ m, u, y0: pos.y, vy: 0, sx: 0, sz: 0, delay: Math.abs(u) * 0.025 }); }      // moss on the old planks
+        for (let k = -Lh + 3; k < Lh - 2; k += 3) reserve.push({ x: b.cx + b.nx * k, z: b.cz + b.nz * k, r: 2.2 });
+        reserve.push({ x: b.cx + b.nx * (Lh + 0.5), z: b.cz + b.nz * (Lh + 0.5), r: 3 }, { x: b.cx - b.nx * (Lh + 0.5), z: b.cz - b.nz * (Lh + 0.5), r: 3 });
+      }
+      const deckAt = (x, z) => { for (const b of hl.sites) { if (b.state === 'fall' || b.state === 'gone') continue; const [u, v] = siteUV(b, x, z); if (Math.abs(v) < b.hw && Math.abs(u) < b.Lh) return b.Hs + 0.06 - b.sag * (1 - (u / b.Lh) * (u / b.Lh)); } return null; };
+      world.bridges = hl.sites; world.events = []; world.pendingFall = null;
+      world.groundAt = (x, z) => { const d = deckAt(x, z); return d !== null ? d : heightAt(x, z); };
+      world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.12 && slopeAt(x, z) < 2.3);
+      world.deepMsg = 'Тут не пройти: обрыв. Ищите тропу или мост.';
+      world.edgeMsg = 'Дальше — только скалы и туман.';
+      world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.siteUV = siteUV;
+      world.flyH = (x, z) => { const h = heightAt(x, z), [g, Hs] = gorgeInfo(x, z); return g > 0 ? h + g * (Hs - h) : h; };      // butterflies glide across a gorge at the height of its rims
+      world.moveK = (x, z, dx, dz) => { const l = Math.hypot(dx, dz); if (l < 1e-4) return 1; const gr = (world.groundAt(x + dx / l * 1.2, z + dz / l * 1.2) - world.groundAt(x, z)) / 1.2; return clamp(1 - 0.5 * gr, 0.42, 1.18); };    // climbing is slow, going down is quick
+      world.updaters.push((dt, t, focus) => {
+        for (const b of hl.sites) {
+          const [u, v] = siteUV(b, focus.x, focus.z), on = Math.abs(v) < b.hw + 0.4 && Math.abs(u) < b.Lh && b.state !== 'fall' && b.state !== 'gone';
+          if (b.state === 'ok') {
+            if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b }); }
+            if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b }); }
+          } else if (b.state === 'shake') {
+            b.t += dt; for (const p of b.planks) p.m.position.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2);
+            if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b }); if (on && Math.abs(v) < b.hw + 0.2) world.pendingFall = b; for (const q of b.planks) q.m.position.y = q.y0; }
+          } else if (b.state === 'fall') {
+            b.t += dt; for (const p of b.planks) { if (Math.abs(p.u) > b.Lh - 1.3 || b.t < p.delay) continue; p.vy -= 13 * dt; p.m.position.y += p.vy * dt; p.m.rotation.x += p.sx * dt; p.m.rotation.z += p.sz * dt; }
+            for (const q of b.ropes) if (Math.abs(q.u) < b.Lh - 1.5 && (q.tag === 'hand' || q.tag === 'vert' || q.tag === 'edge') && b.t > 0.15 + Math.abs(q.u) * 0.03) q.m.visible = false;
+            if (b.t > 3.2) { b.state = 'gone'; for (const p of b.planks) if (Math.abs(p.u) <= b.Lh - 1.3) p.m.visible = false; }
+          }
+        }
+      });
+      // ---- mountain mist: a milky layer in every gorge, soft banks drifting in the valleys
+      const mistTex = canvasTex(32, 32, (x, w, h) => { const d = x.createImageData(w, h); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const dx = (xx + 0.5) / w * 2 - 1, dy = (yy + 0.5) / h * 2 - 1, a = Math.max(0, 1 - Math.hypot(dx, dy)); const i = (yy * w + xx) * 4; d.data[i] = 244; d.data[i + 1] = 248; d.data[i + 2] = 252; d.data[i + 3] = Math.round(Math.pow(a, 0.8) * 255); } x.putImageData(d, 0, 0); });
+      const mist = [], mrng = new Rng(seed ^ 0x3157);
+      const addMist = (x, y, z, w, h, op) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: op, color: 0xffffff })); sp.position.set(x, y, z); sp.scale.set(w, h, 1); sp.userData = { x, z, ph: mrng.range(0, 6.28), sp: mrng.range(0.05, 0.12), amp: mrng.range(2, 5) }; scene.add(sp); mist.push(sp); };
+      for (const b of hl.sites) { const fy = b.Hs - 17.5; for (let v = -b.Lg; v <= b.Lg; v += 6) for (let k = 0; k < 2; k++) { const p = new V3(b.cx + b.tx * v + b.nx * mrng.range(-3, 3), 0, b.cz + b.tz * v + b.nz * mrng.range(-3, 3)); if (Math.hypot(p.x, p.z) > 62) continue; addMist(p.x, fy + (k ? 11 : 6.5) + mrng.range(-1, 1), p.z, mrng.range(20, 30), mrng.range(7, 11), k ? 0.38 : 0.52); } }
+      for (let i = 0; i < 30; i++) { const a = mrng.range(0, 6.28), d = mrng.range(14, 54), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.8), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.2, 0.34)); }
+      world.updaters.push((dt, t) => { for (const sp of mist) { const d = sp.userData; sp.position.x = d.x + Math.sin(t * d.sp + d.ph) * d.amp; sp.position.z = d.z + Math.cos(t * d.sp * 0.8 + d.ph) * d.amp * 0.7; } });
+    }
 
     // ---- lights
     const hemi = new THREE.HemisphereLight(mixHex(env.hemi[0], '#ffd8b0', golden * 0.5), env.hemi[1], env.hemi[2] * (1 - golden * 0.12)); scene.add(hemi);
@@ -3007,13 +3266,13 @@ const World = (() => {
       upland: (x, z, y) => 0.12 + 0.88 * smooth(-0.5, 1.8, y + (tf(x, z) - 0.5) * 3),
     };
     const groups = {};
-    const reserve = [];          // ground kept free for landmarks planned in advance (the bog's boardwalk and peat cutting)
     function scatter(count, rad, minR, maxR, opts = {}) {
       const out = []; let tries = 0; const f = FIELD[opts.field || 'uniform'] || FIELD.uniform;
       while (out.length < count && tries++ < count * 90) {
         const a = rng.range(0, 6.2832), d = Math.sqrt(rng.range(minR * minR, maxR * maxR)); const x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (d < (opts.clear === undefined ? 6 : opts.clear)) continue;
         if (inWater(x, z, opts.waterGap === undefined ? 1.4 : opts.waterGap)) continue;
+        if (hl && gorgeAt(x, z) > 0.02) continue;
         const y = heightAt(x, z);
         if (!opts.anySlope && slopeAt(x, z) > (opts.maxSlope || 0.75)) continue;
         if (rng.next() > f(x, z, y)) continue;
@@ -3052,7 +3311,7 @@ const World = (() => {
         im.castShadow = !opts.noShadow; im.receiveShadow = true; im.frustumCulled = false; scene.add(im);
       });
     }
-    const spacing = { bush: 0.5, rock: 0.5, giant: 2.4, dipt: 2.0, baobab: 3.2, crypto: 1.6, hummock: 1.3, tussock: 0.55, ledum: 0.7, cassandra: 0.6, dbirch: 0.7, ryam: 1.8, snag: 1.6, relic: 1.6, cycad: 0.9, pandan: 1.1, alocasia: 0.8, lavashard: 0.35, groundfern: 0.5, lavarock: 1.2 };
+    const spacing = { bush: 0.5, rock: 0.5, giant: 2.4, dipt: 2.0, baobab: 3.2, crypto: 1.6, hummock: 1.3, tussock: 0.55, ledum: 0.7, cassandra: 0.6, dbirch: 0.7, ryam: 1.8, snag: 1.6, relic: 1.6, cycad: 0.9, pandan: 1.1, alocasia: 0.8, kesiya: 2.0, montoak: 2.6, treefern: 1.0, rhodo: 1.1, musa: 1.0, karst: 3.6, lavashard: 0.35, groundfern: 0.5, lavarock: 1.2 };
     function addTrees(type, count, opts = {}) { instanceAt(type, scatter(count, spacing[type] || 1.6, opts.minR || 6, opts.maxR || 56, opts), opts); }
 
     // vegetation recipe
@@ -3153,7 +3412,7 @@ const World = (() => {
       const im = new THREE.InstancedMesh(grassGeo, foliageMat(gAtlas, false, 1), n); let cnt = 0, tries = 0; const c = new THREE.Color();
       while (cnt < n && tries++ < n * 3) {
         const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(0, PLAY_R * PLAY_R * 1.1)); const x = Math.cos(a) * d, z = Math.sin(a) * d;
-        if (inWater(x, z, 0.6)) continue; if (LDG && ld(x, z) < 0.5 && rng.chance(0.93)) continue; if (env.slopeRock && slopeAt(x, z) > 0.7 && rng.chance(0.8)) continue;
+        if (inWater(x, z, 0.6)) continue; if (LDG && ld(x, z) < 0.5 && rng.chance(0.93)) continue; if (env.slopeRock && slopeAt(x, z) > (env.rockSlope || 0.7) && rng.chance(0.8)) continue; if (hl && gorgeAt(x, z) > 0.04) continue;
         const s = rng.range(env.grass.h[0], env.grass.h[1]) * (0.8 + 0.4 * (1 - tf(x, z))); const w = rng.range(0.55, 1.0) * (0.6 + s * 0.6);
         im.setMatrixAt(cnt, M(x, heightAt(x, z) - 0.05, z, 0, rng.range(0, 3.14), 0, w, s, w));
         c.copy(rng.pick(gcols)).lerp(rng.pick(gcols), rng.next()); im.setColorAt(cnt, c); cnt++;
@@ -3183,7 +3442,7 @@ const World = (() => {
         let x, z, f;
         if (rng.chance(0.82)) { const p = rng.pick(patches); const a = rng.range(0, 6.28), d = Math.abs(rng.next() + rng.next() - 1) * p.r * 1.3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; f = rng.chance(0.75) ? p.f : rng.pick(env.flowers); }
         else { const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(4, PLAY_R * PLAY_R)); x = Math.cos(a) * d; z = Math.sin(a) * d; f = rng.pick(env.flowers); }
-        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8) || (LDG && ld(x, z) < 0.5)) continue;
+        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8) || (LDG && ld(x, z) < 0.5) || (hl && gorgeAt(x, z) > 0.04)) continue;
         const sz = rng.range(0.5, 0.85) * (f[1] === 'spike' ? 1.5 : 1) * (biome.id === 'kenya' || biome.id === 'prairie' ? 1.4 : biome.id === 'bog' ? 0.72 : biome.id === 'papua' ? 0.8 : 1); const y = heightAt(x, z) - 0.04;
         im.setMatrixAt(cnt, M(x, y, z, 0, rng.range(0, 3.14), 0, sz, sz, sz)); c.set(f[0]).multiplyScalar(rng.range(0.9, 1.1)); im.setColorAt(cnt, c); kind[cnt] = KINDS.indexOf(f[1]);
         if (rng.chance(0.4)) world.flowers.push({ x, y: y + sz * 0.78, z, kind: f[1], size: sz, taken: false });
@@ -3594,9 +3853,9 @@ class Fly {
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
       if (Math.hypot(x, z) > R || p.world.inWater(x, z)) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
-      this.pos.set(x, p.world.heightAt(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
+      this.pos.set(x, p.world.flyH(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
     }
-    this.pos.set(5, p.world.heightAt(5, 5) + 1.2, 5);
+    this.pos.set(5, p.world.flyH(5, 5) + 1.2, 5);
   }
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
@@ -3616,9 +3875,9 @@ class Fly {
       const a = Math.random() * 6.28, d = 6 + Math.random() * 14; const x = this.pos.x + Math.cos(a) * d, z = this.pos.z + Math.sin(a) * d;
       if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z)) continue;
       if (awayFrom && Math.hypot(x - awayFrom.x, z - awayFrom.z) < 10) continue;
-      this.tgt.set(x, w.heightAt(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
+      this.tgt.set(x, w.flyH(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
     }
-    this.tgt.set(0, w.heightAt(0, 0) + 1.5, 0);
+    this.tgt.set(0, w.flyH(0, 0) + 1.5, 0);
   }
   startFlee(dir) {
     this.releaseFlower(); this.state = FLEE; this.t = 2.0 + Math.random() * 1.6; this.perchTarget = false;
@@ -3630,12 +3889,12 @@ class Fly {
     const p = this.play, b = this.beh, w = p.world, pl = p.nearestPlayer(this.pos);
     if (this.state === CAUGHT && this.remote) { this.t -= dt; this.mesh.scale.setScalar(Math.max(0.01, this.t / 0.4) * this.baseScale); if (this.t <= 0) this.alive = false; return; }
     if (this.state === CAUGHT) { // glued to the net hoop
-      this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.heightAt(this.pos.x, this.pos.z));
+      this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.flyH(this.pos.x, this.pos.z));
       if (this.t <= 0) this.alive = false; return;
     }
     if (this.puppet) { // another client simulates this butterfly: follow its last reported state
       const k = Math.min(1, dt * 12); this.pos.lerp(this.netPos, k); let dyw = this.netYaw - this.yaw; dyw = Math.atan2(Math.sin(dyw), Math.cos(dyw)); this.yaw += dyw * k;
-      this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1); const gyp = w.heightAt(this.pos.x, this.pos.z);
+      this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1); const gyp = w.flyH(this.pos.x, this.pos.z);
       if (this.state === PERCH) { Art.setFlap(this.mesh, b.flutterPerch ? 0.35 + 0.35 * Math.abs(Math.sin(this.ph * 1.2)) : 0.75 + 0.5 * Math.sin(this.ph * 0.18 + this.sway)); this.mesh.rotation.set(-0.1, this.yaw, 0); }
       else { Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); this.mesh.rotation.set(0, this.yaw, 0); }
       this.mesh.visible = !this.hid && (this.kind !== 'dread' || p.lit(this.pos)); this.mesh.position.copy(this.pos); this.updateShadow(gyp); return;
@@ -3644,7 +3903,7 @@ class Fly {
     this.ph += dt * b.flap * 6.283 * (this.state === FLEE ? 1.35 : 1);
     const dx = this.pos.x - pl.pos.x, dz = this.pos.z - pl.pos.z, dist = Math.hypot(dx, dz, this.pos.y - pl.pos.y);
     // ---- senses
-    if (p.hasMod('teleport') && this.state !== CAUGHT && this.kind !== 'rush' && this.kind !== 'ambush' && Math.random() < dt * 0.45) { const a = Math.random() * 6.28, d = 3 + Math.random() * 5, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d; if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); } }
+    if (p.hasMod('teleport') && this.state !== CAUGHT && this.kind !== 'rush' && this.kind !== 'ambush' && Math.random() < dt * 0.45) { const a = Math.random() * 6.28, d = 3 + Math.random() * 5, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d; if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.flyH(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); } }
     if (this.kind && this.special(this.kind, dt, t, dx, dz, dist)) return;
     const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
@@ -3691,7 +3950,7 @@ class Fly {
   }
   post(skipBounds) {
     const p = this.play, w = p.world;
-    const gy = w.heightAt(this.pos.x, this.pos.z);
+    const gy = w.flyH(this.pos.x, this.pos.z);
  if (this.state !== PERCH && this.pos.y < gy + 0.16) { this.pos.y = gy + 0.16; if (this.vel.y < 0) this.vel.y = 0.4; }
     if (!skipBounds) { const rr = Math.hypot(this.pos.x, this.pos.z); if (rr > w.R * 0.98) { this.pos.x *= (w.R * 0.98) / rr; this.pos.z *= (w.R * 0.98) / rr; if (this.state === FLEE) this.fleeDir.set(-this.pos.x, 0, -this.pos.z).normalize(); } }
     if (this.state !== PERCH) for (const c of w.colliders) { const cx = this.pos.x - c.x, cz = this.pos.z - c.z; const d2 = cx * cx + cz * cz, mr = c.r + 0.25; if (d2 < mr * mr && this.pos.y < gy + 4 + c.r * 5) { const d = Math.sqrt(d2) || 0.01; this.pos.x += cx / d * (mr - d); this.pos.z += cz / d * (mr - d); } }
@@ -3704,14 +3963,14 @@ class Fly {
   steer(dt, tx, ty, tz, spd, k = 3) { _w.set(tx - this.pos.x, ty - this.pos.y, tz - this.pos.z); const L = _w.length(); if (L > 0.02) _w.multiplyScalar(spd * this.play.speedMul() / L * Math.min(1, L * 0.6)); this.vel.lerp(_w, Math.min(1, dt * k)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.85 + 0.3); }
   // special rules of the secret-ocean butterflies. Returns true when the butterfly has moved itself this frame.
   special(kind, dt, t, dx, dz, dist) {
-    const p = this.play, w = p.world, pl = p.nearestPlayer(this.pos), ground = w.heightAt(this.pos.x, this.pos.z);
+    const p = this.play, w = p.world, pl = p.nearestPlayer(this.pos), ground = w.flyH(this.pos.x, this.pos.z);
     if (kind === 'dread') { this.mesh.visible = p.lit(this.pos); return false; }
     if (kind === 'grumble') { this.gs -= dt; if (dist < 10 && this.gs <= 0) { this.gs = 2.4 + Math.random() * 2; Snd.sfx.grumble(dist); } return false; }
     if (kind === 'modifier') { if (this.light) this.light.intensity = 1.1 + Math.sin(t * 7 + this.sway) * 0.5; return false; }
     if (kind === 'glitch') {
       this.gt -= dt; this.gf = Math.max(0, this.gf - dt); this.mesh.visible = !(this.gf > 0 && Math.random() < 0.5);
       if (this.gt <= 0 && this.state !== CAUGHT) { this.gt = 0.45 + Math.random() * 0.6; const a = Math.random() * 6.28, d = 3 + Math.random() * 4, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d;
-        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.heightAt(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
+        if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.flyH(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); this.gf = 0.22; if (dist < 20) Snd.sfx.glitch(); } }
       return false;
     }
     if (kind === 'halt') { if (p.litAny(this.pos) && dist < 26) { this.releaseFlower(); this.state = FLY; this.vel.set(0, 0, 0); Art.setFlap(this.mesh, 0.28 + Math.sin(t * 40) * 0.02); this.post(false); return true; } return false; }
@@ -3725,7 +3984,7 @@ class Fly {
     if (kind === 'eyes') {
       this.cool -= dt;
       const stare = p.lookedAny(this.pos, 0.965) && dist < 26;
-      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.heightAt(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
+      if (this.cool <= 0 && stare) { const a = pl.yaw + (Math.random() - 0.5) * 2.2, nx = pl.pos.x + Math.sin(a) * 10, nz = pl.pos.z + Math.cos(a) * 10; if (Math.hypot(nx, nz) < w.R * 0.95 && !w.inWater(nx, nz)) { this.pos.set(nx, w.flyH(nx, nz) + 1.4, nz); this.vel.set(0, 0, 0); this.cool = 0.35; Snd.sfx.eyes(); } }
       if (p.lookedAny(this.pos, 0.9) && dist < 30) { // in the player's field of view: slip sideways out of it as fast as possible
         const fx = p.fwd.x, fz = p.fwd.z, side = ((this.pos.x - pl.pos.x) * fz - (this.pos.z - pl.pos.z) * fx) >= 0 ? 1 : -1;
         this.vel.lerp(_w.set(-fz * side * 7.5, 0.4, fx * side * 7.5), Math.min(1, dt * 9)); this.pos.addScaledVector(this.vel, dt); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
@@ -3735,13 +3994,13 @@ class Fly {
     if (kind === 'rush' || kind === 'ambush') {
       const S = this.rs; S.t -= dt;
       if (S.ph === 'hide') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'warn'; S.t = 1.5; p.flickT = 1.5; Snd.sfx.rushWarn(kind === 'ambush'); const a = Math.random() * 6.28, off = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 1.0); this.dashDir = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a)); S.start = new THREE.Vector3(pl.pos.x + Math.cos(a) * 30 - this.dashDir.z * off, 0, pl.pos.z + Math.sin(a) * 30 + this.dashDir.x * off); } this.shadow.visible = false; return true; }
-      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.heightAt(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
+      if (S.ph === 'warn') { this.mesh.visible = false; if (S.t <= 0) { S.ph = 'dash'; S.dist = 0; S.pass = 0; this.mesh.visible = true; this.pos.set(S.start.x, w.flyH(S.start.x, S.start.z) + 1.5, S.start.z); this.vel.copy(this.dashDir).multiplyScalar(kind === 'rush' ? 24 : 20); } return true; }
       if (S.ph === 'dash') {
         this.pos.addScaledVector(this.vel, dt); S.dist += this.vel.length() * dt; this.pos.y = lerp(this.pos.y, pl.pos.y - 0.2, Math.min(1, dt * 1.5)); this.face(dt); Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.3);
         if (S.dist > 64) { if (kind === 'ambush' && S.pass < 2) { S.pass++; S.dist = 0; this.vel.negate(); } else { S.ph = 'rest'; S.t = 7; const a = Math.random() * 6.28; S.rt = new THREE.Vector3(pl.pos.x + Math.cos(a) * 6, 0, pl.pos.z + Math.sin(a) * 6); if (Math.hypot(S.rt.x, S.rt.z) > w.R * 0.9) S.rt.set(pl.pos.x * 0.5, 0, pl.pos.z * 0.5); } }
         this.post(true); return true;
       }
-      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.heightAt(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
+      if (S.ph === 'rest') { this.steer(dt, S.rt.x, w.flyH(S.rt.x, S.rt.z) + 1.3 + Math.sin(t * 2) * 0.2, S.rt.z, 2.2); if (S.t <= 0) { S.ph = 'hide'; S.t = 4 + Math.random() * 5; } this.post(false); return true; }
     }
     if (kind === 'guiding') {
       let tg = null, bd = 1e9; for (const f of p.flies) { if (f === this || f.state === CAUGHT || Save.has(f.sp.id) || f.kind === 'guiding') continue; const d = f.pos.distanceTo(pl.pos); if (d < bd) { bd = d; tg = f; } }
@@ -3763,7 +4022,7 @@ class Fly {
 // ---------------------------------------------------------------- the play session
 class Play {
   constructor(biome, seed, mp, at) {
-    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); this.seed = this.world.seedStr; this.scene = this.world.scene;
+    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); if (!this.world.flyH) this.world.flyH = this.world.heightAt; if (!this.world.groundAt) this.world.groundAt = this.world.heightAt; this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
@@ -3797,6 +4056,17 @@ class Play {
     const d = PLAY_MODS[id]; this.mod = { id, t: 90, name: d.name, good: d.good };
     if (id === 'storm') w.storm = 2.2; else if (id === 'bright') w.bright = 1; else if (id === 'blind') w.bright = -1; else if (id === 'fog') w.fog = 2.3;
     this.blackT = 6; return d;
+  }
+  bridgeEvent(e) {
+    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят и качаются под ногами — мост ветхий…', 3.5); }
+    else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
+    else if (e.k === 'snap') { Snd.sfx.snap(); this.toast('Мост оборвался!', 2.5); }
+  }
+  stepFall(dt, w, x, z) {         // the bridge snapped: free fall into the gorge, then the fall ends the trip
+    const f = this.fall; f.t += dt; f.vy += 16 * dt; let y = this.player.y - f.vy * dt; const floor = w.heightAt(x, z) + 1.65;
+    if (y < floor) { y = floor; if (!f.hit) { f.hit = true; Snd.sfx.thud(); } }
+    if (f.t > 1.0 && !f.out) { f.out = true; if (window.F0W && F0W.fall) F0W.fall(this); }
+    return y;
   }
   spawnInitial() {
     // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
@@ -3961,12 +4231,14 @@ class Play {
     const lu = (inp.keys.has('ArrowUp') ? 1 : 0) - (inp.keys.has('ArrowDown') ? 1 : 0); P.pitch = clamp(P.pitch + lu * dt * 1.4, -1.45, 1.45);
     // move
     let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
+    if (this.fall) { mx = 0; mz = 0; }       // falling into a gorge: no steering
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
     const slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight'), sprint = !slow && (inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'));      // creeping wins over running (on a phone the stick's edge also means Shift)
     const wading = w.inWater(P.pos.x, P.pos.z, 0);
     const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1);
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
-    const tx = (fx * -mz + rx * mx) * spd, tz = (fz * -mz + rz * mx) * spd;
+    const mk = w.moveK ? w.moveK(P.pos.x, P.pos.z, fx * -mz + rx * mx, fz * -mz + rz * mx) : 1;      // mountains: climbing is slow
+    const tx = (fx * -mz + rx * mx) * spd * mk, tz = (fz * -mz + rz * mx) * spd * mk;
     P.vel.x = damp(P.vel.x, tx, 11, dt); P.vel.y = damp(P.vel.y, tz, 11, dt);
     let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.y * dt;
     const deep = (x, z) => w.canWalk && !w.canWalk(x, z); let hitDeep = false;
@@ -3975,7 +4247,7 @@ class Play {
     for (const c of w.colliders) { const cx = nx - c.x, cz = nz - c.z, mr = c.r + 0.38, d2 = cx * cx + cz * cz; if (d2 < mr * mr) { const d = Math.sqrt(d2) || 0.01; nx += cx / d * (mr - d); nz += cz / d * (mr - d); } }
     const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
-    const gy = w.heightAt(nx, nz) + 1.65; P.y = damp(P.y, gy, 14, dt);
+    const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
     const speedNow = moved / Math.max(dt, 1e-4);
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
     const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
@@ -4007,6 +4279,8 @@ class Play {
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
     // world
     w.update(dt, this.t, P.pos);
+    if (w.events && w.events.length) for (const e of w.events.splice(0)) this.bridgeEvent(e);
+    if (w.pendingFall && !this.fall) { this.fall = { t: 0, vy: 0 }; w.pendingFall = null; }
     // HUD timers
     this.hintT = Math.max(0, this.hintT - dt);
     for (const c of this.cards) c.t -= dt; this.cards = this.cards.filter(c => c.t > 0);
@@ -4112,8 +4386,8 @@ const ease = t => 1 - Math.pow(1 - clamp(t), 3);
 const collText = () => { const sec = BIOME_BY_ID.ocean.secret; const mine = SPECIES.filter(s => !s.mystery && Maps.allowed(s.biome)); const have = mine.filter(s => Save.has(s.id)).length; return `${have}/${mine.length}`; };
 const Screens = (() => {
   const c = UIK.col;
-  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея' };
-  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070' };
+  const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея', vietnam: 'Вьетнам' };
+  const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070', vietnam: '#e0903a' };
   const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
@@ -4273,6 +4547,7 @@ const Screens = (() => {
       // wooden desk
       for (let i = 0; i < 24; i++) { ctx.fillStyle = i % 2 ? '#2e2018' : '#34261c'; ctx.fillRect(i * 20, 0, 20, SH); } ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, SW, SH);
       T.draw(ctx, 'Выбери место для ловли', 266, 11, { size: 8, align: 'c', color: c.gold, shadow: '#000' });
+      if (window.F0W && F0W.mapNote && performance.now() < F0W.mapNote.until) { const w = T.width(F0W.mapNote.text, 8) + 16; UIK.panel(ctx, 266 - w / 2, 22, w, 16, { fill: 'rgba(60,16,16,0.94)', border: '#c85a3a' }); T.draw(ctx, F0W.mapNote.text, 266, 26, { size: 8, align: 'c', color: '#ffd8c0' }); }
       // parchment frame
       UIK.panel(ctx, MAPX - 8, MAPY - 6, MAP_W * MS + 16, MAP_H * MS + 12, { fill: c.parch, border: '#5a3a1c' }); ctx.strokeStyle = '#8a6a3a'; ctx.strokeRect(MAPX - 5.5, MAPY - 3.5, MAP_W * MS + 11, MAP_H * MS + 6);
       ctx.imageSmoothingEnabled = false; ctx.drawImage(mapCanvas, MAPX, MAPY, MAP_W * MS, MAP_H * MS);
@@ -6780,6 +7055,19 @@ const SecretMarket = (() => {
       // faint water ripples on the parchment
       for (let k = 0; k < 9; k++) { const yy = 12 + (k * 4) % 30, xx = 8 + ((k * 17) % 50); px(xx, yy, '#b8a878'); px(xx + 1, yy, '#b8a878'); px(xx + 2, yy + 1, '#b8a878'); }
       const inPoly = (poly, xx, yy) => { let c = false; for (let i = 0, k = poly.length - 1; i < poly.length; k = i++) { const [xi, yi] = poly[i], [xk, yk] = poly[k]; if ((yi > yy) !== (yk > yy) && xx < (xk - xi) * (yy - yi) / (yk - yi) + xi) c = !c; } return c; };
+      const drawVietnam = () => {
+        // limestone ridges (lit on the left, shaded on the right), a gorge between two of them with a rope bridge, mist, rice terraces, the route and a red cross on the far peak
+        const peaks = [[14, 24, 9, 12], [27, 20, 8, 15], [46, 21, 8, 14], [60, 17, 9, 16]];    // [x, base y, half width, height]
+        for (let xx = 8; xx < W - 8; xx++) for (let yy = 14; yy < 36; yy++) px(xx, yy, yy < 22 ? '#d6d6c0' : '#c8c4a0');       // pale sky and haze behind the ridges
+        for (const [pxm, by, hw, hh] of peaks) for (let yy = 0; yy < hh; yy++) { const w = Math.round(hw * (1 - Math.pow(yy / hh, 1.2) * 0.85) * 1), y0 = by + 14 - yy; for (let xx = -w; xx <= w; xx++) { const lit = xx < 0; px(pxm + xx, y0, yy > hh - 4 ? '#e8e8e0' : lit ? (yy % 3 === 0 ? '#aeb0a0' : '#a0a294') : (yy % 3 === 0 ? '#6c705f' : '#60645a')); } }
+        for (let xx = 8; xx < W - 8; xx++) for (let yy = 32; yy < 38; yy++) if (rnd() < 0.9 - (yy - 32) * 0.05) px(xx, yy, yy < 34 ? '#6a8a44' : '#5a7a3a');        // the forested foot
+        for (let k = 0; k < 4; k++) for (let xx = 10; xx < 30; xx++) { const yy = 36 + k + Math.round(Math.sin(xx * 0.4 + k) * 0.6); if (yy < H - 7) px(xx, yy, k % 2 ? '#8cbc48' : '#d4bc58'); }            // terraces
+        for (let yy = 16; yy < 38; yy++) { const w = 1 + (yy % 4 === 0 ? 1 : 0); for (let xx = 36; xx < 36 + 2 + w; xx++) px(xx, yy, '#2e3a30'); }                  // the gorge
+        for (let xx = 33; xx <= 41; xx++) px(xx, 24, xx % 2 ? '#8a5a2a' : '#6a4420'); px(33, 22, '#4a3626'); px(33, 23, '#4a3626'); px(41, 22, '#4a3626'); px(41, 23, '#4a3626'); for (let xx = 34; xx <= 40; xx++) px(xx, 22, '#c4aa72');   // the rope bridge
+        for (const [mx, my, mw] of [[30, 30, 9], [48, 28, 8], [22, 21, 5], [58, 25, 6], [38, 33, 7]]) for (let xx = -mw; xx <= mw; xx++) { px(mx + xx, my, '#f0f4ee'); if (Math.abs(xx) < mw - 2) px(mx + xx, my + 1, '#e4ece4'); }   // mist
+        const route = [[10, 41], [20, 40], [30, 37], [34, 25], [42, 25], [48, 20], [58, 14]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#7a3a1a'); }
+        for (let k = -2; k <= 2; k++) { px(60 + k, 14 + k, '#b02a1c'); px(60 + k, 14 - k, '#b02a1c'); }
+      };
       const drawPapua = () => {
         const isl = [[9, 24], [13, 19], [19, 16], [26, 18], [31, 15], [37, 14], [43, 17], [49, 19], [55, 22], [61, 26], [66, 31], [60, 33], [54, 31], [50, 35], [44, 33], [40, 30], [34, 32], [30, 36], [24, 34], [20, 30], [14, 28]];
         for (let yy = 12; yy < H - 8; yy++) for (let xx = 7; xx < W - 6; xx++) { if (!inPoly(isl, xx + 0.5, yy + 0.5)) continue; const edge = !inPoly(isl, xx - 1.5, yy + 0.5) || !inPoly(isl, xx + 2.5, yy + 0.5) || !inPoly(isl, xx + 0.5, yy - 1.5) || !inPoly(isl, xx + 0.5, yy + 2.5); px(xx, yy, edge ? '#3a5a2c' : (xx * 7 + yy * 3) % 5 === 0 ? '#2e5a2e' : (xx + yy * 2) % 4 === 0 ? '#4a7a3a' : '#3c6a32'); }
@@ -6796,7 +7084,7 @@ const SecretMarket = (() => {
         const route = [[14, 41], [26, 40], [38, 40], [50, 38], [58, 34], [60, 30]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
         for (let k = -2; k <= 2; k++) { px(60 + k, 29 + k, '#b02a1c'); px(60 + k, 29 - k, '#b02a1c'); }
       };
-      if (id === 'papua') drawPapua(); else {
+      if (id === 'papua') drawPapua(); else if (id === 'vietnam') drawVietnam(); else {
       // the land: a lumpy island of moss and peat
       const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
       for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
@@ -6877,8 +7165,8 @@ const SecretMarket = (() => {
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
     openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0 }; this.open('shop'); }
     buy(i) { const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 128 + i * 54, w: 88, h: 18 })); }
-    shopClose() { return { x: 352, y: 238, w: 88, h: 16 }; }
+    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
+    shopClose() { return { x: 352, y: 240, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
     key(e) {
@@ -6910,16 +7198,16 @@ const SecretMarket = (() => {
         // the trader and what he says (in a bubble to the right of the portrait, inside the window)
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
-        ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 100, 412, 1);
+        ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
         Maps.LIST.forEach((m, i) => {
-          const y = 108 + i * 54, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
-          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 3, 416, 52); }
+          const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
           ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
           T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
           if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
           UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
         });
-        T.para(ctx, 'Карта открывает новое место на карте экспедиций. Карты личные: кто владеет одной картой, встречается там с другими её владельцами.', 34, 222, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 244, 300, { size: 8, color: '#8a78a8', lh: 10 });
         UIK.btn(ctx, Object.assign({ id: 'close', label: 'Закрыть' }, this.shopClose()), UIK.hit(this.shopClose(), m_.x, m_.y));
       }
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }
@@ -6976,6 +7264,8 @@ const SecretMarket = (() => {
   function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
   addEventListener('resize', fit); fit();
   function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
+  App.go = go;
+  App.fall = () => { go(() => { App.toMap(); App.mapNote = { text: 'Мост оборвался — вы сорвались в ущелье и очнулись на карте.', until: performance.now() + 8000 }; }); };
   // Esc releases the pointer lock and the browser refuses an immediate re-lock; so closing the menu with Esc keeps retrying for a couple of seconds
   // (the game runs meanwhile) and never falls back into the pause menu by itself
   function lock() { if (App.noLock) { App.locked = true; return; } App.lockWant = performance.now(); tryLock(0); }

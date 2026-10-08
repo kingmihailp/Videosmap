@@ -169,6 +169,19 @@ const SecretMarket = (() => {
       // faint water ripples on the parchment
       for (let k = 0; k < 9; k++) { const yy = 12 + (k * 4) % 30, xx = 8 + ((k * 17) % 50); px(xx, yy, '#b8a878'); px(xx + 1, yy, '#b8a878'); px(xx + 2, yy + 1, '#b8a878'); }
       const inPoly = (poly, xx, yy) => { let c = false; for (let i = 0, k = poly.length - 1; i < poly.length; k = i++) { const [xi, yi] = poly[i], [xk, yk] = poly[k]; if ((yi > yy) !== (yk > yy) && xx < (xk - xi) * (yy - yi) / (yk - yi) + xi) c = !c; } return c; };
+      const drawVietnam = () => {
+        // limestone ridges (lit on the left, shaded on the right), a gorge between two of them with a rope bridge, mist, rice terraces, the route and a red cross on the far peak
+        const peaks = [[14, 24, 9, 12], [27, 20, 8, 15], [46, 21, 8, 14], [60, 17, 9, 16]];    // [x, base y, half width, height]
+        for (let xx = 8; xx < W - 8; xx++) for (let yy = 14; yy < 36; yy++) px(xx, yy, yy < 22 ? '#d6d6c0' : '#c8c4a0');       // pale sky and haze behind the ridges
+        for (const [pxm, by, hw, hh] of peaks) for (let yy = 0; yy < hh; yy++) { const w = Math.round(hw * (1 - Math.pow(yy / hh, 1.2) * 0.85) * 1), y0 = by + 14 - yy; for (let xx = -w; xx <= w; xx++) { const lit = xx < 0; px(pxm + xx, y0, yy > hh - 4 ? '#e8e8e0' : lit ? (yy % 3 === 0 ? '#aeb0a0' : '#a0a294') : (yy % 3 === 0 ? '#6c705f' : '#60645a')); } }
+        for (let xx = 8; xx < W - 8; xx++) for (let yy = 32; yy < 38; yy++) if (rnd() < 0.9 - (yy - 32) * 0.05) px(xx, yy, yy < 34 ? '#6a8a44' : '#5a7a3a');        // the forested foot
+        for (let k = 0; k < 4; k++) for (let xx = 10; xx < 30; xx++) { const yy = 36 + k + Math.round(Math.sin(xx * 0.4 + k) * 0.6); if (yy < H - 7) px(xx, yy, k % 2 ? '#8cbc48' : '#d4bc58'); }            // terraces
+        for (let yy = 16; yy < 38; yy++) { const w = 1 + (yy % 4 === 0 ? 1 : 0); for (let xx = 36; xx < 36 + 2 + w; xx++) px(xx, yy, '#2e3a30'); }                  // the gorge
+        for (let xx = 33; xx <= 41; xx++) px(xx, 24, xx % 2 ? '#8a5a2a' : '#6a4420'); px(33, 22, '#4a3626'); px(33, 23, '#4a3626'); px(41, 22, '#4a3626'); px(41, 23, '#4a3626'); for (let xx = 34; xx <= 40; xx++) px(xx, 22, '#c4aa72');   // the rope bridge
+        for (const [mx, my, mw] of [[30, 30, 9], [48, 28, 8], [22, 21, 5], [58, 25, 6], [38, 33, 7]]) for (let xx = -mw; xx <= mw; xx++) { px(mx + xx, my, '#f0f4ee'); if (Math.abs(xx) < mw - 2) px(mx + xx, my + 1, '#e4ece4'); }   // mist
+        const route = [[10, 41], [20, 40], [30, 37], [34, 25], [42, 25], [48, 20], [58, 14]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#7a3a1a'); }
+        for (let k = -2; k <= 2; k++) { px(60 + k, 14 + k, '#b02a1c'); px(60 + k, 14 - k, '#b02a1c'); }
+      };
       const drawPapua = () => {
         const isl = [[9, 24], [13, 19], [19, 16], [26, 18], [31, 15], [37, 14], [43, 17], [49, 19], [55, 22], [61, 26], [66, 31], [60, 33], [54, 31], [50, 35], [44, 33], [40, 30], [34, 32], [30, 36], [24, 34], [20, 30], [14, 28]];
         for (let yy = 12; yy < H - 8; yy++) for (let xx = 7; xx < W - 6; xx++) { if (!inPoly(isl, xx + 0.5, yy + 0.5)) continue; const edge = !inPoly(isl, xx - 1.5, yy + 0.5) || !inPoly(isl, xx + 2.5, yy + 0.5) || !inPoly(isl, xx + 0.5, yy - 1.5) || !inPoly(isl, xx + 0.5, yy + 2.5); px(xx, yy, edge ? '#3a5a2c' : (xx * 7 + yy * 3) % 5 === 0 ? '#2e5a2e' : (xx + yy * 2) % 4 === 0 ? '#4a7a3a' : '#3c6a32'); }
@@ -185,7 +198,7 @@ const SecretMarket = (() => {
         const route = [[14, 41], [26, 40], [38, 40], [50, 38], [58, 34], [60, 30]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
         for (let k = -2; k <= 2; k++) { px(60 + k, 29 + k, '#b02a1c'); px(60 + k, 29 - k, '#b02a1c'); }
       };
-      if (id === 'papua') drawPapua(); else {
+      if (id === 'papua') drawPapua(); else if (id === 'vietnam') drawVietnam(); else {
       // the land: a lumpy island of moss and peat
       const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
       for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
@@ -266,8 +279,8 @@ const SecretMarket = (() => {
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
     openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0 }; this.open('shop'); }
     buy(i) { const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 128 + i * 54, w: 88, h: 18 })); }
-    shopClose() { return { x: 352, y: 238, w: 88, h: 16 }; }
+    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
+    shopClose() { return { x: 352, y: 240, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
     key(e) {
@@ -299,16 +312,16 @@ const SecretMarket = (() => {
         // the trader and what he says (in a bubble to the right of the portrait, inside the window)
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
-        ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 100, 412, 1);
+        ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
         Maps.LIST.forEach((m, i) => {
-          const y = 108 + i * 54, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
-          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 3, 416, 52); }
+          const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
           ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
           T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
           if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
           UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
         });
-        T.para(ctx, 'Карта открывает новое место на карте экспедиций. Карты личные: кто владеет одной картой, встречается там с другими её владельцами.', 34, 222, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 244, 300, { size: 8, color: '#8a78a8', lh: 10 });
         UIK.btn(ctx, Object.assign({ id: 'close', label: 'Закрыть' }, this.shopClose()), UIK.hit(this.shopClose(), m_.x, m_.y));
       }
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }

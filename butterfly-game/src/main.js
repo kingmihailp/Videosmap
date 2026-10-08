@@ -43,6 +43,8 @@
   function fit() { const iw = innerWidth, ih = innerHeight; let s = Math.min(iw / SW, ih / SH); const si = Math.floor(s); if (si >= 2 && si / s > 0.8) s = si; stage.style.width = Math.floor(SW * s) + 'px'; stage.style.height = Math.floor(SH * s) + 'px'; const k = clamp(Math.ceil(s * (window.devicePixelRatio || 1) - 0.01), 2, 5); if (k !== uiK) { uiK = k; ui.width = SW * k; ui.height = SH * k; } }
   addEventListener('resize', fit); fit();
   function go(fn) { App.fadeTarget = 1; App.fadeCb = fn; }
+  App.go = go;
+  App.fall = () => { go(() => { App.toMap(); App.mapNote = { text: 'Мост оборвался — вы сорвались в ущелье и очнулись на карте.', until: performance.now() + 8000 }; }); };
   // Esc releases the pointer lock and the browser refuses an immediate re-lock; so closing the menu with Esc keeps retrying for a couple of seconds
   // (the game runs meanwhile) and never falls back into the pause menu by itself
   function lock() { if (App.noLock) { App.locked = true; return; } App.lockWant = performance.now(); tryLock(0); }
