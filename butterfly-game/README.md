@@ -235,3 +235,6 @@ New effect kinds: **quiet** (less swing noise, so butterflies are scared less), 
 ## Hidden console
 
 The backslash key (`\`) opens a one-line console (Enter runs, Esc or `\` closes, arrow up recalls the previous line). The only command: `give gold <amount>` (a leading `:` is accepted) gives the gold to the player who typed it. Test: `tools/test/console.js`.
+
+- **Regenerating a landscape with other players present** needs a vote: the pause-menu button sends `regen`; alone it works at once, with others the server (`loc.vote`, 30 s, one vote per 15 s) asks everybody (`vote`/`voteUpd`/`voteEnd`, answers `voteReply`). Everybody has to say yes; one no, a timeout or a newcomer cancels it; on success all get `reseed` with the same new seed. The card is drawn by `Chat.drawVote` (Yes/No buttons are clickable while the cursor is free, e.g. in the pause menu; Y / N work always). Test: `tools/test/mp_vote.js`.
+- **Rare finds** (`Rare.is`: Queen Alexandra's birdwing, the false ringlet, the golden Kaiser-i-Hind and their aberrations) get a red frame on the catch card, journal, box labels and the market, and their own catch sound (`Snd.sfx.catchRare`).
