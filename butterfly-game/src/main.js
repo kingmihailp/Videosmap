@@ -13,16 +13,16 @@
   const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const postMat = new THREE.ShaderMaterial({
     depthTest: false, depthWrite: false,
-    uniforms: { tColor: { value: rt.texture }, tDepth: { value: rt.depthTexture }, res: { value: new THREE.Vector2(SW, SH) }, near: { value: 0.07 }, far: { value: 700 }, levels: { value: 20 } },
+    uniforms: { tColor: { value: rt.texture }, tDepth: { value: rt.depthTexture }, res: { value: new THREE.Vector2(SW, SH) }, near: { value: 0.07 }, far: { value: 700 }, levels: { value: 20 }, edgeD: { value: 380 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    fragmentShader: `uniform sampler2D tColor; uniform sampler2D tDepth; uniform vec2 res; uniform float near; uniform float far; uniform float levels; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tColor; uniform sampler2D tDepth; uniform vec2 res; uniform float near; uniform float far; uniform float levels; uniform float edgeD; varying vec2 vUv;
       float lin(float d){ float z = d * 2.0 - 1.0; return 2.0 * near * far / (far + near - z * (far - near)); }
       float b2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
       float b4(vec2 a){ return b2(0.5 * a) * 0.25 + b2(a); }
       void main(){
         vec3 c = texture2D(tColor, vUv).rgb;
         float d0 = lin(texture2D(tDepth, vUv).x); vec2 px = 1.0 / res; float edge = 0.0;
-        if (d0 < 380.0) {
+        if (d0 < edgeD) {
           vec2 o[4]; o[0] = vec2(px.x, 0.0); o[1] = vec2(-px.x, 0.0); o[2] = vec2(0.0, px.y); o[3] = vec2(0.0, -px.y);
           for (int i = 0; i < 4; i++) { float dn = lin(texture2D(tDepth, vUv + o[i]).x); if (dn > d0 * 1.07 + 0.12) edge = 1.0; }
         }
@@ -227,14 +227,14 @@
       const p = App.play;
       const running = !App.overlay && (App.locked || App.noLock || App.lockWant);
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; if (p.mp) p.update(dt, IDLE_INP); }   // online the world goes on under a menu (the host must keep leading the butterflies)
-      renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+      postMat.uniforms.edgeD.value = p.world && p.world.env && p.world.env.highland ? 90 : 380; renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
-      if (!full) { renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
+      if (!full) { postMat.uniforms.edgeD.value = 380; renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';
       cb.draw(ctx, t, mouse, dt);
     } else {
       gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
