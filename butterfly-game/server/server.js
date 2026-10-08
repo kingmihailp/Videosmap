@@ -27,6 +27,7 @@ setInterval(save, 4000); process.on('SIGINT', () => { save(); process.exit(0); }
 
 // ------------------------------------------------------------------ cabinet rules (mirror of the client rules)
 const CAP = { S: 1, M: 4, L: 9 }, UNITS = { S: 1, M: 2, L: 4 }, RANK = { S: 1, M: 2, L: 3 };
+const MUS = { mt: 24, ml: 4, mr: 36, mw: 24 }, MWCLS = i => ['L', 'M', 'S', 'S', 'M', 'L'][i % 6];      // the museum: tables, large tables, racks, wall frames
 const WALL = ['L', 'M', 'S', 'S', 'M', 'L'], TOPN = 2, DRAWERS = 3, DRAWER_UNITS = 4;
 const spec = u => state.specimens.find(s => s.uid === u), box = u => state.boxes.find(b => b.uid === u);
 const at = (t, i) => state.boxes.filter(b => b.loc && b.loc.t === t && b.loc.i === i);
@@ -34,6 +35,7 @@ function fits(b, t, i) {
   if (t === 'wall') return i >= 0 && i < WALL.length && !at(t, i).length && RANK[b.size] <= RANK[WALL[i]];
   if (t === 'top') return i >= 0 && i < TOPN && !at(t, i).length && b.size !== 'L';
   if (t === 'drawer') return i >= 0 && i < DRAWERS && at(t, i).reduce((a, x) => a + UNITS[x.size], 0) + UNITS[b.size] <= DRAWER_UNITS;
+  if (MUS[t]) return Number.isInteger(i) && i >= 0 && i < MUS[t] && !at(t, i).length && (t === 'ml' || (t === 'mw' ? RANK[b.size] <= RANK[MWCLS(i)] : b.size !== 'L'));
   return false;
 }
 // returns true when the operation is valid and has been applied
@@ -42,7 +44,7 @@ function applyOp(op) {
     case 'addSpec': { const s = op.spec; if (!s || spec(s.uid) || !s.sp || String(s.sp).length > 64) return false; state.specimens.push({ uid: s.uid, sp: s.sp, biome: s.biome, date: s.date, q: null, pose: null, box: null, by: String(s.by || '').slice(0, MAX_NAME) }); if (state.specimens.length > 600) { const i = state.specimens.findIndex(x => x.q === null && !x.box); if (i >= 0) state.specimens.splice(i, 1); } return true; }
     case 'delSpec': { const s = spec(op.uid); if (!s || s.box) return false; state.specimens = state.specimens.filter(x => x.uid !== op.uid); return true; }
     case 'spread': { const s = spec(op.uid); if (!s || s.q !== null || !(op.q >= 1 && op.q <= 100) || !op.pose) return false; s.q = op.q; s.pose = op.pose; return true; }
-    case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 60) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
+    case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 120) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
     case 'delBox': { const b = box(op.uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = spec(u); if (s) s.box = null; }); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }
     case 'putIn': { const b = box(op.box), s = spec(op.spec); if (!b || !s || s.q === null || s.box || op.slot < 0 || op.slot >= b.items.length || b.items[op.slot]) return false; b.items[op.slot] = s.uid; s.box = b.uid; return true; }
     case 'takeOut': { const b = box(op.box); if (!b || op.slot < 0 || op.slot >= b.items.length || !b.items[op.slot]) return false; const s = spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; return true; }
@@ -86,7 +88,7 @@ function leaveLoc(p) {
 }
 function joinLoc(p, name) {
   if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
-  leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
+  leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && name !== 'museum' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
   if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
@@ -123,7 +125,7 @@ wss.on('connection', ws => {
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
       case 'regen': {
-        const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || me.loc === 'market') { send(me, { t: 'regenNo' }); break; }
+        const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || me.loc === 'market' || me.loc === 'museum') { send(me, { t: 'regenNo' }); break; }
         if (l.ids.size === 1) { state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
         if (l.vote) { send(me, { t: 'regenNo', msg: 'Голосование уже идёт' }); break; }
         if (Date.now() - (l.voteAt || 0) < 15000) { send(me, { t: 'regenNo', msg: 'Следующее голосование — через несколько секунд' }); break; }

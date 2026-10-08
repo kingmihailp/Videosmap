@@ -101,7 +101,7 @@ const Screens = (() => {
       } else if (Net.on) {
         T.draw(ctx, `Вы в сети: ${Net.name}`, SW / 2, r.y + 34, { size: 8, align: 'c', color: c.green }); T.draw(ctx, Net.url, SW / 2, r.y + 46, { size: 8, align: 'c', color: c.dim });
         T.draw(ctx, `Игроки онлайн (${Net.count()}):`, r.x + 16, r.y + 66, { size: 8, color: c.text });
-        Net.list.slice(0, 8).forEach((p, i) => T.draw(ctx, `${p.name}${p.id === Net.id ? ' (вы)' : ''} — ${p.loc ? (p.loc === 'cabinet' ? 'кабинет' : p.loc === 'market' ? 'рынок' : (short[p.loc] || p.loc)) : 'на карте'}`, r.x + 22, r.y + 80 + i * 10, { size: 8, color: p.id === Net.id ? c.gold : c.dim }));
+        Net.list.slice(0, 8).forEach((p, i) => T.draw(ctx, `${p.name}${p.id === Net.id ? ' (вы)' : ''} — ${p.loc ? (p.loc === 'cabinet' ? 'кабинет' : p.loc === 'market' ? 'рынок' : p.loc === 'museum' ? 'музей' : (short[p.loc] || p.loc)) : 'на карте'}`, r.x + 22, r.y + 80 + i * 10, { size: 8, color: p.id === Net.id ? c.gold : c.dim }));
         T.draw(ctx, 'Локации, бабочки и кабинет общие для всех на сервере', SW / 2, r.y + 172, { size: 8, align: 'c', color: '#6a8a78' });
       } else {
         T.draw(ctx, 'Общие локации, бабочки и кабинет энтомолога', SW / 2, r.y + 24, { size: 8, align: 'c', color: c.dim });
@@ -195,7 +195,7 @@ const Screens = (() => {
           if (L.length > 4) T.draw(ctx, '+' + (L.length - 4), p.x + 8 + 4 * 8, p.y - 10, { size: 8, color: '#2a1608', outline: '#f4e8c0' });
           if (i === this.hover) { const w = Math.max(...L.map(pl => T.width(pl.name + (pl.id === Net.id ? ' (вы)' : ''), 8))) + 10, h = L.length * 10 + 6, x = clamp(p.x + 8, 4, SW - w - 4), y = Math.max(MAPY + 2, p.y - 18 - h); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(16,32,28,0.95)', border: c.gold }); L.forEach((pl, k) => T.draw(ctx, pl.name + (pl.id === Net.id ? ' (вы)' : ''), x + 5, y + 4 + k * 10, { size: 8, color: pl.id === Net.id ? c.gold : '#fff' })); }
         });
-        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc && short[pl.loc] && Maps.allowed(pl.loc) ? short[pl.loc] : 'на карте';
+        const where = pl => pl.loc === 'cabinet' ? 'в кабинете' : pl.loc === 'market' ? 'на рынке' : pl.loc === 'museum' ? 'в музее' : pl.loc && short[pl.loc] && Maps.allowed(pl.loc) ? short[pl.loc] : 'на карте';
         const rows = Net.list.slice(0, 8).map(pl => [pl.name + (pl.id === Net.id ? ' (вы)' : ''), where(pl), pl.id === Net.id]); const w1 = Math.max(...rows.map(r => T.width(r[0], 8))), w2 = Math.max(...rows.map(r => T.width(r[1], 8))), pw = w1 + w2 + 24, ph = rows.length * 10 + 18;
         const px = MAPX + MAP_W * MS - pw - 6, py = MAPY + MAP_H * MS - ph - 6; UIK.panel(ctx, px, py, pw, ph, { fill: 'rgba(16,32,28,0.88)', border: c.line, shadow: false });
         T.draw(ctx, `Онлайн: ${Net.list.length}`, px + 6, py + 4, { size: 8, color: c.green }); rows.forEach((r, k) => { T.draw(ctx, r[0], px + 6, py + 16 + k * 10, { size: 8, color: r[2] ? c.gold : '#fff' }); T.draw(ctx, r[1], px + pw - 6, py + 16 + k * 10, { size: 8, align: 'r', color: c.dim }); });

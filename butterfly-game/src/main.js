@@ -58,16 +58,23 @@
   function leave() { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } App.overlay = null; Snd.stopAmbient(); if (Net.on) Net.leave(); }
   App.toTitle = () => { leave(); App.screen = 'title'; };
   App.toMap = () => { leave(); App.screen = 'map'; };
-  const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), cabinet: () => go(() => App.toCabinet()), market: () => go(() => App.toMarket()), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
+  const cabHooks = { lock, unlock, toggle: k => toggleSetting(k), cabinet: () => go(() => App.toCabinet()), museum: () => go(() => App.toMuseum()), market: () => go(() => App.toMarket()), exit: () => go(() => App.toMap()), map: () => go(() => App.toMap()), title: () => go(() => App.toTitle()) };
   // multiplayer: ask the server for the shared location first, then build it with the server's seed and role (host simulates the butterflies)
   const netFail = e => { leave(); App.screen = 'title'; App.fade = 0; App.fadeTarget = 0; Screens.mp.msg = 'Сервер: ' + (e && e.message || 'ошибка'); };
-  const enterCabinet = () => {
-    App.cab = new Cabinet(cabHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
+  const enterCabinet = at => {
+    App.cab = new Cabinet(cabHooks, at); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0;
     if (!Save.data.seenCab) { App.cab.ov = 'help'; Save.data.seenCab = true; Save.write(); } else lock();
   };
-  App.toCabinet = () => {
+  App.toCabinet = at => {
     leave(); App.screen = 'loading'; App.loadText = 'Входим в кабинет энтомолога…';
-    if (Net.on) Net.join('cabinet').then(() => setTimeout(enterCabinet, 40)).catch(netFail); else setTimeout(enterCabinet, 60);
+    if (Net.on) Net.join('cabinet').then(() => setTimeout(() => enterCabinet(at), 40)).catch(netFail); else setTimeout(() => enterCabinet(at), 60);
+  };
+  // the museum of the collection: a big hall behind the east door of the cabinet (a shared location of its own online); leaving brings you back to that door
+  const museumHooks = Object.assign({}, cabHooks, { exitMuseum: () => go(() => App.toCabinet({ x: 3.3, z: 0.1, yaw: Math.PI / 2 })) });
+  const enterMuseum = () => { App.cab = new Museum(museumHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMuseum) { App.cab.ov = 'help'; Save.data.seenMuseum = true; Save.write(); } else lock(); };
+  App.toMuseum = () => {
+    leave(); App.screen = 'loading'; App.loadText = 'Идём в музей коллекции…';
+    if (Net.on) Net.join('museum').then(() => setTimeout(enterMuseum, 40)).catch(netFail); else setTimeout(enterMuseum, 60);
   };
   const enterMarket = at => { App.cab = new Market(cabHooks, at); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMarket) { App.cab.ov = 'help'; Save.data.seenMarket = true; Save.write(); } else lock(); };
   App.toMarket = at => {

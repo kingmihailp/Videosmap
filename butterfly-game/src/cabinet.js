@@ -80,10 +80,10 @@ const Cabinet = (() => {
 
   // ------------------------------------------------------------ the room
   class Cab {
-    constructor(hooks) {
+    constructor(hooks, at) {
       this.hooks = hooks; this.ov = null; this.t = 0; this.sit = 0; this.sitDir = 0; this.sitFrom = null; this.sitOpen = null; this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#1a1410');
       this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
-      this.player = { pos: new THREE.Vector3(3.5, 0, 0.9), yaw: Math.PI / 2 + 0.25, pitch: -0.05, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
+      this.player = { pos: new THREE.Vector3(at ? at.x : 3.5, 0, at ? at.z : 0.9), yaw: at ? at.yaw : Math.PI / 2 + 0.25, pitch: -0.05, bob: 0, vel: new THREE.Vector2(), stepD: 0, moving: false };
       this.colliders = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null;
       this.dynamic = new THREE.Group(); this.scene.add(this.dynamic);
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
@@ -115,13 +115,13 @@ const Cabinet = (() => {
       const wallMat = L => lam('#ffffff', { map: wallTex(L) });
       const mkWall = (L, rotY, x, z, notch) => {
         const sh = new THREE.Shape(); const hl = L / 2;
-        if (notch && notch.type === 'door') { sh.moveTo(-hl, 0); sh.lineTo(notch.u0, 0); sh.lineTo(notch.u0, notch.h); sh.lineTo(notch.u1, notch.h); sh.lineTo(notch.u1, 0); sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); }
+        if (notch && notch.type === 'door') { sh.moveTo(-hl, 0); for (const [a, b, dh] of notch.doors) { sh.lineTo(a, 0); sh.lineTo(a, dh); sh.lineTo(b, dh); sh.lineTo(b, 0); } sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); }
         else { sh.moveTo(-hl, 0); sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); if (notch) { const p = new THREE.Path(); p.moveTo(notch.u0, notch.y0); p.lineTo(notch.u0, notch.y1); p.lineTo(notch.u1, notch.y1); p.lineTo(notch.u1, notch.y0); p.lineTo(notch.u0, notch.y0); sh.holes.push(p); } }
         const m = mesh(new THREE.ShapeGeometry(sh), wallMat(L), x, 0, z, { cast: true }); m.rotation.y = rotY; S.add(m); return m;
       };
       mkWall(RW, 0, 0, -HZ); mkWall(RW, Math.PI, 0, HZ);
       mkWall(RD, Math.PI / 2, -HX, 0, { u0: -1.35, u1: 1.35, y0: 0.95, y1: 2.85 });
-      mkWall(RD, -Math.PI / 2, HX, 0, { type: 'door', u0: -2.15, u1: -1.05, h: 2.35 });
+      mkWall(RD, -Math.PI / 2, HX, 0, { type: 'door', doors: [[-2.15, -1.05, 2.35], [-0.42, 0.62, 2.35]] });      // the way out to the map and the door of the museum
       // --- window (west)
       const wx = -HX;
       this.skyCv = document.createElement('canvas'); this.skyCv.width = 256; this.skyCv.height = 128; this.skyTex = new THREE.CanvasTexture(this.skyCv); this.skyTex.magFilter = this.skyTex.minFilter = THREE.NearestFilter; this.skyTex.generateMipmaps = false;
@@ -193,7 +193,11 @@ const Cabinet = (() => {
       // --- door (east)
       const dz = -1.6; cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, dz - 0.55, darkWood); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, dz + 0.55, darkWood); cube(S, 0.12, 0.08, 1.18, HX - 0.05, 2.39, dz, darkWood);
       const door = cube(S, 0.05, 2.32, 1.02, HX - 0.04, 1.16, dz, lam('#6a4426', { map: T_WOOD('#6a4426', '#4a2c18') })); cube(S, 0.02, 0.9, 0.64, HX - 0.07, 1.65, dz, lam('#5a3820')); cube(S, 0.02, 0.9, 0.64, HX - 0.07, 0.62, dz, lam('#5a3820'));
-      cube(S, 0.05, 0.05, 0.05, HX - 0.1, 1.15, dz + 0.4, brass); const dsg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('ВЫХОД · на карту', 150, 22, '#14281e', '#9af0a0', '#7a8a50', false) }), HX - 0.1, 2.62, dz, { cast: false, recv: false }); dsg.rotation.y = -Math.PI / 2; S.add(dsg);
+      cube(S, 0.05, 0.05, 0.05, HX - 0.1, 1.15, dz + 0.4, brass); const dsg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('ВЫХОД · на карту', 150, 22, '#14281e', '#9af0a0', '#7a8a50', false) }), HX - 0.03, 2.62, dz, { cast: false, recv: false }); dsg.rotation.y = -Math.PI / 2; S.add(dsg);
+      // --- the door of the museum (east wall, between the way out and the workshop)
+      { const mz = 0.1; cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz - 0.55, darkWood); cube(S, 0.12, 2.42, 0.08, HX - 0.05, 1.21, mz + 0.55, darkWood); cube(S, 0.12, 0.08, 1.18, HX - 0.05, 2.39, mz, darkWood);
+        cube(S, 0.05, 2.32, 1.0, HX - 0.04, 1.16, mz, lam('#3a2a4a', { map: T_WOOD('#4a3260', '#2e2040') })); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 1.65, mz, lam('#2e2040')); cube(S, 0.02, 0.9, 0.62, HX - 0.07, 0.62, mz, lam('#2e2040')); cube(S, 0.05, 0.05, 0.05, HX - 0.1, 1.15, mz - 0.38, brass);
+        const msg = mesh(new THREE.PlaneGeometry(0.9, 0.2), bas('#ffffff', { map: signTex('МУЗЕЙ коллекций', 150, 22, '#2a1a3e', '#f0d890', '#c8a040', false) }), HX - 0.03, 2.62, mz, { cast: false, recv: false }); msg.rotation.y = -Math.PI / 2; S.add(msg); }
       // --- display desk (centre)
       const dd = new THREE.Group(); S.add(dd); const ddx = 0, ddz = 0.4;
       cube(dd, 2.5, 0.08, 1.3, ddx, 0.86, ddz, wood); cube(dd, 2.36, 0.62, 1.16, ddx, 0.5, ddz, darkWood);
@@ -215,7 +219,7 @@ const Cabinet = (() => {
       this.hHand.geometry.translate(0, 0.08, 0); this.mHand.geometry.translate(0, 0.115, 0);
       // --- framed specimens
       const fr = (x, y, z, ry, sp) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; S.add(g); cube(g, 0.66, 0.46, 0.05, 0, 0, 0, darkWood, { cast: false }); cube(g, 0.56, 0.36, 0.01, 0, 0, 0.03, lam('#efe6c8'), { cast: false }); const tx = new THREE.CanvasTexture(Art.specimen(sp)); tx.magFilter = tx.minFilter = THREE.NearestFilter; const q = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshLambertMaterial({ map: tx, transparent: true, alphaTest: 0.5 })); q.position.z = 0.04; g.add(q); };
-      fr(-HX + 0.04, 1.85, -2.4, Math.PI / 2, SPECIES_BY_ID.machaon || SPECIES[0]); fr(-HX + 0.04, 1.85, 2.4, Math.PI / 2, SPECIES[Math.min(10, SPECIES.length - 1)]); fr(HX - 0.04, 1.9, -0.05, -Math.PI / 2, SPECIES[Math.min(24, SPECIES.length - 1)]);
+      fr(-HX + 0.04, 1.85, -2.4, Math.PI / 2, SPECIES_BY_ID.machaon || SPECIES[0]); fr(-HX + 0.04, 1.85, 2.4, Math.PI / 2, SPECIES[Math.min(10, SPECIES.length - 1)]);
       // --- pendant lamp, plants, globe
       cyl(S, 0.01, 0.01, 0.7, 0.3, RH - 0.45, 0.4, bas('#14100c'), 4, { cast: false }); cyl(S, 0.08, 0.34, 0.26, 0.3, RH - 0.9, 0.4, lam('#2a6a4a', { side: THREE.DoubleSide }), 14); this.bulb = mesh(new THREE.SphereGeometry(0.08, 8, 6), bas('#fff2c0'), 0.3, RH - 0.98, 0.4, { cast: false, recv: false }); S.add(this.bulb);
       // houseplants: a proper pot with soil and either a rubber-plant (broad leaves on a trunk) or a dracaena (arching blades)
@@ -252,7 +256,7 @@ const Cabinet = (() => {
         this.addCol(x - 0.28, x + 0.28, z - 0.28, z + 0.28);
       };
       plant(-4.0, -2.7, 'ficus', 1.25, 3); plant(4.0, -2.7, 'dracaena', 1.35, 5); plant(-3.9, 2.65, 'ficus', 1.05, 8);
-      const gl = new THREE.Group(); gl.position.set(-1.75, 0, -2.3); S.add(gl); cyl(gl, 0.18, 0.2, 0.05, 0, 0.9 + 0.02, 0, darkWood, 10); cyl(gl, 0.04, 0.04, 0.8, 0, 0.52, 0, darkWood, 8); cyl(gl, 0.26, 0.2, 0.06, 0, 0.03, 0, darkWood, 10);
+      const gl = new THREE.Group(); gl.position.set(-1.75, 0, -2.3); S.add(gl); cyl(gl, 0.18, 0.2, 0.05, 0, 0.9 + 0.02, 0, darkWood, 10); cyl(gl, 0.04, 0.04, 0.88, 0, 0.48, 0, darkWood, 8); cyl(gl, 0.26, 0.2, 0.06, 0, 0.03, 0, darkWood, 10);
       const gtex = ctex(64, 32, (x, w, h) => { x.fillStyle = '#3a78a8'; x.fillRect(0, 0, w, h); const nz = new Noise2(9); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const v = nz.fbm(i * 0.09, j * 0.12, 3); if (v > 0.52) { x.fillStyle = v > 0.66 ? '#6a8a3a' : '#4e9a48'; x.fillRect(i, j, 1, 1); } } }, 0, 0, false);
       const globe = mesh(new THREE.SphereGeometry(0.3, 14, 10), lam('#ffffff', { map: gtex }), 0, 1.3, 0, {}); globe.rotation.z = 0.4; gl.add(globe); this.globe = globe; this.addCol(-2.1, -1.4, -2.65, -1.95);
       // wall hook guides for the exhibition wall are part of refresh()
@@ -263,7 +267,8 @@ const Cabinet = (() => {
         { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская: коробки и сачки (коробок: ${Save.data.boxes.length})` },
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
-        { id: 'exit', x: 4.0, z: -1.6, r: 1.4, label: () => 'E — выйти на карту экспедиций' },
+        { id: 'exit', x: 4.0, z: -1.6, r: 1.1, label: () => 'E — выйти на карту экспедиций' },
+        { id: 'museum', x: 4.0, z: 0.1, r: 0.95, label: () => `E — войти в музей (на экспозиции: ${Save.data.boxes.filter(b => b.loc && Boxes.MUS[b.loc.t]).length})` },
       ];
       this.addCol(-HX, HX, -HZ - 1, -HZ + 0.12); // keep away from the north wall displays
     }
@@ -399,6 +404,7 @@ const Cabinet = (() => {
       else if (s.id === 'desk') { Snd.sfx.page(); Boxes.place.open('desk'); this.open('place'); }
       else if (s.id === 'wall') { Snd.sfx.page(); Boxes.place.open('wall'); this.open('place'); }
       else if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exit(); }
+      else if (s.id === 'museum') { Snd.sfx.door(); this.hooks.museum(); }
     }
     key(e) {
       const ov = this.ov;

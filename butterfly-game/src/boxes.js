@@ -53,17 +53,21 @@ const Boxes = (() => {
   // ---- slot rules
   const WALL = ['L', 'M', 'S', 'S', 'M', 'L'];            // north wall: slot capacity classes (L takes anything)
   const TOPN = 2, DRAWERS = 3, DRAWER_UNITS = 4;
+  // the museum: tables (2 flat slots each, small and medium), large tables (1 slot, any), racks (3 shelves x 2 upright slots, small and medium) and wall frames (L M S S M L ...)
+  const MUS = { mt: 24, ml: 4, mr: 36, mw: 24 }, MWCLS = i => ['L', 'M', 'S', 'S', 'M', 'L'][i % 6], MUS_TABS = [['mt', 'Столы'], ['ml', 'Большие'], ['mr', 'Стеллажи'], ['mw', 'Стена']];
+  const MUS_TITLE = { mt: 'Музей: столы-витрины', ml: 'Музей: большие столы', mr: 'Музей: стеллажи', mw: 'Музей: стены' };
   const rank = { S: 1, M: 2, L: 3 };
   const boxesAt = (t, i) => Save.data.boxes.filter(b => b.loc && b.loc.t === t && b.loc.i === i);
   function fits(box, t, i) {
     if (t === 'wall') return !boxesAt(t, i).length && rank[box.size] <= rank[WALL[i]];
     if (t === 'top') return !boxesAt(t, i).length && box.size !== 'L';
     if (t === 'drawer') return boxesAt(t, i).reduce((a, b) => a + UNITS[b.size], 0) + UNITS[box.size] <= DRAWER_UNITS;
+    if (MUS[t]) return i >= 0 && i < MUS[t] && !boxesAt(t, i).length && (t === 'ml' || (t === 'mw' ? rank[box.size] <= rank[MWCLS(i)] : box.size !== 'L'));
     return false;
   }
   function place(box, t, i) { if (!fits(box, t, i)) return false; box.loc = { t, i }; Save.syncBoxLoc(box); return true; }
   function unplace(box) { box.loc = null; Save.syncBoxLoc(box); }
-  const locName = b => !b.loc ? 'не размещена' : b.loc.t === 'wall' ? 'стена ' + (b.loc.i + 1) : b.loc.t === 'top' ? 'витрина ' + (b.loc.i + 1) : 'ящик ' + (b.loc.i + 1);
+  const locName = b => !b.loc ? 'не размещена' : b.loc.t === 'wall' ? 'стена ' + (b.loc.i + 1) : b.loc.t === 'top' ? 'витрина ' + (b.loc.i + 1) : MUS[b.loc.t] ? 'музей, ' + ({ mt: 'стол ', ml: 'большой стол ', mr: 'стеллаж ', mw: 'стена ' })[b.loc.t] + (b.loc.i + 1) : 'ящик ' + (b.loc.i + 1);
   const fillOf = b => b.items.filter(Boolean).length;
   const boxLabel = b => `${SIZE_NAME[b.size]} · ${STYLES[b.style].name} · ${fillOf(b)}/${b.items.length}`;
 
@@ -204,7 +208,7 @@ const Boxes = (() => {
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
-        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 24) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
+        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 100) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
@@ -227,13 +231,19 @@ const Boxes = (() => {
   const place_ = {
     tab: 'wall', sel: 0, scroll: 0, btns: [], rows: [], slots: [], tabs: [],
     open(tab) { if (tab) this.tab = tab; this.selUid = 0; },
+    museum() { return !!MUS[this.tab]; },
     layout() {
       const un = Save.data.boxes.filter(b => !b.loc); const vis = 9; this.scroll = clamp(this.scroll, 0, Math.max(0, un.length - vis)); this.un = un;
       this.rows = un.slice(this.scroll, this.scroll + vis).map((b, i) => ({ b, x: 8, y: 54 + i * 21, w: 130, h: 19 }));
-      this.tabs = [{ id: 'wall', label: 'Стена', x: 150, y: 30, w: 60, h: 16 }, { id: 'desk', label: 'Стол', x: 214, y: 30, w: 60, h: 16 }];
-      this.btns = [{ id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 }];
+      this.tabs = this.museum() ? MUS_TABS.map(([id, label], k) => ({ id, label, x: 150 + k * 64, y: 30, w: 60, h: 16 })) : [{ id: 'wall', label: 'Стена', x: 150, y: 30, w: 60, h: 16 }, { id: 'desk', label: 'Стол', x: 214, y: 30, w: 60, h: 16 }];
+      this.btns = [{ id: 'close', label: this.museum() ? '← В музей' : '← В кабинет', x: 8, y: 248, w: 80, h: 16 }];
       this.slots = [];
-      if (this.tab === 'wall') {
+      if (this.museum()) {
+        const t = this.tab, n = MUS[t];
+        if (t === 'ml') for (let i = 0; i < n; i++) this.slots.push({ t, i, x: 154 + i * 80, y: 76, w: 74, h: 58 });
+        else if (t === 'mr') for (let i = 0; i < n; i++) this.slots.push({ t, i, x: 192 + (i % 6) * 46, y: 62 + Math.floor(i / 6) * 28, w: 42, h: 24, rack: Math.floor(i / 6) });
+        else for (let i = 0; i < n; i++) this.slots.push({ t, i, cls: t === 'mw' ? MWCLS(i) : 'M', x: 154 + (i % 6) * 53, y: 62 + Math.floor(i / 6) * 42, w: 48, h: 37 });
+      } else if (this.tab === 'wall') {
         const k = 0.22, gap = 5; const ws = WALL.map(s => pxSize(s).w * k + 0); const total = ws.reduce((a, b) => a + b, 0) + gap * 5; let x = 150 + (326 - total) / 2;
         WALL.forEach((s, i) => { const sz = pxSize(s); this.slots.push({ t: 'wall', i, cls: s, x: Math.round(x), y: 68 + Math.round((pxSize('L').h * k - sz.h * k) / 2), w: Math.round(sz.w * k), h: Math.round(sz.h * k) }); x += sz.w * k + gap; });
       } else {
@@ -245,7 +255,7 @@ const Boxes = (() => {
     draw(ctx, t, m) {
       this.layout(); Cab2.backdrop(ctx);
       UIK.panel(ctx, 4, 4, 472, 262, { fill: 'rgba(16,28,24,0.9)', border: c.line, shadow: false });
-      T.draw(ctx, this.tab === 'wall' ? 'Стена экспозиции' : 'Стол энтомолога', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
+      T.draw(ctx, MUS[this.tab] ? MUS_TITLE[this.tab] : this.tab === 'wall' ? 'Стена экспозиции' : 'Стол энтомолога', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
       this.tabs.forEach(b => { UIK.btn(ctx, b, UIK.hit(b, m.x, m.y) || b.id === this.tab); if (b.id === this.tab) { ctx.fillStyle = c.gold; ctx.fillRect(b.x, b.y + b.h - 2, b.w, 2); } });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       T.draw(ctx, `Не размещены (${this.un.length})`, 8, 38, { size: 8, color: c.dim });
@@ -255,13 +265,15 @@ const Boxes = (() => {
       let hovBox = null;
       this.slots.forEach(s => {
         const hv = UIK.hit(s, m.x, m.y);
-        if (s.t === 'wall' || s.t === 'top') {
+        if (s.t !== 'drawer') {
           const occ = boxesAt(s.t, s.i)[0]; const ok = cb && fits(cb, s.t, s.i);
           ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(s.x, s.y, s.w, s.h);
           if (occ) { ctx.imageSmoothingEnabled = true; ctx.drawImage(canvas(occ), s.x, s.y, s.w, s.h); ctx.imageSmoothingEnabled = false; if (hv) hovBox = occ; }
           ctx.strokeStyle = hv ? (occ ? c.red : ok ? c.green : '#555') : occ ? 'rgba(0,0,0,0)' : ok ? 'rgba(126,224,138,0.7)' : '#34504a'; ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1);
-          if (!occ) T.draw(ctx, s.t === 'wall' ? s.cls : 'M', s.x + s.w / 2, s.y + s.h / 2 - 4, { size: 8, align: 'c', color: '#4a6a60' });
+          if (!occ) T.draw(ctx, s.t === 'wall' || s.t === 'mw' ? s.cls : s.t === 'ml' ? 'L' : 'M', s.x + s.w / 2, s.y + s.h / 2 - 4, { size: 8, align: 'c', color: '#4a6a60' });
           if (s.t === 'wall') T.draw(ctx, String(s.i + 1), s.x + s.w / 2, s.y + s.h + 3, { size: 8, align: 'c', color: '#6a8a78' });
+          else if (MUS[s.t] && s.t !== 'mr') T.draw(ctx, String(s.i + 1), s.x + 2, s.y + 1, { size: 8, color: occ ? '#e8e0c8' : '#6a8a78', shadow: '#000' });
+          else if (s.t === 'mr' && s.i % 6 === 0) T.draw(ctx, 'Ст. ' + (s.rack + 1), s.x - 4, s.y + 8, { size: 8, align: 'r', color: '#6a8a78' });
         } else { // drawer
           const here = boxesAt('drawer', s.i); const used = here.reduce((a, b) => a + UNITS[b.size], 0);
           UIK.panel(ctx, s.x, s.y, s.w, s.h, { fill: '#2a1c12', border: hv && cb && fits(cb, 'drawer', s.i) ? c.green : '#6a4a2a', shadow: false });
@@ -272,6 +284,10 @@ const Boxes = (() => {
         }
       });
       if (this.tab === 'desk') { T.draw(ctx, 'Витрина под стеклом (малые и средние)', 156, 51, { size: 8, color: c.dim }); T.draw(ctx, 'Выдвижные ящики: 4 места (мал. 1, ср. 2, бол. 4)', 156, 135, { size: 8, color: c.dim }); }
+      else if (this.tab === 'mt') T.draw(ctx, '12 столов по 2 витрины (малые и средние)', 154, 51, { size: 8, color: c.dim });
+      else if (this.tab === 'ml') T.draw(ctx, 'Большие столы: одна коробка любого размера', 154, 62, { size: 8, color: c.dim });
+      else if (this.tab === 'mr') T.draw(ctx, 'Стеллажи: 3 полки по 2 места (малые и средние)', 154, 47, { size: 8, color: c.dim });
+      else if (this.tab === 'mw') T.draw(ctx, 'Стены: L — любая, M — малая и средняя, S — малая', 154, 51, { size: 8, color: c.dim });
       else T.draw(ctx, 'Стена: L — любая, M — малая и средняя, S — малая', 150, 52, { size: 8, color: c.dim });
       if (hovBox) hint = `${boxLabel(hovBox)} — щёлк: снять`;
       // contents preview of hovered / selected
@@ -279,7 +295,7 @@ const Boxes = (() => {
       if (pv) {
         const lst = pv.items.map(Save.spec.bind(Save)).filter(Boolean).map(s => SPECIES_BY_ID[s.sp].ru);
         if (this.tab === 'wall') { UIK.panel(ctx, 150, 130, 322, 100, { fill: '#10201c', border: c.line, shadow: false }); drawBoxScaled(ctx, pv, 154, 134, 140, 92); T.para(ctx, lst.length ? lst.join(', ') : 'коробка пуста', 300, 136, 166, { size: 8, color: '#9ab8a4', lh: 10 }); }
-        else T.draw(ctx, lst.length ? lst.join(', ').slice(0, 60) + (lst.join(', ').length > 60 ? '…' : '') : 'коробка пуста', 156, 226, { size: 8, color: '#9ab8a4' });
+        else T.draw(ctx, lst.length ? lst.join(', ').slice(0, 60) + (lst.join(', ').length > 60 ? '…' : '') : 'коробка пуста', 156, this.museum() ? 234 : 226, { size: 8, color: '#9ab8a4' });
       }
       T.draw(ctx, hint, SW / 2 + 70, 244, { size: 8, align: 'c', color: c.text });
     },
@@ -302,5 +318,5 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
