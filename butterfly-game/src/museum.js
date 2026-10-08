@@ -16,11 +16,17 @@ const Museum = (() => {
   function mesh(geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; }
   const R = new Rng(4242);
 
-  // a static batch of coloured boxes: one mesh for all the furniture; the boxes are remembered (userData.items) so a test can check what stands on what
+  // a static batch of coloured geometry: one mesh for all the furniture. Every part is remembered (userData.items: [x, y, z, w, h, d, ry, unit]) so a test can check what stands on what.
+  const M4 = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
+  function bladeG(len, wid, bend, segs = 6) {          // a leaf: grows along +y, is wide along x, arches towards +z
+    const pos = [], idx = [];
+    for (let i = 0; i <= segs; i++) { const t = i / segs, hw = wid / 2 * Math.pow(Math.sin(Math.PI * Math.min(1, 0.12 + 0.88 * t)), 0.75) + 0.003, y = len * t * (1 - 0.12 * t), z = bend * len * t * t; pos.push(-hw, y, z, hw, y, z); if (i < segs) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); return g;
+  }
   class Batch {
-    constructor() { this.P = []; this.N = []; this.C = []; this.items = []; }
+    constructor() { this.P = []; this.N = []; this.C = []; this.items = []; this.unit = ''; }
     box(w, h, d, x, y, z, col, ry = 0) {
-      const cc = new THREE.Color(col), co = Math.cos(ry), si = Math.sin(ry), hw = w / 2, hh = h / 2, hd = d / 2; this.items.push([x, y, z, w, h, d, ry]);
+      const cc = new THREE.Color(col), co = Math.cos(ry), si = Math.sin(ry), hw = w / 2, hh = h / 2, hd = d / 2; this.items.push([x, y, z, w, h, d, ry, this.unit]);
       const tr = (a, b, e) => [x + a * hw * co + e * hd * si, y + b * hh, z - a * hw * si + e * hd * co];
       for (const [n, vs] of Batch.FACES) {
         const nn = [n[0] * co + n[2] * si, n[1], -n[0] * si + n[2] * co], q = vs.map(v => tr(v[0], v[1], v[2]));
@@ -32,13 +38,28 @@ const Museum = (() => {
         }
       }
     }
+    // any geometry (flat shaded); col: a colour or [bottom, top]
+    geo(g, m, col) {
+      const gg = g.index ? g.toNonIndexed() : g.clone(); gg.applyMatrix4(m); gg.computeVertexNormals(); gg.computeBoundingBox(); const bb = gg.boundingBox, p = gg.attributes.position, n = gg.attributes.normal;
+      const c0 = new THREE.Color(Array.isArray(col) ? col[0] : col), c1 = new THREE.Color(Array.isArray(col) ? col[1] : col), hy = Math.max(1e-6, bb.max.y - bb.min.y), tc = new THREE.Color();
+      for (let i = 0; i < p.count; i++) { tc.copy(c0).lerp(c1, (p.getY(i) - bb.min.y) / hy); this.P.push(p.getX(i), p.getY(i), p.getZ(i)); this.N.push(n.getX(i), n.getY(i), n.getZ(i)); this.C.push(tc.r, tc.g, tc.b); }
+      this.items.push([(bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2, bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z, 0, this.unit]);
+    }
+    cyl(rt, rb, h, x, y, z, col, seg = 10) { this.geo(new THREE.CylinderGeometry(rt, rb, h, seg), M4(x, y, z), col); }
+    lathe(pts, x, y, z, col, seg = 14) { this.geo(new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg), M4(x, y, z), col); }
+    ball(r, x, y, z, col, seg = 8, sy = 1) { const m = M4(x, y, z); m.scale(new THREE.Vector3(1, sy, 1)); this.geo(new THREE.SphereGeometry(r, seg, Math.max(4, seg - 2)), m, col); }
+    limb(a, b, r0, r1, col, seg = 6) { const len = Math.max(0.01, a.distanceTo(b)), g = new THREE.CylinderGeometry(r1, r0, len, seg); g.translate(0, len / 2, 0); const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); this.geo(g, new THREE.Matrix4().compose(a, q, new THREE.Vector3(1, 1, 1)), col); }
+    blade(len, wid, bend, x, y, z, az, tilt, col, segs = 6) { const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(tilt, az, 0, 'YXZ')), new THREE.Vector3(1, 1, 1)); this.geo(bladeG(len, wid, bend, segs), m, col); }
     build() {
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(this.P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(this.N, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(this.C, 3));
-      const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true })); m.userData.items = this.items; m.frustumCulled = false; return m;
+      const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })); m.userData.items = this.items; m.frustumCulled = false; return m;
     }
   }
   Batch.FACES = [[[1, 0, 0], [[1, -1, -1], [1, 1, -1], [1, 1, 1], [1, -1, 1]]], [[-1, 0, 0], [[-1, -1, 1], [-1, 1, 1], [-1, 1, -1], [-1, -1, -1]]], [[0, 1, 0], [[-1, 1, -1], [-1, 1, 1], [1, 1, 1], [1, 1, -1]]],
     [[0, -1, 0], [[-1, -1, 1], [-1, -1, -1], [1, -1, -1], [1, -1, 1]]], [[0, 0, 1], [[1, -1, 1], [1, 1, 1], [-1, 1, 1], [-1, -1, 1]]], [[0, 0, -1], [[-1, -1, -1], [-1, 1, -1], [1, 1, -1], [1, -1, -1]]]];
+  // quads textured with one picture (specimens lying in the glass-topped cases), merged per picture
+  class QuadBatch { constructor(tex) { this.tex = tex; this.P = []; this.U = []; this.items = []; } quad(x, y, z, w, d, rot) { const e = Math.max(w, d); this.items.push([x, y, z, e, 0.004, e, 0, 'quad']); const c = Math.cos(rot), s = Math.sin(rot), pt = (a, b) => [x + a * c - b * s, y, z + a * s + b * c], q = [pt(-w / 2, d / 2), pt(w / 2, d / 2), pt(w / 2, -d / 2), pt(-w / 2, -d / 2)], uv = [[0, 0], [1, 0], [1, 1], [0, 1]]; for (const i of [0, 1, 2, 0, 2, 3]) { this.P.push(...q[i]); this.U.push(...uv[i]); } }
+    build() { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(this.P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(this.U, 2)); g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: this.tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); m.frustumCulled = false; m.userData.items = this.items; return m; } }
 
   // ------------------------------------------------------------ the layout: where every place for a box is (pure data, also used by the tests)
   const WOOD = ['#6a4426', '#5a3820', '#7a5030'], DARK = '#3e2414', BRASS = '#c8a040';
@@ -58,7 +79,7 @@ const Museum = (() => {
     for (let i = 0; i < 8; i++) mw(-10.5 + 3 * i, HZ, Math.PI);
     for (const z of [-6, -2.2, 2.2, 6]) mw(HX, z, -Math.PI / 2);
     for (const z of [-6.2, -3.3, 3.3, 6.2]) mw(-HX, z, Math.PI / 2);
-    for (let i = 0; i < 8; i++) { L.lowcases.push({ x: -10.5 + 3 * i, z: -HZ + 0.3, w: 2.5, d: 0.5, ry: 0 }); L.lowcases.push({ x: -10.5 + 3 * i, z: HZ - 0.3, w: 2.5, d: 0.5, ry: Math.PI }); }
+    for (let i = 0; i < 8; i++) { const end = i === 0 || i === 7, x = end ? (i ? 10.25 : -10.25) : -10.5 + 3 * i, w = end ? 2.0 : 2.5; L.lowcases.push({ x, z: -HZ + 0.3, w, d: 0.5, ry: 0 }); L.lowcases.push({ x, z: HZ - 0.3, w, d: 0.5, ry: Math.PI }); }      // the outer ones are shorter: the corner columns stand there
     for (const [z, w] of [[-4.1, 1.7], [0, 1.7], [4.1, 1.7]]) L.cases.push({ x: HX - 0.25, z, w, d: 0.45, h: 3.5, ry: -Math.PI / 2 });      // tall bookcases
     for (const z of [-4.75, 4.75]) L.cases.push({ x: -HX + 0.25, z, w: 1.2, d: 0.45, h: 3.5, ry: Math.PI / 2 });
     return L;
@@ -66,6 +87,10 @@ const Museum = (() => {
 
   // ------------------------------------------------------------ textures
   const T_FLOOR = () => ctex(64, 64, (x, w, h) => { for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const dark = (i + j) % 2; x.fillStyle = dark ? '#8a6a46' : '#a88458'; x.fillRect(i * 16, j * 16, 16, 16); x.fillStyle = 'rgba(40,20,8,0.28)'; for (let k = 0; k < 4; k++) x.fillRect(i * 16, j * 16 + 3 + k * 4, 16, 1); x.fillStyle = 'rgba(0,0,0,0.4)'; x.fillRect(i * 16, j * 16, 16, 1); x.fillRect(i * 16, j * 16, 1, 16); } }, RW / 4, RD / 4);
+  const T_MEDAL = () => ctex(128, 128, (x, w, h) => { x.fillStyle = '#6a1c1c'; x.fillRect(0, 0, w, h); x.fillStyle = '#d0b060'; x.beginPath(); x.arc(64, 64, 62, 0, 6.3); x.fill(); x.fillStyle = '#2c4a5a'; x.beginPath(); x.arc(64, 64, 56, 0, 6.3); x.fill(); x.fillStyle = '#d0b060'; x.beginPath(); x.arc(64, 64, 46, 0, 6.3); x.fill(); x.fillStyle = '#7a2424'; x.beginPath(); x.arc(64, 64, 42, 0, 6.3); x.fill();
+    x.fillStyle = '#d0b060'; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, r = i % 2 ? 26 : 40; x.beginPath(); x.moveTo(64, 64); x.lineTo(64 + Math.cos(a - 0.14) * r * 0.5, 64 + Math.sin(a - 0.14) * r * 0.5); x.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); x.lineTo(64 + Math.cos(a + 0.14) * r * 0.5, 64 + Math.sin(a + 0.14) * r * 0.5); x.fill(); }
+    x.fillStyle = '#2c4a5a'; x.beginPath(); x.arc(64, 64, 8, 0, 6.3); x.fill(); x.fillStyle = '#efe6c8'; x.fillRect(62, 62, 4, 4); }, 0, 0, true);
+  const T_SKY = () => ctex(32, 32, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#fffbe8'); g.addColorStop(1, '#e8f4ff'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,255,255,0.8)'; x.fillRect(4, 8, 14, 3); x.fillRect(10, 18, 16, 3); }, 0, 0, true);
   function wallTex(L) {
     const k = 40, w = Math.round(L * k), h = Math.round(RH * k);
     const t = ctex(w, h, (x) => {
@@ -98,13 +123,16 @@ const Museum = (() => {
     addCol(x0, x1, z0, z1) { this.colliders.push({ x0, x1, z0, z1 }); }
 
     build() {
-      const S = this.scene, B = new Batch(), wallM = L => lam('#ffffff', { map: wallTex(L) });
-      // --- lights: a warm hall with a few pendant lamps
-      S.add(new THREE.HemisphereLight('#ffeacc', '#4a3624', 0.95));
-      this.lamps = []; for (const [x, z] of [[-8, -4], [0, -4], [8, -4], [-8, 4], [0, 4], [8, 4]]) { const p = new THREE.PointLight('#ffd89a', 0.5, 12, 1.5); p.position.set(x, 3.7, z); S.add(p); this.lamps.push([x, z]); }
-      // --- floor, ceiling, walls (the west wall has the door)
+      const S = this.scene, B = new Batch(), wallM = L => lam('#ffffff', { map: wallTex(L) }), V = (x, y, z) => new THREE.Vector3(x, y, z), brassC = '#c8a040', brassD = '#8a6a22';
+      const pick = a => a[(R.next() * a.length) | 0], glow = [];     // glow: emissive bits (bulbs, flames, skylights) kept as separate meshes
+      const emit = (r, x, y, z, col = '#fff2c0') => { const m = mesh(new THREE.SphereGeometry(r, 8, 6), bas(col), x, y, z); S.add(m); return m; };
+      // --- light: a warm hall; pendant lamps carry real lights, chandeliers and sconces are only bright
+      S.add(new THREE.HemisphereLight('#ffeacc', '#4a3624', 1.05));
+      this.lamps = []; for (const [x, z] of [[-6, -4], [0, -4], [6, -4], [-6, 4], [0, 4], [6, 4]]) { const p = new THREE.PointLight('#ffd89a', 0.55, 12, 1.5); p.position.set(x, 3.4, z); S.add(p); this.lamps.push([x, z]); }
+      // --- floor (parquet with an inlaid border and a medallion), ceiling, walls (the west wall has the door)
       const floor = mesh(new THREE.PlaneGeometry(RW, RD), lam('#ffffff', { map: T_FLOOR() }), 0, 0, 0); floor.rotation.x = -Math.PI / 2; floor.userData.noFloat = true; S.add(floor);
-      const ceil = mesh(new THREE.PlaneGeometry(RW, RD), lam('#d8cca8'), 0, RH, 0); ceil.rotation.x = Math.PI / 2; ceil.userData.noFloat = true; S.add(ceil);
+      const ceil = mesh(new THREE.PlaneGeometry(RW, RD), lam('#e4d8b4'), 0, RH, 0); ceil.rotation.x = Math.PI / 2; ceil.userData.noFloat = true; S.add(ceil);
+      const medal = mesh(new THREE.CircleGeometry(1.45, 40), lam('#ffffff', { map: T_MEDAL() }), 0, 0.016, 0); medal.rotation.x = -Math.PI / 2; S.add(medal);
       const mkWall = (L, rotY, x, z, door) => {
         const sh = new THREE.Shape(), hl = L / 2;
         if (door) { sh.moveTo(-hl, 0); sh.lineTo(door[0], 0); sh.lineTo(door[0], door[2]); sh.lineTo(door[1], door[2]); sh.lineTo(door[1], 0); sh.lineTo(hl, 0); sh.lineTo(hl, RH); sh.lineTo(-hl, RH); sh.lineTo(-hl, 0); }
@@ -112,72 +140,148 @@ const Museum = (() => {
         const m = mesh(new THREE.ShapeGeometry(sh), wallM(L), x, 0, z); m.rotation.y = rotY; m.userData.noFloat = true; S.add(m);
       };
       mkWall(RW, 0, 0, -HZ); mkWall(RW, Math.PI, 0, HZ); mkWall(RD, -Math.PI / 2, HX, 0); mkWall(RD, Math.PI / 2, -HX, 0, [-0.55, 0.55, 2.3]);
-      // --- ceiling beams and pendant lamps on cords
-      for (let x = -10.5; x <= 10.5; x += 3) B.box(0.22, 0.24, RD, x, RH - 0.12, 0, DARK);
-      B.box(RW, 0.2, 0.22, 0, RH - 0.1, -HZ + 0.2, DARK); B.box(RW, 0.2, 0.22, 0, RH - 0.1, HZ - 0.2, DARK);
-      for (const [x, z] of this.lamps) { B.box(0.02, 1.15, 0.02, x, RH - 0.575, z, '#14100c'); B.box(0.5, 0.22, 0.5, x, RH - 1.2, z, '#2a6a4a'); B.box(0.12, 0.12, 0.12, x, RH - 1.38, z, '#fff2c0'); }
-      // --- the door (west wall): frame, ajar leaf, a sign above
-      B.box(0.14, 2.38, 0.1, -HX + 0.07, 1.19, -0.6, DARK); B.box(0.14, 2.38, 0.1, -HX + 0.07, 1.19, 0.6, DARK); B.box(0.14, 0.1, 1.3, -HX + 0.07, 2.33, 0, DARK);
-      B.box(0.05, 2.2, 1.02, -HX + 0.1, 1.12, 0, '#5a3820', 0); B.box(0.06, 0.06, 0.06, -HX + 0.14, 1.12, 0.38, BRASS);
-      // --- baseboards
-      B.box(RW, 0.14, 0.05, 0, 0.07, -HZ + 0.025, '#3e2614'); B.box(RW, 0.14, 0.05, 0, 0.07, HZ - 0.025, '#3e2614'); B.box(0.05, 0.14, RD, HX - 0.025, 0.07, 0, '#3e2614');
-      B.box(0.05, 0.14, 7.35, -HX + 0.025, 0.07, -4.275, '#3e2614'); B.box(0.05, 0.14, 7.35, -HX + 0.025, 0.07, 4.275, '#3e2614');
-      // --- 12 display tables: legs, apron, top, a brass rim and a low glass-looking edge
-      for (const t of LAYOUT.tables) {
-        const hw = t.w / 2, hd = t.d / 2;
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.09, TOP - 0.06, 0.09, t.x + sx * (hw - 0.1), (TOP - 0.06) / 2, t.z + sz * (hd - 0.1), WOOD[1]);
-        B.box(t.w - 0.2, 0.12, 0.05, t.x, TOP - 0.15, t.z - hd + 0.1, WOOD[1]); B.box(t.w - 0.2, 0.12, 0.05, t.x, TOP - 0.15, t.z + hd - 0.1, WOOD[1]); B.box(0.05, 0.12, t.d - 0.2, t.x - hw + 0.1, TOP - 0.15, t.z, WOOD[1]); B.box(0.05, 0.12, t.d - 0.2, t.x + hw - 0.1, TOP - 0.15, t.z, WOOD[1]);
-        B.box(t.w, 0.06, t.d, t.x, TOP - 0.03, t.z, '#2a5a46'); B.box(t.w + 0.04, 0.02, 0.03, t.x, TOP + 0.01, t.z - hd, BRASS); B.box(t.w + 0.04, 0.02, 0.03, t.x, TOP + 0.01, t.z + hd, BRASS); B.box(0.03, 0.02, t.d, t.x - hw, TOP + 0.01, t.z, BRASS); B.box(0.03, 0.02, t.d, t.x + hw, TOP + 0.01, t.z, BRASS);
-        this.addCol(t.x - hw, t.x + hw, t.z - hd, t.z + hd);
+      // --- the room itself: inlaid floor border, baseboards, a stepped cornice, pilasters, a coffered ceiling, skylights
+      B.unit = 'room';
+      for (const [w, d, x, z] of [[RW - 1.0, 0.1, 0, -HZ + 0.5], [RW - 1.0, 0.1, 0, HZ - 0.5], [0.1, RD - 1.0, -HX + 0.5, 0], [0.1, RD - 1.0, HX - 0.5, 0]]) { B.box(w, 0.012, d, x, 0.006, z, brassC); B.box(w + (w > d ? 0 : 0.5), 0.012, d + (w > d ? 0.5 : 0), x, 0.004, z, '#3e2414'); }
+      B.box(RW, 0.16, 0.06, 0, 0.08, -HZ + 0.03, '#3e2614'); B.box(RW, 0.16, 0.06, 0, 0.08, HZ - 0.03, '#3e2614'); B.box(0.06, 0.16, RD, HX - 0.03, 0.08, 0, '#3e2614');
+      B.box(0.06, 0.16, 7.35, -HX + 0.03, 0.08, -4.275, '#3e2614'); B.box(0.06, 0.16, 7.35, -HX + 0.03, 0.08, 4.275, '#3e2614');
+      B.box(RW, 0.04, 0.08, 0, 0.17, -HZ + 0.04, brassD); B.box(RW, 0.04, 0.08, 0, 0.17, HZ - 0.04, brassD);
+      for (const [lw, dd, x, z, ry] of [[RW, 1, 0, -HZ, 0], [RW, 1, 0, HZ, 0], [RD, 1, HX, 0, 1], [RD, 1, -HX, 0, 1]]) {      // cornice: three steps
+        const sg = z === 0 ? -Math.sign(x) : -Math.sign(z); const horiz = !ry;
+        for (let i = 0; i < 3; i++) { const dpt = 0.1 + i * 0.07, hh = 0.07; if (horiz) B.box(lw, hh, dpt, x, RH - 0.035 - i * 0.07 + 0, z + sg * dpt / 2, i === 1 ? brassC : '#c8b88a'); else B.box(dpt, hh, lw, x + sg * dpt / 2, RH - 0.035 - i * 0.07, z, i === 1 ? brassC : '#c8b88a'); }
       }
-      // --- 4 large tables
-      for (const t of LAYOUT.large) {
-        const hw = t.w / 2, hd = t.d / 2;
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.12, TOP - 0.08, 0.12, t.x + sx * (hw - 0.12), (TOP - 0.08) / 2, t.z + sz * (hd - 0.12), DARK);
-        B.box(t.w - 0.3, 0.14, t.d - 0.3, t.x, TOP - 0.15, t.z, DARK); B.box(t.w, 0.08, t.d, t.x, TOP - 0.04, t.z, '#6a1c1c'); B.box(t.w + 0.06, 0.03, 0.04, t.x, TOP + 0.015, t.z - hd, BRASS); B.box(t.w + 0.06, 0.03, 0.04, t.x, TOP + 0.015, t.z + hd, BRASS);
-        this.addCol(t.x - hw, t.x + hw, t.z - hd, t.z + hd);
+      for (const x of [-6, 0, 6]) for (const sgz of [-1, 1]) {      // pilasters on the long walls: base, fluted shaft, capital
+        const z = sgz * (HZ - 0.07); B.box(0.5, 0.35, 0.14, x, 0.175, z, '#b8a678'); B.box(0.36, 4.0, 0.1, x, 2.35, z, '#d8c8a0'); for (const fx of [-0.12, 0, 0.12]) B.box(0.04, 3.9, 0.12, x + fx, 2.3, z - sgz * 0.005, '#c4b48c'); B.box(0.5, 0.2, 0.14, x, 4.45, z, '#b8a678'); B.box(0.58, 0.07, 0.17, x, 4.6, z, brassC);
       }
-      // --- 6 racks for the frames: two uprights, a back panel, a top, three shelves with a small lip
-      for (const k of LAYOUT.racks) {
-        const hw = k.w / 2, back = k.z - k.f * 0.22, sh = [0.38, 1.28, 2.18];
-        B.box(0.06, k.h, k.d, k.x - hw + 0.03, k.h / 2, k.z, DARK); B.box(0.06, k.h, k.d, k.x + hw - 0.03, k.h / 2, k.z, DARK); B.box(k.w - 0.1, k.h - 0.2, 0.03, k.x, (k.h - 0.2) / 2 + 0.2, back - k.f * 0.015, '#5a4630');
-        B.box(k.w + 0.06, 0.06, k.d + 0.04, k.x, k.h, k.z, DARK); B.box(k.w - 0.1, 0.2, 0.04, k.x, 0.1, k.z, DARK);
-        for (const sy of sh) { B.box(k.w - 0.12, 0.04, k.d - 0.04, k.x, sy - 0.02, k.z, WOOD[0]); B.box(k.w - 0.12, 0.05, 0.02, k.x, sy + 0.02, k.z + k.f * (k.d / 2 - 0.04), BRASS); }
+      for (const [x, z] of [[-HX + 0.27, -HZ + 0.27], [HX - 0.27, -HZ + 0.27], [-HX + 0.27, HZ - 0.27], [HX - 0.27, HZ - 0.27]]) { B.box(0.4, 4.6, 0.4, x, 2.3, z, '#d8c8a0'); B.box(0.46, 0.3, 0.46, x, 0.15, z, '#b8a678'); B.box(0.5, 0.16, 0.5, x, 4.52, z, brassC); }
+      for (let x = -10.5; x <= 10.5; x += 3) { B.box(0.24, 0.26, RD - 0.9, x, RH - 0.13, 0, DARK); B.box(0.1, 0.05, RD - 0.9, x, RH - 0.285, 0, brassD); }
+      for (const z of [-6, -2, 2, 6]) { B.box(RW - 0.9, 0.2, 0.22, 0, RH - 0.1, z, DARK); B.box(RW - 0.9, 0.04, 0.1, 0, RH - 0.22, z, brassD); }
+      for (const x of [-10.5, -4.5, 1.5, 7.5]) for (const z of [-6, -2, 2, 6]) B.ball(0.07, x, RH - 0.3, z, brassC, 6);      // brass bosses at some beam crossings
+      for (const x of [-9, -3, 3, 9]) for (const z of [-4, 4]) {        // skylights: a brass frame and mullions around a bright pane
+        for (const [w, d, dx, dz] of [[2.4, 0.08, 0, -1.4], [2.4, 0.08, 0, 1.4], [0.08, 2.88, -1.2, 0], [0.08, 2.88, 1.2, 0], [0.05, 2.8, 0, 0], [2.3, 0.05, 0, 0]]) B.box(w, 0.06, d, x + dx, RH - 0.03, z + dz, brassD);
+        const sk = mesh(new THREE.PlaneGeometry(2.3, 2.78), bas('#ffffff', { map: T_SKY() }), x, RH - 0.02, z); sk.rotation.x = Math.PI / 2; S.add(sk);
+      }
+      // --- the door (west wall): a frame with a pediment, a panelled leaf, hinges and a brass plate
+      B.unit = 'door';
+      B.box(0.16, 2.4, 0.12, -HX + 0.08, 1.2, -0.62, DARK); B.box(0.16, 2.4, 0.12, -HX + 0.08, 1.2, 0.62, DARK); B.box(0.16, 0.14, 1.36, -HX + 0.08, 2.37, 0, DARK); B.box(0.2, 0.08, 1.6, -HX + 0.1, 2.5, 0, brassD); B.box(0.18, 0.2, 1.3, -HX + 0.09, 2.64, 0, DARK);
+      B.box(0.05, 2.28, 1.1, -HX + 0.1, 1.14, 0, '#5a3820'); for (const [y, h] of [[1.75, 0.8], [0.6, 0.9]]) B.box(0.03, h, 0.76, -HX + 0.13, y, 0, '#6e4a2c'); B.box(0.07, 0.07, 0.07, -HX + 0.16, 1.1, 0.4, brassC); for (const y of [0.4, 1.9]) B.box(0.04, 0.16, 0.05, -HX + 0.1, y, -0.58, brassD);
+      // --- 12 display tables: turned legs, apron with carving, a green leather top, brass rims, little glass cover posts and a plate
+      B.unit = 'tables';
+      LAYOUT.tables.forEach((t, k) => {
+        B.unit = 'table' + k; const hw = t.w / 2, hd = t.d / 2;
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const lx = t.x + sx * (hw - 0.11), lz = t.z + sz * (hd - 0.11); B.lathe([[0.001, 0], [0.07, 0.01], [0.05, 0.05], [0.04, 0.3], [0.06, 0.38], [0.04, 0.46], [0.04, 0.74], [0.065, 0.78], [0.065, TOP - 0.06]], lx, 0, lz, WOOD[1], 8); }
+        B.box(t.w - 0.2, 0.13, 0.05, t.x, TOP - 0.145, t.z - hd + 0.1, WOOD[1]); B.box(t.w - 0.2, 0.13, 0.05, t.x, TOP - 0.145, t.z + hd - 0.1, WOOD[1]); B.box(0.05, 0.13, t.d - 0.2, t.x - hw + 0.1, TOP - 0.145, t.z, WOOD[1]); B.box(0.05, 0.13, t.d - 0.2, t.x + hw - 0.1, TOP - 0.145, t.z, WOOD[1]);
+        for (const dx of [-0.6, 0, 0.6]) { B.box(0.3, 0.07, 0.015, t.x + dx, TOP - 0.15, t.z - hd + 0.12, brassD); B.box(0.3, 0.07, 0.015, t.x + dx, TOP - 0.15, t.z + hd - 0.12, brassD); }
+        B.box(t.w, 0.06, t.d, t.x, TOP - 0.03, t.z, '#2a5a46'); B.box(t.w + 0.05, 0.03, 0.04, t.x, TOP + 0.005, t.z - hd, brassC); B.box(t.w + 0.05, 0.03, 0.04, t.x, TOP + 0.005, t.z + hd, brassC); B.box(0.04, 0.03, t.d, t.x - hw, TOP + 0.005, t.z, brassC); B.box(0.04, 0.03, t.d, t.x + hw, TOP + 0.005, t.z, brassC);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.ball(0.035, t.x + sx * (hw - 0.02), TOP + 0.03, t.z + sz * (hd - 0.02), brassC, 6);
+        const fz = t.z + (t.z < 0 ? 1 : -1) * (hd - 0.04); for (const s of [-1, 1]) B.box(0.16, 0.012, 0.05, t.x + s * 0.58, TOP + 0.006, fz, brassC);       // a name plate in front of each place
+        this.addCol(t.x - hw, t.x + hw, t.z - hd, t.z + hd);
+      });
+      // --- 4 large tables: a velvet top with a fringe, carved claw feet
+      LAYOUT.large.forEach((t, k) => {
+        B.unit = 'large' + k; const hw = t.w / 2, hd = t.d / 2;
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const lx = t.x + sx * (hw - 0.14), lz = t.z + sz * (hd - 0.14); B.lathe([[0.001, 0], [0.11, 0.01], [0.09, 0.07], [0.06, 0.14], [0.05, 0.3], [0.09, 0.36], [0.05, 0.44], [0.06, 0.8], [0.1, 0.83], [0.1, TOP - 0.08]], lx, 0, lz, DARK, 8); B.box(0.2, 0.05, 0.2, lx, 0.025, lz, '#241408'); }
+        B.box(t.w - 0.3, 0.14, t.d - 0.3, t.x, TOP - 0.16, t.z, DARK); B.box(t.w, 0.08, t.d, t.x, TOP - 0.04, t.z, '#6a1c1c');
+        for (let i = 0; i < 18; i++) { const fx = t.x - hw + 0.06 + i * ((t.w - 0.12) / 17); B.box(0.03, 0.12, 0.02, fx, TOP - 0.14, t.z - hd - 0.005, brassC); B.box(0.03, 0.12, 0.02, fx, TOP - 0.14, t.z + hd + 0.005, brassC); }
+        B.box(t.w + 0.06, 0.03, 0.04, t.x, TOP + 0.015, t.z - hd, brassC); B.box(t.w + 0.06, 0.03, 0.04, t.x, TOP + 0.015, t.z + hd, brassC); B.box(0.04, 0.03, t.d, t.x - hw, TOP + 0.015, t.z, brassC); B.box(0.04, 0.03, t.d, t.x + hw, TOP + 0.015, t.z, brassC);
+        B.box(0.3, 0.012, 0.06, t.x, TOP + 0.006, t.z + hd - 0.08, brassC);
+        this.addCol(t.x - hw, t.x + hw, t.z - hd, t.z + hd);
+      });
+      // --- 6 racks: plinth, turned posts, a panelled back, a carved cornice with a name plate, shelves with a brass lip
+      LAYOUT.racks.forEach((k, ki) => {
+        B.unit = 'rack' + ki; const hw = k.w / 2, back = k.z - k.f * 0.22, sh = [0.38, 1.28, 2.18], fz = k.z + k.f * (k.d / 2);
+        B.box(k.w + 0.06, 0.16, k.d + 0.04, k.x, 0.08, k.z, '#2a1a0e'); B.box(k.w + 0.02, 0.04, k.d, k.x, 0.18, k.z, brassD);
+        for (const sx of [-1, 1]) { B.box(0.09, k.h - 0.2, 0.1, k.x + sx * (hw - 0.045), 0.2 + (k.h - 0.2) / 2, k.z + k.f * (k.d / 2 - 0.05), DARK); B.box(0.12, 0.05, 0.13, k.x + sx * (hw - 0.045), 0.2, k.z + k.f * (k.d / 2 - 0.05), brassD); B.box(0.12, 0.05, 0.13, k.x + sx * (hw - 0.045), k.h - 0.1, k.z + k.f * (k.d / 2 - 0.05), brassD); B.box(0.06, k.h - 0.2, k.d, k.x + sx * (hw - 0.03), 0.2 + (k.h - 0.2) / 2, k.z, DARK); }
+        B.box(k.w - 0.1, k.h - 0.4, 0.04, k.x, 0.2 + (k.h - 0.4) / 2, back - k.f * 0.02, '#6a5238');       // the back: three panels with thin mouldings
+        for (let j = 0; j < 3; j++) { const py = 0.2 + 0.45 + j * 0.9; B.box(k.w - 0.4, 0.74, 0.012, k.x, py + 0.0, back + k.f * 0.004, '#7a6044'); for (const sx of [-1, 1]) B.box(0.03, 0.74, 0.016, k.x + sx * (k.w / 2 - 0.2), py, back + k.f * 0.004, DARK); }
+        B.box(k.w + 0.1, 0.1, k.d + 0.06, k.x, k.h - 0.05, k.z, DARK); B.box(k.w + 0.14, 0.05, k.d + 0.1, k.x, k.h + 0.025, k.z, brassD); B.box(k.w - 0.5, 0.2, 0.05, k.x, k.h - 0.22, k.z + k.f * (k.d / 2 + 0.01), '#2a1a0e'); B.box(k.w - 0.56, 0.14, 0.02, k.x, k.h - 0.22, k.z + k.f * (k.d / 2 + 0.04), brassC);
+        for (const sy of sh) { B.box(k.w - 0.18, 0.04, k.d - 0.04, k.x, sy - 0.02, k.z, WOOD[0]); B.box(k.w - 0.18, 0.06, 0.02, k.x, sy + 0.03, k.z + k.f * (k.d / 2 - 0.03), brassC); }
         this.addCol(k.x - hw, k.x + hw, k.z - k.d / 2, k.z + k.d / 2);
-      }
-      // --- low display cabinets under the wall frames (north and south): a carcass, a top, small jars and books on top
-      for (const lc of LAYOUT.lowcases) {
-        const g = lc.ry ? -1 : 1; B.box(lc.w, 0.9, lc.d, lc.x, 0.45, lc.z, WOOD[2]); B.box(lc.w + 0.06, 0.05, lc.d + 0.06, lc.x, 0.925, lc.z, DARK);
-        for (const dx of [-0.8, 0, 0.8]) { B.box(0.7, 0.62, 0.02, lc.x + dx, 0.47, lc.z + g * (lc.d / 2 + 0.005), '#2a1a0e'); B.box(0.06, 0.03, 0.03, lc.x + dx, 0.5, lc.z + g * (lc.d / 2 + 0.03), BRASS); }
-        for (let i = 0; i < 5; i++) { const col = ['#a8d0d8', '#c04a2a', '#2a6a4a', '#e0d4a0', '#8a5a9a'][i], jx = lc.x - 0.9 + i * 0.45 + R.range(-0.05, 0.05), jh = R.range(0.1, 0.2); B.box(0.1, jh, 0.1, jx, 0.95 + jh / 2, lc.z, col); }
+      });
+      // --- low display cabinets under the wall frames: plinth, three drawers with pulls, a glass-topped case with specimens inside
+      const qb = [], qspecies = SPECIES.filter(s => !s.mystery && s.biome !== 'ocean').filter((s, i) => i % 9 === 0).slice(0, 7); qspecies.forEach(sp => { const tx = new THREE.CanvasTexture(Art.specimen(sp)); tx.magFilter = tx.minFilter = THREE.NearestFilter; qb.push(new QuadBatch(tx)); });
+      LAYOUT.lowcases.forEach((lc, k) => {
+        B.unit = 'lowcase' + k; const g = lc.ry ? -1 : 1, fz = lc.z + g * (lc.d / 2);
+        B.box(lc.w - 0.1, 0.1, lc.d - 0.06, lc.x, 0.05, lc.z - g * 0.02, '#241408'); B.box(lc.w, 0.7, lc.d, lc.x, 0.45, lc.z, WOOD[2]); B.box(lc.w + 0.06, 0.05, lc.d + 0.06, lc.x, 0.825, lc.z, DARK);
+        for (const dx of [-0.8, 0, 0.8]) { B.box(0.7, 0.5, 0.025, lc.x + dx, 0.45, fz + g * 0.005, '#2a1a0e'); B.box(0.6, 0.4, 0.012, lc.x + dx, 0.45, fz + g * 0.017, '#7a5030'); B.box(0.16, 0.03, 0.03, lc.x + dx, 0.5, fz + g * 0.04, brassC); B.box(0.08, 0.05, 0.015, lc.x + dx, 0.38, fz + g * 0.03, brassD); }
+        B.box(lc.w - 0.1, 0.1, lc.d - 0.1, lc.x, 0.9, lc.z, '#1e4a38');                                  // the case: green felt floor, four corner posts, a rim, a glass lid
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.045, 0.2, 0.045, lc.x + sx * (lc.w / 2 - 0.05), 1.0, lc.z + sz * (lc.d / 2 - 0.05), DARK);
+        B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z - lc.d / 2 + 0.05, brassC); B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z + lc.d / 2 - 0.05, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x - lc.w / 2 + 0.05, 1.115, lc.z, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x + lc.w / 2 - 0.05, 1.115, lc.z, brassC);
+        const gl = mesh(new THREE.PlaneGeometry(lc.w - 0.12, lc.d - 0.12), bas('#cfe8ff', { transparent: true, opacity: 0.12, depthWrite: false }), lc.x, 1.1, lc.z); gl.rotation.x = -Math.PI / 2; S.add(gl);
+        const nq = 3; for (let i = 0; i < nq; i++) pick(qb).quad(lc.x + (i - 1) * (lc.w / 3.1), 0.952, lc.z + R.range(-0.04, 0.04), 0.46, 0.23, R.range(-0.3, 0.3));
+        for (let i = 0; i < 4; i++) { const col = pick(['#a8d0d8', '#c04a2a', '#2a6a4a', '#e0d4a0', '#8a5a9a']); B.cyl(0.05, 0.05, 0.14, lc.x + (i - 1.5) * 0.42 + R.range(-0.04, 0.04), 1.185, lc.z, col, 8); }
         this.addCol(lc.x - lc.w / 2, lc.x + lc.w / 2, lc.z - lc.d / 2, lc.z + lc.d / 2);
-      }
-      // --- tall bookcases on the east and west walls (lots of shelves with books)
-      for (const bc of LAYOUT.cases) {
-        const along = Math.abs(Math.cos(bc.ry)) < 0.5;                // the case runs along z (the wall is east or west)
-        const wx = bc.x, wz = bc.z, wd = bc.w, dd = bc.d, n = 6, sg = Math.sign(bc.x) || 1, pal = ['#7a2a24', '#2a4a6a', '#3e6a3a', '#8a6a2a', '#5a2a5a', '#2a5a5a', '#9a4a2a', '#4a3a2a'];
-        B.box(dd, bc.h, wd, wx, bc.h / 2, wz, DARK); B.box(dd - 0.04, bc.h - 0.2, wd - 0.12, wx - sg * 0.03, (bc.h - 0.2) / 2 + 0.1, wz, '#1e1208');
-        const front = wx - sg * (dd / 2 - 0.02);
-        for (let i = 0; i <= n; i++) { const y = 0.12 + i * ((bc.h - 0.25) / n); B.box(dd - 0.06, 0.04, wd - 0.08, wx - sg * 0.03, y, wz, WOOD[0]); if (i === n) break;
-          let z = wz - wd / 2 + 0.1; const end = wz + wd / 2 - 0.08; while (z < end - 0.05) { const bw = R.range(0.035, 0.07), bh = R.range(0.18, (bc.h - 0.25) / n - 0.1); if (R.next() < 0.1) { z += R.range(0.08, 0.16); continue; } B.box(dd - 0.2, bh, bw, wx - sg * 0.05, y + 0.02 + bh / 2, z + bw / 2, pal[(R.next() * pal.length) | 0]); z += bw + 0.004; } }
+      });
+      // --- tall bookcases (east and west): a cornice, glass-less shelves with books, jars and little boxes, a globe on top
+      LAYOUT.cases.forEach((bc, k) => {
+        B.unit = 'case' + k; const wx = bc.x, wz = bc.z, wd = bc.w, dd = bc.d, n = 6, sg = Math.sign(bc.x) || 1, pal = ['#7a2a24', '#2a4a6a', '#3e6a3a', '#8a6a2a', '#5a2a5a', '#2a5a5a', '#9a4a2a', '#4a3a2a', '#c8b88a'];
+        B.box(0.04, bc.h - 0.14, wd, wx + sg * (dd / 2 - 0.02), 0.14 + (bc.h - 0.14) / 2, wz, '#1e1208');
+        B.box(dd + 0.08, 0.14, wd + 0.1, wx - sg * 0.04, 0.07, wz, '#2a1a0e'); B.box(dd + 0.1, 0.1, wd + 0.14, wx - sg * 0.05, bc.h + 0.05, wz, DARK); B.box(dd + 0.14, 0.04, wd + 0.18, wx - sg * 0.07, bc.h + 0.12, wz, brassD);
+        for (const sz of [-1, 1]) B.box(dd - 0.02, bc.h - 0.2, 0.06, wx, 0.1 + (bc.h - 0.2) / 2, wz + sz * (wd / 2 - 0.03), '#4a2c18');
+        const fx = wx - sg * (dd / 2 - 0.02);
+        for (let i = 0; i <= n; i++) { const y = 0.16 + i * ((bc.h - 0.3) / n); B.box(dd - 0.06, 0.04, wd - 0.08, wx - sg * 0.02, y, wz, WOOD[0]); if (i < n) B.box(0.02, 0.05, wd - 0.1, fx - sg * 0.0, y + 0.03, wz, brassD); if (i === n) break;
+          let z = wz - wd / 2 + 0.1; const end = wz + wd / 2 - 0.08, hh = (bc.h - 0.3) / n; while (z < end - 0.05) { if (R.next() < 0.14) { const jr = R.range(0.05, 0.08), jh = R.range(0.14, 0.26); B.cyl(jr, jr, jh, wx - sg * 0.07, y + 0.02 + jh / 2, z + jr, pick(['#a8d0d8', '#c8b88a', '#c04a2a', '#2a6a4a']), 8); z += jr * 2 + 0.03; continue; }
+            if (R.next() < 0.07) { const bw = R.range(0.14, 0.22), bh = R.range(0.1, 0.16); if (z + bw < end) { B.box(dd - 0.2, bh, bw, wx - sg * 0.06, y + 0.02 + bh / 2, z + bw / 2, pick(['#3a2210', '#a47c48', '#14141a'])); z += bw + 0.02; continue; } }
+            const bw = R.range(0.035, 0.07), bh = R.range(0.18, hh - 0.12); B.box(dd - 0.2, bh, bw, wx - sg * 0.05, y + 0.02 + bh / 2, z + bw / 2, pick(pal)); z += bw + 0.004; } }
+        B.lathe([[0.001, 0], [0.11, 0], [0.11, 0.04], [0.05, 0.08], [0.04, 0.3]], wx - sg * 0.02, bc.h + 0.14, wz, DARK, 8); B.ball(0.2, wx - sg * 0.02, bc.h + 0.14 + 0.5, wz, '#3a78a8', 10);
         this.addCol(wx - dd / 2, wx + dd / 2, wz - wd / 2, wz + wd / 2);
+      });
+      // --- plants: potted palms / ficus in the corners, ferns on pedestals between the bookcases, dracaenas by the door
+      const bl = (len, wid, bend, x, y, z, az, tilt, col, segs) => { const d = len * (0.88 * Math.sin(tilt) + bend * Math.cos(tilt)) + wid / 2 + 0.05; if (Math.abs(x + Math.sin(az) * d) < HX - 0.04 && Math.abs(z + Math.cos(az) * d) < HZ - 0.04) B.blade(len, wid, bend, x, y, z, az, tilt, col, segs); };      // a leaf that would poke through a wall is left out
+      let pk = 0; const plant = (kind, x, z, y0 = 0, sc = 1) => {
+        B.unit = 'plant' + (pk++); const gl = pick(['#1f5a4a', '#2a4a6a', '#6a3a22']), pot = [[0.001, 0], [0.12 * sc, 0], [0.14 * sc, 0.015], [0.2 * sc, 0.3 * sc], [0.22 * sc, 0.32 * sc], [0.2 * sc, 0.34 * sc], [0.17 * sc, 0.34 * sc], [0.17 * sc, 0.3 * sc], [0.001, 0.3 * sc]];
+        B.cyl(0.19 * sc, 0.2 * sc, 0.03, x, y0 + 0.015, z, '#3a2a1a', 14); B.lathe(pot, x, y0 + 0.03, z, gl, 14); B.cyl(0.04 * sc, 0.04 * sc, 0.004, x, y0 + 0.03 + 0.3 * sc, z, '#2a1c12', 12); B.cyl(0.215 * sc, 0.215 * sc, 0.02, x, y0 + 0.03 + 0.25 * sc, z, brassC, 14);
+        B.cyl(0.165 * sc, 0.165 * sc, 0.01, x, y0 + 0.03 + 0.31 * sc, z, '#2a1c12', 14);
+        const top = y0 + 0.03 + 0.31 * sc, greens = ['#2a6a34', '#337a3c', '#245a30', '#3a8644', '#2e7438'];
+        if (kind === 'palm') { for (let t = 0; t < 3; t++) { const a = t * 2.1 + 0.4, lean = 0.12 + t * 0.05, hh = (1.15 + t * 0.2) * sc, tip = V(x + Math.sin(a) * lean * 2, top + hh, z + Math.cos(a) * lean * 2);
+              B.limb(V(x + Math.sin(a) * 0.03, top, z + Math.cos(a) * 0.03), V((tip.x + x) / 2 + Math.sin(a) * 0.05, top + hh * 0.5, (tip.z + z) / 2 + Math.cos(a) * 0.05), 0.026 * sc, 0.02 * sc, '#6a5030', 6); B.limb(V((tip.x + x) / 2 + Math.sin(a) * 0.05, top + hh * 0.5, (tip.z + z) / 2 + Math.cos(a) * 0.05), tip, 0.02 * sc, 0.013 * sc, '#6a5030', 6);
+              for (let f = 0; f < 7; f++) { const az = f * 0.9 + t, tl = 0.55 + (f % 3) * 0.28; bl((0.9 + (f % 2) * 0.3) * sc, 0.2 * sc, 0.55, tip.x, tip.y - 0.01, tip.z, az, tl, pick(greens), 7); } B.ball(0.03 * sc, tip.x, tip.y, tip.z, '#3a2a1a', 5); } }
+        else if (kind === 'ficus') { const tip = V(x + 0.04, top + 1.15 * sc, z);
+          B.limb(V(x, top, z), V(x + 0.03, top + 0.6 * sc, z + 0.02), 0.03 * sc, 0.024 * sc, '#5a4028', 6); B.limb(V(x + 0.03, top + 0.6 * sc, z + 0.02), tip, 0.024 * sc, 0.014 * sc, '#5a4028', 6);
+          for (let k = 0; k < 15; k++) { const t = k / 14, az = k * 2.39996, h = (0.4 + t * 0.78) * sc, bx = x + 0.03 * Math.min(1, t * 2), bz = z + 0.02 * Math.min(1, t * 2), reach = (0.07 + (1 - Math.abs(t - 0.45)) * 0.1) * sc, lx = bx + Math.sin(az) * reach, lz = bz + Math.cos(az) * reach;
+            B.limb(V(bx, top + h - 0.01, bz), V(lx, top + h + 0.02, lz), 0.006, 0.005, '#4a6a30', 4); bl(0.3 * sc * (1 - t * 0.25), 0.19 * sc * (1 - t * 0.25), 0.35, lx, top + h + 0.02, lz, az, 1.15 + (1 - t) * 0.2, pick(greens), 5); } bl(0.2 * sc, 0.13 * sc, 0.1, tip.x, tip.y, tip.z, 0.4, 0.15, greens[0], 5); }
+        else if (kind === 'fern') { for (let k = 0; k < 22; k++) { const az = k * 2.39996, tl = 0.55 + (k % 4) * 0.2, r0 = 0.05 + (k % 3) * 0.02; bl((0.55 + (k % 5) * 0.09) * sc, 0.1 * sc, 0.7, x + Math.sin(az) * r0, top, z + Math.cos(az) * r0, az, tl, pick(greens), 6); } }
+        else { for (let ring = 0; ring < 2; ring++) for (let k = 0; k < 8; k++) { const az = (k + ring * 0.5) / 8 * Math.PI * 2; bl(1.0 * sc * (ring ? 0.8 : 1), 0.075 * sc, 0.5, x + Math.sin(az) * 0.03, top, z + Math.cos(az) * 0.03, az, ring ? 0.95 : 0.4, pick(greens), 6); } B.limb(V(x, top, z), V(x, top + 0.4 * sc, z), 0.024 * sc, 0.02 * sc, '#6a5030', 6); }
+        this.addCol(x - 0.3 * sc, x + 0.3 * sc, z - 0.3 * sc, z + 0.3 * sc);
+      };
+      plant('palm', -11.1, -6.9, 0, 1.25); plant('ficus', 11.1, -6.9, 0, 1.2); plant('ficus', -11.1, 6.9, 0, 1.2); plant('palm', 11.1, 6.9, 0, 1.25);
+      for (const [x, z] of [[11.35, -2.05], [11.35, 2.05], [-11.35, -3.1], [-11.35, 3.1]]) { B.unit = 'pedestal' + pk; B.box(0.42, 0.1, 0.42, x, 0.05, z, '#2a1a0e'); B.box(0.3, 0.32, 0.3, x, 0.26, z, '#d8c8a0'); B.box(0.4, 0.06, 0.4, x, 0.45, z, brassC); plant('fern', x, z, 0.48, 0.9); }
+      plant('dracaena', -11.3, -1.15, 0, 1.2); plant('dracaena', -11.3, 1.15, 0, 1.2);
+      // --- pendant lamps: a rose, a brass rod, a cap, an opal glass dome with a brass rim, a glowing bulb
+      this.lamps.forEach(([x, z], i) => {
+        B.unit = 'lamp' + i; B.cyl(0.2, 0.2, 0.05, x, RH - 0.025, z, brassD, 12); B.cyl(0.07, 0.07, 0.06, x, RH - 0.08, z, brassC, 10); B.cyl(0.015, 0.015, 0.95, x, RH - 0.575, z, brassC, 6); B.ball(0.05, x, RH - 1.05, z, brassC, 8); B.cyl(0.05, 0.05, 0.22, x, RH - 1.2, z, brassC, 8);
+        B.lathe([[0.04, 0], [0.12, -0.03], [0.26, -0.12], [0.34, -0.26], [0.35, -0.3], [0.33, -0.3], [0.25, -0.24], [0.1, -0.12], [0.03, -0.04]], x, RH - 1.12, z, ['#c8e0d0', '#e8f0e0'], 16); B.cyl(0.36, 0.36, 0.03, x, RH - 1.12 - 0.3, z, brassC, 16);
+        glow.push(emit(0.1, x, RH - 1.12 - 0.22, z));
+      });
+      // --- 3 chandeliers: a rosette, three chains, a brass ring with six arms with candle bulbs, a pendant at the bottom
+      [-6, 0, 6].forEach((x, i) => {
+        B.unit = 'chandelier' + i; const z = 0, ry = RH - 1.35;
+        B.cyl(0.22, 0.22, 0.05, x, RH - 0.025, z, brassD, 12);
+        for (let a = 0; a < 3; a++) { const an = a * 2.094 + 0.3; B.limb(V(x, RH - 0.05, z), V(x + Math.sin(an) * 0.62, ry + 0.02, z + Math.cos(an) * 0.62), 0.012, 0.012, brassC, 5); }
+        B.geo(new THREE.TorusGeometry(0.62, 0.03, 6, 20), (() => { const m = M4(x, ry, z); m.multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)); return m; })(), brassC);
+        for (let a = 0; a < 6; a++) { const an = a * Math.PI / 3, px = x + Math.sin(an) * 0.62, pz = z + Math.cos(an) * 0.62; B.cyl(0.035, 0.035, 0.1, px, ry + 0.07, pz, '#f0e8d0', 8); B.cyl(0.05, 0.03, 0.03, px, ry + 0.015, pz, brassC, 8); glow.push(emit(0.04, px, ry + 0.16, pz, '#ffe08a')); }
+        for (let a = 0; a < 3; a++) { const an = a * 2.094 + 1.0; B.limb(V(x + Math.sin(an) * 0.62, ry, z + Math.cos(an) * 0.62), V(x, ry, z), 0.014, 0.014, brassC, 5); }
+        B.lathe([[0.001, 0], [0.09, 0.06], [0.06, 0.16], [0.03, 0.3]], x, ry - 0.3, z, brassC, 10); B.cyl(0.02, 0.02, 0.05, x, ry - 0.0 - 0.0, z, brassC, 6);
+      });
+      // --- wall sconces between the frames on the long walls and a picture light above every wall frame
+      for (const sgz of [-1, 1]) for (const x of [-9, -3, 3, 9]) { B.unit = 'sconce'; const z = sgz * (HZ - 0.12); B.box(0.16, 0.3, 0.04, x, 2.3, sgz * (HZ - 0.02), brassD); B.limb(V(x, 2.3, sgz * (HZ - 0.04)), V(x, 2.3, z), 0.015, 0.015, brassC, 5); B.lathe([[0.03, 0], [0.09, 0.06], [0.11, 0.2], [0.06, 0.26]], x, 2.32, z, ['#e8f0e0', '#f8f4d8'], 10); glow.push(emit(0.05, x, 2.44, z, '#ffe8a0')); }
+      for (const s of LAYOUT.slots.mw) { B.unit = 'plight'; const ox = Math.sin(s.ry), oz = Math.cos(s.ry), wx = s.x - ox * 0.0, wz = s.z; B.box(0.3, 0.04, 0.03, s.x + ox * 0.02, 3.1, s.z + oz * 0.02, brassC, s.ry); B.box(0.2, 0.05, 0.04, s.x + ox * 0.17, 3.13, s.z + oz * 0.17, brassD, s.ry); B.limb(V(s.x + ox * 0.02, 3.1, s.z + oz * 0.02), V(s.x + ox * 0.17, 3.1, s.z + oz * 0.17), 0.012, 0.012, brassC, 4); }
+      // --- brass plates under the wall frames, benches with cushions, a visitors' stand with a book, display pedestals with glass domes
+      for (const s of LAYOUT.slots.mw) { B.unit = 'plate'; B.box(0.22, 0.07, 0.012, s.x + Math.sin(s.ry) * 0.006, 1.5, s.z + Math.cos(s.ry) * 0.006, brassC, s.ry); }
+      [[-3.3, 0], [3.3, 0]].forEach(([x, z], i) => {
+        B.unit = 'bench' + i; B.box(1.4, 0.07, 0.46, x, 0.43, z, WOOD[2]); B.box(1.3, 0.07, 0.4, x, 0.5, z, '#6a1c1c'); for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.cyl(0.035, 0.03, 0.4, x + sx * 0.6, 0.2, z + sz * 0.17, DARK, 6);
+        B.box(1.4, 0.05, 0.05, x, 0.34, z, DARK); B.box(1.4, 0.3, 0.04, x, 0.7, z - 0.21, WOOD[2]); B.box(1.28, 0.2, 0.025, x, 0.7, z - 0.18, '#6a1c1c'); this.addCol(x - 0.72, x + 0.72, z - 0.26, z + 0.26);
+      });
+      for (const [x, z, i] of [[-9.6, -1.6, 0], [-9.6, 1.6, 1], [9.6, -1.6, 2], [9.6, 1.6, 3]]) {
+        B.unit = 'dome' + i; B.box(0.6, 0.1, 0.6, x, 0.05, z, '#2a1a0e'); B.box(0.5, 1.05, 0.5, x, 0.625, z, '#d8c8a0'); B.box(0.58, 0.07, 0.58, x, 1.185, z, brassC); B.cyl(0.2, 0.2, 0.012, x, 1.22, z, '#6a1c1c', 14);
+        const sp = SPECIES_BY_ID.ornithoptera_alexandrae || SPECIES[i]; const qd = new QuadBatch(new THREE.CanvasTexture(Art.specimen(sp))); qd.tex.magFilter = qd.tex.minFilter = THREE.NearestFilter; qd.quad(x, 1.23, z, 0.34, 0.17, i * 0.8); S.add(qd.build());
+        const dome = mesh(new THREE.SphereGeometry(0.28, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), bas('#cfe8ff', { transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }), x, 1.22, z); S.add(dome);
+        B.cyl(0.285, 0.285, 0.02, x, 1.225, z, brassC, 14); B.ball(0.03, x, 1.5, z, brassC, 6); this.addCol(x - 0.34, x + 0.34, z - 0.34, z + 0.34);
       }
-      // --- visitor benches (aisles) and potted palms in the corners
-      for (const [x, z, ry] of [[-3.3, 0, 0], [3.3, 0, 0]]) {
-        B.box(1.4, 0.06, 0.45, x, 0.44, z, WOOD[2], ry); for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.07, 0.41, 0.07, x + sx * 0.6, 0.205, z + sz * 0.17, DARK); B.box(1.4, 0.05, 0.05, x, 0.52, z - 0.2, DARK);
-        this.addCol(x - 0.72, x + 0.72, z - 0.26, z + 0.26);
-      }
-      for (const [x, z] of [[-11.1, -7.2], [-11.1, 7.2], [11.1, -7.2], [11.1, 7.2]]) {
-        B.box(0.4, 0.4, 0.4, x, 0.2, z, '#b0623a'); B.box(0.34, 0.04, 0.34, x, 0.42, z, '#2a1c12');
-        for (let k = 0; k < 9; k++) { const a = k * 2.4, h = 0.6 + (k % 3) * 0.35; B.box(0.05, h, 0.05, x + Math.sin(a) * 0.1, 0.44 + h / 2, z + Math.cos(a) * 0.1, ['#2a6a34', '#337a3c', '#3a8a40'][k % 3]); B.box(0.5, 0.04, 0.12, x + Math.sin(a) * 0.3, 0.44 + h + 0.02, z + Math.cos(a) * 0.3, ['#2a6a34', '#337a3c', '#3a8a40'][k % 3], a); }
-        this.addCol(x - 0.3, x + 0.3, z - 0.3, z + 0.3);
-      }
-      const furniture = B.build(); S.add(furniture); this.furniture = furniture;
-      // --- a long runner along the aisles
-      const rug = mesh(new THREE.PlaneGeometry(RW - 6, 2.0), lam('#7a2020'), 0, 0.012, 2.0); rug.rotation.x = -Math.PI / 2; S.add(rug); const rug2 = rug.clone(); rug2.position.z = -2.0; S.add(rug2);
-      // --- signs: the name of the hall over the entrance wall and the doors
-      const sg = mesh(new THREE.PlaneGeometry(2.2, 0.4), bas('#ffffff', { map: signTex('МУЗЕЙ КОЛЛЕКЦИИ', 220, 24, '#2a1a0e', '#f0d890') }), 0, 3.9, -HZ + 0.02); S.add(sg);
-      const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#14281e', '#9af0a0', '#7a8a50') }), -HX + 0.03, 2.65, 0); sd.rotation.y = Math.PI / 2; S.add(sd);
+      const furniture = B.build(); S.add(furniture); this.furniture = furniture; qb.forEach(q => { if (q.P.length) S.add(q.build()); }); this.glow = glow;
+      // --- signs: the name of the hall on the north wall, the way back over the door
+      const sg = mesh(new THREE.PlaneGeometry(2.4, 0.4), bas('#ffffff', { map: signTex('МУЗЕЙ КОЛЛЕКЦИИ', 220, 24, '#2a1a0e', '#f0d890') }), 0, 3.85, -HZ + 0.025); S.add(sg);
+      const sd = mesh(new THREE.PlaneGeometry(1.1, 0.22), bas('#ffffff', { map: signTex('← в кабинет', 130, 22, '#14281e', '#9af0a0', '#7a8a50') }), -HX + 0.03, 2.88, 0); sd.rotation.y = Math.PI / 2; S.add(sd);
       // --- stations: leave, and the zones where boxes are placed (the nearest one decides which tab opens)
       this.stations = [{ id: 'exit', x: -HX + 0.7, z: 0, r: 1.3, label: () => 'E — выйти в кабинет' }];
       const zone = (tab, x, z, r, name) => this.stations.push({ id: 'place', tab, x, z, r, label: () => `E — расставить коробки: ${name} (на экспозиции: ${Save.data.boxes.filter(b => b.loc && b.loc.t === tab).length} из ${MUS[tab]})` });
