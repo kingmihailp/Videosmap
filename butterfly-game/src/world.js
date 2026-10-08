@@ -547,9 +547,10 @@ const World = (() => {
     },
     pandan(r) {     // a screw pine on stilt roots with rosettes of long saw-edged leaves
       const parts = []; const H = r.range(3.8, 6.0), lean = r.range(0.1, 0.3); const top = trunk(parts, r, H, 0.2, 0.12, lean, ['#7a6a52', '#5a4c38', 0, H], 4);
-      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + r.range(-0.2, 0.2), L = limb(new V3(Math.cos(a) * 0.9, 0, Math.sin(a) * 0.9), new V3(Math.cos(a) * 0.15, H * 0.35, Math.sin(a) * 0.15), 0.04, 0.08, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); }
+      const onT = y => { const P = top.pts; for (let i = 1; i < P.length; i++) if (P[i].y >= y) return P[i - 1].clone().lerp(P[i], (y - P[i - 1].y) / (P[i].y - P[i - 1].y)); return P[P.length - 1].clone(); };      // a point ON the (leaning) trunk at a height: roots and side branches start from there
+      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + r.range(-0.2, 0.2), e = onT(H * 0.35), L = limb(new V3(Math.cos(a) * 0.9, 0, Math.sin(a) * 0.9), new V3(e.x + Math.cos(a) * 0.05, e.y, e.z + Math.sin(a) * 0.05), 0.04, 0.08, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); }
       const rosette = (p, n, len) => { for (let i = 0; i < n; i++) { const a = i / n * 6.28 + r.range(-0.15, 0.15); parts.push({ g: coneG(0.07, len * r.range(0.8, 1.1), 3), m: M(p.x, p.y, p.z, Math.sin(a) * 1.0, 0, -Math.cos(a) * 1.0), c: ['#5a8a2e', '#9ac04a', 0, len], j: 0.1 }); } };
-      rosette(top, 16, 2.3); for (let k = 0; k < 2; k++) { const a = r.range(0, 6.28), tip = new V3(top.x + Math.cos(a) * 1.4, H * 0.88, top.z + Math.sin(a) * 1.4); const L = limb(new V3(top.x, H * 0.7, top.z), tip, 0.1, 0.06, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); rosette(tip, 12, 1.8); }
+      rosette(top, 16, 2.3); for (let k = 0; k < 2; k++) { const a = r.range(0, 6.28), base = onT(H * 0.7), tip = new V3(base.x + Math.cos(a) * 1.4, H * 0.88, base.z + Math.sin(a) * 1.4); const L = limb(base, tip, 0.1, 0.06, 4); parts.push({ g: L.g, m: L.m, c: '#6a5a44', j: 0.06 }); rosette(tip, 12, 1.8); }
       return { g: merge(parts, r), rad: 0.6, h: H + 2 };
     },
     alocasia(r) {   // an elephant-ear: a few huge arrow-shaped leaves on bent stalks

@@ -21,6 +21,14 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     const fclash = []; for (const f of fr) { for (const q of items) if (dep(f, q, 0) > 0.05 && dep(f, q, 1) > 0.05 && dep(f, q, 2) > 0.05) fclash.push(f.u + ' x ' + q.u); }
     for (let i = 0; i < fr.length; i++) for (let j = i + 1; j < fr.length; j++) if (dep(fr[i], fr[j], 0) > 0.05 && dep(fr[i], fr[j], 1) > 0.05 && dep(fr[i], fr[j], 2) > 0.05) fclash.push(fr[i].u + ' x ' + fr[j].u);
     out.frameClash = fclash.slice(0, 15); out.frames = fr.length;
+    // 2b. floor furniture does not stand inside the footprint of other floor furniture (a bench pushed under a table, a case in a rack ...)
+    const fam = /^(table|large|rack|lowcase|case|bench|dome|clock)/, fp = new Map();
+    for (const it of items) if (fam.test(it.u)) { const f = fp.get(it.u) || { u: it.u, a: [1e9, 1e9], b: [-1e9, -1e9] }; f.a[0] = Math.min(f.a[0], it.a[0]); f.a[1] = Math.min(f.a[1], it.a[2]); f.b[0] = Math.max(f.b[0], it.b[0]); f.b[1] = Math.max(f.b[1], it.b[2]); fp.set(it.u, f); }
+    const fl = [...fp.values()], fpClash = []; for (let i = 0; i < fl.length; i++) for (let j = i + 1; j < fl.length; j++) { const p = fl[i], q = fl[j]; if (Math.min(p.b[0], q.b[0]) - Math.max(p.a[0], q.a[0]) > 0.05 && Math.min(p.b[1], q.b[1]) - Math.max(p.a[1], q.a[1]) > 0.05) fpClash.push(p.u + ' x ' + q.u); }
+    out.footprint = fpClash.slice(0, 15);
+    // 2c. wall signs are not covered by columns, lamps or anything else on the wall
+    const sgn = []; cab.scene.traverse(o => { if (o.userData && o.userData.sign) { const bb = new THREE.Box3().setFromObject(o).expandByScalar(0.06); const hit = items.filter(q => [0, 1, 2].every(k => Math.min(bb.max.getComponent(k), q.b[k]) - Math.max(bb.min.getComponent(k), q.a[k]) > 0.08)); if (hit.length) sgn.push(o.position.toArray().map(v => v.toFixed(1)).join(',') + ' covered by ' + [...new Set(hit.map(h => h.u))].join('/')); } });
+    out.signs = sgn;
     // 3. every wall frame and rack frame faces into the hall
     const face = [], Mu = Museum.LAYOUT; let k = 0;
     for (const t of ['mt', 'ml', 'mr', 'mw']) Mu.slots[t].forEach((s, i) => { const g = cab.dynamic.children[k++]; const n = new THREE.Vector3(0, 0, 1).applyQuaternion(g.quaternion); if (t === 'mw') { if ((-s.x) * n.x + (-s.z) * n.z <= 0.5) face.push('wall ' + i); } else if (t === 'mr') { const f = Mu.racks[Math.floor(i / 6)].f; if (n.z * f < 0.9) face.push('rack ' + i); } });
@@ -40,6 +48,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   let bad = 0; const T = (n, c, x) => { if (!c) bad++; console.log(c ? 'PASS' : 'FAIL', n, x === undefined ? '' : JSON.stringify(x)); };
   T('parts of different furniture do not run into each other', r.clash.length === 0, r.clash);
   T('frames do not run into furniture or each other (' + r.frames + ' frame boxes)', r.frameClash.length === 0, r.frameClash);
+  T('no floor furniture stands inside the footprint of other furniture (benches, tables, racks, cases, clock)', r.footprint.length === 0, r.footprint);
+  T('the wall signs are not covered by columns or anything else', r.signs.length === 0, r.signs);
   T('every wall and rack frame faces into the hall', r.facing.length === 0, r.facing);
   T('the spawn is free and most of the floor can be reached on foot', r.spawnFree && r.reachShare > 90, r.reachShare);
   T('every station (' + r.stations + ') can be reached', r.unreachable.length === 0, r.unreachable);
