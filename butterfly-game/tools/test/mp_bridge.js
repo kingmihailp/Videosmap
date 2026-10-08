@@ -11,7 +11,8 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
     await pg.addInitScript(() => { try { const k = 'flora0world_butterflies_v1', d = JSON.parse(localStorage.getItem(k) || '{}'); d.maps = { vietnam: true }; localStorage.setItem(k, JSON.stringify(d)); } catch (e) {} });
     await pg.goto(`http://localhost:${PORT}/#debug&nolock&mp=${name}`); for (let i = 0; i < 40; i++) { if (await pg.evaluate(() => Net.on).catch(() => false)) break; await pg.waitForTimeout(400); } return pg; };
   const go = async pg => { await pg.evaluate(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.start('vietnam'); }); for (let i = 0; i < 80; i++) { if (await pg.evaluate(() => F0W.screen === 'play' && !!F0W.play).catch(() => false)) return true; await pg.waitForTimeout(400); } return false; };
-  const A = await open('Alice'), B = await open('Bob');
+  const openOnline = async name => { for (let k = 0; k < 4; k++) { const pg = await open(name); if (await pg.evaluate(() => Net.on).catch(() => false)) return pg; console.log('(' + name + ' could not connect on a loaded machine, trying again)'); await pg.close().catch(() => {}); } throw new Error(name + ' never got online'); };      // a page starved by the other software-rendered pages may miss the server's welcome
+  const A = await openOnline('Alice'), B = await openOnline('Bob');
   ok(await go(A) && await go(B), 'both are in the highlands');
   const st = pg => pg.evaluate(() => F0W.play.world.bridges.map(b => b.state));
   const worn = await A.evaluate(() => F0W.play.world.bridges.findIndex(b => b.weak));
@@ -23,7 +24,7 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   ok(['fall', 'gone'].includes(sb[worn]), 'Bob sees it snap', sb);
   // a newcomer finds it already broken
   console.log('before Carol: Bob', JSON.stringify(await B.evaluate(() => ({ on: Net.on, loc: Net.loc, list: Net.list.map(p => p.name + ':' + p.loc), seed: F0W.play && F0W.play.seed }))), 'Alice', JSON.stringify(await A.evaluate(() => ({ on: Net.on, loc: Net.loc, screen: F0W.screen }))));
-  const C = await open('Carol'); ok(await go(C), 'Carol arrives later'); const sc = await st(C);
+  const C = await openOnline('Carol'); ok(await go(C), 'Carol arrives later'); const sc = await st(C);
   const seeds = await Promise.all([A, B, C].map(pg => pg.evaluate(() => F0W.play ? [F0W.play.seed, F0W.play.world.bridges.length] : null))); console.log('seeds/bridges', JSON.stringify(seeds));
   ok(['fall', 'gone'].includes(sc[worn]), 'Carol finds the bridge broken', sc);
   console.log(bad ? 'FAILED ' + bad : 'ALL PASS'); await browser.close(); srv.kill(); process.exit(bad ? 1 : 0);
