@@ -239,7 +239,7 @@ class Play {
     // spawn the herd
     this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
     this.helperT = 40;
-    if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); }
+    if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
@@ -265,6 +265,7 @@ class Play {
     if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят и качаются под ногами — мост ветхий…', 3.5); }
     else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
     else if (e.k === 'snap') { Snd.sfx.snap(); this.toast('Мост оборвался!', 2.5); }
+    if (this.mp && !e.remote && (e.k === 'shake' || e.k === 'snap') && e.i !== undefined) Net.send('bridge', { i: e.i, k: e.k });      // the others see it too
   }
   stepFall(dt, w, x, z) {         // the bridge snapped: free fall into the gorge, then the fall ends the trip
     const f = this.fall; f.t += dt; f.vy += 16 * dt; let y = this.player.y - f.vy * dt; const floor = w.heightAt(x, z) + 1.65;
@@ -288,8 +289,9 @@ class Play {
     H.host = m => { if (m.id === Net.id) { if (!me.isHost) me.becomeHost(m.flies); } else if (me.isHost) me.becomePuppet(m.flies); };
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
     H.regenNo = () => me.toast('Сменить местность можно, только когда вы здесь один', 3);
+    H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.bridge = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;

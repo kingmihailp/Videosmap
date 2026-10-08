@@ -57,7 +57,7 @@ let nextId = 1;
 const players = new Map();                 // id -> { id, name, ws, loc, idx }
 const locs = new Map();                    // loc -> { ids:Set, host, flies:[], caught:Map(fid -> time), mod }
 const cabView = () => ({ specimens: state.specimens, boxes: state.boxes });
-function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null, lastFlies: 0 }; locs.set(name, l); } return l; }
+function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null, lastFlies: 0, bridges: {} }; locs.set(name, l); } return l; }
 const send = (p, o) => { if (p.ws.readyState === 1) p.ws.send(JSON.stringify(o)); };
 const broadcast = (o, except) => { const s = JSON.stringify(o); for (const p of players.values()) if (p.id !== except && p.ws.readyState === 1) p.ws.send(s); };
 const toLoc = (name, o, except) => { const l = locs.get(name); if (!l) return; const s = JSON.stringify(o); for (const id of l.ids) { if (id === except) continue; const p = players.get(id); if (p && p.ws.readyState === 1) p.ws.send(s); } };
@@ -68,16 +68,16 @@ function leaveLoc(p) {
   if (!p.loc) return; const name = p.loc, l = locs.get(name); p.loc = null; if (!l) return;
   l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id });
   if (l.host === p.id) { l.host = l.ids.values().next().value || 0; l.lastFlies = Date.now() + 8000; if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
-  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; }
+  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; }
 }
 function joinLoc(p, name) {
   if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
-  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; }
+  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
   p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now() + 15000; }      // grace while its client builds the world
-  send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
+  send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();
 }
 
@@ -109,6 +109,7 @@ wss.on('connection', ws => {
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
       case 'regen': { const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || l.ids.size !== 1) { send(me, { t: 'regenNo' }); break; } state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
       case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else { send(me, { t: 'opNo', k: m.op && m.op.k, uid: m.op && m.op.uid }); send(me, { t: 'resync', cab: cabView() }); } break; }
+      case 'bridge': { const l = me.loc && locs.get(me.loc); if (!l || me.loc !== 'vietnam' || !(m.i === 0 || m.i === 1) || (m.k !== 'shake' && m.k !== 'snap')) break; l.bridges = l.bridges || {}; if (l.bridges[m.i] === 'snap') break; l.bridges[m.i] = m.k; toLoc(me.loc, { t: 'bridge', i: m.i, k: m.k, by: me.id }, me.id); break; }     // a rope bridge started to shake / snapped: everybody in the location sees it, and a later visitor finds it as it is now
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }
     }
   });

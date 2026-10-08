@@ -922,15 +922,23 @@ const World = (() => {
       world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.siteUV = siteUV;
       world.flyH = (x, z) => { const h = heightAt(x, z), [g, Hs] = gorgeInfo(x, z); return g > 0 ? h + g * (Hs - h) : h; };      // butterflies glide across a gorge at the height of its rims
       world.moveK = (x, z, dx, dz) => { const l = Math.hypot(dx, dz); if (l < 1e-4) return 1; const gr = (world.groundAt(x + dx / l * 1.2, z + dz / l * 1.2) - world.groundAt(x, z)) / 1.2; return clamp(1 - 0.5 * gr, 0.42, 1.18); };    // climbing is slow, going down is quick
+      hl.sites.forEach((b, i) => { b.i = i; });
+      // a bridge that shakes or snaps for one player does so for everybody in the location: the local simulation is the same on every client, and the one who triggers it tells the others (Play sends the event)
+      world.setBridge = (i, k, init) => {
+        const b = hl.sites[i]; if (!b || b.state === 'gone' || b.state === 'fall') return;
+        if (k === 'shake' && b.state === 'ok') { b.state = 'shake'; b.t = 0; b.remote = true; if (!init) world.events.push({ k: 'shake', b, i, remote: true }); }
+        else if (k === 'snap') { b.state = 'fall'; b.t = init ? 99 : 0; b.remote = true; b.fallCheck = true; if (!init) world.events.push({ k: 'snap', b, i, remote: true }); }
+      };
       world.updaters.push((dt, t, focus) => {
         for (const b of hl.sites) {
-          const [u, v] = siteUV(b, focus.x, focus.z), on = Math.abs(v) < b.hw + 0.4 && Math.abs(u) < b.Lh && b.state !== 'fall' && b.state !== 'gone';
+          const [u, v] = siteUV(b, focus.x, focus.z), onDeck = Math.abs(v) < b.hw + 0.2 && Math.abs(u) < b.Lh, on = Math.abs(v) < b.hw + 0.4 && Math.abs(u) < b.Lh && b.state !== 'fall' && b.state !== 'gone';
+          if (b.fallCheck) { b.fallCheck = false; if (onDeck && b.t < 90) world.pendingFall = b; }          // another player's bridge snapped under my feet
           if (b.state === 'ok') {
-            if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b }); }
-            if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b }); }
+            if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b, i: b.i }); }
+            if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
           } else if (b.state === 'shake') {
             b.t += dt; for (const p of b.planks) p.m.position.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2);
-            if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b }); if (on && Math.abs(v) < b.hw + 0.2) world.pendingFall = b; for (const q of b.planks) q.m.position.y = q.y0; }
+            if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b, i: b.i, remote: !!b.remote }); if (onDeck) world.pendingFall = b; for (const q of b.planks) q.m.position.y = q.y0; }
           } else if (b.state === 'fall') {
             b.t += dt; for (const p of b.planks) { if (Math.abs(p.u) > b.Lh - 1.3 || b.t < p.delay) continue; p.vy -= 13 * dt; p.m.position.y += p.vy * dt; p.m.rotation.x += p.sx * dt; p.m.rotation.z += p.sz * dt; }
             for (const q of b.ropes) if (Math.abs(q.u) < b.Lh - 1.5 && (q.tag === 'hand' || q.tag === 'vert' || q.tag === 'edge') && b.t > 0.15 + Math.abs(q.u) * 0.03) q.m.visible = false;

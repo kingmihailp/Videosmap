@@ -384,8 +384,8 @@
     ['Ideopsis juventa', 'Идеопсис ювента', 'Wood nymph', 'D', 70, 85, 1, 'nymph', A('idea', ['#f4f2e8', '#fffdf2'], ['#f4f2e8', '#ece6d0'], { edge: ['#16120e', 2], veins: '#2a2620', sp: [...sp('f', [[.4, .35, 1.4, '#16120e'], [.62, .5, 1.4, '#16120e']]), ...sp('h', [[.5, .5, 1.6, '#16120e']])] }),
       'Опушки, лесные тропы, прибрежные заросли', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'ваточниковые', 'Лёгкая белая бабочка со штриховкой, плавно парит у земли.'],
   ];
-  // Queen Alexandra's birdwing: paid a fixed 1500 coins by the merchant (an aberration multiplies it) and many times rarer than anything else
-  { const q = ROWS.papua[0]; q.fixed = 1500; q.scarce = 0.18; }
+  // Queen Alexandra's birdwing: paid a fixed 2000 coins by the merchant (an aberration multiplies it) and many times rarer than anything else
+  { const q = ROWS.papua[0]; q.fixed = 2000; q.scarce = 0.18; }
 
   // ============================================================ VIETNAM (Hoang Lien Son / Sa Pa highlands)
   ROWS.vietnam = [

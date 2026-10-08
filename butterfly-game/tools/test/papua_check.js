@@ -1,4 +1,4 @@
-// New Guinea: Queen Alexandra's birdwing is paid exactly 1500 (aberration multiplies it), is much rarer than the rest, and the whole location can be bought and entered
+// New Guinea: Queen Alexandra's birdwing is paid exactly 2000 (aberration multiplies it), is much rarer than the rest, and the whole location can be bought and entered
 const { chromium } = require(process.env.PW_CORE || 'playwright-core');
 (async () => {
   const br = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
@@ -15,13 +15,13 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     const rar3 = others.filter(s => s.rar === 3), avg3 = rar3.reduce((a, s) => a + (inc[s.id] || 0), 0) / rar3.length / N;
     return { raw, spread, spread0, abp, bulk, bulkOther, mine: +mine.toFixed(3), avg: +avg.toFixed(3), avg3: +avg3.toFixed(3), n: pap.species.length, scarce: sp.scarce, mm: sp.mm };
   });
-  T('raw specimen: exactly 1500 (not doubled like the others of the location)', r.raw === 1500, r.raw); T('spread specimen: 3 x raw at quality 100, less at 10', r.spread === 4500 && r.spread0 > 2300 && r.spread0 < 2500, [r.spread, r.spread0]);
-  T('aberration: multiplier applies (about x6)', r.abp >= 1500 * 5.3 && r.abp <= 1500 * 6.7, r.abp); T('not taken by "sell all"', r.bulk === false && r.bulkOther === true);
+  T('raw specimen: exactly 2000 (not doubled like the others of the location)', r.raw === 2000, r.raw); T('spread specimen: 3 x raw at quality 100, less at 10', r.spread === 6000 && r.spread0 > 3050 && r.spread0 < 3250, [r.spread, r.spread0]);
+  T('aberration: multiplier applies (about x6)', r.abp >= 2000 * 5.3 && r.abp <= 2000 * 6.7, r.abp); T('not taken by "sell all"', r.bulk === false && r.bulkOther === true);
   T('in a visit population far more rarely than the others', r.mine * 3 < r.avg3, r);
   // buy + enter
-  await ev(() => { Save.data.coins = 6000; F0W.toSecret(); }); for (let i = 0; i < 60; i++) { if (await ev(() => !!(F0W.cab && F0W.cab.seller))) break; await pg.waitForTimeout(300); }
+  await ev(() => { Save.data.coins = 11500; F0W.toSecret(); }); for (let i = 0; i < 60; i++) { if (await ev(() => !!(F0W.cab && F0W.cab.seller))) break; await pg.waitForTimeout(300); }
   await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.cab.ov = null; F0W.cab.openShop(); F0W.cab.buy(1); });
-  T('bought the New Guinea map for 5000', await ev(() => Maps.has('papua') && !Maps.has('bog') && Save.data.coins === 1000), await ev(() => Save.data.coins));
+  T('bought the New Guinea map for 10500', await ev(() => Maps.has('papua') && !Maps.has('bog') && Save.data.coins === 1000), await ev(() => Save.data.coins));
   await ev(() => { F0W.cab.buy(1); }); T('no second purchase', await ev(() => Save.data.coins === 1000));
   await ev(() => { F0W.toMap(); }); await pg.waitForTimeout(800); await ev(() => { F0W.fade = 0; F0W.fadeTarget = 0; });
   T('pin on the map', await ev(() => visibleBiomes().some(b => b.id === 'papua')));
