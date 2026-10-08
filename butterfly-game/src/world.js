@@ -925,6 +925,7 @@ const World = (() => {
     const tp = tg.attributes.position; const colArr = new Float32Array(tp.count * 3); const gc = env.ground.map(hex2rgb); const rockc = hex2rgb(env.rock);
     const sandc = hex2rgb(env.sand ? '#dcc890' : env.shoreCol ? env.shoreCol[0] : '#a89868'); const mudc = hex2rgb(env.shoreCol ? env.shoreCol[1] : '#5a4630'); const litter = hex2rgb('#5a4228'); const mossc = hex2rgb('#4a8a4a');
     const mixc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+    const fogRGB = [fogC.r * 255, fogC.g * 255, fogC.b * 255];
     for (let i = 0; i < tp.count; i++) {
       const x = tp.getX(i), z = tp.getZ(i); tp.setY(i, H[i]);
       const n = noise.fbm(x * 0.07 + 3, z * 0.07 + 9, 3), n2 = noise.at(x * 0.4, z * 0.4);
@@ -937,8 +938,9 @@ const World = (() => {
       if (env.slopeRock && sl > (env.rockSlope || 0.55)) c = mixc(c, rockc, clamp((sl - (env.rockSlope || 0.55)) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
       if (hl) { const tm = TG[i], g = 1 - FG[i]; if (g > 0.6) { c = mixc(c, hex2rgb('#d6e2e6'), smooth(0.6, 0.95, g)); }
         if (tm > 0.2) { if (sl < 0.5) c = mixc(c, hex2rgb(n2 > 0.62 ? '#d4bc58' : n2 > 0.3 ? '#9cc84e' : '#78b044'), tm * 0.85); else c = mixc(c, hex2rgb('#6c5a3a'), tm * 0.75); }
-        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 22) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 22) / 8) * 0.6);
+        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0)) * (1 - smooth(0.6, 0.95, g))); else if (H[i] > 22) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 22) / 8) * 0.6);
         if (sl > 1.0 && g < 0.95) { const cl = clamp((sl - 1.0) * 1.6), band = Math.sin(H[i] * 1.9 + n2 * 4 + n * 9) * 0.5 + 0.5; c = mixc(c, hex2rgb(band > 0.7 ? '#8a7a62' : band > 0.35 ? '#6a6458' : '#4a4a46'), cl * 0.8); const mv = noise.fbm(x * 0.35 + 70, z * 0.35 + 40, 2); if (mv > 0.52) c = mixc(c, hex2rgb(mv > 0.64 ? '#4a7a3a' : '#3a5a32'), cl * smooth(0.52, 0.66, mv) * 0.75); } }   // cliffs: strata bands and moss streaks
+      if (hl && H[i] < 3) c = mixc(c, fogRGB, smooth(3, -9, H[i]));      // everything sinking into the sea of mist takes its colour, so nothing dark shows through it
       const sd = SD[i]; if (sd < 3.2) { c = mixc(c, sandc, smooth(3.2, 0.2, sd) * (env.sand ? 0.95 : 0.55)); if (sd < 0.3) c = mixc(c, mudc, smooth(0.3, -1, sd) * 0.8); }
       const k = 0.92 + n2 * 0.16; colArr[i * 3] = c[0] / 255 * k; colArr[i * 3 + 1] = c[1] / 255 * k; colArr[i * 3 + 2] = c[2] / 255 * k;
     }
@@ -954,7 +956,7 @@ const World = (() => {
       let got = 0;
       for (let tries = 0; tries < 90000 && got < want; tries++) {
         const a = dr.range(0, 6.283), d = Math.sqrt(dr.range(0, (PLAY_R + 4) * (PLAY_R + 4))), x = Math.cos(a) * d, z = Math.sin(a) * d, h = heightAt(x, z);
-        if (h < VOID + 2 || gorgeAt(x, z) > 0.9 || slopeAt(x, z) < 1.15) continue;
+        if (h < -3 || gorgeAt(x, z) > 0.9 || slopeAt(x, z) < 1.15) continue;
         const [dx, dz] = grad(x, z), nx = -dx, nz = -dz, kind = dr.next();       // (dx,dz) points down the face, outwards from the rock is (dx,dz) too
         const P = new V3(x + dx * 0.12, h, z + dz * 0.12); got++;
         if (kind < 0.26) {                                                     // moss / fern cushion
@@ -1073,7 +1075,7 @@ const World = (() => {
       const mist = [], mrng = new Rng(seed ^ 0x3157);
       const addMist = (x, y, z, w, h, op) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: op, color: 0xffffff })); sp.position.set(x, y, z); sp.scale.set(w, h, 1); sp.userData = { x, z, ph: mrng.range(0, 6.28), sp: mrng.range(0.05, 0.12), amp: mrng.range(2, 5) }; scene.add(sp); mist.push(sp); };
       // the sea of mist the islands stand in (two layers, they follow the player so that the edge of the world is always fog), banks of mist among the islands
-      const sea = [[0, 0.93], [-11, 0.7]].map(([y, op]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#eaf1f4', transparent: true, opacity: op, depthWrite: false })); m.position.y = y; m.renderOrder = 2; scene.add(m); return m; });
+      const sea = [[0, 0.97], [-11, 0.85]].map(([y, op]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(690, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: fogC, transparent: true, opacity: op, depthWrite: false })); m.position.y = y; m.renderOrder = 2; scene.add(m); return m; });
       for (let i = 0; i < Math.round(46 * K); i++) { const a = mrng.range(0, 6.28), d = Math.sqrt(mrng.range(0, (PLAY_R + 6) * (PLAY_R + 6))), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) < 0.35) continue; addMist(x, mrng.range(-1, 7), z, mrng.range(24, 38), mrng.range(7, 11), mrng.range(0.3, 0.45)); }
       for (let i = 0; i < Math.round(16 * K); i++) { const a = mrng.range(0, 6.28), d = mrng.range(6, PLAY_R - 4), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.6), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.18, 0.3)); }
       world.updaters.push((dt, t, focus) => { for (const m of sea) { m.position.x = focus.x; m.position.z = focus.z; } });
@@ -1091,7 +1093,7 @@ const World = (() => {
     // ---- sky dome + clouds
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { uTop: { value: new THREE.Color(skyTop) }, uHor: { value: new THREE.Color(skyHor) }, uSun: { value: sunDir.clone() }, uSunCol: { value: new THREE.Color(OC ? '#101416' : sunCol) } },
+      uniforms: { uTop: { value: new THREE.Color(skyTop) }, uHor: { value: new THREE.Color(env.mist ? fogCol : skyHor) }, uSun: { value: sunDir.clone() }, uSunCol: { value: new THREE.Color(OC ? '#101416' : sunCol) } },
       vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform vec3 uTop; uniform vec3 uHor; uniform vec3 uSun; uniform vec3 uSunCol; varying vec3 vDir;
         void main(){ float h = clamp(vDir.y, 0.0, 1.0); vec3 c = mix(uHor, uTop, pow(h, 0.55));
