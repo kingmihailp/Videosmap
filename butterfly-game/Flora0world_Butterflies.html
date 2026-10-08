@@ -7320,7 +7320,7 @@ const SecretMarket = (() => {
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };
-    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod }), 40)).catch(netFail);
+    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges }), 40)).catch(netFail);
     else setTimeout(() => make(seed || params.get('seed') || undefined), 60);
   };
   Net.hooks.reseed = m => go(() => App.start(m.loc));
