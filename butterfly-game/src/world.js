@@ -92,7 +92,7 @@ const World = (() => {
       flowers: [['#e0284a', 'cluster', 1.5], ['#f8f4ec', 'daisy', 1.0], ['#ffcc2a', 'daisy', 0.8], ['#8a4ad8', 'spike', 0.8], ['#ff8a2a', 'spike', 0.7], ['#f080b0', 'bell', 0.9]],
       veg: [['kesiya', 26, 'upland', { variants: 4, maxSlope: 1.1 }], ['montoak', 30, 'grove', { variants: 4, maxSlope: 1.0 }], ['treefern', 44, 'dense', { variants: 3, maxSlope: 1.2 }], ['bamboo', 12, 'grove', { maxSlope: 1.0 }],
         ['rhodo', 50, 'uniform', { variants: 5, maxSlope: 1.3 }], ['musa', 16, 'dense', { variants: 3 }], ['alocasia', 40, 'dense', { variants: 3 }], ['fern', 46, 'dense'], ['groundfern', 160, 'uniform', { variants: 4, maxSlope: 1.5 }], ['bush', 26, 'edge'],
-        ['karst', 16, 'uniform', { variants: 4, maxSlope: 1.6, minR: 14 }]],
+        ['karst', 16, 'uniform', { variants: 4, maxSlope: 0.8, minR: 14 }]],
       rockSlope: 1.05, rocks: 26, water: [], waterCol: '#4a8aa0', mount: ['#4a6a5a', '#9ab0a8', false, 24, 52],
       particles: ['spores', '#fff8d0', 0.6], amb: 'vietnam', clouds: 0.8, bait: ['fruit', 'sap'], lm: ['cairn', 'boulders'], tf: 0.48,
     },
@@ -728,23 +728,24 @@ const World = (() => {
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
     const gorgeInfo = (x, z) => { let g = 0, Hs = 0; if (hl) for (const s of hl.sites) { const [u, v] = siteUV(s, x, z), q = smooth(s.W + 2.0, s.W, Math.abs(u)) * smooth(s.Lg, s.Lg - 8, Math.abs(v)); if (q > g) { g = q; Hs = s.Hs; } } return [g, Hs]; };
     const gorgeAt = (x, z) => gorgeInfo(x, z)[0];
+    const gorgeMargin = (x, z, m) => { for (let k = 0; k < 8; k++) { const a = k * 0.7854; if (gorgeAt(x + Math.cos(a) * m, z + Math.sin(a) * m) > 0.02) return true; } return false; };
     const terraceMask = (x, z, r) => smooth(0.5, 0.62, noise.fbm(x * 0.022 + 7, z * 0.022 + 3, 2)) * smooth(14, 19, r) * smooth(39, 33, r);
     // ---- base relief
     const hlNat = (x, z) => {
       const r = Math.hypot(x, z), ridge = noise.fbm(x * 0.028 + 31, z * 0.028 + 17, 4);
       let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP * smooth(4, 14, r);
-      h += smooth(15, 42, r) * (11 + 7 * ridge) + smooth(44, 58, r) * (6 + 5 * noise.fbm(x * 0.035 + 3, z * 0.035 + 9, 3));
+      h += smooth(15, 42, r) * (11 + 7 * ridge) + smooth(44, 66, r) * (7 + 5 * noise.fbm(x * 0.035 + 3, z * 0.035 + 9, 3));
       for (const p of hl.peaks) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.R) h += p.H * 0.5 * (1 + Math.cos(Math.PI * d / p.R)); }
       const tm = terraceMask(x, z, r); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); }      // rice terraces: flat steps with rounded risers
       return h;
     };
-    if (hl) for (const s of hl.sites) s.Hs = (hlNat(s.cx - s.nx * (s.W + 3.5), s.cz - s.nz * (s.W + 3.5)) + hlNat(s.cx + s.nx * (s.W + 3.5), s.cz + s.nz * (s.W + 3.5))) / 2;
+    if (hl) for (const s of hl.sites) { s.Hin = hlNat(s.cx - s.nx * (s.W + 3.5), s.cz - s.nz * (s.W + 3.5)); s.Hout = hlNat(s.cx + s.nx * (s.W + 3.5), s.cz + s.nz * (s.W + 3.5)); s.Hs = (s.Hin + s.Hout) / 2; }      // each end of a bridge rests on the natural height of its own side: the deck slopes, nothing is cut into the mountain
     const hlH = (x, z) => {
       const r = Math.hypot(x, z); let h = hlNat(x, z);
       for (const s of hl.sites) {
         const [u, v] = siteUV(s, x, z), au = Math.abs(u), av = Math.abs(v);
-        const wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0) h = lerp(h, s.Hs, wp);        // the landing pads at both ends of the bridge
-        const g = smooth(s.W + 2.0, s.W, au) * smooth(s.Lg, s.Lg - 8, av); if (g > 0) h = lerp(h, s.Hs - 17.5 + (noise.at(x * 0.4, z * 0.4) - 0.5) * 1.2 + noise.at(x * 0.09 + 4, z * 0.09) * 1.5, g);   // the gorge
+        const wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0) h = lerp(h, u < 0 ? s.Hin : s.Hout, wp);        // the landing pads at both ends of the bridge
+        const g = smooth(s.W + 2.0, s.W, au) * smooth(s.Lg, s.Lg - 8, av); if (g > 0) h = lerp(h, Math.min(s.Hin, s.Hout) - 17.5 + (noise.at(x * 0.4, z * 0.4) - 0.5) * 1.2 + noise.at(x * 0.09 + 4, z * 0.09) * 1.5, g);   // the gorge
       }
       return h + Math.pow(clamp((r - 56) / 30), 2) * (AMP * 2.6 + 12);
     };
@@ -884,7 +885,7 @@ const World = (() => {
       for (const b of hl.sites) {
         const brng = new Rng(seed ^ Math.floor(b.a * 1000) ^ (b.weak ? 0x1234 : 0x4321)), Lh = b.W + 3.8, hw = 0.88; b.Lh = Lh; b.hw = hw; b.sag = b.weak ? 0.5 : 0.22; b.planks = []; b.ropes = [];
         const grp = new THREE.Group(); scene.add(grp); b.group = grp;
-        const deckY = u => b.Hs + 0.06 - b.sag * (1 - (u / Lh) * (u / Lh)), W3 = (u, v, y) => new V3(b.cx + b.nx * u + b.tx * v, y, b.cz + b.nz * u + b.tz * v);
+        b.deckBase = u => b.Hin + (b.Hout - b.Hin) * (u + Lh) / (2 * Lh); const deckY = u => b.deckBase(u) + 0.06 - b.sag * (1 - (u / Lh) * (u / Lh)), W3 = (u, v, y) => new V3(b.cx + b.nx * u + b.tx * v, y, b.cz + b.nz * u + b.tz * v);
         const woods = b.weak ? ['#6a5238', '#5a4630', '#7a6444', '#4a5236'] : ['#9a7a4a', '#a88858', '#8e6e42', '#a07e50'], wm = woods.map(bmat), ropeM = bmat(b.weak ? '#6a5a3c' : '#c4aa72'), postM = bmat('#4a3626');
         const plankG = new THREE.BoxGeometry(0.27, 0.07, 1.78), n = Math.floor(2 * Lh / 0.34), sp = 2 * Lh / n;
         for (let i = 0; i < n; i++) {
@@ -905,18 +906,17 @@ const World = (() => {
             seg(W3(u0, sd * 0.82, deckY(u0) - 0.03), W3(u1, sd * 0.82, deckY(u1) - 0.03), 0.05, 0.05, ropeM, 'edge', um);
             if (k > 0) seg(W3(u0, sd * 0.9, deckY(u0) + 0.04), W3(u0, sd * 0.95, deckY(u0) + 1.05), 0.016, 0.016, ropeM, 'vert', u0);
           }
-          for (const e of [-1, 1]) { const u = e * (Lh - 0.2); seg(W3(u, sd * 0.95, b.Hs - 0.3), W3(u, sd * 0.95, b.Hs + 1.3), 0.1, 0.09, postM, 'post', u); }
+          for (const e of [-1, 1]) { const u = e * (Lh - 0.2); seg(W3(u, sd * 0.95, b.deckBase(u) - 0.3), W3(u, sd * 0.95, b.deckBase(u) + 1.3), 0.1, 0.09, postM, 'post', u); }
         }
-        for (const e of [-1, 1]) seg(W3(e * (Lh - 0.2), -0.95, b.Hs + 1.22), W3(e * (Lh - 0.2), 0.95, b.Hs + 1.22), 0.05, 0.05, postM, 'post', e * Lh);
-        for (const e of [-1, 1]) for (const sd of [-1, 1]) { const pos = W3(e * (Lh + 0.9), sd * 1.7, b.Hs); const st = new THREE.Mesh(blobG(0.55, brng, 0.3, 1), bmat('#8a877c')); st.position.set(pos.x, heightAt(pos.x, pos.z) + 0.1, pos.z); st.scale.set(1, 0.7, 1); st.castShadow = true; scene.add(st); world.colliders.push({ x: pos.x, z: pos.z, r: 0.45 }); }
+        for (const e of [-1, 1]) for (const sd of [-1, 1]) { const pos = W3(e * (Lh + 0.9), sd * 1.7, 0); const st = new THREE.Mesh(blobG(0.55, brng, 0.3, 1), bmat('#8a877c')); st.position.set(pos.x, heightAt(pos.x, pos.z) + 0.1, pos.z); st.scale.set(1, 0.7, 1); st.castShadow = true; scene.add(st); world.colliders.push({ x: pos.x, z: pos.z, r: 0.45 }); }
         if (b.weak) for (let i = 0; i < 5; i++) { const u = brng.range(-Lh + 2, Lh - 2), m = new THREE.Mesh(blobG(0.16, brng, 0.3, 0), bmat('#5a7a3a')); const pos = W3(u, brng.range(-0.6, 0.6), deckY(u) + 0.1); m.userData.noFloat = true; m.position.copy(pos); m.scale.set(1.4, 0.35, 1.2); grp.add(m); b.planks.push({ m, u, y0: pos.y, vy: 0, sx: 0, sz: 0, delay: Math.abs(u) * 0.025 }); }      // moss on the old planks
         for (let k = -Lh + 3; k < Lh - 2; k += 3) reserve.push({ x: b.cx + b.nx * k, z: b.cz + b.nz * k, r: 2.2 });
-        reserve.push({ x: b.cx + b.nx * (Lh + 0.5), z: b.cz + b.nz * (Lh + 0.5), r: 3 }, { x: b.cx - b.nx * (Lh + 0.5), z: b.cz - b.nz * (Lh + 0.5), r: 3 });
+        for (const e of [-1, 1]) for (let k = Lh - 1; k < Lh + 17; k += 2.5) reserve.push({ x: b.cx + b.nx * e * k, z: b.cz + b.nz * e * k, r: 3.4 });      // the way off the bridge stays free of trees, rocks and spires
       }
-      const deckAt = (x, z) => { for (const b of hl.sites) { if (b.state === 'fall' || b.state === 'gone') continue; const [u, v] = siteUV(b, x, z); if (Math.abs(v) < b.hw && Math.abs(u) < b.Lh) return b.Hs + 0.06 - b.sag * (1 - (u / b.Lh) * (u / b.Lh)); } return null; };
+      const deckAt = (x, z) => { for (const b of hl.sites) { if (b.state === 'fall' || b.state === 'gone') continue; const [u, v] = siteUV(b, x, z); if (Math.abs(v) < b.hw && Math.abs(u) < b.Lh) return b.deckBase(u) + 0.06 - b.sag * (1 - (u / b.Lh) * (u / b.Lh)); } return null; };
       world.bridges = hl.sites; world.events = []; world.pendingFall = null;
       world.groundAt = (x, z) => { const d = deckAt(x, z); return d !== null ? d : heightAt(x, z); };
-      world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.12 && slopeAt(x, z) < 2.3);
+      world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.12 && slopeAt(x, z) < 1.7);
       world.deepMsg = 'Тут не пройти: обрыв. Ищите тропу или мост.';
       world.edgeMsg = 'Дальше — только скалы и туман.';
       world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.siteUV = siteUV;
@@ -1029,7 +1029,7 @@ const World = (() => {
         const a = rng.range(0, 6.2832), d = Math.sqrt(rng.range(minR * minR, maxR * maxR)); const x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (d < (opts.clear === undefined ? 6 : opts.clear)) continue;
         if (inWater(x, z, opts.waterGap === undefined ? 1.4 : opts.waterGap)) continue;
-        if (hl && gorgeAt(x, z) > 0.02) continue;
+        if (hl && (gorgeAt(x, z) > 0.02 || gorgeMargin(x, z, rad + 0.8))) continue;       // nothing stands with a part of it over the edge of a gorge
         const y = heightAt(x, z);
         if (!opts.anySlope && slopeAt(x, z) > (opts.maxSlope || 0.75)) continue;
         if (rng.next() > f(x, z, y)) continue;

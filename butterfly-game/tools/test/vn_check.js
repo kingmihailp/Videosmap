@@ -26,6 +26,15 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     T(`${sd}: most of the land can be reached on foot from the spawn`, r.noBridges.n > r.cells * 0.6, [r.noBridges.n, r.cells]);
     T(`${sd}: the near side of each gorge is reachable without bridges`, r.noBridges.pads.every(p => p[0]), r.noBridges.pads);
     T(`${sd}: the far side only over the bridge`, r.noBridges.pads.every(p => !p[1]) && r.withBridges.pads.every(p => p[1]), { without: r.noBridges.pads, with: r.withBridges.pads });
+    const g = await pg.evaluate(() => {
+      const w = F0W.play.world, o = { blocked: [], hang: [], steep: [] };
+      w.bridges.forEach((b, si) => { for (const e of [-1, 1]) for (let k = b.Lh + 1; k <= b.Lh + 14; k += 1) { const x = b.cx + b.nx * e * k, z = b.cz + b.nz * e * k;
+        if (!w.canWalk(x, z)) o.blocked.push([si, e, k, 'terrain']); if (w.slopeAt(x, z) > 1.3) o.steep.push([si, e, k, +w.slopeAt(x, z).toFixed(2)]);
+        for (const c of w.colliders) if (Math.hypot(c.x - x, c.z - z) < c.r + 0.9) o.blocked.push([si, e, k, 'collider', +c.r.toFixed(1)]); } });
+      for (const c of w.colliders) { if (c.r < 2.4) continue; const hs = [w.heightAt(c.x, c.z)]; let gorge = false; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6, x = c.x + Math.cos(a) * (c.r + 0.2), z = c.z + Math.sin(a) * (c.r + 0.2); hs.push(w.heightAt(x, z)); if (w.inGorge(x, z)) gorge = true; } if (gorge || Math.max(...hs) - Math.min(...hs) > 2.6) o.hang.push([+c.x.toFixed(1), +c.z.toFixed(1), +c.r.toFixed(1), gorge, +(Math.max(...hs) - Math.min(...hs)).toFixed(1)]); }
+      return o; });
+    T(`${sd}: the way off both ends of each bridge is free (no rocks, spires, trees or cliffs)`, g.blocked.length === 0 && g.steep.length === 0, [g.blocked.slice(0, 3), g.steep.slice(0, 3)]);
+    T(`${sd}: big structures (spires) stand on level ground, none over a gorge`, g.hang.length === 0, g.hang.slice(0, 4));
     T(`${sd}: at least one bridge is worn`, r.weak.some(x => x), r.weak);
   }
   // crossing a sound bridge and a worn one
