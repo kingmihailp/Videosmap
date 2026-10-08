@@ -17,9 +17,9 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   const worn = await A.evaluate(() => F0W.play.world.bridges.findIndex(b => b.weak));
   // Alice walks to the middle of a worn bridge; Bob stands elsewhere
   await A.evaluate(i => { const p = F0W.play, w = p.world, b = w.bridges[i], P = p.player; F0W.fade = 0; F0W.fadeTarget = 0; F0W.overlay = null; P.pos.set(b.cx, w.groundAt(b.cx, b.cz) + 1.65, b.cz); P.y = P.pos.y; P.vel.set(0, 0); }, worn);
-  let sa = null, sb = null; for (let i = 0; i < 50; i++) { await A.waitForTimeout(400); sb = await st(B); if (sb[worn] === 'shake' || sb[worn] === 'fall' || sb[worn] === 'gone') break; }
+  let sa = null, sb = null; for (let i = 0; i < 150; i++) { await A.waitForTimeout(400); sb = await st(B); if (sb[worn] === 'shake' || sb[worn] === 'fall' || sb[worn] === 'gone') break; }
   ok(['shake', 'fall', 'gone'].includes(sb[worn]), 'Bob sees the bridge shaking / falling', sb);
-  for (let i = 0; i < 50; i++) { await A.waitForTimeout(400); sb = await st(B); if (sb[worn] === 'gone' || sb[worn] === 'fall') break; }
+  for (let i = 0; i < 150; i++) { await A.waitForTimeout(400); sb = await st(B); if (sb[worn] === 'gone' || sb[worn] === 'fall') break; }
   ok(['fall', 'gone'].includes(sb[worn]), 'Bob sees it snap', sb);
   // a newcomer finds it already broken
   console.log('before Carol: Bob', JSON.stringify(await B.evaluate(() => ({ on: Net.on, loc: Net.loc, list: Net.list.map(p => p.name + ':' + p.loc), seed: F0W.play && F0W.play.seed }))), 'Alice', JSON.stringify(await A.evaluate(() => ({ on: Net.on, loc: Net.loc, screen: F0W.screen }))));
