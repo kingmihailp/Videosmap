@@ -236,7 +236,8 @@ const Cabinet = (() => {
           const trunk = cyl(g, 0.02, 0.032, 0.95, 0.0, 0.78, 0, lam('#5a4028'), 6);
           for (let k = 0; k < 16; k++) {
             const t = k / 15, az = k * 2.39996, h = 0.5 + t * 0.78, reach = 0.05 + (1 - Math.abs(t - 0.4)) * 0.07;
-            const st = cyl(g, 0.006, 0.008, reach + 0.06, Math.sin(az) * (reach + 0.06) / 2, h + 0.01, Math.cos(az) * (reach + 0.06) / 2, lam('#4a6a30'), 4); st.rotation.set(Math.cos(az) * Math.PI / 2 * 0.93, 0, -Math.sin(az) * Math.PI / 2 * 0.93);
+            const tip = new THREE.Vector3(Math.sin(az) * (reach + 0.06), h + 0.01, Math.cos(az) * (reach + 0.06)), root = new THREE.Vector3(0, h - 0.015, 0), sl = root.distanceTo(tip);      // the stalk runs from the trunk to the leaf base, so every leaf is attached
+            const stG = new THREE.CylinderGeometry(0.006, 0.01, sl, 4); stG.translate(0, sl / 2, 0); const st = new THREE.Mesh(stG, lam('#4a6a30')); st.position.copy(root); st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tip.clone().sub(root).normalize()); g.add(st);
             const lf = new THREE.Mesh(LEAFG.broad, leafMat(greens[k % 4])); lf.castShadow = true; lf.receiveShadow = true;
             lf.position.set(Math.sin(az) * (reach + 0.06), h + 0.01, Math.cos(az) * (reach + 0.06)); lf.rotation.set(1.05 + (1 - t) * 0.25, az, 0, 'YXZ'); lf.scale.setScalar(1.0 - t * 0.3); g.add(lf);
           }

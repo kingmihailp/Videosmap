@@ -362,7 +362,7 @@ const World = (() => {
         const tip = new V3(A.x + Math.cos(a) * len, A.y + r.range(0.15, 0.6), A.z + Math.sin(a) * len); const L = limb(A, tip, 0.045, 0.015, 4); parts.push({ g: L.g, m: L.m, c: '#7e7a6e', j: 0.05 });
         const T = limb(new V3(lerp(A.x, tip.x, 0.6), lerp(A.y, tip.y, 0.6), lerp(A.z, tip.z, 0.6)), new V3(tip.x + r.range(-0.3, 0.3), tip.y + r.range(0.1, 0.4), tip.z + r.range(-0.3, 0.3)), 0.02, 0.008, 3); parts.push({ g: T.g, m: T.m, c: '#7e7a6e', j: 0.05 });
       }
-      for (let i = 0; i < 4; i++) { const y = r.range(0.5, H * 0.7); const a = r.range(0, 6.28); parts.push({ g: blobG(0.09, r, 0.3, 0), m: M(Math.cos(a) * 0.16 * (1 - y / H), y, Math.sin(a) * 0.16 * (1 - y / H), 0, 0, 0, 1.5, 0.5, 1.5), c: '#9aa070', j: 0.1 }); }   // lichen
+      for (let i = 0; i < 4; i++) { const y = r.range(0.5, H * 0.7), a = r.range(0, 6.28), tt = y / H, k = Math.min(top.pts.length - 2, Math.floor(tt * (top.pts.length - 1))), P0 = top.pts[k], P1 = top.pts[k + 1], u = clamp((y - P0.y) / (P1.y - P0.y || 1)), rr = lerp(0.17, 0.05, tt) * 0.9; parts.push({ g: blobG(0.09, r, 0.3, 0), m: M(lerp(P0.x, P1.x, u) + Math.cos(a) * rr, y, lerp(P0.z, P1.z, u) + Math.sin(a) * rr, 0, 0, 0, 1.5, 0.5, 1.5), c: '#9aa070', j: 0.1 }); }   // lichen patches on the (leaning) trunk
       return { g: merge(parts, r), rad: 0.2, h: H };
     },
     dbirch(r) {
@@ -374,17 +374,28 @@ const World = (() => {
       }
       return { g: merge(parts, r), rad: 0.25, h: 1.5 };
     },
-    ledum(r) {
+    ledum(r) {      // Labrador tea: woody stems from the ground, a mass of leathery leaves on each, rusty felt underneath, white flower umbels on short stalks
       const parts = []; const cols = ['#33522a', '#3e6030', '#2a4626', '#48683a'], wh = r.chance(0.8);
-      for (let i = 0; i < 5; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.35), hh = r.range(0.4, 0.75); parts.push({ g: blobG(r.range(0.2, 0.32), r, 0.3, 1), m: M(Math.cos(a) * d, hh * 0.55, Math.sin(a) * d, 0, 0, 0, 1, 0.9, 1), c: r.pick(cols), j: 0.1 }); }
-      for (let i = 0; i < 4; i++) { const a = r.range(0, 6.28), d = r.range(0.1, 0.4); parts.push({ g: blobG(0.12, r, 0.3, 0), m: M(Math.cos(a) * d, 0.18, Math.sin(a) * d, 0, 0, 0, 1.3, 0.5, 1.3), c: '#8a5a34', j: 0.1 }); }   // the rusty felt on the leaf undersides
-      if (wh) for (let i = 0; i < 7; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.4); parts.push({ g: blobG(0.075, r, 0.25, 0), m: M(Math.cos(a) * d, r.range(0.5, 0.85), Math.sin(a) * d), c: '#f2f2e4', j: 0.04 }); }
+      for (let i = 0; i < 5; i++) {
+        const a = r.range(0, 6.28), d = r.range(0.05, 0.38), hh = r.range(0.4, 0.75), B = new V3(Math.cos(a) * d, hh, Math.sin(a) * d), A = new V3(Math.cos(a) * 0.03, 0, Math.sin(a) * 0.03);
+        const L = limb(A, B, 0.032, 0.016, 5); parts.push({ g: L.g, m: L.m, c: '#4a3626', j: 0.05 });
+        const R = r.range(0.2, 0.3); parts.push({ g: blobG(R, r, 0.3, 1), m: M(B.x, B.y - 0.02, B.z, 0, 0, 0, 1, 0.8, 1), c: r.pick(cols), j: 0.1 });
+        const m = limb(A.clone().lerp(B, 0.5), B.clone().add(new V3(Math.cos(a + 1.3) * R * 0.6, -R * 0.1, Math.sin(a + 1.3) * R * 0.6)), 0.014, 0.01, 4); parts.push({ g: m.g, m: m.m, c: '#4a3626', j: 0.05 });
+        parts.push({ g: blobG(R * 0.55, r, 0.3, 0), m: M(B.x + Math.cos(a + 1.3) * R * 0.6, B.y - R * 0.1, B.z + Math.sin(a + 1.3) * R * 0.6, 0, 0, 0, 1, 0.8, 1), c: r.pick(cols), j: 0.1 });
+        parts.push({ g: blobG(R * 0.5, r, 0.3, 0), m: M(B.x, B.y - R * 0.5, B.z, 0, 0, 0, 1.2, 0.35, 1.2), c: '#8a5a34', j: 0.1 });          // the rusty felt on the leaf undersides, right under the leaf mass
+        if (wh && i < 4) { const T = B.clone().add(new V3(r.range(-0.08, 0.08), R * 0.8 + r.range(0.05, 0.12), r.range(-0.08, 0.08))), P = limb(B, T, 0.012, 0.008, 4); parts.push({ g: P.g, m: P.m, c: '#6a7a40', j: 0.04 });
+          for (let k = 0; k < 4; k++) parts.push({ g: blobG(0.06, r, 0.25, 0), m: M(T.x + r.range(-0.07, 0.07), T.y + r.range(0, 0.04), T.z + r.range(-0.07, 0.07)), c: '#f2f2e4', j: 0.04 }); }
+      }
       return { g: merge(parts, r), rad: 0, h: 1 };
     },
-    cassandra(r) {
+    cassandra(r) {      // leatherleaf: arching stems with rusty leaves at the tips and white bells hanging from the stems on short stalks
       const parts = []; const cols = ['#8a5a34', '#7a4a2c', '#9a6a3a', '#6a4a2c'];
-      for (let i = 0; i < 6; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.4); const A = new V3(Math.cos(a) * 0.05, 0.05, Math.sin(a) * 0.05), B = new V3(Math.cos(a) * d, r.range(0.35, 0.7), Math.sin(a) * d); const L = limb(A, B, 0.02, 0.01, 4); parts.push({ g: L.g, m: L.m, c: '#5a4030', j: 0.05 }); parts.push({ g: blobG(r.range(0.1, 0.17), r, 0.3, 0), m: M(B.x, B.y, B.z, 0, 0, 0, 1.2, 0.8, 1.2), c: r.pick(cols), j: 0.1 }); }
-      for (let i = 0; i < 6; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.4); parts.push({ g: blobG(0.04, r, 0.2, 0), m: M(Math.cos(a) * d, r.range(0.3, 0.75), Math.sin(a) * d), c: '#f6efe6', j: 0.03 }); }
+      for (let i = 0; i < 6; i++) {
+        const a = r.range(0, 6.28), d = r.range(0.05, 0.4); const A = new V3(Math.cos(a) * 0.05, 0.0, Math.sin(a) * 0.05), B = new V3(Math.cos(a) * d, r.range(0.35, 0.7), Math.sin(a) * d); const L = limb(A, B, 0.03, 0.015, 4); parts.push({ g: L.g, m: L.m, c: '#4a3426', j: 0.05 });
+        parts.push({ g: blobG(r.range(0.1, 0.17), r, 0.3, 0), m: M(B.x, B.y, B.z, 0, 0, 0, 1.2, 0.8, 1.2), c: r.pick(cols), j: 0.1 });
+        for (let k = 0; k < 2; k++) { const t = r.range(0.45, 0.9), P = A.clone().lerp(B, t), a2 = a + r.range(-1.2, 1.2), Q = P.clone().add(new V3(Math.cos(a2) * 0.07, 0.03, Math.sin(a2) * 0.07)), S = limb(P, Q, 0.012, 0.008, 4); parts.push({ g: S.g, m: S.m, c: '#5a4030', j: 0.04 });
+          parts.push({ g: blobG(0.05, r, 0.2, 0), m: M(Q.x, Q.y - 0.02, Q.z, 0, 0, 0, 1, 1.15, 1), c: '#f6efe6', j: 0.03 }); }
+      }
       return { g: merge(parts, r), rad: 0, h: 0.9 };
     },
     hummock(r) {
@@ -392,15 +403,15 @@ const World = (() => {
       parts.push({ g: blobG(R, r, 0.28, 1), m: M(0, 0.04, 0, 0, r.range(0, 6), 0, 1.15, 0.42, 1.15), c: [shadeHex(pal[2], 0.8), pal[1], 0, R * 0.5], j: 0.12 });
       for (let i = 0; i < 15; i++) { const a = r.range(0, 6.28), d = r.range(0.05, R * 0.85), k = r.range(0.85, 1.2); parts.push({ g: blobG(r.range(0.1, 0.24), r, 0.3, 0), m: M(Math.cos(a) * d, R * 0.34 * (1 - d / R) + 0.04, Math.sin(a) * d, 0, 0, 0, 1.25, 0.55, 1.25), c: shadeHex(r.pick(pal), k), j: 0.14 }); }    // the heads of sphagnum
       for (let i = 0; i < 4; i++) { const a = r.range(0, 6.28), d = r.range(0, R * 0.6), y = R * 0.4 * (1 - d / R) + 0.05, h = r.range(0.18, 0.4); parts.push({ g: coneG(0.02, h, 3), m: M(Math.cos(a) * d, y, Math.sin(a) * d, r.range(-0.4, 0.4), 0, r.range(-0.4, 0.4)), c: ['#6a7a34', '#b4ac68', 0, h], j: 0.1 }); }   // sedge blades
-      if (r.chance(0.7)) for (let i = 0; i < r.int(3, 7); i++) { const a = r.range(0, 6.28), d = r.range(0, R * 0.7); const y = R * 0.42 * (1 - d / R) + 0.1; parts.push({ g: new THREE.IcosahedronGeometry(0.045, 0), m: M(Math.cos(a) * d, y, Math.sin(a) * d), c: '#c0282c', j: 0.04 }); parts.push({ g: blobG(0.07, r, 0.3, 0), m: M(Math.cos(a) * d + 0.05, y - 0.02, Math.sin(a) * d, 0, 0, 0, 1.4, 0.3, 1.4), c: '#3a5a2c', j: 0.1 }); }   // cranberries
-      if (r.chance(0.35)) { const a = r.range(0, 6.28), d = r.range(0.05, R * 0.5), y = R * 0.42 * (1 - d / R) + 0.1; for (let k = 0; k < 6; k++) parts.push({ g: new THREE.BoxGeometry(0.1, 0.012, 0.022), m: M(Math.cos(a) * d, y, Math.sin(a) * d, 0, k * 0.52, 0), c: '#b8321e', j: 0.05 }); parts.push({ g: new THREE.IcosahedronGeometry(0.02, 0), m: M(Math.cos(a) * d, y + 0.018, Math.sin(a) * d), c: '#e8a090', j: 0.02 }); }   // a sundew rosette
+      if (r.chance(0.7)) for (let i = 0; i < r.int(3, 7); i++) { const a = r.range(0, 6.28), d = r.range(0, R * 0.7); const y = R * 0.42 * (1 - d / R) + 0.04; parts.push({ g: new THREE.IcosahedronGeometry(0.045, 0), m: M(Math.cos(a) * d, y, Math.sin(a) * d), c: '#c0282c', j: 0.04 }); parts.push({ g: blobG(0.07, r, 0.3, 0), m: M(Math.cos(a) * d + 0.05, y - 0.02, Math.sin(a) * d, 0, 0, 0, 1.4, 0.3, 1.4), c: '#3a5a2c', j: 0.1 }); }   // cranberries
+      if (r.chance(0.35)) { const a = r.range(0, 6.28), d = r.range(0.05, R * 0.5), y = R * 0.42 * (1 - d / R) + 0.04; for (let k = 0; k < 6; k++) parts.push({ g: new THREE.BoxGeometry(0.1, 0.012, 0.022), m: M(Math.cos(a) * d, y, Math.sin(a) * d, 0, k * 0.52, 0), c: '#b8321e', j: 0.05 }); parts.push({ g: new THREE.IcosahedronGeometry(0.02, 0), m: M(Math.cos(a) * d, y + 0.018, Math.sin(a) * d), c: '#e8a090', j: 0.02 }); }   // a sundew rosette
       return { g: merge(parts, r), rad: 0, h: 0.6 };
     },
     tussock(r) {
       const parts = []; const base = r.pick(['#7a8a38', '#8a8c40', '#6a7c34']);
       parts.push({ g: blobG(0.3, r, 0.3, 1), m: M(0, 0.1, 0, 0, 0, 0, 1.2, 0.7, 1.2), c: shadeHex('#5a4a2a', 1), j: 0.1 });
       for (let i = 0; i < 24; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.22), h = r.range(0.45, 0.95); parts.push({ g: coneG(0.022, h, 3), m: M(Math.cos(a) * d, 0.12, Math.sin(a) * d, Math.sin(a) * r.range(0.15, 0.5), 0, -Math.cos(a) * r.range(0.15, 0.5)), c: [shadeHex(base, 0.8), '#c4bc72', 0, h], j: 0.1 }); }
-      for (let i = 0; i < 5; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.2), h = r.range(0.7, 1.05), lx = Math.cos(a) * 0.12, lz = Math.sin(a) * 0.12; const L = limb(new V3(Math.cos(a) * d, 0.12, Math.sin(a) * d), new V3(Math.cos(a) * d + lx, h, Math.sin(a) * d + lz), 0.012, 0.008, 3); parts.push({ g: L.g, m: L.m, c: '#9a9a58', j: 0.04 }); parts.push({ g: blobG(0.085, r, 0.3, 1), m: M(Math.cos(a) * d + lx, h + 0.06, Math.sin(a) * d + lz, 0, 0, 0, 1, 1.2, 1), c: '#f4f2ea', j: 0.05 }); }   // cotton-grass heads
+      for (let i = 0; i < 5; i++) { const a = r.range(0, 6.28), d = r.range(0, 0.2), h = r.range(0.7, 1.05), lx = Math.cos(a) * 0.12, lz = Math.sin(a) * 0.12; const L = limb(new V3(Math.cos(a) * d, 0.12, Math.sin(a) * d), new V3(Math.cos(a) * d + lx, h, Math.sin(a) * d + lz), 0.022, 0.014, 4); parts.push({ g: L.g, m: L.m, c: '#9a9a58', j: 0.04 }); parts.push({ g: blobG(0.085, r, 0.3, 1), m: M(Math.cos(a) * d + lx, h + 0.06, Math.sin(a) * d + lz, 0, 0, 0, 1, 1.2, 1), c: '#f4f2ea', j: 0.05 }); }   // cotton-grass heads
       return { g: merge(parts, r), rad: 0, h: 1.1 };
     },
     // ---- the relic forest of New Guinea
