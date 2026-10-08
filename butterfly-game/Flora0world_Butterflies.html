@@ -2971,67 +2971,91 @@ const World = (() => {
     //      The edge of the map is the cliff at the end of the chain of islands: it falls into the mist.
     const VOID = -34;
     const hl = env.highland ? (() => {
-      const nzf = (a, k) => noise.at(Math.cos(a) * 1.3 + k * 11.7 + 50, Math.sin(a) * 1.3 + k * 5.3 + 50);
-      const Rb = (o, a) => o.R * (1 + 0.3 * (nzf(a, o.k) - 0.5));                         // the irregular outline of an island
-      const mk = (x, z, R, k, Hr) => ({ x, z, R, k, terr: rng.chance(0.4), Hr, hills: [] });
+      // an island is a skeleton of capsules (a segment with a radius at each end): a ridge, a crescent, an L, a Y, a clover, a plain blob ...
+      const capD = (c, x, z) => { const dx = c.bx - c.ax, dz = c.bz - c.az, L2 = dx * dx + dz * dz, t = L2 > 0 ? clamp(((x - c.ax) * dx + (z - c.az) * dz) / L2) : 0; return Math.hypot(x - (c.ax + dx * t), z - (c.az + dz * t)) - lerp(c.ra, c.rb, t); };
+      const wob = (lx, lz, k) => (noise.at(lx * 0.07 + k * 13.1 + 70, lz * 0.07 + k * 7.7 + 70) - 0.5) * 4.2 + (noise.at(lx * 0.19 + k * 3 + 20, lz * 0.19 + 40) - 0.5) * 1.4;      // an irregular outline
+      const sdOf = (o, x, z) => { const lx = x - o.x, lz = z - o.z; let d = 1e9; for (const c of o.caps) { const q = capD(c, lx, lz); if (q < d) d = q; } return d + wob(lx, lz, o.k); };      // < 0 inside the island
+      const ext = (o, a, depth) => { let best = 0; for (let s = 0; s <= o.R + 6; s += 0.5) if (sdOf(o, o.x + Math.cos(a) * s, o.z + Math.sin(a) * s) <= -depth) best = s; return best; };      // how far from the centre one can go in a direction, `depth` m inside the outline
+      const samples = o => { const out = []; for (const c of o.caps) { const L = Math.hypot(c.bx - c.ax, c.bz - c.az), n = Math.max(1, Math.ceil(L / 2.5)); for (let q = 0; q <= n; q++) { const t = q / n; out.push({ x: o.x + lerp(c.ax, c.bx, t), z: o.z + lerp(c.az, c.bz, t), r: lerp(c.ra, c.rb, t) }); } } return out; };
+      const gapBetween = (I, J) => { let g = 1e9; const a = samples(I), b = samples(J); for (const p of a) for (const q of b) g = Math.min(g, Math.hypot(p.x - q.x, p.z - q.z) - p.r - q.r); return g; };
+      const mkShape = (kind, R) => {
+        const w = Math.max(9, R * (kind === 'blob' ? 1 : 0.42)), caps = [], cap = (ax, az, bx, bz, ra, rb) => caps.push({ ax, az, bx, bz, ra: ra === undefined ? w : ra, rb: rb === undefined ? (ra === undefined ? w : ra) : rb });
+        if (kind === 'blob') { cap(0, 0, 0, 0, R); if (rng.chance(0.5)) { const a = rng.range(0, 6.283); cap(Math.cos(a) * R * 0.5, Math.sin(a) * R * 0.5, Math.cos(a) * R * 0.5, Math.sin(a) * R * 0.5, R * 0.62); } }
+        else if (kind === 'ridge') { const n = rng.int(2, 3), L = R * rng.range(2.4, 3.6) / n; let x = -L * n / 2, z = 0, ang = rng.range(-0.3, 0.3); for (let q = 0; q < n; q++) { const nx = x + Math.cos(ang) * L, nz = z + Math.sin(ang) * L; cap(x, z, nx, nz, w * rng.range(0.9, 1.2), w * rng.range(0.9, 1.2)); x = nx; z = nz; ang += rng.range(-0.55, 0.55); } }
+        else if (kind === 'arc') { const n = 5, Rc = R * rng.range(0.95, 1.3), sw = rng.range(1.6, 3.2); for (let q = 0; q < n; q++) { const a0 = -sw / 2 + sw * q / n, a1 = -sw / 2 + sw * (q + 1) / n; cap(Math.cos(a0) * Rc, Math.sin(a0) * Rc, Math.cos(a1) * Rc, Math.sin(a1) * Rc, w * rng.range(0.9, 1.15), w * rng.range(0.9, 1.15)); } }
+        else if (kind === 'L') { const L = R * rng.range(1.3, 1.7), a = rng.range(1.3, 2.3); cap(-L, 0, 0, 0, w, w * 1.15); cap(0, 0, Math.cos(a) * L, Math.sin(a) * L, w * 1.15, w); }
+        else if (kind === 'star') { const L = R * rng.range(1.2, 1.6), a0 = rng.range(0, 6.283); for (let q = 0; q < 3; q++) { const a = a0 + q * 2.094 + rng.range(-0.35, 0.35); cap(0, 0, Math.cos(a) * L, Math.sin(a) * L, w * 1.15, w * rng.range(0.8, 1)); } }
+        else { const a0 = rng.range(0, 6.283), n = rng.int(3, 4); for (let q = 0; q < n; q++) { const a = a0 + q * 6.283 / n + rng.range(-0.3, 0.3), d = R * rng.range(0.55, 0.8), r = R * rng.range(0.45, 0.62); cap(Math.cos(a) * d, Math.sin(a) * d, Math.cos(a) * d, Math.sin(a) * d, Math.max(9, r)); } cap(0, 0, 0, 0, Math.max(9, R * 0.5)); }      // a clover of lobes
+        // rotate at random, then move the origin onto the skeleton point nearest to the centroid, so that the centre is always on the island
+        const rot = rng.range(0, 6.283), cs = Math.cos(rot), sn = Math.sin(rot); for (const c of caps) { const ax = c.ax * cs - c.az * sn, az = c.ax * sn + c.az * cs, bx = c.bx * cs - c.bz * sn, bz = c.bx * sn + c.bz * cs; c.ax = ax; c.az = az; c.bx = bx; c.bz = bz; }
+        const pts = []; for (const c of caps) pts.push([c.ax, c.az], [c.bx, c.bz], [(c.ax + c.bx) / 2, (c.az + c.bz) / 2]); const mx = pts.reduce((a, q) => a + q[0], 0) / pts.length, mz = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+        let bp = pts[0], bd = 1e9; for (const q of pts) { const d = Math.hypot(q[0] - mx, q[1] - mz); if (d < bd) { bd = d; bp = q; } } for (const c of caps) { c.ax -= bp[0]; c.az -= bp[1]; c.bx -= bp[0]; c.bz -= bp[1]; }
+        return caps;
+      };
+      const mk = (x, z, R, k, Hr, kind) => {
+        const o = { x, z, k, kind, Hr, caps: mkShape(kind, R), terr: rng.chance(0.4), hills: [], R: 0 };
+        let rr = 0, area = 0, wsum = 0; for (const c of o.caps) { rr = Math.max(rr, Math.hypot(c.ax, c.az) + c.ra, Math.hypot(c.bx, c.bz) + c.rb); const L = Math.hypot(c.bx - c.ax, c.bz - c.az), r = (c.ra + c.rb) / 2; area += (2 * r * L + Math.PI * r * r) * 0.72; wsum += r; }
+        o.R = rr; o.area = area; o.wm = wsum / o.caps.length; return o;
+      };
+      const kindFor = R => { const r = rng.next(); return R > 31 ? (r < 0.3 ? 'clover' : r < 0.55 ? 'star' : r < 0.8 ? 'arc' : 'ridge') : R > 20 ? (r < 0.25 ? 'arc' : r < 0.45 ? 'star' : r < 0.65 ? 'L' : r < 0.8 ? 'ridge' : r < 0.9 ? 'clover' : 'blob') : R > 13.5 ? (r < 0.3 ? 'ridge' : r < 0.5 ? 'L' : r < 0.65 ? 'arc' : 'blob') : (r < 0.6 ? 'blob' : 'ridge'); };
       let isl, edges, used, bestIsl = null;
-      const ends = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a), r1 = Rb(I, a) - 7, r2 = Rb(J, a + Math.PI) - 7; return { a, A: { x: I.x + dx * r1, z: I.z + dz * r1 }, B: { x: J.x - dx * r2, z: J.z - dz * r2 } }; };
+      const ends = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a), e1 = ext(I, a, 7), e2 = ext(J, a + Math.PI, 7); return { a, A: { x: I.x + dx * e1, z: I.z + dz * e1 }, B: { x: J.x - dx * e2, z: J.z - dz * e2 } }; };
       const free = E => used.every(q => Math.hypot(q.x - E.A.x, q.z - E.A.z) > 10 && Math.hypot(q.x - E.B.x, q.z - E.B.z) > 10);      // two bridges never land near each other
-      const clear = (A, B, skip) => isl.every((Q, q) => skip.includes(q) || (() => { const dx = B.x - A.x, dz = B.z - A.z, L2 = dx * dx + dz * dz, t = clamp(((Q.x - A.x) * dx + (Q.z - A.z) * dz) / L2); return Math.hypot(A.x + dx * t - Q.x, A.z + dz * t - Q.z) > Q.R * 1.2 + 2; })());
-      const LIM = PLAY_R - 3;
+      // a bridge between I and J: the way from its start to its end must run over the void, clear of every island
+      const spanOK = (E, I, J) => { const L = Math.hypot(E.B.x - E.A.x, E.B.z - E.A.z); if (L < 17 || L > 31) return false; for (let s = 2; s < L - 2; s += 1.5) { const x = E.A.x + (E.B.x - E.A.x) * s / L, z = E.A.z + (E.B.z - E.A.z) * s / L; if (s > 10 && s < L - 10 && (sdOf(I, x, z) < -2.5 || sdOf(J, x, z) < -2.5)) return false; for (const Q of isl) if (Q !== I && Q !== J && sdOf(Q, x, z) < 4) return false; } return true; };
+      const LIM = PLAY_R - 3, fits = o => o.caps.every(c => Math.hypot(o.x + c.ax, o.z + c.az) + c.ra <= LIM && Math.hypot(o.x + c.bx, o.z + c.bz) + c.rb <= LIM);
       for (let attempt = 0; attempt < 10; attempt++) {         // lay the islands out again if the chain came out too short
-        isl = [mk(0, 0, rng.range(20, 27), 0, 14)]; edges = []; used = []; let huge = 0;
-        for (let tries = 0; tries < 6000 && isl.length < 17; tries++) {
+        isl = [mk(0, 0, rng.range(20, 27), 0, 14, rng.chance(0.5) ? 'clover' : 'blob')]; edges = []; used = []; let huge = 0;
+        for (let tries = 0; tries < 4000 && isl.length < 17; tries++) {
           const k = isl.length, par = rng.chance(0.6) ? k - 1 : rng.int(0, k - 1), P = isl[par], a = rng.range(0, 6.283);
           // sizes: one huge island right next to the home one, then a few big, many medium and small ones
           const r = rng.next(), R = k === 1 ? rng.range(34, 46) : r < 0.07 && huge < 2 ? rng.range(32, 44) : r < 0.3 ? rng.range(21, 29) : r < 0.66 ? rng.range(14, 20) : rng.range(10, 13);
           const land = k === 1 || (k > 1 && rng.chance(0.28));             // joined to its parent by solid ground instead of a bridge
-          const o = mk(0, 0, R, k, land ? clamp(P.Hr + rng.range(-2.5, 2.5), 8, 22) : rng.range(9, 21));
-          const d = Rb(P, a) + Rb(o, a + Math.PI) + (land ? -rng.range(9, 14) : rng.range(7, 12));
-          o.x = P.x + Math.cos(a) * d; o.z = P.z + Math.sin(a) * d;
-          if (Math.hypot(o.x, o.z) + o.R * 1.18 > LIM) continue;
-          if (isl.some((Q, q) => q !== par && Math.hypot(Q.x - o.x, Q.z - o.z) < Q.R * 1.18 + o.R * 1.18 + 8)) continue;
-          if (!land) { if (!clear(P, o, [par])) continue; const E = ends(P, o); if (!free(E)) continue; used.push(E.A, E.B); }
-          if (R > 31) huge++;
+          const o = mk(0, 0, R, k, 0, k === 1 ? (rng.chance(0.5) ? 'clover' : 'star') : kindFor(R)); o.Hr = land ? clamp(P.Hr + rng.range(-2.5, 2.5), 8, 22) : rng.range(9, 21);
+          const e1 = ext(P, a, land ? 3.5 : 7), e2 = ext(o, a + Math.PI, land ? 3.5 : 7); if (e1 < 2 || e2 < 2) continue;
+          const d = e1 + e2 + (land ? -rng.range(3, 8) : rng.range(21, 27)); o.x = P.x + Math.cos(a) * d; o.z = P.z + Math.sin(a) * d;
+          if (!fits(o)) continue;
+          if (isl.some((Q, q) => q !== par && gapBetween(o, Q) < 11)) continue;
+          if (land) { if (gapBetween(o, P) > -2) continue; } else { if (gapBetween(o, P) < 8) continue; const E = ends(P, o); if (!free(E) || !spanOK(E, P, o)) continue; used.push(E.A, E.B); }
+          if (o.R > 31) huge++;
           isl.push(o); edges.push({ i: par, j: k, loop: false, land });
         }
         if (!bestIsl || isl.length > bestIsl.isl.length) bestIsl = { isl, edges, used };
         if (isl.length >= 12) break;
       }
       ({ isl, edges, used } = bestIsl);
-      const gapOf = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x); return Math.hypot(J.x - I.x, J.z - I.z) - Rb(I, a) - Rb(J, a + Math.PI); };
-      const cand = []; for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (!edges.some(e => (e.i === i && e.j === j) || (e.i === j && e.j === i))) { const g = gapOf(isl[i], isl[j]); if (g > 6 && g < 14 && clear(isl[i], isl[j], [i, j])) cand.push({ i, j, loop: true, land: false }); }
+      const cand = []; for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (!edges.some(e => (e.i === i && e.j === j) || (e.i === j && e.j === i)) && Math.hypot(isl[i].x - isl[j].x, isl[i].z - isl[j].z) < isl[i].R + isl[j].R + 34) { const E = ends(isl[i], isl[j]); if (gapBetween(isl[i], isl[j]) > 6 && spanOK(E, isl[i], isl[j])) cand.push({ i, j, loop: true, land: false }); }
       for (let k = 0; k < 3 && cand.length; k++) { const c = cand.splice(rng.int(0, cand.length - 1), 1)[0], E = ends(isl[c.i], isl[c.j]); if (!free(E)) { k--; continue; } used.push(E.A, E.B); edges.push(c); }
       isl.forEach((o, k) => {           // every island has hills of its own: the bigger the island, the more of them
-        const n = o.R < 12 ? 1 : o.R < 20 ? 2 : o.R < 30 ? 3 : 5;
-        for (let q = 0; q < n; q++) { const hr = Math.max(6, o.R * rng.range(0.32, 0.7)), ha = rng.range(0, 6.283), hd = (k === 0 && q === 0) ? o.R * 0.5 : rng.range(0, Math.max(0, o.R * 0.7 - hr * 0.3)); o.hills.push({ x: o.x + Math.cos(ha) * hd, z: o.z + Math.sin(ha) * hd, r: hr, h: Math.min(rng.range(2.5, 12), hr * 0.55) * (k === 0 ? 0.6 : 1) }); }
+        const n = o.R < 14 ? 1 : o.R < 22 ? 2 : o.R < 32 ? 3 : 5, sm = samples(o).filter(p => k > 0 || Math.hypot(p.x, p.z) > 9);
+        for (let q = 0; q < n && sm.length; q++) { const c = rng.pick(sm), hr = Math.max(6, Math.min(c.r * rng.range(0.7, 1.15), 24)); o.hills.push({ x: c.x + rng.range(-3, 3), z: c.z + rng.range(-3, 3), r: hr, h: Math.min(rng.range(2.5, 12), hr * 0.55) * (k === 0 ? 0.6 : 1) }); }
       });
       const kids = isl.map(() => 0); edges.forEach(e => { if (!e.loop) kids[e.i]++; });
       const sites = edges.filter(e => !e.land).map(e => {
-        const I = isl[e.i], J = isl[e.j], a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a);
-        const A = { x: I.x + dx * (Rb(I, a) - 7), z: I.z + dz * (Rb(I, a) - 7) }, B = { x: J.x - dx * (Rb(J, a + Math.PI) - 7), z: J.z - dz * (Rb(J, a + Math.PI) - 7) }, L = Math.hypot(B.x - A.x, B.z - A.z);
+        const I = isl[e.i], J = isl[e.j], E = ends(I, J), A = E.A, B = E.B, L = Math.hypot(B.x - A.x, B.z - A.z);
         const leaf = !e.loop && kids[e.j] === 0 && e.j !== 0;
-        return { a, cx: (A.x + B.x) / 2, cz: (A.z + B.z) / 2, nx: (B.x - A.x) / L, nz: (B.z - A.z) / L, tx: -(B.z - A.z) / L, tz: (B.x - A.x) / L, W: L / 2 - 3.8, isl: [e.i, e.j], loop: e.loop, leaf, A, B, weak: false, state: 'ok', t: 0, touched: false, Hin: 0, Hout: 0, Hs: 0 };
+        return { a: E.a, cx: (A.x + B.x) / 2, cz: (A.z + B.z) / 2, nx: (B.x - A.x) / L, nz: (B.z - A.z) / L, tx: -(B.z - A.z) / L, tz: (B.x - A.x) / L, W: L / 2 - 3.8, isl: [e.i, e.j], loop: e.loop, leaf, A, B, weak: false, state: 'ok', t: 0, touched: false, Hin: 0, Hout: 0, Hs: 0 };
       });
       // a worn bridge: the spare (loop) bridges often, the ones to a dead-end island sometimes, a bridge that holds the chain together never; at least one worn bridge always
       sites.forEach(b => { b.weak = b.loop ? rng.chance(0.65) : b.leaf ? rng.chance(0.4) : false; });
       if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
-      return { isl, sites, edges, Rb, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + Math.PI * o.R * o.R * 0.85, 0) };
+      return { isl, sites, edges, sdOf, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + o.area, 0) };
     })() : null;
     const K = hl ? clamp(hl.area / 5200, 1, 4) : 1;          // how much more there is to grow and to catch on a big map
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
-    const isTop = (o, x, z) => {
-      const d = Math.hypot(x - o.x, z - o.z); let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
+    const isTop = (o, x, z, sdv) => {
+      const sd = sdv === undefined ? hl.sdOf(o, x, z) : sdv; let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
       let h = o.Hr + hills + (noise.fbm(x * 0.05 + o.k * 9, z * 0.05 + o.k * 4, 3) - 0.5) * 3.4 + (noise.at(x * 0.3 + o.k, z * 0.3) - 0.5) * 0.6;
-      let tm = 0; if (o.terr) { tm = smooth(0.3, 0.5, d / o.R) * smooth(0.95, 0.78, d / o.R); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); } }       // rice terraces: flat steps with rounded risers
+      let tm = 0; if (o.terr) { tm = smooth(-4, -8, sd) * smooth(-0.95 * o.wm, -0.6 * o.wm, sd); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); } }       // rice terraces: flat steps with rounded risers
       return [h, tm];
     };
     // [height, how much of a point is island (1) rather than void (0), terrace mask]
     const islandField = (x, z) => {
       let best = VOID, F = 0, TM = 0;
       for (const o of hl.isl) {
-        const d = Math.hypot(x - o.x, z - o.z) + (noise.at(x * 0.35, z * 0.35) - 0.5) * 1.4, rb = hl.Rb(o, Math.atan2(z - o.z, x - o.x)), f = smooth(rb, rb - 3.5, d); if (f <= 0) continue;
-        const [t, tm] = isTop(o, x, z), hh = VOID + f * (t - VOID); if (f > F) F = f; if (hh > best) { best = hh; TM = tm; }
+        if (Math.hypot(x - o.x, z - o.z) > o.R + 8) continue;
+        const sd = hl.sdOf(o, x, z) + (noise.at(x * 0.35, z * 0.35) - 0.5) * 1.4, f = smooth(0, -3.5, sd); if (f <= 0) continue;
+        const [t, tm] = isTop(o, x, z, sd), hh = VOID + f * (t - VOID); if (f > F) F = f; if (hh > best) { best = hh; TM = tm; }
       }
       for (const s of hl.sites) { const [u, v] = siteUV(s, x, z), au = Math.abs(u), av = Math.abs(v), wp = smooth(s.W + 1.5, s.W + 2.6, au) * smooth(s.W + 17, s.W + 4.5, au) * smooth(8.5, 3.5, av); if (wp > 0 && F > 0.95) best = lerp(best, u < 0 ? s.Hin : s.Hout, wp); }       // the landing pads at the ends of a bridge
       return [best, F, TM];
