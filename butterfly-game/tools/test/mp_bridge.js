@@ -22,6 +22,7 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   for (let i = 0; i < 50; i++) { await A.waitForTimeout(400); sb = await st(B); if (sb[worn] === 'gone' || sb[worn] === 'fall') break; }
   ok(['fall', 'gone'].includes(sb[worn]), 'Bob sees it snap', sb);
   // a newcomer finds it already broken
+  console.log('before Carol: Bob', JSON.stringify(await B.evaluate(() => ({ on: Net.on, loc: Net.loc, list: Net.list.map(p => p.name + ':' + p.loc), seed: F0W.play && F0W.play.seed }))), 'Alice', JSON.stringify(await A.evaluate(() => ({ on: Net.on, loc: Net.loc, screen: F0W.screen }))));
   const C = await open('Carol'); ok(await go(C), 'Carol arrives later'); const sc = await st(C);
   const seeds = await Promise.all([A, B, C].map(pg => pg.evaluate(() => F0W.play ? [F0W.play.seed, F0W.play.world.bridges.length] : null))); console.log('seeds/bridges', JSON.stringify(seeds));
   ok(['fall', 'gone'].includes(sc[worn]), 'Carol finds the bridge broken', sc);
