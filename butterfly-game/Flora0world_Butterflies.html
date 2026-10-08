@@ -901,6 +901,8 @@ function revealOcean() {
 // ---------------------------------------------------------------- utilities
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const lerp = (a, b, t) => a + (b - a) * t;
+// the three very rare finds of the secret places (Queen Alexandra's birdwing, the false ringlet, the golden Kaiser-i-Hind; their aberrations too) are marked in red wherever their card or label is drawn
+const Rare = { ids: new Set(['ornithoptera_alexandrae', 'coenonympha_oedippus', 'teinopalpus_aureus']), col: '#e8363a', is: sp => !!sp && Rare.ids.has(sp.base || sp.id) };
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 const damp = (a, b, k, dt) => lerp(a, b, 1 - Math.exp(-k * dt));
 
@@ -1940,6 +1942,12 @@ const Snd = (() => {
       for (let i = 0; i < n; i++) bell(midi(root + sc[i]), t + i * 0.085, first ? 0.2 : 0.16, first ? 1.8 : 1.0);
       if (first) { for (let i = 0; i < 6; i++) osc('triangle', midi(root + 12 + sc[i % 5]) * 2, t + 0.65 + i * 0.07, 0.4, 0.04); }
     },
+    catchRare(first) {          // the very rare finds: a low drum, a rising red-hot arpeggio and a long shimmer
+      if (!ac) return; const t = now(); osc('sine', 110, t, 0.5, 0.3, null, 55); noiseBurst(t, 0.12, 900, 300, 0.2, 'lowpass', 1);
+      [0, 3, 7, 10, 12, 15, 19, 24].forEach((n, i) => bell(midi(64 + n), t + 0.12 + i * 0.075, 0.2, 2.4));
+      for (let i = 0; i < 8; i++) osc('triangle', midi(88 + (i % 4) * 3) * 2, t + 0.75 + i * 0.09, 0.5, 0.05);
+      if (first) [0, 4, 7, 12].forEach((n, i) => bell(midi(76 + n), t + 1.4 + i * 0.12, 0.2, 2.2));
+    },
     complete() { if (!ac) return; const t = now(); [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => { bell(midi(67 + n), t + i * 0.1, 0.2, 2.2); }); osc('triangle', midi(43), t, 1.6, 0.12); osc('triangle', midi(50), t, 1.6, 0.1); },
     pin() { if (!ac) return; const t = now(); osc('sine', 900, t, 0.2, 0.15, null, 300); bell(midi(88), t + 0.14, 0.12, 0.8); },
     page() { if (!ac) return; noiseBurst(now(), 0.12, 2400, 900, 0.1, 'bandpass', 0.8); },
@@ -2324,7 +2332,7 @@ const World = (() => {
       flowers: [['#f4f2ea', 'cotton', 1.5], ['#f4f2ea', 'cotton', 1.3], ['#f0efe6', 'cotton', 1.4], ['#f2a0b8', 'bell', 0.8], ['#f4f4e8', 'umbel', 0.9], ['#e8607c', 'cluster', 0.6], ['#fbfbf2', 'daisy', 0.6]],
       veg: [['hummock', 240, 'uniform', { variants: 8 }], ['tussock', 150, 'uniform', { variants: 4 }], ['ledum', 46, 'uniform', { variants: 4 }], ['cassandra', 34, 'uniform', { variants: 4 }], ['ryam', 30, 'grove', { variants: 5 }], ['snag', 9, 'sparse', { variants: 4 }], ['dbirch', 26, 'uniform', { variants: 4 }], ['spruce', 10, 'edge', { scale: 0.55 }]],
       rocks: 3, water: ['pool'], waterCol: '#3e3322', shoreCol: ['#3a3a22', '#2c2216'], mount: ['#34423a', '#46564a', false, 3, 8],
-      particles: ['fluff', '#e4e8e0', 0.75], amb: 'bog', clouds: 2.6, bait: null, lm: ['boardwalk', 'peatcut', 'boulders', 'stumps'], tf: 0.5,
+      particles: ['fluff', '#e4e8e0', 0.75], amb: 'bog', clouds: 2.6, bait: null, lm: ['boardwalk', 'boulders', 'stumps'], tf: 0.5,
     },
     // relic rain forest on the slopes of Mount Lamington (Oro province, New Guinea): giant branching trees close the sky, tree ferns and cycads below, frozen black lava flows, a jungle stream
     papua: {
@@ -3430,7 +3438,6 @@ const World = (() => {
         if (pts.length >= 14) plan.walk = pts;
       }
       if (plan.walk) plan.walk.forEach((q, i) => { if (i % 2 === 0) reserve.push({ x: q[0], z: q[1], r: 1.6 }); });
-      for (let tries = 0; tries < 60 && !plan.cut; tries++) { const a = rng.range(0, 6.28), d = rng.range(16, 40), x = Math.cos(a) * d, z = Math.sin(a) * d; if (inWater(x, z, 7) || reserve.some(q => Math.hypot(q.x - x, q.z - z) < 9)) continue; plan.cut = { x, z, ry: rng.range(0, 6.28) }; reserve.push({ x, z, r: 6.2 }); }
     }
     const treeMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
     function instanceAt(builderKey, pts, opts = {}) {
@@ -3508,10 +3515,6 @@ const World = (() => {
         const m = new THREE.Mesh(merge(parts, rng), treeMat); m.castShadow = false; m.receiveShadow = true; scene.add(m);
         const [sx, sz, sa] = pts[0], sp = new THREE.Group(); const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.3, 6), mWood); post.position.y = 0.65; const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.04), mat('#4a6a44')); board.position.set(0, 1.15, 0.05); sp.add(post, board);
         addMesh(sp, sx - Math.sin(sa) * 0.9, heightAt(sx, sz), sz + Math.cos(sa) * 0.9, -sa, true);    // a trail sign at the start
-      },
-      peatcut() {         // an old peat cutting: a wet dark trench in the moss
-        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry;
-        const trench = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.2).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#2a2016' })); addMesh(trench, c.x, heightAt(c.x, c.z) + 0.05, c.z, -ry, false);
       },
       lavaflow() {        // columnar basalt: a cluster of hexagonal columns of cooled lava standing at the edge of the flow, moss and ferns on their tops
         if (!lava) return; const idx = rng.int(14, lava.pts.length - 14), P = lava.pts[idx], Q = lava.pts[idx + 1], ang = Math.atan2(Q.z - P.z, Q.x - P.x) + Math.PI / 2, off = P.w * 1.3; const cx = P.x + Math.cos(ang) * off, cz = P.z + Math.sin(ang) * off;
@@ -3828,14 +3831,16 @@ const Net = (() => {
   N.disconnect = () => { if (N.ws) { N.bye = true; try { N.ws.close(); } catch (e) {} } };
   // join a location ('cabinet' or a biome id); resolves with the server's answer (seed, host, butterfly snapshot, modifier)
   N.join = loc => new Promise((res, rej) => { N.remote = {}; N.loc = loc; if (!N.on) { rej(new Error('offline')); return; } joinWait = res; joinRej = rej; N.send('join', { loc, maps: Maps.owned() }); setTimeout(() => { if (joinWait === res) { joinWait = null; rej(new Error('timeout')); } }, 15000); });
+  const sys = text => { N.chat.push({ name: 'Голосование', text, at: performance.now(), sys: true }); if (N.chat.length > 8) N.chat.shift(); };
+  N.voteReply = ok => { const v = N.vote; if (!v || v.mine) return false; v.mine = ok ? 'yes' : 'no'; if (ok) v.yes++; N.send('voteReply', { vid: v.vid, ok: !!ok }); return true; };
   N.say = text => { if (N.on && text) N.send('chat', { text }); };
-  N.leave = () => { N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
+  N.leave = () => { N.vote = null; N.loc = null; N.host = false; N.remote = {}; if (N.on) N.send('join', { loc: null }); };
 
   function handle(m) {
     switch (m.t) {
       case 'welcome': N.on = true; N.id = m.id; N.idx = m.idx; N.name = m.name; N.seeds = m.seeds; N.list = m.players; Save.enterMP(m.cab, m.idx); N.status = 'Онлайн'; if (connWait) { connWait.res(m); connWait = null; } break;
       case 'plist': N.list = m.list; break;
-      case 'joined': N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
+      case 'joined': N.vote = null; N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
       case 'denied': if (joinWait) { joinWait = null; if (joinRej) joinRej(new Error('для этого места нужна карта')); } break;
       case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
       case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
@@ -3844,6 +3849,9 @@ const Net = (() => {
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
       case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
       case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
+      case 'vote': N.vote = { vid: m.vid, by: m.by, yes: m.yes, need: m.need, end: performance.now() + m.ms, ms: m.ms, mine: m.byId === N.id ? 'yes' : null }; sys(`${m.by} предлагает сгенерировать новую местность`); if (m.byId !== N.id && N.hooks.voteNew) N.hooks.voteNew(m); break;
+      case 'voteUpd': if (N.vote && N.vote.vid === m.vid) { N.vote.yes = m.yes; N.vote.need = m.need; } break;
+      case 'voteEnd': if (N.vote && N.vote.vid === m.vid) { N.vote = null; if (!m.ok) sys(m.why === 'no' ? 'Голосование: кто-то против — местность остаётся' : m.why === 'join' ? 'Голосование отменено: пришёл новый игрок' : 'Голосование: не набралось согласия — местность остаётся'); else sys('Все согласны — местность создаётся заново'); } break;
       case 'chat': m.at = performance.now(); N.chat.push(m); if (N.chat.length > 8) N.chat.shift(); if (N.hooks.chat) N.hooks.chat(m); break;
       default: if (N.hooks[m.t]) N.hooks[m.t](m);   // flies, caught, catchOk, catchNo, mod, reseed, regenNo
     }
@@ -4224,10 +4232,10 @@ class Play {
     H.mod = m => { const d = me.applyMod(m.id); me.toast(`${m.by}: ${PLAY_MODS[m.id].good ? 'хороший' : 'плохой'} модификатор — ${PLAY_MODS[m.id].name}`, 5, true); Snd.sfx.modifier(); };
     H.host = m => { if (m.id === Net.id) { if (!me.isHost) me.becomeHost(m.flies); } else if (me.isHost) me.becomePuppet(m.flies); };
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
-    H.regenNo = () => me.toast('Сменить местность можно, только когда вы здесь один', 3);
+    H.regenNo = m => me.toast((m && m.msg) || 'Здесь сейчас нельзя сменить местность', 3); H.voteNew = () => { me.toast('Голосование: Y — за, N — против', 4); Snd.sfx.click(); };
     H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.bridge = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
@@ -4349,7 +4357,7 @@ class Play {
     const first = Save.add(sp.id, this.biome.id); const twin = Math.random() < this.netStats.dbl; if (twin) Save.add(sp.id, this.biome.id);     // gem handle / deep mesh: a second one
     if (this.netStats.coin) { Save.data.coins = (Save.data.coins || 0) + this.netStats.coin; Save.write(); } if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     if (twin) this.toast('Двойной улов!', 2.5);
-    Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
+    if (Rare.is(sp)) Snd.sfx.catchRare(first); else Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
@@ -4500,14 +4508,14 @@ class Play {
     const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const P = pos || this.cardPos(), up = P.y > SH / 2 ? -1 : 1;
     const x = 0, y = i * 66 * up - (1 - k) * 70 * up;
     ctx.save(); ctx.translate(Math.round(P.x), Math.round(P.y)); ctx.scale(P.s, P.s);
-    ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
-    ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+    ctx.globalAlpha = Math.min(1, k * 1.4); const rare = Rare.is(cd.sp); UIK.panel(ctx, x, y, w, h, { fill: rare ? 'rgba(34,14,14,0.95)' : 'rgba(14,30,26,0.95)', border: rare ? Rare.col : cd.first ? c.gold : c.line }); if (rare) { ctx.strokeStyle = Rare.col; ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); }
+    ctx.fillStyle = rare ? 'rgba(232,54,58,0.14)' : cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
     T.draw(ctx, cd.sp.ab ? 'АБЕРРАНТ!  ab. ' + cd.sp.ab.name : cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.sp.ab ? '#ff9ae8' : cd.first ? c.gold : c.green });
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ru, 120) : cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
-    T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
+    T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim }); if (rare) T.draw(ctx, 'РЕДКАЯ ДОБЫЧА', x + w - 6, y + 51, { size: 8, align: 'r', color: Rare.col });
     ctx.globalAlpha = 1; ctx.restore();
   }
   dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
@@ -4774,7 +4782,7 @@ const Screens = (() => {
       for (let i = 0; i < 240; i++) { const x = 9 + (i * 97) % 210, y = 45 + (i * 53) % 216; ctx.fillStyle = i % 3 ? '#b89860' : '#d8b880'; ctx.fillRect(x, y, 2, 1); }
       this.slots.forEach(s => {
         const has = Save.has(s.sp.id), on = s.k === this.sel, hv = UIK.hit(s, m.x, m.y);
-        ctx.fillStyle = on ? 'rgba(240,200,90,0.35)' : hv ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.0)'; ctx.fillRect(s.x, s.y, s.w, s.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1); }
+        ctx.fillStyle = on ? 'rgba(240,200,90,0.35)' : hv ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.0)'; ctx.fillRect(s.x, s.y, s.w, s.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1); } if (has && Rare.is(s.sp)) { ctx.strokeStyle = Rare.col; ctx.lineWidth = 1; ctx.strokeRect(s.x + 2.5, s.y + 2.5, s.w - 5, s.h - 5); }
         ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.5; ctx.fillStyle = '#000'; ctx.fillRect(s.x + 12, s.y + 44, 78, 2); ctx.globalAlpha = 1;
         ctx.drawImage(Art.specimen(s.sp, !has), s.x + 11, s.y + 5, 80, 40);
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
@@ -4785,7 +4793,7 @@ const Screens = (() => {
       // detail page
       const sp = b.species[this.sel], has = Save.has(sp.id), x0 = 228, w0 = SW - x0 - 6;
       UIK.panel(ctx, x0, 42, w0, 222, { fill: '#e8dcb4', border: '#5a3a1c' }); ctx.fillStyle = '#d4c494'; ctx.fillRect(x0 + 2, 44, w0 - 4, 1);
-      ctx.fillStyle = '#c8a870'; ctx.fillRect(x0 + 6, 48, 164, 84); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has), x0 + 8, 50, 160, 80);
+      ctx.fillStyle = '#c8a870'; ctx.fillRect(x0 + 6, 48, 164, 84); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has), x0 + 8, 50, 160, 80); if (has && Rare.is(sp)) { ctx.strokeStyle = Rare.col; ctx.strokeRect(x0 + 6.5, 48.5, 163, 83); ctx.strokeRect(x0 + 7.5, 49.5, 161, 81); }
       if (has) { ctx.fillStyle = '#111'; ctx.fillRect(x0 + 86, 72, 3, 3); }
       const ink = '#2a1a0c', dim = '#6a5030'; const tx = x0 + 8, tw = w0 - 16;
       // stat box
@@ -5003,6 +5011,18 @@ const Chat = (() => {
       }
     },
   };
+  // the vote card (a new landscape needs everybody's consent): buttons work whenever the cursor is free, Y / N always
+  o.vbtns = [];
+  o.drawVote = (ctx, t, m) => {
+    const v = Net.vote; o.vbtns = []; if (!v) return; const c = UIK.col, x = 6, y = 52, w = 214, left = Math.max(0, (v.end - performance.now()) / v.ms);
+    UIK.panel(ctx, x, y, w, 46, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+    T.draw(ctx, `${v.by} предлагает создать новую местность`, x + 6, y + 5, { size: 8, color: '#fff' });
+    T.draw(ctx, `Согласны: ${v.yes} из ${v.need}`, x + 6, y + 16, { size: 8, color: '#9ae0b0' });
+    if (!v.mine) { o.vbtns = [{ id: 'yes', label: 'Да (Y)', x: x + 6, y: y + 27, w: 60, h: 13 }, { id: 'no', label: 'Нет (N)', x: x + 72, y: y + 27, w: 60, h: 13 }]; o.vbtns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); T.draw(ctx, 'Esc — курсор', x + 138, y + 30, { size: 7, color: c.dim }); }
+    else T.draw(ctx, v.mine === 'yes' ? 'Вы за — ждём остальных…' : 'Вы против', x + 6, y + 29, { size: 8, color: c.dim });
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(x + 4, y + 42, w - 8, 2); ctx.fillStyle = c.gold; ctx.fillRect(x + 4, y + 42, (w - 8) * left, 2);
+  };
+  o.voteClick = (mx, my) => { for (const b of o.vbtns) if (UIK.hit(b, mx, my)) { Net.voteReply(b.id === 'yes'); Snd.sfx.click(); return true; } return false; };
   return o;
 })();
 
@@ -5309,6 +5329,7 @@ const Boxes = (() => {
       const sp = SPECIES_BY_ID[s.sp];
       Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
       x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1);
+      if (Rare.is(sp)) { x.strokeStyle = Rare.col; x.lineWidth = 1; x.strokeRect(cx0 + 5.5, cy0 + 5.5, CW - 11, 69); }
       // label
       x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1);
       let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…';
@@ -6824,7 +6845,7 @@ const Market = (() => {
       UIK.panel(ctx, 6, 56, 230, 208, { fill: '#2a2018', border: '#5a4430', shadow: false });
       if (!S.items.length) T.para(ctx, S.tab === 0 ? 'Нечего продавать. Наловите бабочек в экспедициях! Экземпляры в коробках сначала достаньте из коробки.' : 'В этой вкладке пусто.', 16, 110, 210, { size: 8, color: c.dim, lh: 10 });
       L.rows.forEach(r => { const e = S.items[r.idx], on = r.idx === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        ctx.fillStyle = '#c8a870'; ctx.fillRect(r.x + 2, r.y + 2, 42, 22); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(e.i.sp), r.x + 3, r.y + 3, 40, 20);
+        ctx.fillStyle = '#c8a870'; ctx.fillRect(r.x + 2, r.y + 2, 42, 22); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(e.i.sp), r.x + 3, r.y + 3, 40, 20); if (Rare.is(e.i.sp)) { ctx.strokeStyle = Rare.col; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
         T.draw(ctx, fitTxt(e.i.sp.ru.replace(' · аберрант', ''), 112), r.x + 48, r.y + 3, { size: 8, color: e.i.isAb ? '#ff9ae8' : '#f0e8d0' }); T.draw(ctx, e.i.isAb ? 'аберрант' + (e.i.spread ? ` · ${e.spec.q}%` : '') : e.i.spread ? `расправлен ${e.spec.q}%` : 'сырой', r.x + 48, r.y + 14, { size: 8, color: e.i.isAb ? '#c070b0' : c.dim });
         this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(e.i.price), 8), r.y + 8); T.draw(ctx, String(e.i.price), r.x + r.w - 6, r.y + 8, { size: 8, align: 'r', color: c.gold }); });
       if (S.items.length > 7) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${S.sel + 1}/${S.items.length}`, 12, 253, { size: 8, color: c.dim }); }
@@ -6832,7 +6853,7 @@ const Market = (() => {
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'buyer', 247, 43, t, S.msgT > 0);
       T.para(ctx, S.msg, 294, 46, 176, { size: 8, color: '#2a1a0c', lh: 10 });
       const e = S.items[S.sel]; UIK.panel(ctx, 240, 98, 234, 102, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
-      if (e) { const i = e.i; ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 90, 46); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(i.sp), 247, 103, 84, 42);
+      if (e) { const i = e.i; ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 90, 46); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(i.sp), 247, 103, 84, 42); if (Rare.is(i.sp)) { ctx.strokeStyle = Rare.col; ctx.strokeRect(243.5, 101.5, 91, 47); ctx.strokeRect(244.5, 102.5, 89, 45); }
         T.draw(ctx, fitTxt(i.sp.ru, 130), 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, fitTxt(i.sp.la, 130), 340, 114, { size: 8, color: '#8a2a1a' }); T.draw(ctx, `${i.sp.mm[0]}–${i.sp.mm[1]} мм`, 340, 125, { size: 8, color: '#6a5030' }); T.draw(ctx, e.spec.by ? `поймал: ${e.spec.by}` : i.spread ? `качество ${e.spec.q}%` : 'не расправлен', 340, 136, { size: 8, color: '#6a5030' });
         const rows = [[`Вид (${i.isOcean ? 'редкость ???' : '★'.repeat(0) + 'редкость ' + (i.species.rar || 1) + '/3'})`, `${i.base}`], i.loc > 1 ? ['Особая локация', `×${i.loc}`] : null, i.isAb ? ['Аберрант', `×${i.ab.toFixed(1)}`] : null, [i.spread ? `Расправлен ${e.spec.q}%` : 'Сырой экземпляр', `×${i.cond.toFixed(2)}`]].filter(Boolean);
         rows.forEach((r, k) => { const ry = rows.length > 3 ? 148 + k * 9 : 154 + k * 11; T.draw(ctx, r[0], 248, ry, { size: 8, color: '#2a1a0c' }); T.draw(ctx, r[1], 466, ry, { size: 8, align: 'r', color: '#6a5030' }); });
@@ -7514,6 +7535,7 @@ const SecretMarket = (() => {
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
+    if ((e.code === 'KeyY' || e.code === 'KeyN') && !e.repeat && !App.modal && App.screen === 'play' && Net.vote && !Net.vote.mine) { e.preventDefault(); Net.voteReply(e.code === 'KeyY'); Snd.sfx.click(); return; }
     if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
@@ -7548,6 +7570,7 @@ const SecretMarket = (() => {
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
     if (App.modal) { modalClick(x, y); return; }
+    if (sc === 'play' && Net.vote && !Net.vote.mine && !App.locked && Chat.voteClick(x, y)) return;
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
@@ -7607,7 +7630,7 @@ const SecretMarket = (() => {
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
-    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
+    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) { Chat.draw(ctx, t); if (App.screen === 'play') Chat.drawVote(ctx, t, mouse); } else if (Chat.open) Chat.close();
     Con.draw(ctx, t);
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }

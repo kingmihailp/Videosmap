@@ -291,10 +291,10 @@ class Play {
     H.mod = m => { const d = me.applyMod(m.id); me.toast(`${m.by}: ${PLAY_MODS[m.id].good ? 'хороший' : 'плохой'} модификатор — ${PLAY_MODS[m.id].name}`, 5, true); Snd.sfx.modifier(); };
     H.host = m => { if (m.id === Net.id) { if (!me.isHost) me.becomeHost(m.flies); } else if (me.isHost) me.becomePuppet(m.flies); };
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
-    H.regenNo = () => me.toast('Сменить местность можно, только когда вы здесь один', 3);
+    H.regenNo = m => me.toast((m && m.msg) || 'Здесь сейчас нельзя сменить местность', 3); H.voteNew = () => { me.toast('Голосование: Y — за, N — против', 4); Snd.sfx.click(); };
     H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.bridge = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
@@ -416,7 +416,7 @@ class Play {
     const first = Save.add(sp.id, this.biome.id); const twin = Math.random() < this.netStats.dbl; if (twin) Save.add(sp.id, this.biome.id);     // gem handle / deep mesh: a second one
     if (this.netStats.coin) { Save.data.coins = (Save.data.coins || 0) + this.netStats.coin; Save.write(); } if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     if (twin) this.toast('Двойной улов!', 2.5);
-    Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
+    if (Rare.is(sp)) Snd.sfx.catchRare(first); else Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;
     for (let i = 0; i < 26; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 90; this.sparks.push({ x: sx, y: sy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0.6 + Math.random() * 0.5, c: first ? ['#f0c85a', '#fff4b0', '#ffffff'][i % 3] : ['#9ae0ff', '#fff', '#b8f0c0'][i % 3] }); }
@@ -567,14 +567,14 @@ class Play {
     const c = UIK.col, w = 214, h = 62; const k = ease(clamp((cd.d - cd.t) / 0.35)) * clamp(cd.t / 0.4); const P = pos || this.cardPos(), up = P.y > SH / 2 ? -1 : 1;
     const x = 0, y = i * 66 * up - (1 - k) * 70 * up;
     ctx.save(); ctx.translate(Math.round(P.x), Math.round(P.y)); ctx.scale(P.s, P.s);
-    ctx.globalAlpha = Math.min(1, k * 1.4); UIK.panel(ctx, x, y, w, h, { fill: 'rgba(14,30,26,0.95)', border: cd.first ? c.gold : c.line });
-    ctx.fillStyle = cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+    ctx.globalAlpha = Math.min(1, k * 1.4); const rare = Rare.is(cd.sp); UIK.panel(ctx, x, y, w, h, { fill: rare ? 'rgba(34,14,14,0.95)' : 'rgba(14,30,26,0.95)', border: rare ? Rare.col : cd.first ? c.gold : c.line }); if (rare) { ctx.strokeStyle = Rare.col; ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); }
+    ctx.fillStyle = rare ? 'rgba(232,54,58,0.14)' : cd.first ? 'rgba(240,200,90,0.12)' : 'rgba(255,255,255,0.03)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(cd.sp), x + 4, y + 8, 80, 40);
     T.draw(ctx, cd.sp.ab ? 'АБЕРРАНТ!  ab. ' + cd.sp.ab.name : cd.first ? 'НОВЫЙ ВИД!' : `Поймано · ×${cd.count}`, x + 90, y + 5, { size: 8, color: cd.sp.ab ? '#ff9ae8' : cd.first ? c.gold : c.green });
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ru, 120) : cd.sp.ru, x + 90, y + 16, { size: 10, color: '#fff' });
     T.draw(ctx, cd.sp.ab ? fitStr(cd.sp.ab.desc[0], 118) : cd.sp.la, x + 90, y + 29, { size: 8, color: c.dim });
     T.draw(ctx, `${cd.sp.mm[0]}–${cd.sp.mm[1]} мм · ${cd.sp.fam}`, x + 90, y + 40, { size: 8, color: c.text });
-    T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim });
+    T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim }); if (rare) T.draw(ctx, 'РЕДКАЯ ДОБЫЧА', x + w - 6, y + 51, { size: 8, align: 'r', color: Rare.col });
     ctx.globalAlpha = 1; ctx.restore();
   }
   dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }

@@ -35,6 +35,7 @@ const Boxes = (() => {
       const sp = SPECIES_BY_ID[s.sp];
       Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
       x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1);
+      if (Rare.is(sp)) { x.strokeStyle = Rare.col; x.lineWidth = 1; x.strokeRect(cx0 + 5.5, cy0 + 5.5, CW - 11, 69); }
       // label
       x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1);
       let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…';

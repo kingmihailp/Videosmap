@@ -1,6 +1,8 @@
 // ---------------------------------------------------------------- utilities
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const lerp = (a, b, t) => a + (b - a) * t;
+// the three very rare finds of the secret places (Queen Alexandra's birdwing, the false ringlet, the golden Kaiser-i-Hind; their aberrations too) are marked in red wherever their card or label is drawn
+const Rare = { ids: new Set(['ornithoptera_alexandrae', 'coenonympha_oedippus', 'teinopalpus_aureus']), col: '#e8363a', is: sp => !!sp && Rare.ids.has(sp.base || sp.id) };
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 const damp = (a, b, k, dt) => lerp(a, b, 1 - Math.exp(-k * dt));
 

@@ -52,6 +52,12 @@ const Snd = (() => {
       for (let i = 0; i < n; i++) bell(midi(root + sc[i]), t + i * 0.085, first ? 0.2 : 0.16, first ? 1.8 : 1.0);
       if (first) { for (let i = 0; i < 6; i++) osc('triangle', midi(root + 12 + sc[i % 5]) * 2, t + 0.65 + i * 0.07, 0.4, 0.04); }
     },
+    catchRare(first) {          // the very rare finds: a low drum, a rising red-hot arpeggio and a long shimmer
+      if (!ac) return; const t = now(); osc('sine', 110, t, 0.5, 0.3, null, 55); noiseBurst(t, 0.12, 900, 300, 0.2, 'lowpass', 1);
+      [0, 3, 7, 10, 12, 15, 19, 24].forEach((n, i) => bell(midi(64 + n), t + 0.12 + i * 0.075, 0.2, 2.4));
+      for (let i = 0; i < 8; i++) osc('triangle', midi(88 + (i % 4) * 3) * 2, t + 0.75 + i * 0.09, 0.5, 0.05);
+      if (first) [0, 4, 7, 12].forEach((n, i) => bell(midi(76 + n), t + 1.4 + i * 0.12, 0.2, 2.2));
+    },
     complete() { if (!ac) return; const t = now(); [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => { bell(midi(67 + n), t + i * 0.1, 0.2, 2.2); }); osc('triangle', midi(43), t, 1.6, 0.12); osc('triangle', midi(50), t, 1.6, 0.1); },
     pin() { if (!ac) return; const t = now(); osc('sine', 900, t, 0.2, 0.15, null, 300); bell(midi(88), t + 0.14, 0.12, 0.8); },
     page() { if (!ac) return; noiseBurst(now(), 0.12, 2400, 900, 0.1, 'bandpass', 0.8); },

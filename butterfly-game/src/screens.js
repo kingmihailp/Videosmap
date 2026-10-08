@@ -248,7 +248,7 @@ const Screens = (() => {
       for (let i = 0; i < 240; i++) { const x = 9 + (i * 97) % 210, y = 45 + (i * 53) % 216; ctx.fillStyle = i % 3 ? '#b89860' : '#d8b880'; ctx.fillRect(x, y, 2, 1); }
       this.slots.forEach(s => {
         const has = Save.has(s.sp.id), on = s.k === this.sel, hv = UIK.hit(s, m.x, m.y);
-        ctx.fillStyle = on ? 'rgba(240,200,90,0.35)' : hv ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.0)'; ctx.fillRect(s.x, s.y, s.w, s.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1); }
+        ctx.fillStyle = on ? 'rgba(240,200,90,0.35)' : hv ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.0)'; ctx.fillRect(s.x, s.y, s.w, s.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1); } if (has && Rare.is(s.sp)) { ctx.strokeStyle = Rare.col; ctx.lineWidth = 1; ctx.strokeRect(s.x + 2.5, s.y + 2.5, s.w - 5, s.h - 5); }
         ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.5; ctx.fillStyle = '#000'; ctx.fillRect(s.x + 12, s.y + 44, 78, 2); ctx.globalAlpha = 1;
         ctx.drawImage(Art.specimen(s.sp, !has), s.x + 11, s.y + 5, 80, 40);
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
@@ -259,7 +259,7 @@ const Screens = (() => {
       // detail page
       const sp = b.species[this.sel], has = Save.has(sp.id), x0 = 228, w0 = SW - x0 - 6;
       UIK.panel(ctx, x0, 42, w0, 222, { fill: '#e8dcb4', border: '#5a3a1c' }); ctx.fillStyle = '#d4c494'; ctx.fillRect(x0 + 2, 44, w0 - 4, 1);
-      ctx.fillStyle = '#c8a870'; ctx.fillRect(x0 + 6, 48, 164, 84); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has), x0 + 8, 50, 160, 80);
+      ctx.fillStyle = '#c8a870'; ctx.fillRect(x0 + 6, 48, 164, 84); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has), x0 + 8, 50, 160, 80); if (has && Rare.is(sp)) { ctx.strokeStyle = Rare.col; ctx.strokeRect(x0 + 6.5, 48.5, 163, 83); ctx.strokeRect(x0 + 7.5, 49.5, 161, 81); }
       if (has) { ctx.fillStyle = '#111'; ctx.fillRect(x0 + 86, 72, 3, 3); }
       const ink = '#2a1a0c', dim = '#6a5030'; const tx = x0 + 8, tw = w0 - 16;
       // stat box

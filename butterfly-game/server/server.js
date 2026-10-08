@@ -64,10 +64,24 @@ const toLoc = (name, o, except) => { const l = locs.get(name); if (!l) return; c
 const plist = () => [...players.values()].map(p => ({ id: p.id, name: p.name, loc: p.loc }));
 const sendPlist = () => broadcast({ t: 'plist', list: plist() });
 
+// a vote to generate a new landscape while several players are in a location: everybody there has to agree
+const VOTE_MS = 30000; let nextVote = 1;
+function voteEnd(name, l, ok, why) {
+  const v = l.vote; if (!v) return; clearTimeout(v.timer); l.vote = null; toLoc(name, { t: 'voteEnd', vid: v.vid, ok, why });
+  if (ok) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.bridges = {}; console.log('new landscape:', name, state.seeds[name], '(vote)'); toLoc(name, { t: 'reseed', loc: name, seed: state.seeds[name] }); }
+}
+function voteCheck(name, l) {
+  const v = l.vote; if (!v) return; if (!l.ids.size) { clearTimeout(v.timer); l.vote = null; return; }
+  if ([...l.ids].some(id => v.no.has(id))) return voteEnd(name, l, false, 'no');
+  const yes = [...l.ids].filter(id => v.yes.has(id)).length; if (yes === l.ids.size) return voteEnd(name, l, true);
+  toLoc(name, { t: 'voteUpd', vid: v.vid, yes, need: l.ids.size });
+}
+
 function leaveLoc(p) {
   if (!p.loc) return; const name = p.loc, l = locs.get(name); p.loc = null; if (!l) return;
   l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id });
   if (l.host === p.id) { l.host = l.ids.values().next().value || 0; l.lastFlies = Date.now() + 8000; if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
+  if (l.vote) voteCheck(name, l);
   if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; }
 }
 function joinLoc(p, name) {
@@ -76,6 +90,7 @@ function joinLoc(p, name) {
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
   if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
+  if (l.vote) voteEnd(name, l, false, 'join');
   p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now() + 15000; }      // grace while its client builds the world
   send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();
@@ -107,7 +122,16 @@ wss.on('connection', ws => {
       case 'flies': { const l = me.loc && locs.get(me.loc); if (!l || l.host !== me.id || !Array.isArray(m.list)) break; l.lastFlies = Date.now(); const now = Date.now(); for (const [k, t] of l.caught) if (now - t > 15000) l.caught.delete(k); l.flies = m.list.filter(f => !l.caught.has(f[0])); toLoc(me.loc, { t: 'flies', list: l.flies }, me.id); break; }
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
-      case 'regen': { const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || l.ids.size !== 1) { send(me, { t: 'regenNo' }); break; } state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
+      case 'regen': {
+        const l = me.loc && locs.get(me.loc); if (!l || me.loc === 'cabinet' || me.loc === 'market') { send(me, { t: 'regenNo' }); break; }
+        if (l.ids.size === 1) { state.seeds[me.loc] = rnd(); dirty = true; l.flies = []; l.caught.clear(); send(me, { t: 'reseed', loc: me.loc, seed: state.seeds[me.loc] }); break; }
+        if (l.vote) { send(me, { t: 'regenNo', msg: 'Голосование уже идёт' }); break; }
+        if (Date.now() - (l.voteAt || 0) < 15000) { send(me, { t: 'regenNo', msg: 'Следующее голосование — через несколько секунд' }); break; }
+        l.voteAt = Date.now(); const vid = nextVote++; const name = me.loc;
+        l.vote = { vid, by: me.id, yes: new Set([me.id]), no: new Set(), timer: setTimeout(() => { const ll = locs.get(name); if (ll && ll.vote && ll.vote.vid === vid) voteEnd(name, ll, false, 'time'); }, VOTE_MS) };
+        toLoc(name, { t: 'vote', vid, by: me.name, byId: me.id, need: l.ids.size, yes: 1, ms: VOTE_MS }); break;
+      }
+      case 'voteReply': { const l = me.loc && locs.get(me.loc); if (!l || !l.vote || l.vote.vid !== m.vid || !l.ids.has(me.id) || l.vote.yes.has(me.id) || l.vote.no.has(me.id)) break; (m.ok ? l.vote.yes : l.vote.no).add(me.id); voteCheck(me.loc, l); break; }
       case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else { send(me, { t: 'opNo', k: m.op && m.op.k, uid: m.op && m.op.uid }); send(me, { t: 'resync', cab: cabView() }); } break; }
       case 'bridge': { const l = me.loc && locs.get(me.loc); if (!l || me.loc !== 'vietnam' || !(Number.isInteger(m.i) && m.i >= 0 && m.i < 40) || (m.k !== 'shake' && m.k !== 'snap')) break; l.bridges = l.bridges || {}; if (l.bridges[m.i] === 'snap') break; l.bridges[m.i] = m.k; toLoc(me.loc, { t: 'bridge', i: m.i, k: m.k, by: me.id }, me.id); break; }     // a rope bridge started to shake / snapped: everybody in the location sees it, and a later visitor finds it as it is now
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }

@@ -151,6 +151,7 @@
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
+    if ((e.code === 'KeyY' || e.code === 'KeyN') && !e.repeat && !App.modal && App.screen === 'play' && Net.vote && !Net.vote.mine) { e.preventDefault(); Net.voteReply(e.code === 'KeyY'); Snd.sfx.click(); return; }
     if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
@@ -185,6 +186,7 @@
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
     if (App.modal) { modalClick(x, y); return; }
+    if (sc === 'play' && Net.vote && !Net.vote.mine && !App.locked && Chat.voteClick(x, y)) return;
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
@@ -244,7 +246,7 @@
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
-    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) Chat.draw(ctx, t); else if (Chat.open) Chat.close();
+    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) { Chat.draw(ctx, t); if (App.screen === 'play') Chat.drawVote(ctx, t, mouse); } else if (Chat.open) Chat.close();
     Con.draw(ctx, t);
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }

@@ -73,7 +73,7 @@ const World = (() => {
       flowers: [['#f4f2ea', 'cotton', 1.5], ['#f4f2ea', 'cotton', 1.3], ['#f0efe6', 'cotton', 1.4], ['#f2a0b8', 'bell', 0.8], ['#f4f4e8', 'umbel', 0.9], ['#e8607c', 'cluster', 0.6], ['#fbfbf2', 'daisy', 0.6]],
       veg: [['hummock', 240, 'uniform', { variants: 8 }], ['tussock', 150, 'uniform', { variants: 4 }], ['ledum', 46, 'uniform', { variants: 4 }], ['cassandra', 34, 'uniform', { variants: 4 }], ['ryam', 30, 'grove', { variants: 5 }], ['snag', 9, 'sparse', { variants: 4 }], ['dbirch', 26, 'uniform', { variants: 4 }], ['spruce', 10, 'edge', { scale: 0.55 }]],
       rocks: 3, water: ['pool'], waterCol: '#3e3322', shoreCol: ['#3a3a22', '#2c2216'], mount: ['#34423a', '#46564a', false, 3, 8],
-      particles: ['fluff', '#e4e8e0', 0.75], amb: 'bog', clouds: 2.6, bait: null, lm: ['boardwalk', 'peatcut', 'boulders', 'stumps'], tf: 0.5,
+      particles: ['fluff', '#e4e8e0', 0.75], amb: 'bog', clouds: 2.6, bait: null, lm: ['boardwalk', 'boulders', 'stumps'], tf: 0.5,
     },
     // relic rain forest on the slopes of Mount Lamington (Oro province, New Guinea): giant branching trees close the sky, tree ferns and cycads below, frozen black lava flows, a jungle stream
     papua: {
@@ -1179,7 +1179,6 @@ const World = (() => {
         if (pts.length >= 14) plan.walk = pts;
       }
       if (plan.walk) plan.walk.forEach((q, i) => { if (i % 2 === 0) reserve.push({ x: q[0], z: q[1], r: 1.6 }); });
-      for (let tries = 0; tries < 60 && !plan.cut; tries++) { const a = rng.range(0, 6.28), d = rng.range(16, 40), x = Math.cos(a) * d, z = Math.sin(a) * d; if (inWater(x, z, 7) || reserve.some(q => Math.hypot(q.x - x, q.z - z) < 9)) continue; plan.cut = { x, z, ry: rng.range(0, 6.28) }; reserve.push({ x, z, r: 6.2 }); }
     }
     const treeMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
     function instanceAt(builderKey, pts, opts = {}) {
@@ -1257,10 +1256,6 @@ const World = (() => {
         const m = new THREE.Mesh(merge(parts, rng), treeMat); m.castShadow = false; m.receiveShadow = true; scene.add(m);
         const [sx, sz, sa] = pts[0], sp = new THREE.Group(); const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.3, 6), mWood); post.position.y = 0.65; const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.04), mat('#4a6a44')); board.position.set(0, 1.15, 0.05); sp.add(post, board);
         addMesh(sp, sx - Math.sin(sa) * 0.9, heightAt(sx, sz), sz + Math.cos(sa) * 0.9, -sa, true);    // a trail sign at the start
-      },
-      peatcut() {         // an old peat cutting: a wet dark trench in the moss
-        if (!plan.cut) return; const c = plan.cut; c.y = heightAt(c.x, c.z); world.lmPos = Object.assign(world.lmPos || {}, { peatcut: [c.x, c.z] }); const ry = c.ry;
-        const trench = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 2.2).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#2a2016' })); addMesh(trench, c.x, heightAt(c.x, c.z) + 0.05, c.z, -ry, false);
       },
       lavaflow() {        // columnar basalt: a cluster of hexagonal columns of cooled lava standing at the edge of the flow, moss and ferns on their tops
         if (!lava) return; const idx = rng.int(14, lava.pts.length - 14), P = lava.pts[idx], Q = lava.pts[idx + 1], ang = Math.atan2(Q.z - P.z, Q.x - P.x) + Math.PI / 2, off = P.w * 1.3; const cx = P.x + Math.cos(ang) * off, cz = P.z + Math.sin(ang) * off;

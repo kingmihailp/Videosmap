@@ -29,5 +29,17 @@ const Chat = (() => {
       }
     },
   };
+  // the vote card (a new landscape needs everybody's consent): buttons work whenever the cursor is free, Y / N always
+  o.vbtns = [];
+  o.drawVote = (ctx, t, m) => {
+    const v = Net.vote; o.vbtns = []; if (!v) return; const c = UIK.col, x = 6, y = 52, w = 214, left = Math.max(0, (v.end - performance.now()) / v.ms);
+    UIK.panel(ctx, x, y, w, 46, { fill: 'rgba(16,32,28,0.96)', border: c.gold });
+    T.draw(ctx, `${v.by} предлагает создать новую местность`, x + 6, y + 5, { size: 8, color: '#fff' });
+    T.draw(ctx, `Согласны: ${v.yes} из ${v.need}`, x + 6, y + 16, { size: 8, color: '#9ae0b0' });
+    if (!v.mine) { o.vbtns = [{ id: 'yes', label: 'Да (Y)', x: x + 6, y: y + 27, w: 60, h: 13 }, { id: 'no', label: 'Нет (N)', x: x + 72, y: y + 27, w: 60, h: 13 }]; o.vbtns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); T.draw(ctx, 'Esc — курсор', x + 138, y + 30, { size: 7, color: c.dim }); }
+    else T.draw(ctx, v.mine === 'yes' ? 'Вы за — ждём остальных…' : 'Вы против', x + 6, y + 29, { size: 8, color: c.dim });
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(x + 4, y + 42, w - 8, 2); ctx.fillStyle = c.gold; ctx.fillRect(x + 4, y + 42, (w - 8) * left, 2);
+  };
+  o.voteClick = (mx, my) => { for (const b of o.vbtns) if (UIK.hit(b, mx, my)) { Net.voteReply(b.id === 'yes'); Snd.sfx.click(); return true; } return false; };
   return o;
 })();
