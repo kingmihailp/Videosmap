@@ -51,9 +51,14 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   if (sound >= 0) { await place(sound, 0); await pg.waitForTimeout(3500); const s = await pg.evaluate(() => ({ screen: F0W.screen, st: F0W.play && F0W.play.world.bridges.map(b => b.state) })); T('a sound bridge holds the player in the middle', s.screen === 'play' && s.st[sound] === 'ok', s); }
   await place(worn, -info[worn].Lh + 1); let s1 = false; for (let i = 0; i < 40 && !s1; i++) { await pg.waitForTimeout(500); s1 = await pg.evaluate((i) => F0W.play.world.bridges[i].touched, worn); }
   s1 = s1 === true; T('stepping onto a worn bridge is noticed (it creaks)', s1 === true);
-  await place(worn, 0);
+  const fake = (sp) => pg.evaluate((sp) => { const w = F0W.play.world; Object.defineProperty(w, 'pstate', { configurable: true, get: () => ({ speed: sp, sprint: sp > 5 }), set: () => {} }); }, sp);
+  await place(worn, 0); await fake(3);
+  await pg.waitForTimeout(9000);
+  const w1 = await pg.evaluate((i) => ({ st: F0W.play.world.bridges[i].state, screen: F0W.screen, strain: F0W.play.world.bridges[i].strain }), worn);
+  T('walking carefully over a worn bridge: it only creaks, does not snap', w1.st === 'ok' && w1.screen === 'play' && w1.strain < 0.05, w1);
+  await fake(9); await place(worn, 0);
   let s2 = null; for (let i = 0; i < 120; i++) { await pg.waitForTimeout(500); s2 = await pg.evaluate((i) => ({ st: F0W.play && F0W.play.world.bridges[i].state, fall: !!(F0W.play && F0W.play.fall), screen: F0W.screen }), worn); if (s2.fall || s2.screen === 'map') break; }
-  T('in the middle of a worn bridge it snaps and the player falls', s2.fall || s2.screen === 'map', s2);
+  T('running over a worn bridge it snaps and the player falls', s2.fall || s2.screen === 'map', s2);
   let s3 = null; for (let i = 0; i < 120; i++) { await pg.waitForTimeout(500); s3 = await pg.evaluate(() => ({ screen: F0W.screen, note: F0W.mapNote && F0W.mapNote.text })); if (s3.screen === 'map') break; }
   T('after the fall the player is on the map with a note', s3.screen === 'map' && !!s3.note, s3);
   console.log(errs.length ? 'ERRORS ' + errs.slice(0, 5) : bad ? 'FAILED ' + bad : 'ALL PASS'); await br.close(); process.exit(bad || errs.length ? 1 : 0);

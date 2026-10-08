@@ -937,7 +937,8 @@ const World = (() => {
       if (env.slopeRock && sl > (env.rockSlope || 0.55)) c = mixc(c, rockc, clamp((sl - (env.rockSlope || 0.55)) * 2.2)); else if (sl > 0.9) c = mixc(c, rockc, clamp((sl - 0.9) * 1.5));
       if (hl) { const tm = TG[i], g = 1 - FG[i]; if (g > 0.6) { c = mixc(c, hex2rgb('#d6e2e6'), smooth(0.6, 0.95, g)); }
         if (tm > 0.2) { if (sl < 0.5) c = mixc(c, hex2rgb(n2 > 0.62 ? '#d4bc58' : n2 > 0.3 ? '#9cc84e' : '#78b044'), tm * 0.85); else c = mixc(c, hex2rgb('#6c5a3a'), tm * 0.75); }
-        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 22) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 22) / 8) * 0.6); }
+        if (g > 0.05) c = mixc(c, hex2rgb(n2 > 0.55 ? '#3e4a3a' : '#5a5e50'), clamp(g * 0.9 + (sl > 1.2 ? 0.3 : 0))); else if (H[i] > 22) c = mixc(c, hex2rgb('#b4b2a6'), clamp((H[i] - 22) / 8) * 0.6);
+        if (sl > 1.0 && g < 0.95) { const cl = clamp((sl - 1.0) * 1.6), band = Math.sin(H[i] * 1.9 + n2 * 4 + n * 9) * 0.5 + 0.5; c = mixc(c, hex2rgb(band > 0.7 ? '#8a7a62' : band > 0.35 ? '#6a6458' : '#4a4a46'), cl * 0.8); const mv = noise.fbm(x * 0.35 + 70, z * 0.35 + 40, 2); if (mv > 0.52) c = mixc(c, hex2rgb(mv > 0.64 ? '#4a7a3a' : '#3a5a32'), cl * smooth(0.52, 0.66, mv) * 0.75); } }   // cliffs: strata bands and moss streaks
       const sd = SD[i]; if (sd < 3.2) { c = mixc(c, sandc, smooth(3.2, 0.2, sd) * (env.sand ? 0.95 : 0.55)); if (sd < 0.3) c = mixc(c, mudc, smooth(0.3, -1, sd) * 0.8); }
       const k = 0.92 + n2 * 0.16; colArr[i * 3] = c[0] / 255 * k; colArr[i * 3 + 1] = c[1] / 255 * k; colArr[i * 3 + 2] = c[2] / 255 * k;
     }
@@ -945,6 +946,44 @@ const World = (() => {
     const gtex = groundTex(rng); gtex.repeat.set(SIZE / 2.4, SIZE / 2.4);
     const terrain = new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ map: gtex, vertexColors: true }));
     terrain.receiveShadow = true; scene.add(terrain);
+
+    // ---- cliff decor (highlands): lianas, moss cushions, outcrops, roots, strata ledges and crooked pines growing out of the rock face
+    if (hl) {
+      const dr = new Rng(seed ^ 0xc11f), parts = [], want = Math.min(4200, Math.round(1500 * K)), grad = (x, z) => { const gx = heightAt(x + 0.8, z) - heightAt(x - 0.8, z), gz = heightAt(x, z + 0.8) - heightAt(x, z - 0.8), l = Math.hypot(gx, gz) || 1; return [-gx / l, -gz / l]; };
+      const greens = ['#3c6a34', '#4a7a3a', '#58883e', '#2e5a30'], rocks = ['#7a7468', '#6a665c', '#8a8070', '#5e5a52'];
+      let got = 0;
+      for (let tries = 0; tries < 90000 && got < want; tries++) {
+        const a = dr.range(0, 6.283), d = Math.sqrt(dr.range(0, (PLAY_R + 4) * (PLAY_R + 4))), x = Math.cos(a) * d, z = Math.sin(a) * d, h = heightAt(x, z);
+        if (h < VOID + 2 || gorgeAt(x, z) > 0.9 || slopeAt(x, z) < 1.15) continue;
+        const [dx, dz] = grad(x, z), nx = -dx, nz = -dz, kind = dr.next();       // (dx,dz) points down the face, outwards from the rock is (dx,dz) too
+        const P = new V3(x + dx * 0.12, h, z + dz * 0.12); got++;
+        if (kind < 0.26) {                                                     // moss / fern cushion
+          const r = dr.range(0.4, 1.0); parts.push({ g: blobG(r, dr, 0.3, 1), m: M(P.x, P.y + 0.05, P.z, 0, dr.range(0, 6), 0, 1.3, 0.6, 1.3), c: dr.pick(greens), j: 0.1 });
+          if (dr.chance(0.5)) for (let k = 0; k < 3; k++) parts.push({ g: blobG(r * 0.45, dr, 0.3, 0), m: M(P.x + dr.range(-r, r) * 0.8, P.y + 0.2, P.z + dr.range(-r, r) * 0.8, 0, 0, 0, 1, 0.9, 1), c: dr.pick(['#6a9a40', '#8aaa48', '#4a8a3a']), j: 0.1 });
+        } else if (kind < 0.42) {                                              // rock outcrop
+          const r = dr.range(0.5, 1.5); parts.push({ g: blobG(r, dr, 0.35, 1), m: M(P.x + dx * r * 0.2, P.y, P.z + dz * r * 0.2, dr.range(0, 3), dr.range(0, 6), dr.range(0, 3), dr.range(0.9, 1.5), dr.range(0.6, 1), dr.range(0.9, 1.4)), c: dr.pick(rocks), j: 0.12 });
+        } else if (kind < 0.6) {                                               // liana hanging down the face
+          let cur = P.clone(), px = P.x, pz = P.z; const n = dr.int ? dr.int(5, 12) : 5 + Math.floor(dr.next() * 8), lc = dr.pick(['#2e4a28', '#3a5a2c', '#4a5a30']);
+          for (let k = 1; k <= n; k++) {
+            const yt = P.y - k * 0.8; let st = 0; while (heightAt(px, pz) > yt + 0.05 && st < 14) { px += dx * 0.2; pz += dz * 0.2; st++; }
+            if (st >= 14 || yt < VOID + 1) break;
+            const nxt = new V3(px + dx * 0.14 + Math.sin(k * 1.7 + x) * 0.05, yt, pz + dz * 0.14); const l = limb(cur, nxt, 0.045, 0.04, 4); parts.push({ g: l.g, m: l.m, c: lc, j: 0.06 });
+            if (k % 2 === 0) parts.push({ g: blobG(0.2, dr, 0.3, 0), m: M(nxt.x, nxt.y, nxt.z, 0, dr.range(0, 6), 0, 1, 0.7, 1), c: dr.pick(greens), j: 0.1 });
+            cur = nxt;
+          }
+        } else if (kind < 0.7) {                                               // hanging roots
+          for (let k = 0; k < 4; k++) { const ax = P.x + dr.range(-0.4, 0.4), az = P.z + dr.range(-0.4, 0.4), ay = heightAt(ax, az) + 0.1, l = limb(new V3(ax + dx * 0.1, ay, az + dz * 0.1), new V3(ax + dx * 0.3 + dr.range(-0.2, 0.2), ay - dr.range(0.8, 1.9), az + dz * 0.3 + dr.range(-0.2, 0.2)), 0.08, 0.025, 4); parts.push({ g: l.g, m: l.m, c: '#5a4430', j: 0.08 }); }
+        } else if (kind < 0.82) {                                              // strata ledge (a thin slab along the contour)
+          const L = dr.range(2, 4.5); parts.push({ g: blobG(0.5, dr, 0.25, 1), m: M(P.x + dx * 0.2, P.y, P.z + dz * 0.2, 0, Math.atan2(-dz, dx) + Math.PI / 2 * 0 + 0, 0, L, 0.28, 0.7), c: dr.pick(['#8a7a62', '#6a6458', '#9a8c72']), j: 0.1 });
+          if (dr.chance(0.6)) parts.push({ g: blobG(0.5, dr, 0.3, 1), m: M(P.x + dx * 0.3, P.y + 0.25, P.z + dz * 0.3, 0, dr.range(0, 6), 0, L * 0.8, 0.22, 0.6), c: dr.pick(greens), j: 0.1 });
+        } else {                                                               // crooked pine growing out of a crack
+          const out = new V3(P.x + dx * dr.range(0.9, 1.6), P.y + dr.range(0.5, 1.1), P.z + dz * dr.range(0.9, 1.6)), top = new V3(out.x + dx * 0.3, out.y + dr.range(0.9, 1.6), out.z + dz * 0.3), l1 = limb(P, out, 0.13, 0.09, 5), l2 = limb(out, top, 0.09, 0.05, 5);
+          parts.push({ g: l1.g, m: l1.m, c: '#4a3626', j: 0.06 }, { g: l2.g, m: l2.m, c: '#4a3626', j: 0.06 });
+          for (let k = 0; k < 3; k++) parts.push({ g: blobG(dr.range(0.4, 0.65), dr, 0.3, 1), m: M(top.x + dr.range(-0.5, 0.5), top.y - k * 0.3 + 0.1, top.z + dr.range(-0.5, 0.5), 0, dr.range(0, 6), 0, 1.4 - k * 0.15, 0.5, 1.4 - k * 0.15), c: dr.pick(['#244a30', '#2e5a34', '#1e4028']), j: 0.1 });
+        }
+      }
+      const dm = new THREE.Mesh(merge(parts, dr), new THREE.MeshLambertMaterial({ vertexColors: true })); dm.castShadow = false; dm.receiveShadow = true; dm.userData.noFloat = true; dm.frustumCulled = false; scene.add(dm);
+    }
 
 
     // ---- bridges across the gorges (highlands): a plank deck on ropes; a worn one may snap under the player, who then falls into the gorge
@@ -1007,7 +1046,18 @@ const World = (() => {
           if (b.fallCheck) { b.fallCheck = false; if (onDeck && b.t < 90) world.pendingFall = b; }          // another player's bridge snapped under my feet
           if (b.state === 'ok') {
             if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b, i: b.i }); }
-            if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
+            if (b.weak) {
+              // a worn bridge only gives way under a runner: walking (or creeping) is safe, it just creaks; running on it builds up strain
+              const ps = world.pstate || { speed: 0 }, run = on && ps.speed > 4.6;
+              b.strain = clamp((b.strain || 0) + (run ? dt : -dt * 0.6), 0, 2);
+              if (b.strain > 0.45 && !b.warned) { b.warned = true; world.events.push({ k: 'warn', b, i: b.i }); } else if (b.strain < 0.12) b.warned = false;
+              if (on && !run) { b.ct = (b.ct === undefined ? 0.8 : b.ct) - dt; if (b.ct <= 0) { b.ct = 1.1 + Math.random() * 1.6; world.events.push({ k: 'creak2', b, i: b.i }); } }
+              if (on || b.strain > 0 || b.swaying) {          // the planks sway under the feet, the more the more strain
+                b.swaying = on || b.strain > 0.02; const amp = 0.004 + 0.03 * Math.min(1, b.strain);
+                b.planks.forEach((p, i) => { p.y = p.y0 + (b.swaying ? Math.sin(t * (7 + b.strain * 9) + p.u * 1.6) * amp * Math.min(1, 1 - Math.abs(p.u) / b.Lh * 0.5) : 0); b.putPlank(i); }); b.flush();
+              }
+              if (b.strain >= 1 && on) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
+            }
           } else if (b.state === 'shake') {
             b.t += dt; b.planks.forEach((p, i) => { p.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2); b.putPlank(i); }); b.flush();
             if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b, i: b.i, remote: !!b.remote }); if (onDeck) world.pendingFall = b; b.planks.forEach((p, i) => { p.y = p.y0; b.putPlank(i); }); b.flush(); }

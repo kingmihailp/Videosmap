@@ -3258,7 +3258,18 @@ const World = (() => {
           if (b.fallCheck) { b.fallCheck = false; if (onDeck && b.t < 90) world.pendingFall = b; }          // another player's bridge snapped under my feet
           if (b.state === 'ok') {
             if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b, i: b.i }); }
-            if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
+            if (b.weak) {
+              // a worn bridge only gives way under a runner: walking (or creeping) is safe, it just creaks; running on it builds up strain
+              const ps = world.pstate || { speed: 0 }, run = on && ps.speed > 4.6;
+              b.strain = clamp((b.strain || 0) + (run ? dt : -dt * 0.6), 0, 2);
+              if (b.strain > 0.45 && !b.warned) { b.warned = true; world.events.push({ k: 'warn', b, i: b.i }); } else if (b.strain < 0.12) b.warned = false;
+              if (on && !run) { b.ct = (b.ct === undefined ? 0.8 : b.ct) - dt; if (b.ct <= 0) { b.ct = 1.1 + Math.random() * 1.6; world.events.push({ k: 'creak2', b, i: b.i }); } }
+              if (on || b.strain > 0 || b.swaying) {          // the planks sway under the feet, the more the more strain
+                b.swaying = on || b.strain > 0.02; const amp = 0.004 + 0.03 * Math.min(1, b.strain);
+                b.planks.forEach((p, i) => { p.y = p.y0 + (b.swaying ? Math.sin(t * (7 + b.strain * 9) + p.u * 1.6) * amp * Math.min(1, 1 - Math.abs(p.u) / b.Lh * 0.5) : 0); b.putPlank(i); }); b.flush();
+              }
+              if (b.strain >= 1 && on) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
+            }
           } else if (b.state === 'shake') {
             b.t += dt; b.planks.forEach((p, i) => { p.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2); b.putPlank(i); }); b.flush();
             if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b, i: b.i, remote: !!b.remote }); if (onDeck) world.pendingFall = b; b.planks.forEach((p, i) => { p.y = p.y0; b.putPlank(i); }); b.flush(); }
@@ -4144,7 +4155,9 @@ class Play {
     this.blackT = 6; return d;
   }
   bridgeEvent(e) {
-    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят и качаются под ногами — мост ветхий…', 3.5); }
+    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят — мост ветхий. Идите осторожно и не бегите.', 4); }
+    else if (e.k === 'creak2') Snd.sfx.creak();
+    else if (e.k === 'warn') { Snd.sfx.creak(); this.toast('Мост ходит ходуном — остановитесь!', 2.4); }
     else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
     else if (e.k === 'snap') { Snd.sfx.snap(); this.toast('Мост оборвался!', 2.5); }
     if (this.mp && !e.remote && (e.k === 'shake' || e.k === 'snap') && e.i !== undefined) Net.send('bridge', { i: e.i, k: e.k });      // the others see it too
@@ -4336,7 +4349,7 @@ class Play {
     const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
     const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
-    const speedNow = moved / Math.max(dt, 1e-4);
+    const speedNow = moved / Math.max(dt, 1e-4); w.pstate = { speed: speedNow, sprint };
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
     const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
     const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);

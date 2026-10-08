@@ -263,7 +263,9 @@ class Play {
     this.blackT = 6; return d;
   }
   bridgeEvent(e) {
-    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят и качаются под ногами — мост ветхий…', 3.5); }
+    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят — мост ветхий. Идите осторожно и не бегите.', 4); }
+    else if (e.k === 'creak2') Snd.sfx.creak();
+    else if (e.k === 'warn') { Snd.sfx.creak(); this.toast('Мост ходит ходуном — остановитесь!', 2.4); }
     else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
     else if (e.k === 'snap') { Snd.sfx.snap(); this.toast('Мост оборвался!', 2.5); }
     if (this.mp && !e.remote && (e.k === 'shake' || e.k === 'snap') && e.i !== undefined) Net.send('bridge', { i: e.i, k: e.k });      // the others see it too
@@ -455,7 +457,7 @@ class Play {
     const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
     const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
-    const speedNow = moved / Math.max(dt, 1e-4);
+    const speedNow = moved / Math.max(dt, 1e-4); w.pstate = { speed: speedNow, sprint };
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
     const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
     const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
