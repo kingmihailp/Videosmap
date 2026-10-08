@@ -86,7 +86,7 @@ const World = (() => {
       particles: ['spores', '#dfffb0', 1.0], amb: 'papua', clouds: 0.25, bait: ['fruit', 'sap'], lm: ['lavaflow', 'biglog', 'boulders'], tf: 0.42,
     },
     vietnam: {      // the limestone highlands of Hoang Lien Son (Sa Pa), northern Vietnam: sunny, with mountain mist in the gorges
-      sky: ['#2c7fe6', '#c4def2'], fog: ['#e6eef2', 0.0105], sun: ['#fff6e0', [0.3, 0.95, 0.25]], hemi: ['#dcecff', '#5a7a48', 1.0], highland: true, mist: true,
+      sky: ['#2c7fe6', '#c4def2'], fog: ['#e6eef2', 0.0088], sun: ['#fff6e0', [0.3, 0.95, 0.25]], hemi: ['#dcecff', '#5a7a48', 1.0], highland: true, mist: true,
       amp: 3.4, freq: 0.03, ground: ['#5a8a3a', '#4a7a32', '#8a9a4c'], rock: '#a09d90', slopeRock: true,
       grass: { col: ['#6a9a3c', '#527f32', '#8ab04a', '#a6b858'], h: [0.3, 0.7], n: 9500 },
       flowers: [['#e0284a', 'cluster', 1.5], ['#f8f4ec', 'daisy', 1.0], ['#ffcc2a', 'daisy', 0.8], ['#8a4ad8', 'spike', 0.8], ['#ff8a2a', 'spike', 0.7], ['#f080b0', 'bell', 0.9]],
@@ -685,6 +685,8 @@ const World = (() => {
   function build(biome, seedStr) {
     seedStr = seedStr || randomSeed();
     const env = Object.assign({}, ENV[biome.id]);
+    const BIGMAP = !!env.highland;         // the archipelago is a much bigger place than the other locations
+    const SIZE = BIGMAP ? 360 : 180, SEG = BIGMAP ? 300 : 180, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : 58, CELL = SIZE / SEG;
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
     env._bush = ({ papua: ['#2a6a30', '#3a7a34'], vietnam: ['#2e6a34', '#3a7a3a'], russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
@@ -720,30 +722,41 @@ const World = (() => {
     const hl = env.highland ? (() => {
       const nzf = (a, k) => noise.at(Math.cos(a) * 1.3 + k * 11.7 + 50, Math.sin(a) * 1.3 + k * 5.3 + 50);
       const Rb = (o, a) => o.R * (1 + 0.3 * (nzf(a, o.k) - 0.5));                         // the irregular outline of an island
-      const mk = (x, z, R, k) => ({ x, z, R, k, terr: rng.chance(0.4), Hr: 0, hillH: 0, hillR: 0, hx: 0, hz: 0 });
-      let isl, edges, used;
+      const mk = (x, z, R, k, Hr) => ({ x, z, R, k, terr: rng.chance(0.4), Hr, hills: [] });
+      let isl, edges, used, bestIsl = null;
       const ends = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a), r1 = Rb(I, a) - 7, r2 = Rb(J, a + Math.PI) - 7; return { a, A: { x: I.x + dx * r1, z: I.z + dz * r1 }, B: { x: J.x - dx * r2, z: J.z - dz * r2 } }; };
       const free = E => used.every(q => Math.hypot(q.x - E.A.x, q.z - E.A.z) > 10 && Math.hypot(q.x - E.B.x, q.z - E.B.z) > 10);      // two bridges never land near each other
       const clear = (A, B, skip) => isl.every((Q, q) => skip.includes(q) || (() => { const dx = B.x - A.x, dz = B.z - A.z, L2 = dx * dx + dz * dz, t = clamp(((Q.x - A.x) * dx + (Q.z - A.z) * dz) / L2); return Math.hypot(A.x + dx * t - Q.x, A.z + dz * t - Q.z) > Q.R * 1.2 + 2; })());
-      for (let attempt = 0; attempt < 8; attempt++) {         // lay the islands out again if the chain came out too short
-        isl = [mk(0, 0, rng.range(15, 18), 0)]; edges = []; used = [];
-        for (let tries = 0; tries < 3000 && isl.length < 9; tries++) {
-          const par = rng.chance(0.75) ? isl.length - 1 : rng.int(0, isl.length - 1), P = isl[par], a = rng.range(0, 6.283), o = mk(0, 0, [8, 10, 12, 14, 17][rng.int(0, 4)] + rng.range(-1, 1), isl.length), gap = rng.range(7, 12), d = Rb(P, a) + Rb(o, a + Math.PI) + gap;
+      const LIM = PLAY_R - 3;
+      for (let attempt = 0; attempt < 10; attempt++) {         // lay the islands out again if the chain came out too short
+        isl = [mk(0, 0, rng.range(20, 27), 0, 14)]; edges = []; used = []; let huge = 0;
+        for (let tries = 0; tries < 6000 && isl.length < 17; tries++) {
+          const k = isl.length, par = rng.chance(0.6) ? k - 1 : rng.int(0, k - 1), P = isl[par], a = rng.range(0, 6.283);
+          // sizes: one huge island right next to the home one, then a few big, many medium and small ones
+          const r = rng.next(), R = k === 1 ? rng.range(34, 46) : r < 0.07 && huge < 2 ? rng.range(32, 44) : r < 0.3 ? rng.range(21, 29) : r < 0.66 ? rng.range(14, 20) : rng.range(10, 13);
+          const land = k === 1 || (k > 1 && rng.chance(0.28));             // joined to its parent by solid ground instead of a bridge
+          const o = mk(0, 0, R, k, land ? clamp(P.Hr + rng.range(-2.5, 2.5), 8, 22) : rng.range(9, 21));
+          const d = Rb(P, a) + Rb(o, a + Math.PI) + (land ? -rng.range(9, 14) : rng.range(7, 12));
           o.x = P.x + Math.cos(a) * d; o.z = P.z + Math.sin(a) * d;
-          if (Math.hypot(o.x, o.z) + o.R * 1.18 > 57) continue;
+          if (Math.hypot(o.x, o.z) + o.R * 1.18 > LIM) continue;
           if (isl.some((Q, q) => q !== par && Math.hypot(Q.x - o.x, Q.z - o.z) < Q.R * 1.18 + o.R * 1.18 + 8)) continue;
-          if (!clear(P, o, [par])) continue;
-          { const E = ends(P, o); if (!free(E)) continue; used.push(E.A, E.B); }
-          isl.push(o); edges.push({ i: par, j: isl.length - 1, loop: false });
+          if (!land) { if (!clear(P, o, [par])) continue; const E = ends(P, o); if (!free(E)) continue; used.push(E.A, E.B); }
+          if (R > 31) huge++;
+          isl.push(o); edges.push({ i: par, j: k, loop: false, land });
         }
-        if (isl.length >= 6) break;
+        if (!bestIsl || isl.length > bestIsl.isl.length) bestIsl = { isl, edges, used };
+        if (isl.length >= 12) break;
       }
+      ({ isl, edges, used } = bestIsl);
       const gapOf = (I, J) => { const a = Math.atan2(J.z - I.z, J.x - I.x); return Math.hypot(J.x - I.x, J.z - I.z) - Rb(I, a) - Rb(J, a + Math.PI); };
-      const cand = []; for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (!edges.some(e => (e.i === i && e.j === j) || (e.i === j && e.j === i))) { const g = gapOf(isl[i], isl[j]); if (g > 6 && g < 14 && clear(isl[i], isl[j], [i, j])) cand.push({ i, j, loop: true }); }
-      for (let k = 0; k < 2 && cand.length; k++) { const c = cand.splice(rng.int(0, cand.length - 1), 1)[0], E = ends(isl[c.i], isl[c.j]); if (!free(E)) { k--; continue; } used.push(E.A, E.B); edges.push(c); }
-      isl.forEach((o, k) => { o.Hr = k === 0 ? 14 : rng.range(9, 21); o.hillH = k === 0 ? 5.5 : rng.range(3, Math.min(11, o.R * 0.55)); o.hillR = o.R * 0.8; const ha = rng.range(0, 6.283), hd = o.R * (k === 0 ? 0.45 : rng.range(0, 0.3)); o.hx = o.x + Math.cos(ha) * hd; o.hz = o.z + Math.sin(ha) * hd; });
+      const cand = []; for (let i = 0; i < isl.length; i++) for (let j = i + 1; j < isl.length; j++) if (!edges.some(e => (e.i === i && e.j === j) || (e.i === j && e.j === i))) { const g = gapOf(isl[i], isl[j]); if (g > 6 && g < 14 && clear(isl[i], isl[j], [i, j])) cand.push({ i, j, loop: true, land: false }); }
+      for (let k = 0; k < 3 && cand.length; k++) { const c = cand.splice(rng.int(0, cand.length - 1), 1)[0], E = ends(isl[c.i], isl[c.j]); if (!free(E)) { k--; continue; } used.push(E.A, E.B); edges.push(c); }
+      isl.forEach((o, k) => {           // every island has hills of its own: the bigger the island, the more of them
+        const n = o.R < 12 ? 1 : o.R < 20 ? 2 : o.R < 30 ? 3 : 5;
+        for (let q = 0; q < n; q++) { const hr = Math.max(6, o.R * rng.range(0.32, 0.7)), ha = rng.range(0, 6.283), hd = (k === 0 && q === 0) ? o.R * 0.5 : rng.range(0, Math.max(0, o.R * 0.7 - hr * 0.3)); o.hills.push({ x: o.x + Math.cos(ha) * hd, z: o.z + Math.sin(ha) * hd, r: hr, h: Math.min(rng.range(2.5, 12), hr * 0.55) * (k === 0 ? 0.6 : 1) }); }
+      });
       const kids = isl.map(() => 0); edges.forEach(e => { if (!e.loop) kids[e.i]++; });
-      const sites = edges.map(e => {
+      const sites = edges.filter(e => !e.land).map(e => {
         const I = isl[e.i], J = isl[e.j], a = Math.atan2(J.z - I.z, J.x - I.x), dx = Math.cos(a), dz = Math.sin(a);
         const A = { x: I.x + dx * (Rb(I, a) - 7), z: I.z + dz * (Rb(I, a) - 7) }, B = { x: J.x - dx * (Rb(J, a + Math.PI) - 7), z: J.z - dz * (Rb(J, a + Math.PI) - 7) }, L = Math.hypot(B.x - A.x, B.z - A.z);
         const leaf = !e.loop && kids[e.j] === 0 && e.j !== 0;
@@ -752,12 +765,13 @@ const World = (() => {
       // a worn bridge: the spare (loop) bridges often, the ones to a dead-end island sometimes, a bridge that holds the chain together never; at least one worn bridge always
       sites.forEach(b => { b.weak = b.loop ? rng.chance(0.65) : b.leaf ? rng.chance(0.4) : false; });
       if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
-      return { isl, sites, Rb, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3 };
+      return { isl, sites, edges, Rb, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + Math.PI * o.R * o.R * 0.85, 0) };
     })() : null;
+    const K = hl ? clamp(hl.area / 5200, 1, 4) : 1;          // how much more there is to grow and to catch on a big map
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
     const isTop = (o, x, z) => {
-      const d = Math.hypot(x - o.x, z - o.z), dh = Math.hypot(x - o.hx, z - o.hz);
-      let h = o.Hr + o.hillH * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, dh / o.hillR))) + (noise.fbm(x * 0.05 + o.k * 9, z * 0.05 + o.k * 4, 3) - 0.5) * 3.4 + (noise.at(x * 0.3 + o.k, z * 0.3) - 0.5) * 0.6;
+      const d = Math.hypot(x - o.x, z - o.z); let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
+      let h = o.Hr + hills + (noise.fbm(x * 0.05 + o.k * 9, z * 0.05 + o.k * 4, 3) - 0.5) * 3.4 + (noise.at(x * 0.3 + o.k, z * 0.3) - 0.5) * 0.6;
       let tm = 0; if (o.terr) { tm = smooth(0.3, 0.5, d / o.R) * smooth(0.95, 0.78, d / o.R); if (tm > 0.001) { const st = 1.15, t = h / st, fl = Math.floor(t); h = lerp(h, (fl + smooth(0.45, 1, t - fl)) * st, tm * 0.92); } }       // rice terraces: flat steps with rounded risers
       return [h, tm];
     };
@@ -911,35 +925,39 @@ const World = (() => {
 
     // ---- bridges across the gorges (highlands): a plank deck on ropes; a worn one may snap under the player, who then falls into the gorge
     if (hl) {
-      const bmat = c => new THREE.MeshLambertMaterial({ color: c });
+      const rmat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
       for (const b of hl.sites) {
-        const brng = new Rng(seed ^ Math.floor(b.a * 1000) ^ (b.weak ? 0x1234 : 0x4321)), Lh = b.W + 3.8, hw = 0.88; b.Lh = Lh; b.hw = hw; b.sag = b.weak ? 0.5 : 0.22; b.planks = []; b.ropes = [];
-        const grp = new THREE.Group(); scene.add(grp); b.group = grp;
+        const brng = new Rng(seed ^ Math.floor(b.a * 1000) ^ (b.weak ? 0x1234 : 0x4321)), Lh = b.W + 3.8, hw = 0.88; b.Lh = Lh; b.hw = hw; b.sag = b.weak ? 0.5 : 0.22;
         b.deckBase = u => b.Hin + (b.Hout - b.Hin) * (u + Lh) / (2 * Lh); const deckY = u => b.deckBase(u) + 0.06 - b.sag * (1 - (u / Lh) * (u / Lh)), W3 = (u, v, y) => new V3(b.cx + b.nx * u + b.tx * v, y, b.cz + b.nz * u + b.tz * v);
-        const woods = b.weak ? ['#6a5238', '#5a4630', '#7a6444', '#4a5236'] : ['#9a7a4a', '#a88858', '#8e6e42', '#a07e50'], wm = woods.map(bmat), ropeM = bmat(b.weak ? '#6a5a3c' : '#c4aa72'), postM = bmat('#4a3626');
-        const plankG = new THREE.BoxGeometry(0.27, 0.07, 1.78), n = Math.floor(2 * Lh / 0.34), sp = 2 * Lh / n;
+        const woods = b.weak ? ['#6a5238', '#5a4630', '#7a6444', '#4a5236'] : ['#9a7a4a', '#a88858', '#8e6e42', '#a07e50'], ropeC = b.weak ? '#6a5a3c' : '#c4aa72', postC = '#4a3626';
+        // the planks: one instanced mesh per bridge (a plank can still move on its own when the bridge shakes and falls)
+        const plankG = new THREE.BoxGeometry(0.27, 0.07, 1.78), n = Math.floor(2 * Lh / 0.34), sp = 2 * Lh / n, P = [];
         for (let i = 0; i < n; i++) {
           const u = -Lh + (i + 0.5) * sp; if (b.weak && i > 1 && i < n - 2 && brng.chance(0.14)) continue;
-          const m = new THREE.Mesh(plankG, wm[brng.int(0, wm.length - 1)]); m.castShadow = true; m.receiveShadow = true; const y0 = deckY(u) + 0.035, pos = W3(u, brng.range(-0.03, 0.03), y0);
-          m.userData.noFloat = true; m.position.copy(pos); m.rotation.set(0, -b.a + brng.range(-0.04, 0.04), b.weak && brng.chance(0.25) ? brng.range(-0.12, 0.12) : 0, 'YXZ'); grp.add(m);
-          if (b.weak && brng.chance(0.22)) m.scale.z = brng.range(0.5, 0.8);
-          b.planks.push({ m, u, y0, vy: 0, vx: 0, sx: brng.range(-3, 3), sz: brng.range(-3, 3), delay: Math.abs(u) * 0.025 + brng.range(0, 0.25) });
+          const y0 = deckY(u) + 0.035, pos = W3(u, brng.range(-0.03, 0.03), y0);
+          P.push({ u, pos, y: y0, y0, rx: 0, ry: -b.a + brng.range(-0.04, 0.04), rz: b.weak && brng.chance(0.25) ? brng.range(-0.12, 0.12) : 0, sz: b.weak && brng.chance(0.22) ? brng.range(0.5, 0.8) : 1, vy: 0, spx: brng.range(-3, 3), spz: brng.range(-3, 3), delay: Math.abs(u) * 0.025 + brng.range(0, 0.25), col: brng.pick(woods), hide: false });
         }
-        const seg = (A, B, r0, r1, mat, tag, uMid) => { const l = limb(A, B, r0, r1, 4), m = new THREE.Mesh(l.g, mat); m.matrixAutoUpdate = false; m.userData.noFloat = true; m.matrix.copy(l.m); m.castShadow = true; grp.add(m); b.ropes.push({ m, u: uMid, tag }); return m; };
+        const im = new THREE.InstancedMesh(plankG, new THREE.MeshLambertMaterial({ color: 0xffffff }), P.length); im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; im.userData.noFloat = true; scene.add(im);
+        const tM = new THREE.Matrix4(), tQ = new THREE.Quaternion(), tE = new THREE.Euler(), tS = new THREE.Vector3(), tP = new THREE.Vector3(), tC = new THREE.Color();
+        b.putPlank = i => { const p = P[i]; tE.set(p.rx, p.ry, p.rz, 'YXZ'); tQ.setFromEuler(tE); if (p.hide) tS.set(0, 0, 0); else tS.set(1, 1, p.sz); tP.set(p.pos.x, p.y, p.pos.z); tM.compose(tP, tQ, tS); im.setMatrixAt(i, tM); };
+        P.forEach((p, i) => { b.putPlank(i); im.setColorAt(i, tC.set(p.col)); }); b.planks = P; b.flush = () => { im.instanceMatrix.needsUpdate = true; }; b.planksIM = im;
+        // ropes, posts, anchor stones, moss: merged into two meshes (the middle part of the ropes goes down with the deck; the ends stay hanging from the posts)
+        const mid = [], ends = [], seg = (A, B, r0, r1, col, tag, uMid) => { const l = limb(A, B, r0, r1, 4); (Math.abs(uMid) < Lh - 1.5 && tag !== 'post' ? mid : ends).push({ g: l.g, m: l.m, c: col, j: 0.03 }); };
         const NS = 18;
         for (const sd of [-1, 1]) {
           for (let k = 0; k < NS; k++) {                                   // the hand rope and the rope under the deck edge
             const u0 = -Lh + 2 * Lh * k / NS, u1 = -Lh + 2 * Lh * (k + 1) / NS, um = (u0 + u1) / 2;
             const gap = b.weak && k > 2 && k < NS - 3 && brng.chance(0.14);
-            if (!gap) seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u1, sd * 0.95, deckY(u1) + 1.05), 0.032, 0.032, ropeM, 'hand', um);
-            else { seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u0 + 0.12, sd * 0.95, deckY(u0) + 0.45), 0.03, 0.012, ropeM, 'hand', um); seg(W3(u1, sd * 0.95, deckY(u1) + 1.05), W3(u1 - 0.12, sd * 0.95, deckY(u1) + 0.4), 0.03, 0.012, ropeM, 'hand', um); }
-            seg(W3(u0, sd * 0.82, deckY(u0) - 0.03), W3(u1, sd * 0.82, deckY(u1) - 0.03), 0.05, 0.05, ropeM, 'edge', um);
-            if (k > 0) seg(W3(u0, sd * 0.9, deckY(u0) + 0.04), W3(u0, sd * 0.95, deckY(u0) + 1.05), 0.016, 0.016, ropeM, 'vert', u0);
+            if (!gap) seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u1, sd * 0.95, deckY(u1) + 1.05), 0.032, 0.032, ropeC, 'hand', um);
+            else { seg(W3(u0, sd * 0.95, deckY(u0) + 1.05), W3(u0 + 0.12, sd * 0.95, deckY(u0) + 0.45), 0.03, 0.012, ropeC, 'hand', um); seg(W3(u1, sd * 0.95, deckY(u1) + 1.05), W3(u1 - 0.12, sd * 0.95, deckY(u1) + 0.4), 0.03, 0.012, ropeC, 'hand', um); }
+            seg(W3(u0, sd * 0.82, deckY(u0) - 0.03), W3(u1, sd * 0.82, deckY(u1) - 0.03), 0.05, 0.05, ropeC, 'edge', um);
+            if (k > 0) seg(W3(u0, sd * 0.9, deckY(u0) + 0.04), W3(u0, sd * 0.95, deckY(u0) + 1.05), 0.016, 0.016, ropeC, 'vert', u0);
           }
-          for (const e of [-1, 1]) { const u = e * (Lh - 0.2); seg(W3(u, sd * 0.95, b.deckBase(u) - 0.3), W3(u, sd * 0.95, b.deckBase(u) + 1.3), 0.1, 0.09, postM, 'post', u); }
+          for (const e of [-1, 1]) { const u = e * (Lh - 0.2); seg(W3(u, sd * 0.95, b.deckBase(u) - 0.3), W3(u, sd * 0.95, b.deckBase(u) + 1.3), 0.1, 0.09, postC, 'post', u); }
         }
-        for (const e of [-1, 1]) for (const sd of [-1, 1]) { const pos = W3(e * (Lh + 0.9), sd * 1.7, 0); const st = new THREE.Mesh(blobG(0.55, brng, 0.3, 1), bmat('#8a877c')); st.position.set(pos.x, heightAt(pos.x, pos.z) + 0.1, pos.z); st.scale.set(1, 0.7, 1); st.castShadow = true; scene.add(st); world.colliders.push({ x: pos.x, z: pos.z, r: 0.45 }); }
-        if (b.weak) for (let i = 0; i < 5; i++) { const u = brng.range(-Lh + 2, Lh - 2), m = new THREE.Mesh(blobG(0.16, brng, 0.3, 0), bmat('#5a7a3a')); const pos = W3(u, brng.range(-0.6, 0.6), deckY(u) + 0.1); m.userData.noFloat = true; m.position.copy(pos); m.scale.set(1.4, 0.35, 1.2); grp.add(m); b.planks.push({ m, u, y0: pos.y, vy: 0, sx: 0, sz: 0, delay: Math.abs(u) * 0.025 }); }      // moss on the old planks
+        for (const e of [-1, 1]) for (const sd of [-1, 1]) { const pos = W3(e * (Lh + 0.9), sd * 1.7, 0); ends.push({ g: blobG(0.55, brng, 0.3, 1), m: M(pos.x, heightAt(pos.x, pos.z) + 0.1, pos.z, 0, 0, 0, 1, 0.7, 1), c: '#8a877c', j: 0.08 }); world.colliders.push({ x: pos.x, z: pos.z, r: 0.45 }); }
+        if (b.weak) for (let i = 0; i < 5; i++) { const u = brng.range(-Lh + 2, Lh - 2), pos = W3(u, brng.range(-0.6, 0.6), deckY(u) + 0.1); mid.push({ g: blobG(0.16, brng, 0.3, 0), m: M(pos.x, pos.y, pos.z, 0, 0, 0, 1.4, 0.35, 1.2), c: '#5a7a3a', j: 0.08 }); }      // moss on the old planks
+        b.midMesh = new THREE.Mesh(merge(mid, brng), rmat); b.endMesh = new THREE.Mesh(merge(ends, brng), rmat); for (const m of [b.midMesh, b.endMesh]) { m.castShadow = true; m.frustumCulled = false; m.userData.noFloat = true; scene.add(m); }
         for (let k = -Lh + 3; k < Lh - 2; k += 3) reserve.push({ x: b.cx + b.nx * k, z: b.cz + b.nz * k, r: 2.2 });
         for (const e of [-1, 1]) for (let k = Lh - 1; k < Lh + 17; k += 2.5) reserve.push({ x: b.cx + b.nx * e * k, z: b.cz + b.nz * e * k, r: 3.4 });      // the way off the bridge stays free of trees, rocks and spires
       }
@@ -949,7 +967,7 @@ const World = (() => {
       world.canWalk = (x, z) => deckAt(x, z) !== null || (gorgeAt(x, z) < 0.2 && slopeAt(x, z) < 1.7);
       world.deepMsg = 'Здесь обрыв: дальше только туман. Ищите тропу или мост.';
       world.edgeMsg = 'Дальше — только туман.';
-      world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.noFly = (x, z) => gorgeAt(x, z) > 0.6; world.siteUV = siteUV; world.islands = hl.isl;
+      world.inGorge = (x, z) => gorgeAt(x, z) > 0.05; world.noFly = (x, z) => gorgeAt(x, z) > 0.6; world.siteUV = siteUV; world.islands = hl.isl; world.links = hl.edges;
       world.flyH = (x, z) => { const h = heightAt(x, z), [g, Hs] = gorgeInfo(x, z); return g > 0 ? h + g * (Hs - h) : h; };      // butterflies glide across a chasm at the height of the islands
       world.moveK = (x, z, dx, dz) => { const l = Math.hypot(dx, dz); if (l < 1e-4) return 1; const gr = (world.groundAt(x + dx / l * 1.2, z + dz / l * 1.2) - world.groundAt(x, z)) / 1.2; return clamp(1 - 0.5 * gr, 0.42, 1.18); };    // climbing is slow, going down is quick
       hl.sites.forEach((b, i) => { b.i = i; });
@@ -967,12 +985,12 @@ const World = (() => {
             if (on && !b.touched) { b.touched = true; if (b.weak) world.events.push({ k: 'creak', b, i: b.i }); }
             if (b.weak && b.touched && on && Math.abs(u) < 1.2 && Math.abs(v) < b.hw) { b.state = 'shake'; b.t = 0; world.events.push({ k: 'shake', b, i: b.i }); }
           } else if (b.state === 'shake') {
-            b.t += dt; for (const p of b.planks) p.m.position.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2);
-            if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b, i: b.i, remote: !!b.remote }); if (onDeck) world.pendingFall = b; for (const q of b.planks) q.m.position.y = q.y0; }
+            b.t += dt; b.planks.forEach((p, i) => { p.y = p.y0 + Math.sin(t * 38 + p.u * 3) * 0.03 * Math.min(1, b.t * 2); b.putPlank(i); }); b.flush();
+            if (b.t > 1.2) { b.state = 'fall'; b.t = 0; world.events.push({ k: 'snap', b, i: b.i, remote: !!b.remote }); if (onDeck) world.pendingFall = b; b.planks.forEach((p, i) => { p.y = p.y0; b.putPlank(i); }); b.flush(); }
           } else if (b.state === 'fall') {
-            b.t += dt; for (const p of b.planks) { if (Math.abs(p.u) > b.Lh - 1.3 || b.t < p.delay) continue; p.vy -= 13 * dt; p.m.position.y += p.vy * dt; p.m.rotation.x += p.sx * dt; p.m.rotation.z += p.sz * dt; }
-            for (const q of b.ropes) if (Math.abs(q.u) < b.Lh - 1.5 && (q.tag === 'hand' || q.tag === 'vert' || q.tag === 'edge') && b.t > 0.15 + Math.abs(q.u) * 0.03) q.m.visible = false;
-            if (b.t > 3.2) { b.state = 'gone'; for (const p of b.planks) if (Math.abs(p.u) <= b.Lh - 1.3) p.m.visible = false; }
+            b.t += dt; b.planks.forEach((p, i) => { if (Math.abs(p.u) > b.Lh - 1.3 || b.t < p.delay) return; p.vy -= 13 * dt; p.y += p.vy * dt; p.rx += p.spx * dt; p.rz += p.spz * dt; if (b.t > 3.2) p.hide = true; b.putPlank(i); }); b.flush();
+            if (b.t > 0.35 && b.midMesh.visible) b.midMesh.visible = false;
+            if (b.t > 3.2) b.state = 'gone';
           }
         }
       });
@@ -982,8 +1000,8 @@ const World = (() => {
       const addMist = (x, y, z, w, h, op) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: op, color: 0xffffff })); sp.position.set(x, y, z); sp.scale.set(w, h, 1); sp.userData = { x, z, ph: mrng.range(0, 6.28), sp: mrng.range(0.05, 0.12), amp: mrng.range(2, 5) }; scene.add(sp); mist.push(sp); };
       // the sea of mist the islands stand in (two layers, they follow the player so that the edge of the world is always fog), banks of mist among the islands
       const sea = [[0, 0.93], [-11, 0.7]].map(([y, op]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#eaf1f4', transparent: true, opacity: op, depthWrite: false })); m.position.y = y; m.renderOrder = 2; scene.add(m); return m; });
-      for (let i = 0; i < 46; i++) { const a = mrng.range(0, 6.28), d = Math.sqrt(mrng.range(0, 64 * 64)), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) < 0.35) continue; addMist(x, mrng.range(-1, 7), z, mrng.range(24, 38), mrng.range(7, 11), mrng.range(0.3, 0.45)); }
-      for (let i = 0; i < 16; i++) { const a = mrng.range(0, 6.28), d = mrng.range(6, 54), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.6), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.18, 0.3)); }
+      for (let i = 0; i < Math.round(46 * K); i++) { const a = mrng.range(0, 6.28), d = Math.sqrt(mrng.range(0, (PLAY_R + 6) * (PLAY_R + 6))), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) < 0.35) continue; addMist(x, mrng.range(-1, 7), z, mrng.range(24, 38), mrng.range(7, 11), mrng.range(0.3, 0.45)); }
+      for (let i = 0; i < Math.round(16 * K); i++) { const a = mrng.range(0, 6.28), d = mrng.range(6, PLAY_R - 4), x = Math.cos(a) * d, z = Math.sin(a) * d; if (gorgeAt(x, z) > 0.1) continue; addMist(x, heightAt(x, z) + mrng.range(0.9, 2.6), z, mrng.range(16, 28), mrng.range(4, 8), mrng.range(0.18, 0.3)); }
       world.updaters.push((dt, t, focus) => { for (const m of sea) { m.position.x = focus.x; m.position.z = focus.z; } });
       world.updaters.push((dt, t) => { for (const sp of mist) { const d = sp.userData; sp.position.x = d.x + Math.sin(t * d.sp + d.ph) * d.amp; sp.position.z = d.z + Math.cos(t * d.sp * 0.8 + d.ph) * d.amp * 0.7; } });
     }
@@ -1104,7 +1122,7 @@ const World = (() => {
       });
     }
     const spacing = { bush: 0.5, rock: 0.5, giant: 2.4, dipt: 2.0, baobab: 3.2, crypto: 1.6, hummock: 1.3, tussock: 0.55, ledum: 0.7, cassandra: 0.6, dbirch: 0.7, ryam: 1.8, snag: 1.6, relic: 1.6, cycad: 0.9, pandan: 1.1, alocasia: 0.8, kesiya: 2.0, montoak: 2.6, treefern: 1.0, rhodo: 1.1, musa: 1.0, karst: 3.6, lavashard: 0.35, groundfern: 0.5, lavarock: 1.2 };
-    function addTrees(type, count, opts = {}) { instanceAt(type, scatter(count, spacing[type] || 1.6, opts.minR || 6, opts.maxR || 56, opts), opts); }
+    function addTrees(type, count, opts = {}) { instanceAt(type, scatter(count, spacing[type] || 1.6, opts.minR || 6, opts.maxR || (PLAY_R - 2), opts), opts); }
 
     // vegetation recipe
     const lowOpts = { noShadow: true, noCollide: true }; const LOW_BOG = { lavashard: 1, groundfern: 1, hummock: 1, tussock: 1, ledum: 1, cassandra: 1, dbirch: 1, alocasia: 1 };
@@ -1120,10 +1138,10 @@ const World = (() => {
         const a = rng.range(0, 6.28); let x = Math.cos(a) * rng.range(14, 24), z = Math.sin(a) * rng.range(14, 24), dir = rng.range(0, 6.28); const pts = [];
         for (let i = 0; i < n; i++) { dir += rng.range(-0.12, 0.12); x += Math.cos(dir) * 5.4; z += Math.sin(dir) * 5.4; if (Math.hypot(x, z) > 54 || Math.hypot(x, z) < 7 || inWater(x, z, 2)) break; for (const s of [-1, 1]) { const px = x + Math.cos(dir + 1.5708) * 2.1 * s, pz = z + Math.sin(dir + 1.5708) * 2.1 * s; pts.push({ x: px, z: pz, y: heightAt(px, pz) }); placed.push({ x: px, z: pz, r: 1.2 }); } }
         instanceAt(type, pts, {});
-      } else addTrees(type, hl ? Math.round(n * 1.6) : n, Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
+      } else addTrees(type, hl ? Math.round(n * 1.6 * K) : n, Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
     }
     // rocks (+ big outcrops in the Alps, kopje in Kenya)
-    instanceAt('rock', scatter(env.rocks, 1.2, 6, 56, { anySlope: true, field: env.slopeRock ? 'upland' : 'sparse' }), {});
+    instanceAt('rock', scatter(Math.round(env.rocks * K), 1.2, 6, PLAY_R - 2, { anySlope: true, field: env.slopeRock ? 'upland' : 'sparse' }), {});
     if (biome.id === 'alps') instanceAt('rock', scatter(10, 2.4, 20, 56, { anySlope: true }), { scale: 2.2, variants: 2 });
     if (env.lm.includes('kopje')) {
       const nK = rng.int(1, 2);
@@ -1200,7 +1218,7 @@ const World = (() => {
     const withKind = (geo, arr) => { const g = geo.clone(); g.setAttribute('aKind', new THREE.InstancedBufferAttribute(arr, 1)); return g; };
     const gAtlas = grassAtlas(rng);
     {
-      const gcols = env.grass.col.map(c => new THREE.Color(c)); const n = env.grass.n;
+      const gcols = env.grass.col.map(c => new THREE.Color(c)); const n = Math.round(env.grass.n * K);
       const im = new THREE.InstancedMesh(grassGeo, foliageMat(gAtlas, false, 1), n); let cnt = 0, tries = 0; const c = new THREE.Color();
       while (cnt < n && tries++ < n * 3) {
         const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(0, PLAY_R * PLAY_R * 1.1)); const x = Math.cos(a) * d, z = Math.sin(a) * d;
@@ -1222,14 +1240,14 @@ const World = (() => {
     }
     {
       // flower meadows: biased to clearings, shores and the area around the spawn
-      const patches = []; const np = 24;
+      const patches = []; const np = Math.round(24 * K);
       const wantPatch = (x, z) => { const t = tf(x, z); let w = 0.35 + 0.65 * (1 - smooth(TH - 0.05, TH + 0.1, t)); if (sdf(x, z) < 14) w += 0.35; return w; };
       for (let i = 0, tries = 0; i < np && tries < 600; tries++) {
         let x, z; if (i < 3) { const a = rng.range(0, 6.28), d = rng.range(6, 15); x = Math.cos(a) * d; z = Math.sin(a) * d; } else { const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(30, PLAY_R * PLAY_R * 0.8)); x = Math.cos(a) * d; z = Math.sin(a) * d; }
         if (inWater(x, z, 1.5) || rng.next() > wantPatch(x, z)) continue; patches.push({ x, z, r: rng.range(3, 7), f: rng.pick(env.flowers) }); i++;
       }
       if (!patches.length) patches.push({ x: 8, z: 4, r: 5, f: env.flowers[0] });
-      const nF = biome.id === 'bog' ? 1500 : biome.id === 'papua' ? 1700 : 2800; const im = new THREE.InstancedMesh(grassGeo, foliageMat(flowerAtlas(), true, KINDS.length), nF); const kind = new Float32Array(nF); const c = new THREE.Color(); let cnt = 0, tries = 0;
+      const nF = Math.round((biome.id === 'bog' ? 1500 : biome.id === 'papua' ? 1700 : 2800) * K); const im = new THREE.InstancedMesh(grassGeo, foliageMat(flowerAtlas(), true, KINDS.length), nF); const kind = new Float32Array(nF); const c = new THREE.Color(); let cnt = 0, tries = 0;
       while (cnt < nF && tries++ < nF * 4) {
         let x, z, f;
         if (rng.chance(0.82)) { const p = rng.pick(patches); const a = rng.range(0, 6.28), d = Math.abs(rng.next() + rng.next() - 1) * p.r * 1.3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; f = rng.chance(0.75) ? p.f : rng.pick(env.flowers); }
@@ -1279,7 +1297,7 @@ const World = (() => {
       world.baits.push({ x, y: y + 0.42, z, type });
     }
     if (env.bait) {
-      const types = Array.isArray(env.bait) ? env.bait : [env.bait]; const spots = scatter(6, 2.0, 8, 44, { clear: 7 });
+      const types = Array.isArray(env.bait) ? env.bait : [env.bait]; const spots = scatter(Math.round(6 * K), 2.0, 8, Math.round(PLAY_R * 0.76), { clear: 7 });
       spots.forEach((s, i) => addBait(types[i % types.length], s.x, s.z));
       if (env.sand) waters.forEach(w => { const p = w.kind === 'pond' ? w : w.pts[Math.floor(w.pts.length * 0.5)]; for (let i = 0; i < 2; i++) { const a = rng.range(0, 6.28), rr = (w.kind === 'pond' ? w.r : p.w) + 2.2; const x = p.x + Math.cos(a) * rr, z = p.z + Math.sin(a) * rr; if (!inWater(x, z, 0.5) && Math.hypot(x, z) < 56) addBait('salt', x, z); } });
     }

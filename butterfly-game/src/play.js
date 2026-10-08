@@ -54,6 +54,7 @@ class Fly {
     for (let i = 0; i < 40; i++) {
       let x, z;
       if (near) { const a = p.player.yaw + (Math.random() - 0.5) * 1.6; const d = 7 + Math.random() * 9; x = p.player.pos.x - Math.sin(a) * d; z = p.player.pos.z - Math.cos(a) * d; }
+      else if (p.world.R > 80) { const a = Math.random() * 6.28, d = 12 + Math.sqrt(Math.random()) * 50; x = p.player.pos.x + Math.cos(a) * d; z = p.player.pos.z + Math.sin(a) * d; }      // a big map: the butterflies live around the player, not over the whole map
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
       if (Math.hypot(x, z) > R || p.world.inWater(x, z) || (p.world.noFly && p.world.noFly(x, z))) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;

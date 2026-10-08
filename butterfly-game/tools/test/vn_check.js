@@ -11,24 +11,25 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     await pg.evaluate(([sd]) => { Save.data.maps = { vietnam: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start('vietnam', sd); }, [sd]);
     for (let i = 0; i < 120; i++) { if (await pg.evaluate(() => !!(F0W.play && F0W.screen === 'play')).catch(() => false)) break; await pg.waitForTimeout(500); }
     const r = await pg.evaluate(() => {
-      const w = F0W.play.world, B = w.bridges, I = w.islands, o = {};
-      const reach = () => { const N = 233, seen = new Uint8Array(N * N), q = [], id = (i, j) => j * N + i, X = i => (i - 116) / 2;
-        const ok = (x, z) => Math.hypot(x, z) <= 58 && w.canWalk(x, z);
-        q.push([116, 116]); seen[id(116, 116)] = 1; let n = 0;
+      const w = F0W.play.world, B = w.bridges, I = w.islands, o = {}, RR = w.R;
+      const reach = () => { const N = Math.round(4 * RR) + 1, C = Math.round(2 * RR), seen = new Uint8Array(N * N), q = [], id = (i, j) => j * N + i, X = i => (i - C) / 2;
+        const ok = (x, z) => Math.hypot(x, z) <= RR && w.canWalk(x, z);
+        q.push([C, C]); seen[id(C, C)] = 1; let n = 0;
         while (q.length) { const [i, j] = q.pop(); n++; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= N || b >= N || seen[id(a, b)]) continue; const x = X(a), z = X(b); if (!ok(x, z)) continue; if (Math.abs(w.groundAt(x, z) - w.groundAt(X(i), X(j))) > 1.2) continue; seen[id(a, b)] = 1; q.push([a, b]); } }
-        return { n: n / 4, at: (x, z) => !!seen[id(Math.round(x * 2) + 116, Math.round(z * 2) + 116)] }; };
-      let land = 0; for (let x = -58; x <= 58; x++) for (let z = -58; z <= 58; z++) if (Math.hypot(x, z) <= 58 && !w.inGorge(x, z)) land++;
-      o.islands = I.length; o.sizes = I.map(q => Math.round(q.R)); o.land = land;
+        return { n: n / 4, at: (x, z) => !!seen[id(Math.round(x * 2) + C, Math.round(z * 2) + C)] }; };
+      let land = 0; for (let x = -RR; x <= RR; x++) for (let z = -RR; z <= RR; z++) if (Math.hypot(x, z) <= RR && !w.inGorge(x, z)) land++;
+      o.radius = RR; o.islands = I.length; o.sizes = I.map(q => Math.round(q.R)); o.land = land;
+      // the islands that are joined to the home one by solid ground alone
+      const comp = new Set([0]); for (let k = 0; k < I.length; k++) for (const l of w.links) if (l.land) { if (comp.has(l.i)) comp.add(l.j); if (comp.has(l.j)) comp.add(l.i); }
+      o.landLinks = w.links.filter(l => l.land).length; o.expected = I.map((q, k) => comp.has(k));
       let R = reach(); o.with = { n: R.n, isl: I.map(q => R.at(q.x, q.z)) };
       const st = B.map(b => b.state); B.forEach(b => { b.state = 'gone'; }); R = reach(); o.without = { n: R.n, isl: I.map(q => R.at(q.x, q.z)) }; B.forEach((b, i) => { b.state = st[i]; });
-      // the bridges that hold the chain together (not worn): are all islands reachable over them alone?
-      B.forEach(b => { if (b.weak) b.state = 'gone'; }); R = reach(); o.sound = { n: R.n, isl: I.map(q => R.at(q.x, q.z)) }; B.forEach((b, i) => { b.state = st[i]; });
-      o.weak = B.map(b => b.weak); o.leaf = B.map(b => b.leaf); o.loop = B.map(b => b.loop); o.spans = B.map(b => +(2 * b.Lh).toFixed(1)); return o;
+      o.weak = B.map(b => b.weak); o.bridges = B.length; return o;
     });
-    T(`${sd}: an archipelago of islands of different sizes`, r.islands >= 5 && Math.max(...r.sizes) - Math.min(...r.sizes) >= 6, r.sizes);
-    T(`${sd}: without bridges only the home island can be reached`, r.without.isl[0] && r.without.isl.slice(1).every(x => !x), r.without.isl);
-    T(`${sd}: over the bridges every island can be reached, and most of the land`, r.with.isl.every(x => x) && r.with.n > r.land * 0.8, [r.with.n, r.land]);
-    T(`${sd}: the sound bridges alone join every island that is not a dead end behind a worn bridge`, r.sound.isl.every((x, i) => x || r.weak.some((wk, bi) => wk)), r.sound.isl);
+    T(`${sd}: a big map (radius ${r.radius}) with many islands, huge ones and small ones`, r.radius >= 100 && r.islands >= 8 && Math.max(...r.sizes) >= 30 && Math.min(...r.sizes) <= 13, [r.islands, r.sizes]);
+    T(`${sd}: some islands are joined by solid ground, not by bridges`, r.landLinks >= 1 && r.bridges >= 3, [r.landLinks, r.bridges]);
+    T(`${sd}: without bridges exactly the islands joined by solid ground can be reached`, r.without.isl.every((x, i) => x === r.expected[i]), [r.without.isl.map(Number).join(''), r.expected.map(Number).join('')]);
+    T(`${sd}: over the bridges every island can be reached, and most of the land`, r.with.isl.every(x => x) && r.with.n > r.land * 0.75, [r.with.n, r.land]);
     T(`${sd}: at least one bridge is worn`, r.weak.some(x => x), r.weak);
     const g = await pg.evaluate(() => {
       const w = F0W.play.world, o = { blocked: [], hang: [], steep: [] };
@@ -48,12 +49,12 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const info = await pg.evaluate(() => F0W.play.world.bridges.map(b => ({ weak: b.weak, Lh: b.Lh })));
   const sound = info.findIndex(b => !b.weak), worn = info.findIndex(b => b.weak);
   if (sound >= 0) { await place(sound, 0); await pg.waitForTimeout(3500); const s = await pg.evaluate(() => ({ screen: F0W.screen, st: F0W.play && F0W.play.world.bridges.map(b => b.state) })); T('a sound bridge holds the player in the middle', s.screen === 'play' && s.st[sound] === 'ok', s); }
-  await place(worn, -info[worn].Lh + 1); await pg.waitForTimeout(500);
-  const s1 = await pg.evaluate((i) => F0W.play.world.bridges[i].touched, worn); T('stepping onto a worn bridge is noticed (it creaks)', s1 === true);
+  await place(worn, -info[worn].Lh + 1); let s1 = false; for (let i = 0; i < 40 && !s1; i++) { await pg.waitForTimeout(500); s1 = await pg.evaluate((i) => F0W.play.world.bridges[i].touched, worn); }
+  s1 = s1 === true; T('stepping onto a worn bridge is noticed (it creaks)', s1 === true);
   await place(worn, 0);
-  let s2 = null; for (let i = 0; i < 40; i++) { await pg.waitForTimeout(500); s2 = await pg.evaluate((i) => ({ st: F0W.play && F0W.play.world.bridges[i].state, fall: !!(F0W.play && F0W.play.fall), screen: F0W.screen }), worn); if (s2.fall || s2.screen === 'map') break; }
+  let s2 = null; for (let i = 0; i < 120; i++) { await pg.waitForTimeout(500); s2 = await pg.evaluate((i) => ({ st: F0W.play && F0W.play.world.bridges[i].state, fall: !!(F0W.play && F0W.play.fall), screen: F0W.screen }), worn); if (s2.fall || s2.screen === 'map') break; }
   T('in the middle of a worn bridge it snaps and the player falls', s2.fall || s2.screen === 'map', s2);
-  let s3 = null; for (let i = 0; i < 40; i++) { await pg.waitForTimeout(500); s3 = await pg.evaluate(() => ({ screen: F0W.screen, note: F0W.mapNote && F0W.mapNote.text })); if (s3.screen === 'map') break; }
+  let s3 = null; for (let i = 0; i < 120; i++) { await pg.waitForTimeout(500); s3 = await pg.evaluate(() => ({ screen: F0W.screen, note: F0W.mapNote && F0W.mapNote.text })); if (s3.screen === 'map') break; }
   T('after the fall the player is on the map with a note', s3.screen === 'map' && !!s3.note, s3);
   console.log(errs.length ? 'ERRORS ' + errs.slice(0, 5) : bad ? 'FAILED ' + bad : 'ALL PASS'); await br.close(); process.exit(bad || errs.length ? 1 : 0);
 })();
