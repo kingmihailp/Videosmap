@@ -75,7 +75,7 @@ function joinLoc(p, name) {
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
-  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
+  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
   p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now() + 15000; }      // grace while its client builds the world
   send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();

@@ -5,7 +5,7 @@ const PORT = 3700 + Math.floor(Math.random() * 400), SRV = path.resolve(__dirnam
 try { fs.rmSync(path.join(SRV, 'data'), { recursive: true, force: true }); } catch (e) {}
 let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' : 'FAIL ') + m, x === undefined ? '' : JSON.stringify(x)); };
 (async () => {
-  const srv = spawn('node', ['server.js', String(PORT)], { cwd: SRV, stdio: 'pipe' }); srv.stderr.on('data', d => process.stdout.write('[srv-err] ' + d)); await new Promise(r => setTimeout(r, 1200));
+  const srv = spawn('node', ['server.js', String(PORT)], { cwd: SRV, stdio: 'pipe' }); srv.stderr.on('data', d => process.stdout.write('[srv-err] ' + d)); srv.stdout.on('data', d => process.stdout.write('[srv] ' + d)); await new Promise(r => setTimeout(r, 1200));
   const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'] });
   const open = async name => { const ctx = await browser.newContext({ viewport: { width: 640, height: 360 } }); const pg = await ctx.newPage(); pg.on('pageerror', e => console.log('[pageerror ' + name + ']', e.message));
     await pg.addInitScript(() => { try { const k = 'flora0world_butterflies_v1', d = JSON.parse(localStorage.getItem(k) || '{}'); d.maps = { vietnam: true }; localStorage.setItem(k, JSON.stringify(d)); } catch (e) {} });
