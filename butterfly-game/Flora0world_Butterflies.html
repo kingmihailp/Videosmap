@@ -7940,7 +7940,7 @@ const SecretMarket = (() => {
     if (Net.on) Net.join('cabinet').then(() => setTimeout(() => enterCabinet(at), 40)).catch(netFail); else setTimeout(() => enterCabinet(at), 60);
   };
   // the museum of the collection: a big hall behind the east door of the cabinet (a shared location of its own online); leaving brings you back to that door
-  const museumHooks = Object.assign({}, cabHooks, { exitMuseum: () => go(() => App.toCabinet({ x: 3.3, z: 0.1, yaw: Math.PI / 2 })) });
+  const museumHooks = Object.assign(Object.create(cabHooks), { exitMuseum: () => go(() => App.toCabinet({ x: 3.3, z: 0.1, yaw: Math.PI / 2 })) });
   const enterMuseum = () => { App.cab = new Museum(museumHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; if (!Save.data.seenMuseum) { App.cab.ov = 'help'; Save.data.seenMuseum = true; Save.write(); } else lock(); };
   App.toMuseum = () => {
     leave(); App.screen = 'loading'; App.loadText = 'Идём в музей коллекции…';
@@ -7952,10 +7952,10 @@ const SecretMarket = (() => {
     if (Net.on) Net.join('market').then(() => setTimeout(() => enterMarket(at), 40)).catch(netFail); else setTimeout(() => enterMarket(at), 60);
   };
   // the secret market behind the code door of the insect market (personal: never joins a shared location)
-  const secretHooks = Object.assign({}, cabHooks, { exitSecret: () => go(() => App.toMarket({ x: 18, z: -30.1, yaw: Math.PI })) });
+  const secretHooks = Object.assign(Object.create(cabHooks), { exitSecret: () => go(() => App.toMarket({ x: 18, z: -30.1, yaw: Math.PI })) });
   App.toSecret = () => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new SecretMarket(secretHooks); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); };
   // a room behind a door in the world (currently an empty placeholder room); leaving brings you back to the same door
-  const roomHooks = Object.assign({}, cabHooks, { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
+  const roomHooks = Object.assign(Object.create(cabHooks), { exitRoom: () => go(() => { const r = App.roomReturn; if (r) App.start(r.biome, r.seed, r.at); else App.toMap(); }) });
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
   App.start = (biomeId, seed, at) => {
     if (!Maps.allowed(biomeId)) { App.toMap(); return; }          // a secret location can only be entered with its map
