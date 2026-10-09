@@ -46,7 +46,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const tk = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__spec, want: window.__n, left: F0W.play.traps.list.length, now: F0W.play.traps.list[0].items.length }));
   T('«Забрать улов» moves the butterflies into the cabinet; the trap stays', tk.got === tk.want && tk.want > 0 && tk.left === 1 && tk.now === 0, tk);
   // a trap that wears out vanishes together with its catch (nothing is credited)
-  await pg.evaluate(() => { const p = F0W.play, t = p.traps.list[0]; for (let i = 0; i < 400 && t.items.length < 2; i++) p.traps.update(0.25); window.__n = t.items.length; window.__spec = Save.data.specimens.length; t.t = t.life - 1; for (let i = 0; i < 8; i++) p.traps.update(0.25); });
+  await pg.evaluate(() => { const p = F0W.play, t = p.traps.list[0]; const L0 = t.life; t.life = 99999; for (let i = 0; i < 4000 && t.items.length < 2; i++) p.traps.update(0.25); window.__n = t.items.length; window.__spec = Save.data.specimens.length; t.life = L0; t.t = L0 - 1; for (let i = 0; i < 8; i++) p.traps.update(0.25); });
   const worn = await pg.evaluate(() => ({ had: window.__n, listed: F0W.play.traps.list.length, fliers: F0W.play.traps.fliers.length, credited: Save.data.specimens.length - window.__spec, colliders: F0W.play.world.colliders.filter(c => c.trap).length }));
   T('a trap that wears out disappears with its catch: nothing is credited, no collider and no flier is left', worn.had >= 2 && worn.listed === 0 && worn.fliers === 0 && worn.credited === 0 && worn.colliders === 0, worn); await shot('manage_full');
   // the imported trap: durability 4 minutes, aberrations possible, and leaving takes the catch

@@ -12,7 +12,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     let abI = 0; for (let i = 0; i < 20000; i++) if (Traps.pick(b, 'pheromone', 'imp').ab) abI++; o.abImp = abI / 20000; return o;
   });
   T('3000 coins, secret item, not in the honey seller\'s shop', d.price === 3000 && d.secret && !d.honeyShop, [d.price, d.secret, d.honeyShop]);
-  T('about 10% of the visitors are aberrations (standard trap), and the imported trap's own 1% is added: about 11%', d.ph.ab > 0.085 && d.ph.ab < 0.115 && d.heather.ab === 0 && d.abImp > 0.095 && d.abImp < 0.125 && d.abImp > d.ph.ab - 0.002, [d.ph.ab, d.heather.ab, d.abImp]);
+  T('about 10% of the visitors are aberrations (standard trap), and the imported trap\'s own 1% is added: about 11%', d.ph.ab > 0.085 && d.ph.ab < 0.115 && d.heather.ab === 0 && d.abImp > 0.095 && d.abImp < 0.125 && d.abImp > d.ph.ab - 0.002, [d.ph.ab, d.heather.ab, d.abImp]);
   const rare = o => o.r2 + o.r3;
   T('it raises the rarity far more than the best honey: almost every visitor is uncommon or rare', rare(d.ph) > 0.85 && rare(d.heather) < 0.75 && rare(d.none) < 0.35 && d.ph.r3 > d.heather.r3, [rare(d.none), rare(d.heather), rare(d.ph)]);
   T('as a bait it brings visitors itself', d.rate > 0 && d.rateBoth > d.rate, [d.rate, d.rateBoth]);
