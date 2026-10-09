@@ -264,7 +264,7 @@ const Cabinet = (() => {
       const gtex = ctex(64, 32, (x, w, h) => { x.fillStyle = '#3a78a8'; x.fillRect(0, 0, w, h); const nz = new Noise2(9); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const v = nz.fbm(i * 0.09, j * 0.12, 3); if (v > 0.52) { x.fillStyle = v > 0.66 ? '#6a8a3a' : '#4e9a48'; x.fillRect(i, j, 1, 1); } } }, 0, 0, false);
       const globe = mesh(new THREE.SphereGeometry(0.3, 14, 10), lam('#ffffff', { map: gtex }), 0, 1.3, 0, {}); globe.rotation.z = 0.4; gl.add(globe); this.globe = globe; this.addCol(-2.1, -1.4, -2.65, -1.95);
       // --- the easel with the frame of the guiding butterfly's wings (west side; the picture itself is made in refresh())
-      { const ez = 2.05, ex = -2.0, ea = new THREE.Group(); ea.position.set(ex, 0, ez); S.add(ea);
+      { const ez = 2.5, ex = -2.0, ea = new THREE.Group(); ea.position.set(ex, 0, ez); S.add(ea);
         for (const sx of [-1, 1]) cube(ea, 0.06, 1.65, 0.05, sx * 0.66, 0.82, 0.12, darkWood);
         cube(ea, 1.32, 0.05, 0.05, 0, 1.55, 0.12, darkWood);
         cube(ea, 1.5, 0.05, 0.3, 0, 0.62, -0.03, wood); cube(ea, 1.46, 0.05, 0.04, 0, 0.62, -0.19, brass);
@@ -278,7 +278,7 @@ const Cabinet = (() => {
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
         { id: 'exit', x: 4.0, z: -1.6, r: 1.1, label: () => 'E — выйти на карту экспедиций' },
-        { id: 'wings', x: -2.0, z: 1.3, r: 1.2, label: () => Wings.done() ? 'E — рамка путеводных крыльев (продана)' : `E — рамка с крыльями путеводной бабочки (${Wings.inFrame()}/${Wings.START.length})` },
+        { id: 'wings', x: -2.0, z: 1.75, r: 1.2, label: () => Wings.done() ? 'E — рамка путеводных крыльев (продана)' : `E — рамка с крыльями путеводной бабочки (${Wings.inFrame()}/${Wings.START.length})` },
         { id: 'museum', x: 4.0, z: 0.1, r: 0.95, label: () => `E — войти в музей (на экспозиции: ${Save.data.boxes.filter(b => b.loc && Boxes.MUS[b.loc.t]).length})` },
       ];
       this.addCol(-HX, HX, -HZ - 1, -HZ + 0.12); // keep away from the north wall displays

@@ -41,28 +41,45 @@ const Spread = (() => {
 
   // ------------------------------------------------------------------ specimen picker
   const pick = {
-    page: 0, hover: -1, cards: [], btns: [], list: [],
-    open() { this.page = 0; },
+    page: 0, hover: -1, cards: [], btns: [], list: [], all: [], f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
+    open() { this.page = 0; this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; },
+    // the filters: every one cycles through «все» and the values that occur among the waiting butterflies
+    filters() {
+      const base = s => SPECIES_BY_ID[s.sp].base ? SPECIES_BY_ID[SPECIES_BY_ID[s.sp].base] || SPECIES_BY_ID[s.sp] : SPECIES_BY_ID[s.sp], DAY = 864e5, now = Date.now();
+      const uniq = f => [...new Set(this.all.map(f))];
+      const locName = id => { const b = BIOME_BY_ID[id]; return b ? (b.short || (b.place || b.name).split(',')[0]) : id; };
+      return [
+        { id: 'rar', name: 'Редкость', opts: [{ n: 'все', t: () => true }].concat(uniq(s => base(s).rar || 1).sort().map(r => ({ n: '★'.repeat(r), t: s => (base(s).rar || 1) === r }))) },
+        { id: 'loc', name: 'Локация', opts: [{ n: 'все', t: () => true }].concat(uniq(s => s.biome || base(s).biome).sort().map(b => ({ n: locName(b), t: s => (s.biome || base(s).biome) === b }))) },
+        { id: 'ab', name: 'Аберрация', opts: [{ n: 'все', t: () => true }, { n: 'аберранты', t: s => !!SPECIES_BY_ID[s.sp].ab }, { n: 'обычные', t: s => !SPECIES_BY_ID[s.sp].ab }] },
+        { id: 'date', name: 'Поймано', opts: [{ n: 'любая', t: () => true }, { n: 'сегодня', t: s => now - s.date < DAY }, { n: 'за 3 дня', t: s => now - s.date < 3 * DAY }, { n: 'за неделю', t: s => now - s.date < 7 * DAY }, { n: 'давно (>7 дн.)', t: s => now - s.date >= 7 * DAY }] },
+        { id: 'fam', name: 'Семейство', opts: [{ n: 'все', t: () => true }].concat(uniq(s => base(s).fam).sort().map(fm => ({ n: fm, t: s => base(s).fam === fm }))) },
+      ];
+    },
     layout() {
-      this.list = Save.rawList(); const per = 12;
+      this.all = Save.rawList(); const per = 12, FL = this.filters(); FL.forEach(fl => { this.f[fl.id] = Math.min(this.f[fl.id] || 0, fl.opts.length - 1); });
+      this.list = this.all.filter(sp => FL.every(fl => fl.opts[this.f[fl.id]].t(sp)));
+      this.fbtns = FL.map((fl, i) => ({ id: 'f_' + fl.id, fid: fl.id, n: fl.opts.length, label: fl.name + ': ' + fl.opts[this.f[fl.id]].n, on: this.f[fl.id] > 0, x: 12 + i * 94, y: 36, w: 90, h: 13 }));
       const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
       const ord = new Map(); for (const g of groups) { const b = SPECIES_BY_ID[g.s.sp].base || g.s.sp; if (!ord.has(b)) ord.set(b, ord.size); }
       groups.sort((a, b) => { const sa = SPECIES_BY_ID[a.s.sp], sb = SPECIES_BY_ID[b.s.sp]; return (ord.get(sa.base || sa.id) - ord.get(sb.base || sb.id)) || ((sa.ab ? 1 : 0) - (sb.ab ? 1 : 0)) || (sa.id < sb.id ? -1 : 1); });   // every aberration stands right after its normal form
       const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
-      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 36 + Math.floor(i / 4) * 68, w: 104, h: 64 }));
+      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 54 + Math.floor(i / 4) * 64, w: 104, h: 62 }));
       this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];
       this.pages = pages;
     },
     draw(ctx, t, m) {
       this.layout(); Cab2.backdrop(ctx);
       T.draw(ctx, 'Что расправим?', SW / 2, 10, { size: 14, align: 'c', color: c.gold, shadow: '#000' });
-      T.draw(ctx, this.list.length ? 'выберите пойманную бабочку — ей потребуются точные движения' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 27, { size: 8, align: 'c', color: c.dim });
+      T.draw(ctx, this.list.length ? 'выберите пойманную бабочку — ей потребуются точные движения' : this.all.length ? 'под фильтры ничего не подходит — щёлкните фильтр, чтобы сменить значение' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 26, { size: 8, align: 'c', color: c.dim });
+      this.fbtns.forEach(b => { const hv = UIK.hit(b, m.x, m.y); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: b.on ? '#4a3a1c' : hv ? '#244a3c' : '#1a3228', border: b.on ? c.gold : c.line, shadow: false }); T.draw(ctx, fitStr(b.label, b.w - 6), b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: b.on ? '#fff' : c.text }); });
       this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false, cd.n); });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       T.draw(ctx, `${this.page + 1} / ${this.pages}`, 240, 250, { size: 8, align: 'c', color: c.text });
-      T.draw(ctx, `всего необработанных: ${this.list.length}`, SW - 12, 250, { size: 8, align: 'r', color: c.dim });
+      T.draw(ctx, this.list.length === this.all.length ? `всего необработанных: ${this.all.length}` : `показано ${this.list.length} из ${this.all.length}`, SW - 12, 250, { size: 8, align: 'r', color: c.dim });
     },
     click(x, y) {
+      const fb = this.fbtns.find(b => UIK.hit(b, x, y)); if (fb) { this.f[fb.fid] = (this.f[fb.fid] + 1) % fb.n; this.page = 0; Snd.sfx.click(); return null; }
       const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); if (b) { if (b.id === 'prev') this.page--; else if (b.id === 'next') this.page++; Snd.sfx.click(); return b.id === 'close' ? { act: 'close' } : null; }
       const cd = this.cards.find(cd => UIK.hit(cd, x, y)); if (cd) return { act: 'begin', spec: cd.s };
       return null;
