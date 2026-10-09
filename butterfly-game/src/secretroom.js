@@ -277,9 +277,12 @@ const SecretMarket = (() => {
     close() { this.ov = null; this.hooks.lock(); }
     openTalk() { const sp = Secret.speech('shop'); this.talk = { who: 'inside', lines: sp.lines, i: 0, chars: 0 }; this.open('talk'); }
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
-    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0 }; this.open('shop'); }
-    buy(i) { const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
+    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0, tab: 0 }; this.open('shop'); }
+    shopTabs() { return [{ id: 'tab0', i: 0, label: 'Карты', x: 196, y: 240, w: 60, h: 16 }, { id: 'tab1', i: 1, label: 'Предметы', x: 260, y: 240, w: 88, h: 16 }]; }
+    setTab(i) { this.shop.tab = i; this.shop.sel = 0; this.shop.line = i ? 'Не карта… но тоже дорога. Для тех, кто ставит ловушки.' : Secret.speech('shop').lines[0]; this.shop.chars = 0; Snd.sfx.page(); }
+    buyItem() { const r = Traps.buy('hn', 'pheromone'), say = t => { this.shop.line = t; this.shop.chars = 0; }; if (r) { Snd.sfx.coin(); say(['Бери. Не нюхай. Положи в ловушку — и жди.', 'Он зовёт тех, кто редко приходит.'][(Math.random() * 2) | 0]); this.toast('Куплено: непонятные феромоны (кладутся в ловушку вместо мёда)', 4); } else { Snd.sfx.deny(); say('Три тысячи. Тишина стоит дороже, но это — тоже не даром.'); } }
+    buy(i) { if (this.shop.tab === 1) { this.buyItem(); return; } const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
+    shopRows() { return (this.shop && this.shop.tab === 1 ? [0] : Maps.LIST.map((m, i) => i)).map(i => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
     shopClose() { return { x: 352, y: 240, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
@@ -287,13 +290,13 @@ const SecretMarket = (() => {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
-      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
+      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Tab' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') this.setTab(1 - this.shop.tab); else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
       if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
     }
     pauseButtons() { const x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на рынок', x, y: 126, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 148, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov === 'talk') { this.talkNext(); return; }
-      if (this.ov === 'shop') { const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
+      if (this.ov === 'shop') { const tb = this.shopTabs().find(b => UIK.hit(b, x, y)); if (tb) { if (tb.i !== this.shop.tab) this.setTab(tb.i); return; } const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
       if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'stash') this.hooks.stash(); else if (b.id === 'exit') this.hooks.exitSecret(); else if (b.id === 'title') this.hooks.title();
     }
@@ -313,15 +316,23 @@ const SecretMarket = (() => {
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
         ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
+        if (S0.tab === 0) {
         Maps.LIST.forEach((m, i) => {
-          const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
-          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
-          ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
-          T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
-          if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
-          UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
-        });
-        T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 244, 300, { size: 8, color: '#8a78a8', lh: 10 });
+            const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+            if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
+            ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
+            T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
+            if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
+            UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
+          });
+        } else {
+          const PH = Traps.HN.pheromone, y = 96, b = this.shopRows()[0], hv = UIK.hit(b, m_.x, m_.y), cv = Traps.closeup('hn', 'pheromone', 0.5 + t * 0.4);
+          ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); ctx.fillStyle = '#0c0814'; ctx.fillRect(36, y, 76, 46); if (cv) { ctx.imageSmoothingEnabled = false; ctx.drawImage(cv, 58, y - 1, 32, 48); }
+          T.draw(ctx, PH.ru, 122, y, { size: 10, color: '#c8a0ff' }); T.para(ctx, 'Запечатанный флакон без этикетки. Кладётся в ловушку вместо мёда: редчайшие гости почти наверняка, и каждая десятая бабочка — аберрант.', 122, y + 14, 220, { size: 8, color: '#c8c0d8', lh: 9 });
+          T.draw(ctx, `${PH.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= PH.price ? c.gold : '#e07070' }); UIK.btn(ctx, Object.assign({}, b, { label: 'Купить' }), hv); T.draw(ctx, `у вас: ${Traps.count('hn', 'pheromone')}`, b.x + b.w / 2, b.y + 22, { size: 8, align: 'c', color: '#9a88b8' });
+          T.para(ctx, 'Один флакон на одну ловушку. Мёд не нужен: феромоны занимают его место.', 34, 150, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        }
+        if (S0.tab === 0) T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 238, 156, { size: 8, color: '#8a78a8', lh: 9 }); this.shopTabs().forEach(b => { const on = b.i === S0.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#4a3a6a' : UIK.hit(b, m_.x, m_.y) ? '#34284a' : '#241a36', border: on ? '#c8a8f0' : '#6a4a98', shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 4, { size: 8, align: 'c', color: on ? '#fff' : '#c8c0d8' }); });
         UIK.btn(ctx, Object.assign({ id: 'close', label: 'Закрыть' }, this.shopClose()), UIK.hit(this.shopClose(), m_.x, m_.y));
       }
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }

@@ -35,6 +35,8 @@ const Traps = (() => {
     { id: 'buckwheat', ru: 'Гречишный мёд', q: 4, price: 150, col: '#8a4a18', desc: 'Тёмный, с резким тягучим запахом: бабочки прилетают издалека.' },
     { id: 'chestnut', ru: 'Каштановый мёд', q: 4, price: 170, col: '#7a3c14', desc: 'Горьковатый, очень ароматный, почти чёрный.' },
     { id: 'heather', ru: 'Вересковый мёд', q: 5, price: 230, col: '#b86a20', desc: 'Редкий желеобразный мёд из пустошей; самая ценная приманка.' },
+    // sold only by the hooded trader of the secret market; goes into the honey place of a trap: wildly rarer visitors and 10% of them are aberrations
+    { id: 'pheromone', ru: 'Непонятные феромоны', q: 25, tag: 'неведомый', price: 3000, col: '#8a4aff', secret: true, ab: 0.1, lure: 2.0, desc: 'Запечатанный флакон без этикетки. Пахнет тем, чего не бывает. Ловушка с ним зовёт самых редких, и каждая десятая бабочка оказывается не такой, как все.' },
     { id: 'manuka', ru: 'Мёд манука', q: 5, price: 300, col: '#9a5818', desc: 'Импортный мёд из Новой Зеландии с насыщенным травяным ароматом.' },
   ];
   const FL = Object.fromEntries(FLOWERS.map(f => [f.id, f])), HN = Object.fromEntries(HONEYS.map(h => [h.id, h]));
@@ -46,7 +48,7 @@ const Traps = (() => {
   const owned = k => KINDS[k].list.filter(x => count(k, x.id) > 0);
   function buy(k, id) { const it = KINDS[k].by[id]; if (!it || (Save.data.coins || 0) < it.price) return 0; Save.data.coins -= it.price; add(k, id, 1); return it.price; }
   // ---- the effect of what lies in a trap
-  const rate = (fl, hn) => (FL[fl] ? 1.1 * FL[fl].scent : 0) + (HN[hn] ? 0.4 * HN[hn].q : 0);            // visits per minute
+  const rate = (fl, hn) => (FL[fl] ? 1.1 * FL[fl].scent : 0) + (HN[hn] ? (HN[hn].lure !== undefined ? HN[hn].lure : 0.4 * HN[hn].q) : 0);            // visits per minute
   const quality = hn => (HN[hn] ? HN[hn].q : 0);
   const rarK = (hn, rar) => 1 + 0.9 * quality(hn) * (rar - 1);                                           // multiplier of the weight of a species of rarity rar
   // the species a trap can lure: daytime butterflies of the location (no glowing or night ones)
@@ -54,7 +56,8 @@ const Traps = (() => {
   function pick(biome, hn, type) {
     const pool = lure(biome).map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
     if (!pool.length) return null; let r = Math.random() * pool.reduce((a, o) => a + o.w, 0); let sp = pool[pool.length - 1].sp; for (const o of pool) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
-    return (TYPES[type].ab && Aberr.eligible(sp) && Math.random() < TYPES[type].ab) ? Aberr.make(sp, Aberr.randomCode()) : sp;
+    const abp = Math.max(TYPES[type].ab, (HN[hn] && HN[hn].ab) || 0);
+    return (abp && Aberr.eligible(sp) && Math.random() < abp) ? Aberr.make(sp, Aberr.randomCode()) : sp;
   }
   const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
@@ -169,9 +172,25 @@ const Traps = (() => {
     grp.add(new THREE.Mesh(merged(parts), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 95, specular: new THREE.Color('#fff0c0'), flatShading: false })));
     grp.add(new THREE.Mesh(merged(wax), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }))); g.add(grp);
   }
+  // the strange pheromones: a sealed flask with a violet glowing liquid standing in a spilled puddle, a wax seal, a rune band and a thread of smoke
+  function pheroPiece(g, y, hn, ox = 0) {
+    const parts = [], glow = [], col = new THREE.Color(hn.col), rng = seedRng(77);
+    parts.push({ g: new THREE.CylinderGeometry(0.085, 0.09, 0.008, 14), m: MX(0, 0.004, 0), c: (x, yy, z) => mixc('#3a1a6a', col, clamp(1 - Math.hypot(x, z) * 9)) });
+    for (let i = 0; i < 5; i++) { const a = i * 1.3 + rng(), r = 0.085 + rng() * 0.01; parts.push({ g: new THREE.SphereGeometry(0.011 + rng() * 0.006, 6, 4), m: MX(Math.cos(a) * r, 0.006, Math.sin(a) * r, 0, 0, 0, 1.3, 0.45, 1.3), c: '#6a2ad0' }); }
+    glow.push({ g: new THREE.CylinderGeometry(0.036, 0.04, 0.085, 10), m: MX(0, 0.0505, 0), c: (x, yy, z) => mixc('#5a1ac0', '#b890ff', clamp((yy + 0.04) * 10)) });       // the liquid
+    parts.push({ g: new THREE.CylinderGeometry(0.042, 0.045, 0.014, 10), m: MX(0, 0.015, 0), c: '#dfe8ee' });                                  // the heavy glass foot
+    parts.push({ g: new THREE.CylinderGeometry(0.02, 0.038, 0.03, 10), m: MX(0, 0.108, 0), c: '#cfdde6' }); parts.push({ g: new THREE.CylinderGeometry(0.017, 0.02, 0.026, 8), m: MX(0, 0.136, 0), c: '#cfdde6' });   // shoulder and neck
+    parts.push({ g: new THREE.CylinderGeometry(0.021, 0.019, 0.014, 8), m: MX(0, 0.15, 0), c: '#7a1a1a' }); parts.push({ g: new THREE.SphereGeometry(0.014, 6, 4, 0, 6.3, 0, 1.4), m: MX(0, 0.156, 0), c: '#8a2222' });    // the wax seal
+    parts.push({ g: new THREE.CylinderGeometry(0.0425, 0.0425, 0.012, 10, 1, true), m: MX(0, 0.06, 0), c: (x, yy, z) => (Math.abs(Math.atan2(x, z) * 7 % 2) > 1 ? '#e8d890' : '#a89850') });           // a band of runes
+    for (let i = 0; i < 4; i++) parts.push({ g: new THREE.SphereGeometry(0.011 - i * 0.002, 5, 4), m: MX(0.006 * Math.sin(i * 1.7), 0.17 + i * 0.012, 0.006 * Math.cos(i * 1.7)), c: mixc('#c8a8ff', '#6a3ad0', i / 4) });   // a thread of smoke
+    const grp = new THREE.Group(); grp.position.set(ox, y, 0);
+    grp.add(new THREE.Mesh(merged(parts), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 110, specular: new THREE.Color('#ffffff'), flatShading: false })));
+    grp.add(new THREE.Mesh(merged(glow), new THREE.MeshPhongMaterial({ vertexColors: true, emissive: new THREE.Color('#6a2ad0'), emissiveIntensity: 0.9, shininess: 120 }))); g.add(grp);
+  }
+  const honeyOrPhero = (g, y, hn, ox) => (hn.secret ? pheroPiece(g, y, hn, ox) : honeyPiece(g, y, hn, ox));
   // the bait dish contents: flowers and honey on the tray top at height y (r = tray radius)
   function bait(g, y, r, fl, hn) {
-    if (HN[hn]) honeyPiece(g, y, HN[hn], FL[fl] ? -r * 0.36 : 0);
+    if (HN[hn]) honeyOrPhero(g, y, HN[hn], FL[fl] ? -r * 0.36 : 0);
     if (FL[fl]) flowerBunch(g, y, FL[fl], r, HN[hn] ? r * 0.12 : 0);
   }
   // the three trap bodies; every part touches its neighbour (the float test checks it); y = 0 is the ground
@@ -396,11 +415,11 @@ const Traps = (() => {
         if (mine) {
           const f = FL[tr.fl], h = HN[tr.hn], rr = rate(tr.fl, tr.hn);
           T.draw(ctx, 'Цветы — зовут бабочек', 124, 70, { size: 8, color: cl.dim }); T.draw(ctx, f ? `${f.ru} (запах: ${SCENT[f.scent]})` : 'нет — без цветов бабочки почти не летят', 124, 82, { size: 8, color: f ? '#f0e8d0' : '#c87060' });
-          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim }); T.draw(ctx, h ? `${h.ru} (${QUAL[h.q]})` : 'нет — редкие виды не привлекаются', 124, 122, { size: 8, color: h ? '#f0e8d0' : '#c87060' });
+          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim }); T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : 'нет — редкие виды не привлекаются', 124, 122, { size: 8, color: h ? '#f0e8d0' : '#c87060' });
           for (const id of ['flp', 'fln', 'hnp', 'hnn']) { const b = bs.find(q => q.id === id); UIK.btn(ctx, b, hv(b)); }
           T.draw(ctx, f ? `в запасе: ${count('fl', f.id)}` : `в запасе видов: ${owned('fl').length}`, 166, 97, { size: 8, color: cl.dim }); T.draw(ctx, h ? `в запасе: ${count('hn', h.id)}` : `в запасе видов: ${owned('hn').length}`, 166, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
-          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
+          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` + (h.ab ? ` · аберрантов ${Math.round(h.ab * 100)}%` : '') : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
           // the catch
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
@@ -440,8 +459,8 @@ const Traps = (() => {
   const closeCache = {};
   function closeup(kind, id, t = 0.6) {
     const R = Thumb.get(); if (!R) return null; const key = kind + id; let cv = closeCache[key];
-    if (!cv) { const g = new THREE.Group(); if (kind === 'fl') { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], 0.14, 0); } else { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); honeyPiece(g, 0, HN[id], 0); }
-      const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+    if (!cv) { const g = new THREE.Group(); if (kind === 'fl') { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], 0.14, 0); } else { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); honeyOrPhero(g, 0, HN[id], 0); }
+      const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : id === 'pheromone' ? [0.26, 0.09, 0.7] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     return cv;
   }
   return { closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };

@@ -768,7 +768,7 @@ const Market = (() => {
       const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, а потом забирайте улов (E).' };
       this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
     }
-    goodsList() { return Traps.KINDS[this.gd.kind].list; }
+    goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret); }
     goodsMove(d) { const G = this.gd, n = this.goodsList().length; G.sel = clamp(G.sel + d, 0, n - 1); if (G.sel < G.scroll) G.scroll = G.sel; if (G.sel >= G.scroll + 6) G.scroll = G.sel - 5; Snd.sfx.page(); }
     goodsBuy() {
       const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(G.kind, it.id);

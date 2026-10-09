@@ -2059,6 +2059,8 @@ const Traps = (() => {
     { id: 'buckwheat', ru: 'Гречишный мёд', q: 4, price: 150, col: '#8a4a18', desc: 'Тёмный, с резким тягучим запахом: бабочки прилетают издалека.' },
     { id: 'chestnut', ru: 'Каштановый мёд', q: 4, price: 170, col: '#7a3c14', desc: 'Горьковатый, очень ароматный, почти чёрный.' },
     { id: 'heather', ru: 'Вересковый мёд', q: 5, price: 230, col: '#b86a20', desc: 'Редкий желеобразный мёд из пустошей; самая ценная приманка.' },
+    // sold only by the hooded trader of the secret market; goes into the honey place of a trap: wildly rarer visitors and 10% of them are aberrations
+    { id: 'pheromone', ru: 'Непонятные феромоны', q: 25, tag: 'неведомый', price: 3000, col: '#8a4aff', secret: true, ab: 0.1, lure: 2.0, desc: 'Запечатанный флакон без этикетки. Пахнет тем, чего не бывает. Ловушка с ним зовёт самых редких, и каждая десятая бабочка оказывается не такой, как все.' },
     { id: 'manuka', ru: 'Мёд манука', q: 5, price: 300, col: '#9a5818', desc: 'Импортный мёд из Новой Зеландии с насыщенным травяным ароматом.' },
   ];
   const FL = Object.fromEntries(FLOWERS.map(f => [f.id, f])), HN = Object.fromEntries(HONEYS.map(h => [h.id, h]));
@@ -2070,7 +2072,7 @@ const Traps = (() => {
   const owned = k => KINDS[k].list.filter(x => count(k, x.id) > 0);
   function buy(k, id) { const it = KINDS[k].by[id]; if (!it || (Save.data.coins || 0) < it.price) return 0; Save.data.coins -= it.price; add(k, id, 1); return it.price; }
   // ---- the effect of what lies in a trap
-  const rate = (fl, hn) => (FL[fl] ? 1.1 * FL[fl].scent : 0) + (HN[hn] ? 0.4 * HN[hn].q : 0);            // visits per minute
+  const rate = (fl, hn) => (FL[fl] ? 1.1 * FL[fl].scent : 0) + (HN[hn] ? (HN[hn].lure !== undefined ? HN[hn].lure : 0.4 * HN[hn].q) : 0);            // visits per minute
   const quality = hn => (HN[hn] ? HN[hn].q : 0);
   const rarK = (hn, rar) => 1 + 0.9 * quality(hn) * (rar - 1);                                           // multiplier of the weight of a species of rarity rar
   // the species a trap can lure: daytime butterflies of the location (no glowing or night ones)
@@ -2078,7 +2080,8 @@ const Traps = (() => {
   function pick(biome, hn, type) {
     const pool = lure(biome).map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
     if (!pool.length) return null; let r = Math.random() * pool.reduce((a, o) => a + o.w, 0); let sp = pool[pool.length - 1].sp; for (const o of pool) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
-    return (TYPES[type].ab && Aberr.eligible(sp) && Math.random() < TYPES[type].ab) ? Aberr.make(sp, Aberr.randomCode()) : sp;
+    const abp = Math.max(TYPES[type].ab, (HN[hn] && HN[hn].ab) || 0);
+    return (abp && Aberr.eligible(sp) && Math.random() < abp) ? Aberr.make(sp, Aberr.randomCode()) : sp;
   }
   const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
@@ -2193,9 +2196,25 @@ const Traps = (() => {
     grp.add(new THREE.Mesh(merged(parts), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 95, specular: new THREE.Color('#fff0c0'), flatShading: false })));
     grp.add(new THREE.Mesh(merged(wax), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }))); g.add(grp);
   }
+  // the strange pheromones: a sealed flask with a violet glowing liquid standing in a spilled puddle, a wax seal, a rune band and a thread of smoke
+  function pheroPiece(g, y, hn, ox = 0) {
+    const parts = [], glow = [], col = new THREE.Color(hn.col), rng = seedRng(77);
+    parts.push({ g: new THREE.CylinderGeometry(0.085, 0.09, 0.008, 14), m: MX(0, 0.004, 0), c: (x, yy, z) => mixc('#3a1a6a', col, clamp(1 - Math.hypot(x, z) * 9)) });
+    for (let i = 0; i < 5; i++) { const a = i * 1.3 + rng(), r = 0.085 + rng() * 0.01; parts.push({ g: new THREE.SphereGeometry(0.011 + rng() * 0.006, 6, 4), m: MX(Math.cos(a) * r, 0.006, Math.sin(a) * r, 0, 0, 0, 1.3, 0.45, 1.3), c: '#6a2ad0' }); }
+    glow.push({ g: new THREE.CylinderGeometry(0.036, 0.04, 0.085, 10), m: MX(0, 0.0505, 0), c: (x, yy, z) => mixc('#5a1ac0', '#b890ff', clamp((yy + 0.04) * 10)) });       // the liquid
+    parts.push({ g: new THREE.CylinderGeometry(0.042, 0.045, 0.014, 10), m: MX(0, 0.015, 0), c: '#dfe8ee' });                                  // the heavy glass foot
+    parts.push({ g: new THREE.CylinderGeometry(0.02, 0.038, 0.03, 10), m: MX(0, 0.108, 0), c: '#cfdde6' }); parts.push({ g: new THREE.CylinderGeometry(0.017, 0.02, 0.026, 8), m: MX(0, 0.136, 0), c: '#cfdde6' });   // shoulder and neck
+    parts.push({ g: new THREE.CylinderGeometry(0.021, 0.019, 0.014, 8), m: MX(0, 0.15, 0), c: '#7a1a1a' }); parts.push({ g: new THREE.SphereGeometry(0.014, 6, 4, 0, 6.3, 0, 1.4), m: MX(0, 0.156, 0), c: '#8a2222' });    // the wax seal
+    parts.push({ g: new THREE.CylinderGeometry(0.0425, 0.0425, 0.012, 10, 1, true), m: MX(0, 0.06, 0), c: (x, yy, z) => (Math.abs(Math.atan2(x, z) * 7 % 2) > 1 ? '#e8d890' : '#a89850') });           // a band of runes
+    for (let i = 0; i < 4; i++) parts.push({ g: new THREE.SphereGeometry(0.011 - i * 0.002, 5, 4), m: MX(0.006 * Math.sin(i * 1.7), 0.17 + i * 0.012, 0.006 * Math.cos(i * 1.7)), c: mixc('#c8a8ff', '#6a3ad0', i / 4) });   // a thread of smoke
+    const grp = new THREE.Group(); grp.position.set(ox, y, 0);
+    grp.add(new THREE.Mesh(merged(parts), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 110, specular: new THREE.Color('#ffffff'), flatShading: false })));
+    grp.add(new THREE.Mesh(merged(glow), new THREE.MeshPhongMaterial({ vertexColors: true, emissive: new THREE.Color('#6a2ad0'), emissiveIntensity: 0.9, shininess: 120 }))); g.add(grp);
+  }
+  const honeyOrPhero = (g, y, hn, ox) => (hn.secret ? pheroPiece(g, y, hn, ox) : honeyPiece(g, y, hn, ox));
   // the bait dish contents: flowers and honey on the tray top at height y (r = tray radius)
   function bait(g, y, r, fl, hn) {
-    if (HN[hn]) honeyPiece(g, y, HN[hn], FL[fl] ? -r * 0.36 : 0);
+    if (HN[hn]) honeyOrPhero(g, y, HN[hn], FL[fl] ? -r * 0.36 : 0);
     if (FL[fl]) flowerBunch(g, y, FL[fl], r, HN[hn] ? r * 0.12 : 0);
   }
   // the three trap bodies; every part touches its neighbour (the float test checks it); y = 0 is the ground
@@ -2420,11 +2439,11 @@ const Traps = (() => {
         if (mine) {
           const f = FL[tr.fl], h = HN[tr.hn], rr = rate(tr.fl, tr.hn);
           T.draw(ctx, 'Цветы — зовут бабочек', 124, 70, { size: 8, color: cl.dim }); T.draw(ctx, f ? `${f.ru} (запах: ${SCENT[f.scent]})` : 'нет — без цветов бабочки почти не летят', 124, 82, { size: 8, color: f ? '#f0e8d0' : '#c87060' });
-          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim }); T.draw(ctx, h ? `${h.ru} (${QUAL[h.q]})` : 'нет — редкие виды не привлекаются', 124, 122, { size: 8, color: h ? '#f0e8d0' : '#c87060' });
+          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim }); T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : 'нет — редкие виды не привлекаются', 124, 122, { size: 8, color: h ? '#f0e8d0' : '#c87060' });
           for (const id of ['flp', 'fln', 'hnp', 'hnn']) { const b = bs.find(q => q.id === id); UIK.btn(ctx, b, hv(b)); }
           T.draw(ctx, f ? `в запасе: ${count('fl', f.id)}` : `в запасе видов: ${owned('fl').length}`, 166, 97, { size: 8, color: cl.dim }); T.draw(ctx, h ? `в запасе: ${count('hn', h.id)}` : `в запасе видов: ${owned('hn').length}`, 166, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
-          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
+          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` + (h.ab ? ` · аберрантов ${Math.round(h.ab * 100)}%` : '') : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
           // the catch
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
@@ -2464,8 +2483,8 @@ const Traps = (() => {
   const closeCache = {};
   function closeup(kind, id, t = 0.6) {
     const R = Thumb.get(); if (!R) return null; const key = kind + id; let cv = closeCache[key];
-    if (!cv) { const g = new THREE.Group(); if (kind === 'fl') { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], 0.14, 0); } else { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); honeyPiece(g, 0, HN[id], 0); }
-      const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+    if (!cv) { const g = new THREE.Group(); if (kind === 'fl') { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], 0.14, 0); } else { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); honeyOrPhero(g, 0, HN[id], 0); }
+      const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : id === 'pheromone' ? [0.26, 0.09, 0.7] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     return cv;
   }
   return { closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
@@ -8086,7 +8105,7 @@ const Market = (() => {
       const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, а потом забирайте улов (E).' };
       this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
     }
-    goodsList() { return Traps.KINDS[this.gd.kind].list; }
+    goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret); }
     goodsMove(d) { const G = this.gd, n = this.goodsList().length; G.sel = clamp(G.sel + d, 0, n - 1); if (G.sel < G.scroll) G.scroll = G.sel; if (G.sel >= G.scroll + 6) G.scroll = G.sel - 5; Snd.sfx.page(); }
     goodsBuy() {
       const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(G.kind, it.id);
@@ -8594,9 +8613,12 @@ const SecretMarket = (() => {
     close() { this.ov = null; this.hooks.lock(); }
     openTalk() { const sp = Secret.speech('shop'); this.talk = { who: 'inside', lines: sp.lines, i: 0, chars: 0 }; this.open('talk'); }
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
-    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0 }; this.open('shop'); }
-    buy(i) { const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return Maps.LIST.map((m, i) => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
+    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0, tab: 0 }; this.open('shop'); }
+    shopTabs() { return [{ id: 'tab0', i: 0, label: 'Карты', x: 196, y: 240, w: 60, h: 16 }, { id: 'tab1', i: 1, label: 'Предметы', x: 260, y: 240, w: 88, h: 16 }]; }
+    setTab(i) { this.shop.tab = i; this.shop.sel = 0; this.shop.line = i ? 'Не карта… но тоже дорога. Для тех, кто ставит ловушки.' : Secret.speech('shop').lines[0]; this.shop.chars = 0; Snd.sfx.page(); }
+    buyItem() { const r = Traps.buy('hn', 'pheromone'), say = t => { this.shop.line = t; this.shop.chars = 0; }; if (r) { Snd.sfx.coin(); say(['Бери. Не нюхай. Положи в ловушку — и жди.', 'Он зовёт тех, кто редко приходит.'][(Math.random() * 2) | 0]); this.toast('Куплено: непонятные феромоны (кладутся в ловушку вместо мёда)', 4); } else { Snd.sfx.deny(); say('Три тысячи. Тишина стоит дороже, но это — тоже не даром.'); } }
+    buy(i) { if (this.shop.tab === 1) { this.buyItem(); return; } const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
+    shopRows() { return (this.shop && this.shop.tab === 1 ? [0] : Maps.LIST.map((m, i) => i)).map(i => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
     shopClose() { return { x: 352, y: 240, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
@@ -8604,13 +8626,13 @@ const SecretMarket = (() => {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
-      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
+      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Tab' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') this.setTab(1 - this.shop.tab); else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
       if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
     }
     pauseButtons() { const x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на рынок', x, y: 126, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 148, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov === 'talk') { this.talkNext(); return; }
-      if (this.ov === 'shop') { const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
+      if (this.ov === 'shop') { const tb = this.shopTabs().find(b => UIK.hit(b, x, y)); if (tb) { if (tb.i !== this.shop.tab) this.setTab(tb.i); return; } const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
       if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'stash') this.hooks.stash(); else if (b.id === 'exit') this.hooks.exitSecret(); else if (b.id === 'title') this.hooks.title();
     }
@@ -8630,15 +8652,23 @@ const SecretMarket = (() => {
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
         ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
+        if (S0.tab === 0) {
         Maps.LIST.forEach((m, i) => {
-          const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
-          if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
-          ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
-          T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
-          if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
-          UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
-        });
-        T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 244, 300, { size: 8, color: '#8a78a8', lh: 10 });
+            const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+            if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
+            ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
+            T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
+            if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
+            UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
+          });
+        } else {
+          const PH = Traps.HN.pheromone, y = 96, b = this.shopRows()[0], hv = UIK.hit(b, m_.x, m_.y), cv = Traps.closeup('hn', 'pheromone', 0.5 + t * 0.4);
+          ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); ctx.fillStyle = '#0c0814'; ctx.fillRect(36, y, 76, 46); if (cv) { ctx.imageSmoothingEnabled = false; ctx.drawImage(cv, 58, y - 1, 32, 48); }
+          T.draw(ctx, PH.ru, 122, y, { size: 10, color: '#c8a0ff' }); T.para(ctx, 'Запечатанный флакон без этикетки. Кладётся в ловушку вместо мёда: редчайшие гости почти наверняка, и каждая десятая бабочка — аберрант.', 122, y + 14, 220, { size: 8, color: '#c8c0d8', lh: 9 });
+          T.draw(ctx, `${PH.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= PH.price ? c.gold : '#e07070' }); UIK.btn(ctx, Object.assign({}, b, { label: 'Купить' }), hv); T.draw(ctx, `у вас: ${Traps.count('hn', 'pheromone')}`, b.x + b.w / 2, b.y + 22, { size: 8, align: 'c', color: '#9a88b8' });
+          T.para(ctx, 'Один флакон на одну ловушку. Мёд не нужен: феромоны занимают его место.', 34, 150, 300, { size: 8, color: '#8a78a8', lh: 10 });
+        }
+        if (S0.tab === 0) T.para(ctx, 'Карты личные: у кого одна карта, те встречаются там вместе.', 34, 238, 156, { size: 8, color: '#8a78a8', lh: 9 }); this.shopTabs().forEach(b => { const on = b.i === S0.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#4a3a6a' : UIK.hit(b, m_.x, m_.y) ? '#34284a' : '#241a36', border: on ? '#c8a8f0' : '#6a4a98', shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 4, { size: 8, align: 'c', color: on ? '#fff' : '#c8c0d8' }); });
         UIK.btn(ctx, Object.assign({ id: 'close', label: 'Закрыть' }, this.shopClose()), UIK.hit(this.shopClose(), m_.x, m_.y));
       }
       if (this.ov === 'pause') { ctx.fillStyle = 'rgba(4,8,8,0.7)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 106, 44, 212, 140, { fill: 'rgba(16,32,28,0.96)', border: c.gold }); T.draw(ctx, 'Пауза', SW / 2, 54, { size: 14, align: 'c', color: c.gold }); this.pauseButtons().forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y))); }
