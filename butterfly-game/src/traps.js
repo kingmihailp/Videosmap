@@ -227,7 +227,7 @@ const Traps = (() => {
       g.add(box(0.2, 0.1, 0.012, brass, 0, 0.13, 0.495));                                                                                    // maker's plate on the plank edge
     } else if (type === 'scr') {
       // the «скритчушка»: a black thing with a toothy smile, three odd eyes and tentacles; the lower jaw (U.jaw) swings open when a butterfly comes
-      const skin = M('#0c0a12'), skin2 = M('#181226'), lip = M('#2a0a1a'), tooth = M('#f4f0dc'), tongue = M('#b04a78'), eyeW = new THREE.MeshBasicMaterial({ color: '#e8f090' }), pupil = M('#050308'), orb = new THREE.MeshBasicMaterial({ color: '#b070ff' }), cavity = new THREE.MeshBasicMaterial({ color: '#5a0a22' });
+      const skin = M('#0c0a12'), skin2 = M('#181226'), lip = M('#2a0a1a'), tooth = M('#f4f0dc'), tongue = M('#b04a78'), eyeW = new THREE.MeshBasicMaterial({ color: '#ffffff' }), orb = new THREE.MeshBasicMaterial({ color: '#f4eaa0' }), cavity = new THREE.MeshBasicMaterial({ color: '#5a0a22' });
       const tap = (a, b, r0, r1, mat) => { const d = new THREE.Vector3().subVectors(b, a), L = d.length(), m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, L, 7), mat); m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return m; };
       const sm = (u) => u * u * (3 - 2 * u), V = (x, y, z) => new THREE.Vector3(x, y, z);
       const bodyM = mesh(new THREE.SphereGeometry(0.62, 20, 14), skin, 0, 0.82, 0); bodyM.scale.set(1.05, 1.08, 0.95); top.add(bodyM);
@@ -244,7 +244,7 @@ const Traps = (() => {
       // warts
       for (let i = 0; i < 12; i++) { const th2 = i * 2.4 + 1, ph = 0.5 + (i * 0.37 % 1) * 2.1; if (Math.abs(Math.atan2(Math.sin(th2), Math.cos(th2)) - Math.PI / 2) < 0.9 && ph > 1.0 && ph < 2.3) continue; top.add(mesh(new THREE.SphereGeometry(0.04 + (i % 3) * 0.015, 6, 5), skin2, 0.63 * 0.96 * Math.sin(ph) * Math.cos(th2) * 1.05, 0.82 + 0.67 * 0.96 * Math.cos(ph), 0.59 * 0.96 * Math.sin(ph) * Math.sin(th2))); }
       // three eyes
-      for (const [ex, ey, ez] of [[-0.22, 1.02, 0.5], [0.22, 1.02, 0.5], [0, 1.2, 0.44]]) { top.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), eyeW, ex, ey, ez)); top.add(box(0.016, 0.07, 0.02, pupil, ex, ey, ez + 0.07)); }
+      for (const [ex, ey, ez] of [[-0.22, 1.02, 0.5], [0.22, 1.02, 0.5], [0, 1.2, 0.44]]) { top.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), eyeW, ex, ey, ez)); }
       // the cavity of the mouth, the upper lip with hanging teeth
       const cav = mesh(new THREE.SphereGeometry(1, 14, 8), cavity, 0, 0.56, 0.4); cav.scale.set(0.42, 0.17, 0.16); top.add(cav);
       const upper = new THREE.CatmullRomCurve3([V(-0.44, 0.74, 0.34), V(-0.24, 0.66, 0.53), V(0, 0.62, 0.58), V(0.24, 0.66, 0.53), V(0.44, 0.74, 0.34)]); top.add(mesh(new THREE.TubeGeometry(upper, 24, 0.045, 6), lip, 0, 0, 0));
@@ -254,7 +254,7 @@ const Traps = (() => {
       for (let i = 0; i < 9; i++) { const u = (i + 0.5) / 9, p = lower.getPoint(u), h = 0.07 + ((i * 5) % 3) * 0.02; jaw.add(mesh(new THREE.ConeGeometry(0.028, h, 5), tooth, p.x, p.y + 0.03 + h / 2 - 0.02, p.z - 0.008)); }
       const tg = mesh(new THREE.SphereGeometry(1, 10, 6), tongue, 0, -0.07, 0.1); tg.scale.set(0.27, 0.05, 0.15); jaw.add(tg); jaw.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 5), lip, 0, -0.02, 0.0, 0, 0, Math.PI / 2));   // tongue and the hinge pin
       // a crooked bowl on the head for the flask
-      baitG.add(cyl(0.27, 0.21, 0.06, M('#241a30'), 0, 1.5, 0, 12)); baitG.add(mesh(new THREE.TorusGeometry(0.265, 0.018, 5, 14), M('#4a3a60'), 0, 1.53, 0, Math.PI / 2));
+      baitG.add(cyl(0.27, 0.21, 0.06, M('#cfc68a'), 0, 1.5, 0, 12)); baitG.add(mesh(new THREE.TorusGeometry(0.265, 0.018, 5, 14), M('#f4eaa0'), 0, 1.53, 0, Math.PI / 2));
       trayY = 1.53; trayR = 0.26; jawRef = jaw;
     } else {
       const netc = NET('#f4f6f0', 0.4), orange = M('#e8782a'), rib = M('#c8ccc4'), peg = M(IRON), line = M('#e8d8b0');
