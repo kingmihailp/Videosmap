@@ -2619,7 +2619,7 @@ const World = (() => {
       }
       // the leader: a slim pointed spike with short needle whorls
       // the leader: a small upright tuft of needles (the trunk ends inside it)
-      const lead = at(H * 0.93); for (let k = 0; k < 3; k++) { const sc = [1, 0.75, 0.5][k]; parts.push({ g: r.pick(pool), m: M(lead.x, lead.y + k * H * 0.028, lead.z, 0, r.range(0, 6), 0, 0.22 * sc + 0.05, 0.3 * sc + 0.05, 0.22 * sc + 0.05), c: shadeHex(o.cols[k % o.cols.length], 1.1 + k * 0.08), j: 0.08 }); }
+      const lead = at(H * 0.93); for (let k = 0; k < 3; k++) { const sc = [1, 0.75, 0.5][k]; parts.push({ g: r.pick(pool), m: M(lead.x, lead.y + k * Math.min(H * 0.028, 0.26), lead.z, 0, r.range(0, 6), 0, 0.22 * sc + 0.05, 0.3 * sc + 0.05, 0.22 * sc + 0.05), c: shadeHex(o.cols[k % o.cols.length], 1.1 + k * 0.08), j: 0.08 }); }
       return { g: merge(parts, r), rad: o.rad, h: H };
 
   }
@@ -2729,12 +2729,7 @@ const World = (() => {
       for (let i = 0; i < 16; i++) { const t = r.pick(out); const len = r.range(2, 3.4); parts.push({ g: cylG(0.045, 0.02, len, 4), m: M(t.x * 1.1, t.y - 0.6 - len, t.z * 1.1), c: '#86a844', j: 0.08 }); }
       return { g: merge(parts, r), rad: 0.5, h: H + 1 };
     },
-    crypto(r) {
-      const parts = []; const H = r.range(14, 22);
-      parts.push({ g: cylG(0.12, 0.55, H * 0.96, 7), c: '#6a4a38', j: 0.08 });
-      for (let i = 0; i < 7; i++) { const t = i / 6; parts.push({ g: coneG(lerp(2.1, 0.5, t), H * 0.24, 8), m: M(0, H * 0.14 + t * H * 0.7, 0, 0, i * 0.8), c: ['#1e3e28', '#2e5a34', 0, H], j: 0.1 }); }
-      return { g: merge(parts, r), rad: 0.6, h: H };
-    },
+    crypto(r) { return boughTree(r, { H: [14, 22], bark: ['#7a5240', '#4a3226', 0, 12], core: ['#14301c', '#24482a', 0, 12], W: 36, cols: ['#1e4a2a', '#2a5e34', '#38703e'], nb: [6, 3], Lmax: 2.3, taper: 1.15, sag: [0.2, 0.04], dead: 3, cone: [0.06, 0.12], coneP: 0.3, lead: ['#1e4a2a', '#38703e', 0, 12], lit: [0.82, 0.34], rad: 0.6 }); },
     maple(r) {
       const parts = []; const H = r.range(5, 7); const top = trunk(parts, r, H * 0.7, 0.26, 0.13, 0.08, '#5a4a3a', 4);
       const autumn = r.chance(0.3); const cols = autumn ? ['#d8401a', '#e8741c', '#c82a18'] : ['#3a8a38', '#4a9a3c', '#2e7a32'];
