@@ -27,7 +27,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
         const ang = cross ? Math.atan2(cross.x, cross.z) : null;
         let through = cross && cross.y > gap[0] && cross.y < gap[1];
         if (type === 'imp' && cross) through = through && Math.abs(ang) < 0.62;          // the doorway is centred on +z
-        out.push({ type, rep, steps, startDist: +Math.hypot(start.x, start.z).toFixed(1), startH: +(start.y).toFixed(2), maxStep: +maxStep.toFixed(3), crossY: cross ? +cross.y.toFixed(2) : null, through: !!through, endDist: +end.distanceTo(new THREE.Vector3(spot.x, spot.y, spot.z)).toFixed(3), counted: counted, after: t.items.length - before, inflight: t.inflight, flierSecs: +(steps * 0.05).toFixed(1) });
+        out.push({ type, rep, steps, startDist: +Math.hypot(start.x, start.z).toFixed(1), startH: +(P[0].y - w.groundAt(P[0].x, P[0].z)).toFixed(2), maxStep: +maxStep.toFixed(3), crossY: cross ? +cross.y.toFixed(2) : null, through: !!through, endDist: +end.distanceTo(new THREE.Vector3(spot.x, spot.y, spot.z)).toFixed(3), counted: counted, after: t.items.length - before, inflight: t.inflight, flierSecs: +(steps * 0.05).toFixed(1) });
         S.drop(t);
       }
     });

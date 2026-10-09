@@ -40,7 +40,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await pg.evaluate(() => { const U = Traps.UI; for (const id of ['fln', 'hnn']) { const b = U.layout().find(q => q.id === id); U.click(b.x + 2, b.y + 2); } });
   const bt = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { fl: t.fl, hn: t.hn, stockFl: Traps.count('fl', t.fl), stockHn: Traps.count('hn', t.hn) }; });
   T('arrows put flowers and honey into the trap (and take them from the stock)', bt.fl && bt.hn && bt.stockFl === 0 && bt.stockHn === 0, bt);
-  await pg.evaluate(() => { F0W.play.traps.update(20); }); const mid = await pg.evaluate(() => F0W.play.traps.list[0].items.length); T('with bait butterflies come', mid > 0, mid);
+  await pg.evaluate(() => { for (let i = 0; i < 240; i++) F0W.play.traps.update(0.25); }); const mid = await pg.evaluate(() => F0W.play.traps.list[0].items.length); T('with bait butterflies come', mid > 0, mid);
   await pg.evaluate(() => { const t = F0W.play.traps.list[0]; t.t = t.life - 5; for (let i = 0; i < 40; i++) F0W.play.traps.update(0.5); });
   const full = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { n: t.items.length, cap: t.cap, broken: t.broken, left: t.life - t.t }; });
   T('the trap breaks when its time is out and never holds more than its capacity', full.broken && full.n <= full.cap && full.n > 0, full); await shot('manage_full');
@@ -48,7 +48,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const tk = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__spec, want: window.__n, left: F0W.play.traps.list.length }));
   T('«Забрать улов» moves the butterflies into the cabinet; a broken trap is cleared away', tk.got === tk.want && tk.left === 0, tk);
   // the imported trap: durability 4 minutes, aberrations possible, and leaving takes the catch
-  await pg.evaluate(() => { F0W.overlay = null; const p = F0W.play; const t = p.traps.place('imp'); t.fl = 'lavender'; t.hn = 'heather'; for (let i = 0; i < 20; i++) p.traps.update(1); window.__before = Save.data.specimens.length; window.__in = t.items.length; });
+  await pg.evaluate(() => { F0W.overlay = null; const p = F0W.play; const t = p.traps.place('imp'); t.fl = 'lavender'; t.hn = 'heather'; for (let i = 0; i < 400 && !t.items.length; i++) p.traps.update(0.25); for (let i = 0; i < 80; i++) p.traps.update(0.25); window.__before = Save.data.specimens.length; window.__in = t.items.length; });
   const sw = await pg.evaluate(() => ({ life: F0W.play.traps.list[0].life, n: window.__in }));
   T('the imported trap lives 4 minutes and fills up', sw.life === 240 && sw.n > 0, sw);
   await pg.evaluate(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.toMap(); }); await pg.waitForTimeout(800);
