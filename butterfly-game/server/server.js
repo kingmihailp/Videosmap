@@ -57,7 +57,7 @@ function applyOp(op) {
 
 // the version (BUILD_ID) of the game file this server serves: a client with another build would generate other landscapes from the same seed, so it may not join places
 let buildCache = { mt: 0, id: '' };
-function currentBuild() { try { const st = fs.statSync(GAME); if (st.mtimeMs !== buildCache.mt) { const head = fs.readFileSync(GAME, 'utf8').slice(0, 400000); const m = /const BUILD_ID = '([0-9a-f]+)'/.exec(head); buildCache = { mt: st.mtimeMs, id: m ? m[1] : '' }; } } catch (e) { return ''; } return buildCache.id; }
+function currentBuild() { try { const st = fs.statSync(GAME); if (st.mtimeMs !== buildCache.mt) { const head = fs.readFileSync(GAME, 'utf8'); const m = /const BUILD_ID = '([0-9a-f]+)'/.exec(head); buildCache = { mt: st.mtimeMs, id: m ? m[1] : '' }; } } catch (e) { return ''; } return buildCache.id; }
 // ------------------------------------------------------------------ players & locations
 let nextId = 1;
 const players = new Map();                 // id -> { id, name, ws, loc, idx }
