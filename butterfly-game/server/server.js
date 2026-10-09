@@ -93,6 +93,7 @@ function trapMsg(me, m) {
     if (m.k === 'set') { t.fl = String(m.fl || '').slice(0, 24); t.hn = String(m.hn || '').slice(0, 24); toLoc(me.loc, { t: 'trap', k: 'set', tid, fl: t.fl, hn: t.hn }, me.id); }
     else if (m.k === 'cnt') { t.n = Math.max(0, Math.min(40, m.n | 0)); toLoc(me.loc, { t: 'trap', k: 'cnt', tid, n: t.n }, me.id); }
     else if (m.k === 'del') { l.traps.delete(tid); toLoc(me.loc, { t: 'trap', k: 'del', tid }, me.id); }
+    else if (m.k === 'arr') toLoc(me.loc, { t: 'trap', k: 'arr', tid }, me.id);          // a butterfly sets off towards the trap (nothing is stored)
   }
 }
 function leaveLoc(p) {

@@ -76,15 +76,103 @@ const Traps = (() => {
     else for (let i = 0; i < 9; i++) { const y = 0.3 + (i % 3) * 0.24, a = i * 2.1, r = 0.55 * Math.sqrt(Math.max(0.05, 1 - (y / 1.1) * (y / 1.1))) - 0.03; out.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, a }); }
     return out;
   }
-  function flowerBunch(g, y, col, shape, rad) {
-    const stem = M('#3a7a30');
-    for (let i = 0; i < 7; i++) { const a = i * 0.9, r = rad * (0.25 + 0.7 * ((i * 0.37) % 1)), x = Math.cos(a) * r, z = Math.sin(a) * r;
-      g.add(mesh(new THREE.SphereGeometry(shape === 'spike' ? 0.03 : 0.045, 6, 5), M(col), x, y + 0.05 + (i % 3) * 0.015, z)); if (shape === 'spike') g.add(mesh(new THREE.CylinderGeometry(0.018, 0.026, 0.1, 5), M(col), x, y + 0.05, z)); else g.add(box(0.012, 0.045, 0.012, stem, x, y + 0.02, z)); }
+  // ---- detailed baits: real-looking flower heads (petals with a shaded gradient, stems, leaves) and honey (a honeycomb piece, a glossy puddle, a dipper); every part touches the one it grows from
+  const tint = (hex, k) => { const c = new THREE.Color(hex); c.multiplyScalar(k); return c; };
+  const mixc = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
+  const Z3 = new THREE.Vector3(), Qt = new THREE.Quaternion(), Eu = new THREE.Euler();
+  // merge parts [{g, m: Matrix4, c: colour or fn(x, y, z) -> colour}] into one vertex-coloured geometry
+  function merged(parts) {
+    let n = 0; const gs = parts.map(p => { const g = p.g.index ? p.g.toNonIndexed() : p.g.clone(); g.applyMatrix4(p.m); n += g.attributes.position.count; return g; });
+    const P = new Float32Array(n * 3), N = new Float32Array(n * 3), C = new Float32Array(n * 3); let o = 0;
+    gs.forEach((g, i) => { const pa = g.attributes.position, na = g.attributes.normal, p = parts[i], inv = new THREE.Matrix4().copy(p.m).invert(), v = new THREE.Vector3(), col = typeof p.c === 'function' ? null : new THREE.Color(p.c);
+      for (let k = 0; k < pa.count; k++) { P[(o + k) * 3] = pa.getX(k); P[(o + k) * 3 + 1] = pa.getY(k); P[(o + k) * 3 + 2] = pa.getZ(k); N[(o + k) * 3] = na.getX(k); N[(o + k) * 3 + 1] = na.getY(k); N[(o + k) * 3 + 2] = na.getZ(k);
+        const c = col || (v.set(pa.getX(k), pa.getY(k), pa.getZ(k)).applyMatrix4(inv), new THREE.Color(p.c(v.x, v.y, v.z))); C[(o + k) * 3] = c.r; C[(o + k) * 3 + 1] = c.g; C[(o + k) * 3 + 2] = c.b; } o += pa.count; g.dispose(); });
+    const G = new THREE.BufferGeometry(); G.setAttribute('position', new THREE.BufferAttribute(P, 3)); G.setAttribute('normal', new THREE.BufferAttribute(N, 3)); G.setAttribute('color', new THREE.BufferAttribute(C, 3)); return G;
   }
-  // the bait dish contents: flowers and a honey sponge on the tray top at height y (r = tray radius)
+  const MX = (x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), Qt.setFromEuler(Eu.set(rx, ry, rz, 'YXZ')).clone(), new THREE.Vector3(sx, sy, sz));
+  // one petal: a leaf-shaped strip lying along +x (length L, width W); (x, y, z) -> t along it
+  const petalGeo = (L, W, curl = 0) => { const rows = [0.25, 0.7, 1, 0.85, 0.35, 0], P = [], I = []; rows.forEach((w, r) => { const t = r / (rows.length - 1); P.push(t * L, -curl * L * t * t, -w * W / 2, t * L, -curl * L * t * t, w * W / 2); if (r) { const a = (r - 1) * 2; I.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } }); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I); g.computeVertexNormals(); return g; };
+  const leafGeo = (L, W) => petalGeo(L, W, 0.25);
+  const GREEN = ['#2e6a2a', '#3e8a34', '#58a63e'];
+  function rodGeo(a, b, r) { const d = new THREE.Vector3().subVectors(b, a), L = d.length(), g = new THREE.CylinderGeometry(r * 0.7, r, L, 5); const m = new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()), new THREE.Vector3(1, 1, 1)); return { g, m }; }
+  // a flower head at the origin of its own frame, looking up (+y); returns parts
+  function headParts(f, k, rng) {
+    const parts = [], c = f.col, light = tint(c, 1.28), dark = tint(c, 0.62), mid = c;
+    const petal = (L, W, curl, ang, tilt, off, cA, cB, y = 0) => parts.push({ g: petalGeo(L, W, curl), m: MX(Math.cos(ang) * off, y, Math.sin(ang) * off, 0, -ang, tilt), c: (x, yy, z) => { const t = x / L, edge = Math.abs(z) / (W * 0.5 + 1e-6); return mixc(mixc(cA, cB, t), tint(cB, 0.8), clamp(edge * 0.6)); } });
+    if (f.shape === 'daisy') {
+      const n = 14; for (let i = 0; i < n; i++) petal(0.05, 0.016, 0.1, i / n * 6.283 + rng() * 0.1, 0.12 + rng() * 0.12, 0.014, '#fffef4', '#e8e4d0', 0.002 * (i % 2));
+      parts.push({ g: new THREE.CylinderGeometry(0.016, 0.019, 0.012, 9), m: MX(0, 0.004, 0), c: (x, y, z) => ((Math.round(x * 500) + Math.round(z * 500)) % 2 ? '#e8b820' : '#f4d440') }); parts.push({ g: new THREE.SphereGeometry(0.012, 7, 4, 0, 6.3, 0, 1.4), m: MX(0, 0.006, 0), c: '#f8dc50' });
+    } else if (f.shape === 'star') {
+      for (let i = 0; i < 9; i++) { const a = i / 9 * 6.283; petal(0.036, 0.012, 0.2, a, 0.5, 0.008, tint(c, 0.8), light, 0.002); petal(0.026, 0.011, 0.2, a + 0.35, 0.78, 0.008, tint(c, 0.9), tint(c, 1.15), 0.006); }
+      parts.push({ g: new THREE.SphereGeometry(0.012, 6, 5), m: MX(0, 0.004, 0), c: '#2a1e5a' }); for (let i = 0; i < 6; i++) parts.push({ g: new THREE.CylinderGeometry(0.002, 0.003, 0.014, 4), m: MX(Math.cos(i) * 0.006, 0.012, Math.sin(i) * 0.006, 0.2 * Math.cos(i), 0, 0.2 * Math.sin(i)), c: '#6a2a8a' });
+      parts.push({ g: new THREE.SphereGeometry(0.014, 6, 4, 0, 6.3, 1.6, 1.5), m: MX(0, 0.002, 0), c: '#4a7a30' });
+    } else if (f.shape === 'cone') {
+      for (let i = 0; i < 13; i++) petal(0.058, 0.014, 0.5, i / 13 * 6.283 + rng() * 0.08, -0.55 - rng() * 0.2, 0.02, tint(c, 1.15), tint(c, 0.78), 0.004);
+      parts.push({ g: new THREE.ConeGeometry(0.022, 0.03, 8), m: MX(0, 0.015, 0), c: (x, y, z) => (y > 0.0 ? mixc('#7a3a14', '#c8641e', clamp(y * 40 + 0.5)) : '#5a2a10') });
+      for (let i = 0; i < 16; i++) { const a = i * 2.4, r = 0.004 + i * 0.001; parts.push({ g: new THREE.ConeGeometry(0.0035, 0.01, 4), m: MX(Math.cos(a) * r, 0.034 - i * 0.0012, Math.sin(a) * r), c: '#e0902a' }); }
+    } else if (f.shape === 'ball') {
+      parts.push({ g: new THREE.IcosahedronGeometry(0.024, 1), m: MX(0, 0.022, 0, 0, 0, 0, 1, 1.15, 1), c: (x, y, z) => mixc(tint(c, 0.7), tint(c, 1.1), clamp((y + 0.03) * 12)) });
+      for (let i = 0; i < 34; i++) { const u = (i + 0.5) / 34, ph = Math.acos(1 - u * 1.9), th = i * 2.4; parts.push({ g: new THREE.ConeGeometry(0.0055, 0.015, 4), m: MX(Math.sin(ph) * Math.cos(th) * 0.026, 0.022 + Math.cos(ph) * 0.03, Math.sin(ph) * Math.sin(th) * 0.026, Math.sin(ph) * Math.sin(th) * 0.9, 0, -Math.sin(ph) * Math.cos(th) * 0.9), c: i % 3 ? tint(c, 1.22) : tint(c, 0.9) }); }
+      for (let i = 0; i < 3; i++) { const a = i * 2.1; parts.push({ g: leafGeo(0.05, 0.026), m: MX(Math.cos(a) * 0.012, -0.002, Math.sin(a) * 0.012, 0, -a, 0.35), c: '#4a8a34' }); }
+    } else if (f.shape === 'spike') {
+      const buddle = f.id === 'buddleia', N = buddle ? 46 : 34, Hh = buddle ? 0.15 : 0.12;
+      parts.push(rodRaw(new THREE.Vector3(0, -0.004, 0), new THREE.Vector3(0, Hh, 0), 0.0035, '#4a8a34'));
+      for (let i = 0; i < N; i++) { const t = i / (N - 1), a = i * 2.4 + rng() * 0.4, rad = (buddle ? 0.026 : 0.017) * (1 - t * 0.75) + 0.004, y = t * Hh; const fc = i % 3 ? mixc(c, light, t * 0.4) : tint(c, 0.78);
+        parts.push({ g: new THREE.OctahedronGeometry(buddle ? 0.0105 : 0.0085, 0), m: MX(Math.cos(a) * rad, y, Math.sin(a) * rad, 0.4, a, 0.3, 1, 1.25, 1), c: fc }); parts.push(rodRaw(new THREE.Vector3(0, y, 0), new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad), 0.0016, '#4a7a34'));
+        if (buddle && i % 4 === 0) parts.push({ g: new THREE.SphereGeometry(0.0034, 4, 3), m: MX(Math.cos(a) * rad * 1.1, y + 0.002, Math.sin(a) * rad * 1.1), c: '#f09a20' }); }
+      parts.push({ g: new THREE.OctahedronGeometry(0.009, 0), m: MX(0, Hh + 0.006, 0, 0, 0, 0, 1, 1.4, 1), c: light });
+    } else {      // cluster: an umbel / panicle of small stalked florets
+      const big = f.id === 'lilac', N = big ? 30 : 17, R = big ? 0.05 : 0.04;
+      for (let i = 0; i < N; i++) { const a = i * 2.4 + rng() * 0.3, u = Math.sqrt((i + 0.5) / N), rad = R * u, y = (big ? 0.01 + (1 - u) * 0.07 : 0.026 - u * u * 0.012) + (i % 3) * 0.002, fc = i % 4 ? mixc(c, light, (i % 5) / 6) : dark;
+        parts.push(rodRaw(new THREE.Vector3(0, big ? 0.0 : -0.002, 0), new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad), 0.0015, '#4a7a34'));
+        for (let k = 0; k < 4; k++) parts.push({ g: petalGeo(0.0115, 0.0085, 0.2), m: MX(Math.cos(a) * rad, y, Math.sin(a) * rad, 0, -(k * 1.571 + a), 0.35), c: k % 2 ? fc : tint(fc, 1.15) });
+        parts.push({ g: new THREE.SphereGeometry(0.0034, 4, 3), m: MX(Math.cos(a) * rad, y + 0.003, Math.sin(a) * rad), c: '#f8e8a0' }); }
+    }
+    return parts;
+  }
+  function rodRaw(a, b, r, c) { const o = rodGeo(a, b, r); return { g: o.g, m: o.m, c }; }
+  // a stem with leaves and a head at its top; the base is the origin; the tip is at (tx, h, tz)
+  function stemParts(f, h, tx, tz, rng) {
+    const parts = [], base = new THREE.Vector3(0, 0, 0), mid = new THREE.Vector3(tx * 0.45, h * 0.5, tz * 0.45), tip = new THREE.Vector3(tx, h, tz);
+    parts.push(rodRaw(base, mid, 0.0055, '#3a7a30'), rodRaw(mid, tip, 0.0045, '#4a8a38'));
+    for (let i = 0; i < 3; i++) { const t = 0.2 + i * 0.22, p = base.clone().lerp(tip, t), a = i * 2.2 + rng() * 0.6; parts.push({ g: leafGeo(0.06 - i * 0.012, 0.022), m: MX(p.x, p.y, p.z, 0, -a, 0.55 - i * 0.12), c: (x, y, z) => mixc(GREEN[0], GREEN[2], clamp(x * 14)) }); }
+    const hp = headParts(f, 1, rng), look = new THREE.Vector3(tx, h * 0.5, tz).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), look);
+    for (const p of hp) { const m = new THREE.Matrix4().compose(tip.clone().add(new THREE.Vector3(0, -0.002, 0)), q, new THREE.Vector3(1, 1, 1)).multiply(p.m); parts.push({ g: p.g, m, c: p.c }); }
+    return parts;
+  }
+  const seedRng = s => () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+  // a bunch standing in the dish (base at the dish top y), spread by sp
+  function flowerBunch(g, y, f, r, ox = 0) {
+    const rng = seedRng(f.id.length * 977 + f.scent * 31), parts = [], N = f.shape === 'spike' || f.shape === 'cluster' ? 6 : 7;
+    for (let i = 0; i < N; i++) { const a = i / N * 6.283 + rng() * 0.5, lean = 0.05 + rng() * 0.07, h = 0.2 + rng() * 0.07 + (f.shape === 'spike' ? 0.03 : 0), tx = Math.cos(a) * (lean + 0.02), tz = Math.sin(a) * (lean + 0.02), bx = Math.cos(a) * 0.008, bz = Math.sin(a) * 0.008;
+      for (const p of stemParts(f, h, tx - bx, tz - bz, rng)) parts.push({ g: p.g, m: new THREE.Matrix4().makeTranslation(bx, 0, bz).multiply(p.m), c: p.c }); }
+    parts.push({ g: new THREE.CylinderGeometry(0.022, 0.017, 0.05, 8), m: MX(0, 0.025, 0), c: (x, yy, z) => (Math.abs(((yy * 90) % 2)) > 1 ? '#c8b080' : '#a89060') });      // a twine-wrapped paper cone around the stem bases
+    const mesh0 = new THREE.Mesh(merged(parts), new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, flatShading: true })); mesh0.position.set(ox, y - 0.002, 0); g.add(mesh0);
+  }
+  // honey: a honeycomb piece with a glossy puddle, drips, bubbles, a grooved dipper
+  const WAX = '#e8c668';
+  function honeyPiece(g, y, hn, ox = 0) {
+    const col = new THREE.Color(hn.col), parts = [], wax = [], rng = seedRng(hn.q * 131 + hn.price), cells = [[0, 0], [1, 0], [-1, 0], [0.5, 0.87], [-0.5, 0.87], [0.5, -0.87], [-0.5, -0.87]], S = 0.034;
+    // a puddle on the dish and drips over its edge
+    parts.push({ g: new THREE.CylinderGeometry(0.1, 0.11, 0.012, 14), m: MX(0, 0.006, 0), c: (x, yy, z) => mixc(tint(col, 0.78), col, clamp(1 - Math.hypot(x, z) * 8)) });
+    for (let i = 0; i < 6; i++) { const a = i * 1.1 + rng(), r = 0.1 + rng() * 0.012; parts.push({ g: new THREE.SphereGeometry(0.014 + rng() * 0.007, 6, 4), m: MX(Math.cos(a) * r, 0.007, Math.sin(a) * r, 0, 0, 0, 1.2, 0.5, 1.2), c: tint(col, 0.92) }); }
+    // the comb: seven six-sided cells with brimming honey caps
+    cells.forEach(([cx, cz], i) => { const x = cx * S * 1.75, z = cz * S * 1.75; wax.push({ g: new THREE.CylinderGeometry(S, S, 0.034, 6), m: MX(x, 0.029, z, 0, Math.PI / 6), c: (xx, yy, zz) => (Math.hypot(xx, zz) > S * 0.86 ? mixc(tint(WAX, 0.82), col, 0.3) : mixc(WAX, col, 0.4)) });
+      parts.push({ g: new THREE.CylinderGeometry(S * 0.8, S * 0.8, 0.012, 6), m: MX(x, 0.047, z, 0, Math.PI / 6), c: i % 2 ? tint(col, 1.12) : col }); parts.push({ g: new THREE.SphereGeometry(S * 0.62, 6, 3, 0, 6.3, 0, 0.9), m: MX(x, 0.05, z, 0, 0, 0, 1, 0.35, 1), c: tint(col, 1.3) }); });
+    // bubbles and, in the pale crystallising kinds, grains
+    for (let i = 0; i < 6; i++) { const a = i * 2.3, r = 0.045 + rng() * 0.05; parts.push({ g: new THREE.SphereGeometry(0.004, 4, 3), m: MX(Math.cos(a) * r, 0.014, Math.sin(a) * r), c: tint(col, 1.45) }); }
+    if (hn.id === 'sunflower' || hn.id === 'meadow') for (let i = 0; i < 12; i++) { const a = i * 2.1, r = 0.02 + rng() * 0.08; parts.push({ g: new THREE.OctahedronGeometry(0.004, 0), m: MX(Math.cos(a) * r, 0.016, Math.sin(a) * r), c: '#fff4c0' }); }
+    // a wooden dipper lying in the honey and resting on the rim
+    const d0 = new THREE.Vector3(-0.02, 0.03, 0.0), d1 = new THREE.Vector3(0.2, 0.012, 0.1); const rd = rodRaw(d0, d1, 0.006, '#9a6a3a'); wax.push(rd);
+    for (let i = 0; i < 5; i++) { const t = i / 4, p = d0.clone().lerp(new THREE.Vector3(0.07, 0.04, 0.035), t * 0.8); wax.push({ g: new THREE.TorusGeometry(0.014 + (i % 2) * 0.004, 0.004, 4, 8), m: MX(p.x - 0.01 + t * 0.025, p.y, p.z, 0, 0.45, Math.PI / 2 - 0.1), c: '#b88a50' }); }
+    const grp = new THREE.Group(); grp.position.set(ox, y, 0);
+    grp.add(new THREE.Mesh(merged(parts), new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 95, specular: new THREE.Color('#fff0c0'), flatShading: false })));
+    grp.add(new THREE.Mesh(merged(wax), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }))); g.add(grp);
+  }
+  // the bait dish contents: flowers and honey on the tray top at height y (r = tray radius)
   function bait(g, y, r, fl, hn) {
-    if (HN[hn]) { g.add(cyl(0.11, 0.1, 0.022, M(HN[hn].col), r * 0.0 + (FL[fl] ? -r * 0.35 : 0), y + 0.011, FL[fl] ? r * 0.1 : 0, 10)); g.add(mesh(new THREE.SphereGeometry(0.06, 7, 4, 0, 6.3, 0, 1.2), M(HN[hn].col), FL[fl] ? -r * 0.35 : 0, y + 0.002, FL[fl] ? r * 0.1 : 0)); }
-    if (FL[fl]) { const b = new THREE.Group(); b.position.set(HN[hn] ? r * 0.3 : 0, 0, 0); flowerBunch(b, y, FL[fl].col, FL[fl].shape, r * 0.45); g.add(b); }
+    if (HN[hn]) honeyPiece(g, y, HN[hn], FL[fl] ? -r * 0.36 : 0);
+    if (FL[fl]) flowerBunch(g, y, FL[fl], r, HN[hn] ? r * 0.12 : 0);
   }
   // the three trap bodies; every part touches its neighbour (the float test checks it); y = 0 is the ground
   function body(type) {
@@ -104,18 +192,19 @@ const Traps = (() => {
       const wood = M(WOOD), dw = M(DWOOD), brass = M(BRASS), netc = NET('#e0e8dc', 0.38);
       for (const sx of [-1, 1]) for (const sz of [-1, 1]) { g.add(box(0.1, 0.1, 0.1, dw, sx * 0.42, 0.05, sz * 0.42)); g.add(box(0.07, 1.22, 0.07, wood, sx * 0.43, 0.76, sz * 0.43)); top.add(box(0.1, 0.05, 0.1, brass, sx * 0.43, 1.39, sz * 0.43)); }   // feet, posts, brass caps
       g.add(box(0.98, 0.06, 0.98, wood, 0, 0.13, 0));                                                                                      // the floor plank
-      for (const [x, z, w, d] of [[0, 0.43, 0.86, 0.06], [0, -0.43, 0.86, 0.06], [0.43, 0, 0.06, 0.86], [-0.43, 0, 0.06, 0.86]]) { top.add(box(w, 0.06, d, wood, x, 1.36, z)); g.add(box(w, 0.05, d, wood, x, 0.45, z)); }   // top frame and the sill of the net walls
-      for (const [x, z, w, d] of [[0, 0.43, 0.8, 0.012], [0, -0.43, 0.8, 0.012], [0.43, 0, 0.012, 0.8], [-0.43, 0, 0.012, 0.8]]) top.add(box(w, 0.88, d, netc, x, 0.9, z));   // mesh walls (the gap below the sill is the way in)
-      for (const [x, z, w, d] of [[0, 0.43, 0.86, 0.02], [0, -0.43, 0.86, 0.02], [0.43, 0, 0.02, 0.86], [-0.43, 0, 0.02, 0.86]]) top.add(box(w, 0.025, d, M(IRON), x, 0.9, z));   // metal hoop
+      for (const [x, z, w, d] of [[0, 0.43, 0.86, 0.06], [0, -0.43, 0.86, 0.06], [0.43, 0, 0.06, 0.86], [-0.43, 0, 0.06, 0.86]]) { top.add(box(w, 0.06, d, wood, x, 1.36, z)); g.add(box(w, 0.05, d, wood, x, 0.6, z)); }   // top frame and the sill of the net walls
+      for (const [x, z, w, d] of [[0, 0.43, 0.8, 0.012], [0, -0.43, 0.8, 0.012], [0.43, 0, 0.012, 0.8], [-0.43, 0, 0.012, 0.8]]) top.add(box(w, 0.74, d, netc, x, 0.98, z));   // mesh walls (the gap below the sill is the way in)
+      for (const [x, z, w, d] of [[0, 0.43, 0.86, 0.02], [0, -0.43, 0.86, 0.02], [0.43, 0, 0.02, 0.86], [-0.43, 0, 0.02, 0.86]]) top.add(box(w, 0.025, d, M(IRON), x, 1.0, z));   // metal hoop
       top.add(mesh(new THREE.ConeGeometry(0.78, 0.3, 4), M('#4a5a50'), 0, 1.56, 0, 0, Math.PI / 4, 0)); top.add(mesh(new THREE.SphereGeometry(0.045, 6, 5), M(BRASS), 0, 1.73, 0));   // hip roof and its finial
       g.add(cyl(0.12, 0.2, 0.2, dw, 0, 0.26, 0, 8)); baitG.add(cyl(0.3, 0.3, 0.04, M('#5a4028'), 0, 0.38, 0, 12)); trayY = 0.4; trayR = 0.3;     // a pedestal and the dish on it
       g.add(box(0.2, 0.1, 0.012, brass, 0, 0.13, 0.495));                                                                                    // maker's plate on the plank edge
     } else {
       const netc = NET('#f4f6f0', 0.4), orange = M('#e8782a'), rib = M('#c8ccc4'), peg = M(IRON), line = M('#e8d8b0');
       g.add(mesh(new THREE.TorusGeometry(0.55, 0.022, 5, 18), rib, 0, 0.025, 0, Math.PI / 2));                                            // the base hoop on the ground
-      const dome = mesh(new THREE.SphereGeometry(0.55, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), netc, 0, 0.02, 0); dome.scale.y = 2.0; top.add(dome);
+      const dome = mesh(new THREE.SphereGeometry(0.55, 16, 8, 0, Math.PI * 2, 0, 1.425), netc, 0, 0.02, 0); dome.scale.y = 2.0; top.add(dome);
       for (let k = 0; k < 3; k++) { const arc = mesh(new THREE.TorusGeometry(0.55, 0.012, 4, 18, Math.PI), rib, 0, 0.02, 0, 0, k * Math.PI / 3, 0); arc.scale.y = 2.0; top.add(arc); }   // arched ribs
-      g.add(cyl(0.56, 0.56, 0.16, orange, 0, 0.08, 0, 18, true));                                                                          // the coloured skirt
+      g.add(mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.2, 20, 1, true, 0.5, Math.PI * 2 - 1.0), M('#e8782a', { side: THREE.DoubleSide }), 0, 0.1, 0));       // the coloured skirt with a doorway (centred on +z)
+      for (const sd of [-1, 1]) g.add(box(0.03, 0.2, 0.012, M('#c85a1a'), sd * Math.sin(0.5) * 0.56, 0.1, Math.cos(0.5) * 0.56, 0, sd * 0.5, 0));      // the posts of the doorway
       top.add(mesh(new THREE.SphereGeometry(0.05, 6, 5), M(BRASS), 0, 1.12, 0)); top.add(rod([0, 1.1, 0], [0, 1.62, 0], 0.01, peg, 4)); top.add(mesh(new THREE.ConeGeometry(0.1, 0.24, 3), M('#d03a30'), 0.1, 1.5, 0, 0, 0, -Math.PI / 2));   // top cap and a pennant
       for (let k = 0; k < 4; k++) { const a = k * 1.571 + 0.78, X = Math.cos(a), Z = Math.sin(a); g.add(rod([X * 1.0, -0.05, Z * 1.0], [X * 0.92, 0.2, Z * 0.92], 0.014, peg, 4)); top.add(rod([X * 0.92, 0.2, Z * 0.92], [X * 0.45, 0.62, Z * 0.45], 0.005, line, 3)); }    // pegs and guy lines to the dome
       baitG.add(cyl(0.3, 0.3, 0.035, M('#3a4a58'), 0, 0.05, 0, 12)); trayY = 0.07; trayR = 0.3;
@@ -142,13 +231,48 @@ const Traps = (() => {
   }
   const specCol = sp => { const b = SPECIES_BY_ID[sp.base] || sp; const a = b.art; const h = a && ((a.f && a.f[0]) || (a.h && a.h[0])); return typeof h === 'string' && h[0] === '#' ? h : '#e8a030'; };
 
+  // ================================================================== a butterfly flying into a trap: it comes from afar, meanders, finds the way in (a gap under the net ring / over the sill / the doorway of the dome), rises to a spot inside and settles
+  const UP = new THREE.Vector3(0, 1, 0);
+  // the way in, in the trap's own frame: [outside, inside, higher up inside] for a visitor coming from direction a (radians in the xz plane)
+  function doorway(type, a) {
+    if (type === 'std') { const d = [Math.cos(a), Math.sin(a)]; return { dir: a, pts: [[d[0] * 1.2, 0.43, d[1] * 1.2], [d[0] * 0.26, 0.43, d[1] * 0.26], [d[0] * 0.05, 0.62, d[1] * 0.05], [0, 0.82, 0]] }; }
+    if (type === 'str') { const k = Math.round(a / (Math.PI / 2)), aa = k * Math.PI / 2, d = [Math.round(Math.cos(aa)), Math.round(Math.sin(aa))]; return { dir: aa, pts: [[d[0] * 1.3, 0.48, d[1] * 1.3], [d[0] * 0.3, 0.48, d[1] * 0.3], [0, 0.52, 0], [0, 0.7, 0]] }; }
+    return { dir: Math.PI / 2, pts: [[0, 0.09, 1.3], [0, 0.09, 0.42], [0, 0.14, 0.15], [0, 0.4, 0.04]] };       // the dome: a doorway centred on +z
+  }
+  class Flier {
+    constructor(sys, trap, sp, spotIdx) {
+      this.sys = sys; this.trap = trap; this.sp = sp; this.done = false; this.t = Math.random() * 6; const w = sys.world, yaw = trap.yaw;
+      const toW = (x, y, z) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, yaw).add(new THREE.Vector3(trap.x, trap.y, trap.z));
+      const a0 = trap.type === 'imp' ? Math.PI / 2 + (Math.random() - 0.5) * 1.5 : Math.random() * 6.283;             // the side it comes from (local); the dome only from its door
+      const door = doorway(trap.type, trap.type === 'imp' ? 0 : a0); const out = toW(...door.pts[0]), inn = toW(...door.pts[1]);
+      const away = trap.type === 'imp' ? new THREE.Vector3(0, 0, 1).applyAxisAngle(UP, yaw) : new THREE.Vector3(Math.cos(door.dir), 0, Math.sin(door.dir)).applyAxisAngle(UP, yaw);
+      const side = new THREE.Vector3(-away.z, 0, away.x), dist = 5 + Math.random() * 3, start = new THREE.Vector3(trap.x, 0, trap.z).addScaledVector(away, dist).addScaledVector(side, (Math.random() - 0.5) * 5); start.y = w.groundAt(start.x, start.z) + 1.1 + Math.random() * 1.1;
+      const lat = (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 0.8), p1 = start.clone().lerp(out, 0.35).addScaledVector(side, lat); p1.y += 0.35; const p2 = start.clone().lerp(out, 0.72).addScaledVector(side, -lat * 0.6); p2.y = Math.max(out.y + 0.2, p2.y - 0.5);
+      const rest = rests(trap.type)[spotIdx % 9], rw = toW(rest.x, rest.y, rest.z), pts = [start, p1, p2, out, inn, toW(...door.pts[2]), toW(...door.pts[3]), rw];
+      this.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal'); this.len = this.curve.getLength(); this.s = 0; this.sOut = pts.slice(0, 4).reduce((a, p, i, A) => a + (i ? p.distanceTo(A[i - 1]) : 0), 0) * 1.04;
+      this.g = new THREE.Group(); const col = sp ? specCol(sp) : ['#e8a030', '#6a9ae0', '#f0f0e0', '#d05a5a', '#8ad060'][Math.floor(Math.random() * 5)], wm = M(col, { side: THREE.DoubleSide }), span = sp ? clamp((sp.mm[0] + sp.mm[1]) / 1000, 0.1, 0.17) : 0.12, wg = new THREE.PlaneGeometry(span / 2, span * 0.46).rotateX(-Math.PI / 2);
+      this.wl = new THREE.Group(); this.wr = new THREE.Group(); const l = new THREE.Mesh(wg, wm), r = new THREE.Mesh(wg, wm); l.position.x = -span / 4; r.position.x = span / 4; this.wl.add(l); this.wr.add(r);
+      const bd = box(0.009, 0.009, 0.05, M('#2a2018'), 0, 0, 0); this.g.add(bd, this.wl, this.wr); this.g.position.copy(start); sys.group.add(this.g); this.pos = start.clone(); this.last = start.clone(); this.log = [];
+    }
+    update(dt) {
+      this.t += dt; const tr = this.trap, v = this.s < this.sOut ? 1.5 : 0.65; this.s = Math.min(this.len, this.s + v * dt); const u = this.s / this.len, p = this.curve.getPointAt(Math.min(0.9999, u));
+      const k = this.s < this.sOut ? clamp(1 - this.s / this.sOut) * clamp((this.sOut - this.s) / 1.4) : 0;           // the meandering dies away near the door
+      const tan = this.curve.getTangentAt(Math.min(0.9999, u)); const sd = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      p.addScaledVector(sd, Math.sin(this.t * 4.1) * 0.3 * k); p.y += Math.sin(this.t * 6.3) * 0.14 * k + Math.sin(this.t * 24) * 0.012;
+      this.last.copy(this.pos); this.pos.copy(p); this.g.position.copy(p); this.g.lookAt(p.clone().add(tan)); const settle = clamp((1 - u) / 0.04), amp = settle * 0.95, fl = Math.sin(this.t * 44) * amp + (1 - settle) * 0.1;
+      this.wl.rotation.z = -fl; this.wr.rotation.z = fl; this.log.push([+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)]); if (this.log.length > 600) this.log.shift();
+      if (this.s >= this.len) this.done = true;
+    }
+    dispose() { this.sys.group.remove(this.g); this.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  }
+
   // ================================================================== the traps of a location
   class Sys {
-    constructor(play) { this.play = play; this.list = []; this.group = new THREE.Group(); play.scene.add(this.group); this.seq = 0; this.cntT = 0; this.near = null; }
+    constructor(play) { this.play = play; this.list = []; this.fliers = []; this.group = new THREE.Group(); play.scene.add(this.group); this.seq = 0; this.cntT = 0; this.near = null; }
     get world() { return this.play.world; }
     own() { return this.list.filter(t => t.mine); }
     mk(spec, mine) {
-      const T0 = TYPES[spec.type]; if (!T0) return null; const t = { tid: spec.tid, mine, owner: spec.owner, name: spec.name || '?', type: spec.type, x: spec.x, y: spec.y, z: spec.z, yaw: spec.yaw || 0, t: spec.age || 0, life: T0.life, cap: T0.cap, fl: spec.fl || '', hn: spec.hn || '', items: spec.items || [], n: spec.n || 0, broken: false, goneT: 0, dirty: true, label: null };
+      const T0 = TYPES[spec.type]; if (!T0) return null; const t = { tid: spec.tid, mine, owner: spec.owner, name: spec.name || '?', type: spec.type, x: spec.x, y: spec.y, z: spec.z, yaw: spec.yaw || 0, t: spec.age || 0, life: T0.life, cap: T0.cap, fl: spec.fl || '', hn: spec.hn || '', items: spec.items || [], n: spec.n || 0, inflight: 0, broken: false, goneT: 0, dirty: true, label: null };
       this.list.push(t); t.col = { x: spec.x, z: spec.z, r: 0.5, trap: t.tid }; this.world.colliders.push(t.col); this.rebuild(t); return t;
     }
     rebuild(t) {
@@ -159,9 +283,10 @@ const Traps = (() => {
     }
     net(m) {      // a message from the server about somebody else's trap
       if (m.k === 'put') { if (m.trap && !this.list.some(t => t.tid === m.trap.tid)) this.mk(m.trap, false); }
-      else { const t = this.list.find(q => q.tid === m.tid && !q.mine); if (!t) return; if (m.k === 'set') { t.fl = m.fl; t.hn = m.hn; t.dirty = true; } else if (m.k === 'cnt') { t.n = m.n; t.dirty = true; } else if (m.k === 'del') this.drop(t); }
+      else { const t = this.list.find(q => q.tid === m.tid && !q.mine); if (!t) return; if (m.k === 'set') { t.fl = m.fl; t.hn = m.hn; t.dirty = true; } else if (m.k === 'cnt') { t.n = m.n; t.dirty = true; } else if (m.k === 'del') this.drop(t); else if (m.k === 'arr') { if (!t.broken) this.spawn(t, null); } }
     }
-    drop(t) { this.list = this.list.filter(q => q !== t); if (t.group) { this.group.remove(t.group); t.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } if (t.label) this.group.remove(t.label); const w = this.world, ci = w.colliders.indexOf(t.col); if (ci >= 0) w.colliders.splice(ci, 1); if (this.near === t) this.near = null; }
+    spawn(t, sp) { const idx = (t.mine ? t.items.length : t.n) + t.inflight; t.inflight++; this.fliers.push({ f: new Flier(this, t, sp, idx), t, sp }); }
+    drop(t) { this.list = this.list.filter(q => q !== t); this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); if (t.group) { this.group.remove(t.group); t.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } if (t.label) this.group.remove(t.label); const w = this.world, ci = w.colliders.indexOf(t.col); if (ci >= 0) w.colliders.splice(ci, 1); if (this.near === t) this.near = null; }
     send(o) { if (Net.on && this.play.mp) Net.send('trap', o); }
     // G: put a trap of the chosen type in front of the player
     spot() { const P = this.play.player, w = this.world, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), x = P.pos.x + fx * 1.7, z = P.pos.z + fz * 1.7; if ((w.canWalk && !w.canWalk(x, z)) || (w.inWater && w.inWater(x, z, 0.6))) return null; if (w.slopeAt && w.slopeAt(x, z) > 0.55) return null;
@@ -176,18 +301,22 @@ const Traps = (() => {
     nearest() { const P = this.play.player, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); let best = null, bd = 1e9; for (const t of this.list) { const dx = t.x - P.pos.x, dz = t.z - P.pos.z, d = Math.hypot(dx, dz); if (d < 2.6 && (d < 1.5 || (dx * fx + dz * fz) / (d || 1) > 0.2) && d < bd) { best = t; bd = d; } } return best; }
     label(t) { return t.mine ? `E — ловушка: ${TYPES[t.type].ru.toLowerCase()} (${t.broken ? 'сломана' : mmss(t.life - t.t)}, бабочек: ${t.items.length})` : `Ловушка игрока ${t.name} · бабочек внутри: ${t.n}`; }
     update(dt) {
-      this.near = this.play.entering ? null : this.nearest(); const tt = this.play.t;
+      this.flyAll(dt); this.near = this.play.entering ? null : this.nearest(); const tt = this.play.t;
       for (const t of this.list.slice()) {
         t.t += dt;
-        if (!t.broken && t.t >= t.life) { t.broken = true; t.dirty = true; if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — заберите улов`, 4, true); Snd.sfx.deny(); } }
-        if (t.mine && !t.broken && t.items.length < t.cap) {                 // butterflies come
-          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.biome, t.hn, t.type); if (sp) { t.items.push(sp.id); t.dirty = true; this.cntT = 0.01; this.send({ k: 'cnt', tid: t.tid, n: t.items.length }); } }
+        if (!t.broken && t.t >= t.life) { t.broken = true; t.dirty = true; this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); t.inflight = 0; if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — заберите улов`, 4, true); Snd.sfx.deny(); } }
+        if (t.mine && !t.broken && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
+          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.biome, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
         }
         if (t.mine && t.broken && !t.items.length && !t.fl && !t.hn) { t.goneT += dt; if (t.goneT > 25) { this.send({ k: 'del', tid: t.tid }); this.drop(t); continue; } }
         if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); }
         const U = t.group && t.group.userData; if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
         if (U && !t.broken) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
       }
+    }
+    flyAll(dt) {
+      for (const o of this.fliers.slice()) { o.f.update(dt); if (o.f.done) { const t = o.t; o.f.dispose(); this.fliers = this.fliers.filter(q => q !== o); t.inflight = Math.max(0, t.inflight - 1);
+        if (t.mine && !t.broken && o.sp) { t.items.push(o.sp.id); t.dirty = true; this.send({ k: 'cnt', tid: t.tid, n: t.items.length }); } } }
     }
     bait(t, fl, hn) {      // change what lies in a trap (what was there goes back to the inventory)
       if (!t.mine || t.broken) return false; let ch = false;
@@ -205,7 +334,7 @@ const Traps = (() => {
     }
     // leaving the location: what is caught goes to the cabinet, the baits that were left are lost with the traps
     collectAll() { for (const t of this.own().slice()) { this.take(t, true); this.send({ k: 'del', tid: t.tid }); this.drop(t); } }
-    dispose() { this.collectAll(); this.play.scene.remove(this.group); }
+    dispose() { this.collectAll(); for (const o of this.fliers) o.f.dispose(); this.fliers = []; this.play.scene.remove(this.group); }
   }
 
   // ================================================================== the windows: put a trap (G) and look into one (E)
@@ -217,7 +346,7 @@ const Traps = (() => {
       try {
         const ren = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true }); ren.setSize(100, 150, false); ren.setPixelRatio(1); ren.setClearColor(0x000000, 0);
         const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-0.75, 0.75, 1.125, -1.125, 0.1, 20); sc.add(new THREE.HemisphereLight('#ffffff', '#6a7a60', 0.95)); const sun = new THREE.DirectionalLight('#fff4dc', 0.9); sun.position.set(2, 4, 3); sc.add(sun);
-        this.r = { draw(g, t) { const old = g.parent, pos = g.position.clone(), rot = g.rotation.y; sc.add(g); g.position.set(0, 0, 0); g.rotation.y = rot + (t || 0); const bb = new THREE.Box3().setFromObject(g), hh = Math.max(bb.max.y, 0.5), half = hh / 2 + 0.08; cam.top = half; cam.bottom = -half; cam.left = -half * 0.667; cam.right = half * 0.667; cam.updateProjectionMatrix(); cam.position.set(2.6, hh / 2 + 0.55, 2.6); cam.lookAt(0, hh / 2, 0); ren.render(sc, cam); sc.remove(g); g.position.copy(pos); g.rotation.y = rot; if (old) old.add(g); return ren.domElement; } };
+        this.r = { close(g, t, h = 0.3, cy = 0.14, el = 0.5) { const old = g.parent; sc.add(g); g.rotation.y = t || 0; const c2 = new THREE.OrthographicCamera(-h * 0.5, h * 0.5, h * 0.75, -h * 0.75, 0.05, 20); c2.position.set(1.4, cy + el, 1.4); c2.lookAt(0, cy, 0); ren.render(sc, c2); sc.remove(g); if (old) old.add(g); return ren.domElement; }, draw(g, t) { const old = g.parent, pos = g.position.clone(), rot = g.rotation.y; sc.add(g); g.position.set(0, 0, 0); g.rotation.y = rot + (t || 0); const bb = new THREE.Box3().setFromObject(g), hh = Math.max(bb.max.y, 0.5), half = hh / 2 + 0.08; cam.top = half; cam.bottom = -half; cam.left = -half * 0.667; cam.right = half * 0.667; cam.updateProjectionMatrix(); cam.position.set(2.6, hh / 2 + 0.55, 2.6); cam.lookAt(0, hh / 2, 0); ren.render(sc, cam); sc.remove(g); g.position.copy(pos); g.rotation.y = rot; if (old) old.add(g); return ren.domElement; } };
       } catch (e) { this.r = null; }
       return this.r;
     },
@@ -307,5 +436,13 @@ const Traps = (() => {
     R(3, 3, 10, 12, '#d8e8e8'); R(4, 5, 8, 10, h.col); R(4, 5, 8, 2, '#ffffff44'); R(5, 8, 1, 6, '#ffffff55'); R(4, 14, 8, 1, '#00000030'); R(3, 1, 10, 2, '#7a5a30'); R(4, 0, 8, 1, '#8a6a3a'); R(6, 9, 4, 3, '#f0e8c8'); R(7, 10, 2, 1, '#8a6a3a');
     for (let i = 0; i < h.q; i++) R(3 + i * 2, 16, 1, 1, '#ffe070');
   }
-  return { drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
+  // a close-up picture (a canvas of 100 x 150) of a flower bunch or a honey piece lying on a dish: for the shops
+  const closeCache = {};
+  function closeup(kind, id, t = 0.6) {
+    const R = Thumb.get(); if (!R) return null; const key = kind + id; let cv = closeCache[key];
+    if (!cv) { const g = new THREE.Group(); if (kind === 'fl') { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], 0.14, 0); } else { g.add(cyl(0.14, 0.14, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); honeyPiece(g, 0, HN[id], 0); }
+      const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+    return cv;
+  }
+  return { closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
 })();

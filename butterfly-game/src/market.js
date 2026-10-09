@@ -784,7 +784,7 @@ const Market = (() => {
       const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { if (G.sel !== r.i) { G.sel = r.i; Snd.sfx.click(); } else this.goodsBuy(); return; }
       if (UIK.hit(L.buy, x, y)) this.goodsBuy(); else if (UIK.hit(L.up, x, y)) this.goodsMove(-1); else if (UIK.hit(L.dn, x, y)) this.goodsMove(1);
     }
-    goodsIcon(ctx, kind, it, x, y, k) { if (kind === 'fl') Traps.drawFlower(ctx, x, y, it, k); else if (kind === 'hn') Traps.drawJar(ctx, x, y, it, k); else { if (!this.trapThumb) this.trapThumb = {}; const g = this.trapThumb[it.id] || (this.trapThumb[it.id] = Traps.model(it.id, {})); Traps.UI.preview(ctx, { group: g }, this.t * 0.7, x, y, Math.round(k * 0.67), k); } }
+    goodsIcon(ctx, kind, it, x, y, k) { if (kind !== 'tr') { const cv = Traps.closeup(kind, it.id); if (cv) { ctx.imageSmoothingEnabled = false; const h = Math.round(k * 17), w = Math.round(h * 0.667); ctx.drawImage(cv, x + Math.round(((k > 2 ? 62 : 32) - w) / 2) - (k > 2 ? 0 : 0), y - (k > 2 ? 4 : 0), w, h); return; } } if (kind === 'fl') Traps.drawFlower(ctx, x, y, it, k); else if (kind === 'hn') Traps.drawJar(ctx, x, y, it, k); else { if (!this.trapThumb) this.trapThumb = {}; const g = this.trapThumb[it.id] || (this.trapThumb[it.id] = Traps.model(it.id, {})); Traps.UI.preview(ctx, { group: g }, this.t * 0.7, x, y, Math.round(k * 0.67), k); } }
     drawGoods(ctx, t, m, dt) {
       const G = this.gd, K = G.kind, list = this.goodsList(), L = this.goodsLayout(), it = list[G.sel]; G.msgT = Math.max(0, G.msgT - dt); G.flash = Math.max(0, G.flash - dt);
       const title = { fl: 'Цветы', hn: 'Мёд', tr: 'Ловушки для бабочек' }[K], por = { fl: 'florist', hn: 'beekeeper', tr: 'trapper' }[K];
