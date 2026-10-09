@@ -37,9 +37,17 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   // loading: flowers + honey through the window
   await pg.evaluate(() => { const p = F0W.play, t = p.traps.list[0]; p.player.pos.set(t.x + 1.0, p.player.pos.y, t.z); p.player.yaw = Math.atan2(-(t.x - p.player.pos.x), -(t.z - p.player.pos.z)); p.traps.update(0.02); Traps.UI.openTrap(p, p.traps.near); F0W.overlay = 'trap'; });
   const nr = await pg.evaluate(() => [Traps.UI.mode, !!F0W.play.traps.near]); T('walking up to your trap and pressing E shows its window', nr[0] === 'manage' && nr[1], nr); await shot('manage_empty');
-  await pg.evaluate(() => { const U = Traps.UI; for (const id of ['fln', 'hnn']) { const b = U.layout().find(q => q.id === id); U.click(b.x + 2, b.y + 2); } });
-  const bt = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { fl: t.fl, hn: t.hn, stockFl: Traps.count('fl', t.fl), stockHn: Traps.count('hn', t.hn) }; });
-  T('arrows put flowers and honey into the trap (and take them from the stock)', bt.fl && bt.hn && bt.stockFl === 0 && bt.stockHn === 0, bt);
+  // the sliders go round in both directions
+  const sl = await pg.evaluate(() => { const U = Traps.UI; for (const id of ['chamomile', 'cornflower']) Traps.add('fl', id, 1); const names = Traps.owned('fl').map(f => f.id), n = names.length, seen = [], click = id => { const b = U.layout().find(q => q.id === id); U.click(b.x + 2, b.y + 2); return U.cand('fl').id; };
+    const start = U.cand('fl').id; const fwd = []; for (let i = 0; i <= n; i++) fwd.push(click('fln')); const back = []; for (let i = 0; i <= n; i++) back.push(click('flp'));
+    return { n, start, fwd, back, names }; });
+  T('the flower slider goes round forwards (all items once, then the first again) and backwards', sl.n >= 3 && new Set(sl.fwd.slice(0, sl.n)).size === sl.n && sl.fwd[sl.n - 1] === sl.start && new Set(sl.back.slice(0, sl.n)).size === sl.n && sl.back[sl.n - 1] === sl.fwd[sl.n], sl);
+  const lk = await pg.evaluate(() => { const U = Traps.UI, S = F0W.play.traps, t = S.list[0]; const put = id => { const b = U.layout().find(q => q.id === id); U.click(b.x + 2, b.y + 2); };
+    const cf = U.cand('fl').id, ch = U.cand('hn').id, stF = Traps.count('fl', cf), stH = Traps.count('hn', ch); put('flput'); put('hnput');
+    const o = { fl: t.fl === cf, hn: t.hn === ch, stF: stF - Traps.count('fl', cf), stH: stH - Traps.count('hn', ch) };
+    o.buttons = U.layout().map(q => q.id).filter(id => /^(fl|hn)/.test(id)); o.again = S.bait(t, 'lavender', 'meadow'); o.same = t.fl === cf && t.hn === ch; o.afterStock = [Traps.count('fl', 'lavender'), Traps.count('hn', 'meadow')]; return o; });
+  T('a slot is filled once: flowers and honey are taken from the stock and cannot be taken out or replaced', lk.fl && lk.hn && lk.stF === 1 && lk.stH === 1 && lk.buttons.length === 0 && lk.again === false && lk.same && lk.afterStock[0] >= 1, lk);
+  const bt = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { fl: t.fl, hn: t.hn }; });
   await pg.evaluate(() => { for (let i = 0; i < 240; i++) F0W.play.traps.update(0.25); }); const mid = await pg.evaluate(() => F0W.play.traps.list[0].items.length); T('with bait butterflies come', mid > 0, mid);
   // «Забрать улов» while the trap is still working
   await pg.evaluate(() => { const t = F0W.play.traps.list[0]; const r = Traps.UI.layout().find(q => q.id === 'take'); window.__n = t.items.length; window.__spec = Save.data.specimens.length; Traps.UI.click(r.x + 3, r.y + 3); });

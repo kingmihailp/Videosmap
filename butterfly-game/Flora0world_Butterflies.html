@@ -2366,11 +2366,11 @@ const Traps = (() => {
       for (const o of this.fliers.slice()) { o.f.update(dt); if (o.f.done) { const t = o.t; o.f.dispose(); this.fliers = this.fliers.filter(q => q !== o); t.inflight = Math.max(0, t.inflight - 1);
         if (t.mine && !t.broken && o.sp) { t.items.push(o.sp.id); t.dirty = true; this.send({ k: 'cnt', tid: t.tid, n: t.items.length }); } } }
     }
-    bait(t, fl, hn) {      // change what lies in a trap (what was there goes back to the inventory)
-      if (!t.mine || t.broken) return false; let ch = false;
-      if (fl !== undefined && fl !== t.fl) { if (fl && count('fl', fl) < 1) return false; if (t.fl) add('fl', t.fl, 1); if (fl) add('fl', fl, -1); t.fl = fl; ch = true; }
-      if (hn !== undefined && hn !== t.hn) { if (hn && count('hn', hn) < 1) return false; if (t.hn) add('hn', t.hn, 1); if (hn) add('hn', hn, -1); t.hn = hn; ch = true; }
-      if (ch) { t.dirty = true; this.send({ k: 'set', tid: t.tid, fl: t.fl, hn: t.hn }); Snd.sfx.click(); } return ch;
+    bait(t, fl, hn) {      // put bait in: a slot is filled once and for all (nothing can be taken back out)
+      if (!t.mine) return false; let ch = false;
+      if (fl && !t.fl && FL[fl] && count('fl', fl) >= 1) { add('fl', fl, -1); t.fl = fl; ch = true; }
+      if (hn && !t.hn && HN[hn] && count('hn', hn) >= 1) { add('hn', hn, -1); t.hn = hn; ch = true; }
+      if (ch) { t.dirty = true; this.send({ k: 'set', tid: t.tid, fl: t.fl, hn: t.hn }); Snd.sfx.coin(); } return ch;
     }
     // take the butterflies out of an own trap (the new ones go to the cabinet as raw specimens)
     take(t, quiet) {
@@ -2401,14 +2401,19 @@ const Traps = (() => {
   const UI = {
     mode: null, t: null, sel: 0, msg: '', msgT: 0, scroll: 0, btns: [],
     openPlace(play) { this.mode = 'place'; this.play = play; this.sel = Math.max(0, Object.keys(TYPES).findIndex(id => count('tr', id) > 0)); this.msg = ''; this.msgT = 0; },
-    openTrap(play, t) { this.mode = t.mine ? 'manage' : 'view'; this.play = play; this.t = t; this.msg = ''; this.msgT = 0; this.scroll = 0; },
+    openTrap(play, t) { this.mode = t.mine ? 'manage' : 'view'; this.play = play; this.t = t; this.pf = ''; this.ph = ''; this.msg = ''; this.msgT = 0; this.scroll = 0; },
     say(m) { this.msg = m; this.msgT = 3.5; },
+    // the candidate shown in a slider (it is not in the trap yet): always one of the items in stock; the arrows go round in both directions
+    cand(kind) { const list = owned(kind), key = kind === 'fl' ? 'pf' : 'ph'; if (!list.length) return null; if (!list.some(x => x.id === this[key])) this[key] = list[0].id; return (kind === 'fl' ? FL : HN)[this[key]]; },
+    step(kind, d) { const list = owned(kind), key = kind === 'fl' ? 'pf' : 'ph', n = list.length; if (!n) return false; const cur = list.findIndex(x => x.id === this[key]); this[key] = list[cur < 0 ? (d > 0 ? 0 : n - 1) : (cur + d + n) % n].id; Snd.sfx.click(); return true; },
     cyc(list, cur, d) { const ids = [''].concat(list.map(x => x.id)); const i = ids.indexOf(cur || ''); return ids[(i + d + ids.length) % ids.length]; },
     layout() {
       const b = [{ id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 }];
       if (this.mode === 'place') Object.values(TYPES).forEach((T0, i) => b.push({ id: 'type' + i, tid: T0.id, x: 40, y: 56 + i * 52, w: 400, h: 46 }));
       else if (this.mode === 'manage') {
-        const t = this.t; b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 });
+        const t = this.t;
+        if (!t.fl) b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'flput', label: 'Положить', x: 162, y: 94, w: 78, h: 14, disabled: !this.cand('fl') });
+        if (!t.hn) b.push({ id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 }, { id: 'hnput', label: 'Положить', x: 162, y: 134, w: 78, h: 14, disabled: !this.cand('hn') });
         b.push({ id: 'take', label: t.items.length ? `Забрать улов (${t.items.length})` : 'Улова нет', x: 12, y: 232, w: 150, h: 18, disabled: !t.items.length });
       }
       if (this.t && this.mode !== 'place' && this.play && !this.play.traps.list.includes(this.t)) b.length = 1;      // the trap is gone (it wore out): only the way out
@@ -2419,8 +2424,10 @@ const Traps = (() => {
       if (b.id === 'close') return 'close';
       if (b.tid) { if (count('tr', b.tid) < 1) { this.say('У вас нет такой ловушки: купите её у торговца ловушками на рынке'); Snd.sfx.deny(); return null; } return S.place(b.tid) ? 'close' : null; }
       const t = this.t; if (!t || !S.list.includes(t)) return 'close';
-      if (b.id === 'flp' || b.id === 'fln') { const o = owned('fl'); if (t.fl && !o.some(f => f.id === t.fl)) o.push(FL[t.fl]); const nx = this.cyc(o, t.fl, b.id === 'fln' ? 1 : -1); if (!S.bait(t, nx, undefined)) this.say(t.broken ? 'Ловушка сломана' : 'Нет таких цветов — купите их у цветочницы'); }
-      else if (b.id === 'hnp' || b.id === 'hnn') { const o = owned('hn'); if (t.hn && !o.some(f => f.id === t.hn)) o.push(HN[t.hn]); const nx = this.cyc(o, t.hn, b.id === 'hnn' ? 1 : -1); if (!S.bait(t, undefined, nx)) this.say(t.broken ? 'Ловушка сломана' : 'Нет такого мёда — купите его у медовщика'); }
+      if (b.id === 'flp' || b.id === 'fln') { if (!this.step('fl', b.id === 'fln' ? 1 : -1)) this.say('Нет цветов в запасе: их продаёт цветочница'); }
+      else if (b.id === 'hnp' || b.id === 'hnn') { if (!this.step('hn', b.id === 'hnn' ? 1 : -1)) this.say('Нет мёда в запасе: его продаёт медовщик'); }
+      else if (b.id === 'flput') { const c = this.cand('fl'); if (c && S.bait(t, c.id, undefined)) this.say('Цветы положены — достать их обратно нельзя'); else Snd.sfx.deny(); }
+      else if (b.id === 'hnput') { const c = this.cand('hn'); if (c && S.bait(t, undefined, c.id)) this.say('Положено — достать обратно нельзя'); else Snd.sfx.deny(); }
       else if (b.id === 'take') { S.take(t); if (!S.list.includes(t)) return 'close'; }
       return null;
     },
@@ -2442,10 +2449,14 @@ const Traps = (() => {
         const n = mine ? tr.items.length : tr.n; T.draw(ctx, `Бабочек внутри: ${n} из ${tr.cap}`, 290, 42, { size: 8, color: cl.text }); ctx.fillStyle = '#10201c'; ctx.fillRect(290, 54, 150, 6); ctx.fillStyle = '#e0a0e0'; ctx.fillRect(290, 54, Math.round(150 * n / tr.cap), 6);
         if (mine) {
           const f = FL[tr.fl], h = HN[tr.hn], rr = rate(tr.fl, tr.hn);
-          T.draw(ctx, 'Цветы — зовут бабочек', 124, 70, { size: 8, color: cl.dim }); T.draw(ctx, f ? `${f.ru} (запах: ${SCENT[f.scent]})` : 'нет — без цветов бабочки почти не летят', 124, 82, { size: 8, color: f ? '#f0e8d0' : '#c87060' });
-          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim }); T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : 'нет — редкие виды не привлекаются', 124, 122, { size: 8, color: h ? '#f0e8d0' : '#c87060' });
-          for (const id of ['flp', 'fln', 'hnp', 'hnn']) { const b = bs.find(q => q.id === id); UIK.btn(ctx, b, hv(b)); }
-          T.draw(ctx, f ? `в запасе: ${count('fl', f.id)}` : `в запасе видов: ${owned('fl').length}`, 166, 97, { size: 8, color: cl.dim }); T.draw(ctx, h ? `в запасе: ${count('hn', h.id)}` : `в запасе видов: ${owned('hn').length}`, 166, 137, { size: 8, color: cl.dim });
+          const cf = !tr.fl && this.cand('fl'), ch = !tr.hn && this.cand('hn'), sc = x => (x.scent ? `запах: ${SCENT[x.scent]}` : `${x.tag || QUAL[x.q]}`);
+          T.draw(ctx, 'Цветы — зовут бабочек', 124, 70, { size: 8, color: cl.dim });
+          T.draw(ctx, f ? `${f.ru} (запах: ${SCENT[f.scent]})` : cf ? `${cf.ru} (${sc(cf)})` : 'нет цветов в запасе — их продаёт цветочница', 124, 82, { size: 8, color: f ? '#9af0a0' : cf ? '#f0e8d0' : '#c87060' });
+          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim });
+          T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : ch ? `${ch.ru} (${sc(ch)})` : 'нет мёда в запасе — его продаёт медовщик', 124, 122, { size: 8, color: h ? '#9af0a0' : ch ? '#f0e8d0' : '#c87060' });
+          for (const id of ['flp', 'fln', 'flput', 'hnp', 'hnn', 'hnput']) { const b = bs.find(q => q.id === id); if (b) UIK.btn(ctx, b, !b.disabled && hv(b)); }
+          if (f) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 97, { size: 8, color: '#e0a070' }); else T.draw(ctx, cf ? `в запасе: ${count('fl', cf.id)} (видов: ${owned('fl').length})` : '', 246, 97, { size: 8, color: cl.dim });
+          if (h) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 137, { size: 8, color: '#e0a070' }); else T.draw(ctx, ch ? `в запасе: ${count('hn', ch.id)} (видов: ${owned('hn').length})` : '', 246, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
           T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
           { const abp = TYPES[tr.type].ab + ((h && h.ab) || 0); if (abp > 0) T.draw(ctx, `Аберранты: ${+(abp * 100).toFixed(1)}% (ловушка ${+(TYPES[tr.type].ab * 100).toFixed(1)}%${h && h.ab ? ` + приманка ${Math.round(h.ab * 100)}%` : ''})`, 124, 184, { size: 8, color: '#ff9ae8' }); }
@@ -2457,7 +2468,7 @@ const Traps = (() => {
         } else {
           T.draw(ctx, 'Чужая ловушка: открыть её и забрать бабочек может только владелец.', 124, 80, { size: 8, color: cl.text }); const f = FL[tr.fl], h = HN[tr.hn]; T.draw(ctx, `Цветы: ${f ? f.ru : 'нет'}`, 124, 100, { size: 8, color: cl.dim }); T.draw(ctx, `Мёд: ${h ? h.ru : 'нет'}`, 124, 112, { size: 8, color: cl.dim });
         }
-        if (this.msgT > 0) T.draw(ctx, this.msg, 300, 238, { size: 8, align: 'c', color: '#ffb070' });
+        if (this.msgT > 0) T.draw(ctx, this.msg, 300, 222, { size: 8, align: 'c', color: '#ffe070' });
       }
       UIK.btn(ctx, bs[0], hv(bs[0])); T.draw(ctx, `${Save.data.coins || 0} монет`, SW - 10, 24, { size: 8, align: 'r', color: '#ffe070' });
     },
