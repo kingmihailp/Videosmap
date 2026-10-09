@@ -31,8 +31,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const after = await pg.evaluate(() => { const p = F0W.play; return { newSeed: p.seed !== window.__seed, traps: p.traps.list.length, credited: Save.data.specimens.length - window.__spec, colliders: p.world.colliders.filter(c => c.trap).length, toast: (p.toasts || []).map(x => x.text || x.s || x).join('|') }; });
   T('after regeneration: new landscape, no traps, no butterflies credited', after.newSeed && after.traps === 0 && after.credited === 0 && after.colliders === 0, after);
   T('the player is told', /пропали вместе с уловом/.test(after.toast), after.toast);
-  // leaving normally still hands the catch over
+  // leaving the location without taking the catch does not keep it
   const lv = await pg.evaluate(() => { const p = F0W.play, S = p.traps; Traps.add('tr', 'std', 1); const t = S.place('std'); t.fl = 'lavender'; t.life = 99999; for (let i = 0; i < 4000 && t.items.length < 2; i++) S.update(0.25); window.__spec2 = Save.data.specimens.length; window.__n2 = t.items.length; const n = t.items.length; F0W.fade = 0; F0W.fadeTarget = 0; F0W.toMap(); return n; });
-  await pg.waitForTimeout(800); const lv2 = await pg.evaluate(() => Save.data.specimens.length - window.__spec2); T('leaving the location (not regenerating) still puts the catch into the cabinet', lv > 0 && lv2 === lv, [lv, lv2]);
+  await pg.waitForTimeout(800); const lv2 = await pg.evaluate(() => Save.data.specimens.length - window.__spec2); T('leaving the location without taking the butterflies out loses them (nothing credited)', lv > 0 && lv2 === 0, [lv, lv2]);
   console.log(errs.length ? 'ERRORS ' + errs.slice(0, 5) : bad ? 'FAILED ' + bad : 'ALL PASS'); await br.close(); process.exit(bad || errs.length ? 1 : 0);
 })();

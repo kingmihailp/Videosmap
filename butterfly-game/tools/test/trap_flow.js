@@ -49,11 +49,11 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await pg.evaluate(() => { const p = F0W.play, t = p.traps.list[0]; const L0 = t.life; t.life = 99999; for (let i = 0; i < 4000 && t.items.length < 2; i++) p.traps.update(0.25); window.__n = t.items.length; window.__spec = Save.data.specimens.length; t.life = L0; t.t = L0 - 1; for (let i = 0; i < 8; i++) p.traps.update(0.25); });
   const worn = await pg.evaluate(() => ({ had: window.__n, listed: F0W.play.traps.list.length, fliers: F0W.play.traps.fliers.length, credited: Save.data.specimens.length - window.__spec, colliders: F0W.play.world.colliders.filter(c => c.trap).length }));
   T('a trap that wears out disappears with its catch: nothing is credited, no collider and no flier is left', worn.had >= 2 && worn.listed === 0 && worn.fliers === 0 && worn.credited === 0 && worn.colliders === 0, worn); await shot('manage_full');
-  // the imported trap: durability 4 minutes, aberrations possible, and leaving takes the catch
+  // the imported trap: durability 4 minutes; leaving the location without taking the catch loses it
   await pg.evaluate(() => { F0W.overlay = null; const p = F0W.play; const t = p.traps.place('imp'); t.fl = 'lavender'; t.hn = 'heather'; for (let i = 0; i < 400 && !t.items.length; i++) p.traps.update(0.25); for (let i = 0; i < 80; i++) p.traps.update(0.25); window.__before = Save.data.specimens.length; window.__in = t.items.length; });
   const sw = await pg.evaluate(() => ({ life: F0W.play.traps.list[0].life, n: window.__in }));
   T('the imported trap lives 4 minutes and fills up', sw.life === 240 && sw.n > 0, sw);
   await pg.evaluate(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.toMap(); }); await pg.waitForTimeout(800);
-  const lv = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__before, n: window.__in, screen: F0W.screen })); T('leaving the location puts the catch of the traps into the cabinet', lv.got === lv.n && lv.n > 0, lv);
+  const lv = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__before, n: window.__in, screen: F0W.screen })); T('leaving the location without taking the butterflies out loses them: nothing is credited', lv.got === 0 && lv.n > 0, lv);
   console.log(errs.length ? 'ERRORS ' + errs.slice(0, 5) : bad ? 'FAILED ' + bad : 'ALL PASS'); await br.close(); process.exit(bad || errs.length ? 1 : 0);
 })();

@@ -355,9 +355,9 @@ const Traps = (() => {
       if (!quiet) { P.toast(`Из ловушки взято бабочек: ${ids.length}` + (fresh ? ` · новых видов: ${fresh}` : ''), 4, true); Snd.sfx.reward(); }
       return ids.length;
     }
-    // leaving the location: what is caught goes to the cabinet, the baits that were left are lost with the traps
+    // (not used any more: leaving the location, like a worn-out trap or a new landscape, takes the traps away with their catch)
     collectAll() { for (const t of this.own().slice()) { this.take(t, true); this.send({ k: 'del', tid: t.tid }); this.drop(t); } }
-    dispose() { if (!this.lost) this.collectAll(); for (const o of this.fliers) o.f.dispose(); this.fliers = []; this.play.scene.remove(this.group); }
+    dispose() { this.lose(); for (const o of this.fliers) o.f.dispose(); this.fliers = []; this.play.scene.remove(this.group); }
   }
 
   // ================================================================== the windows: put a trap (G) and look into one (E)
@@ -429,7 +429,7 @@ const Traps = (() => {
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
           if (!ids.length) T.draw(ctx, tr.broken ? 'В ловушке никого нет.' : 'Пока никто не прилетел.', 14, 212, { size: 8, color: cl.dim });
-          bs.filter(b => b.id === 'take' || b.id === 'remove').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b)));
+          bs.filter(b => b.id === 'take').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b))); T.draw(ctx, 'Уйдёте с локации, не забрав улов, — он пропадёт', 172, 238, { size: 8, color: '#e0a070' });
         } else {
           T.draw(ctx, 'Чужая ловушка: открыть её и забрать бабочек может только владелец.', 124, 80, { size: 8, color: cl.text }); const f = FL[tr.fl], h = HN[tr.hn]; T.draw(ctx, `Цветы: ${f ? f.ru : 'нет'}`, 124, 100, { size: 8, color: cl.dim }); T.draw(ctx, `Мёд: ${h ? h.ru : 'нет'}`, 124, 112, { size: 8, color: cl.dim });
         }
