@@ -31,5 +31,14 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   ok(got.n === cntA && got.d === cntA, 'Alice takes her catch', got);
   await A.evaluate(() => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.toMap(); }); let gone = false; for (let i = 0; i < 30 && !gone; i++) { await B.waitForTimeout(300); gone = await B.evaluate(t => !F0W.play.traps.list.some(x => x.tid === t), tid); }
   ok(gone, 'the trap goes away when its owner leaves');
+  // a vote for a new landscape: everybody agrees; the traps are gone with their catch, nothing is credited
+  ok(await go(A), 'Alice comes back'); await A.waitForTimeout(500);
+  await A.evaluate(() => { F0W.overlay = null; Traps.add('tr', 'std', 1); const p = F0W.play, t = p.traps.place('std'); t.fl = 'lavender'; t.hn = 'heather'; t.life = 99999; for (let i = 0; i < 4000 && t.items.length < 2; i++) p.traps.update(0.25); window.__spec = Save.data.specimens.length; window.__seed = p.seed; window.__tid2 = t.tid; });
+  let seen2 = false; for (let i = 0; i < 30 && !seen2; i++) { await B.waitForTimeout(300); seen2 = await B.evaluate(t => F0W.play.traps.list.some(x => x.tid === t), await A.evaluate(() => window.__tid2)); } ok(seen2, 'Bob sees the new trap');
+  await B.evaluate(() => { window.__seedB = F0W.play.seed; }); await A.waitForTimeout(15500); await A.evaluate(() => Net.send('regen')); for (let i = 0; i < 40 && !(await B.evaluate(() => Chat.vbtns.length > 0)); i++) await B.waitForTimeout(500);
+  await B.evaluate(() => { const b = Chat.vbtns.find(q => q.id === 'yes'); Chat.voteClick(b.x + 2, b.y + 2); });
+  let sa = null; for (let i = 0; i < 90; i++) { await A.waitForTimeout(500); sa = await A.evaluate(() => (F0W.play && F0W.screen === 'play') ? F0W.play.seed : null).catch(() => null); const sb = await B.evaluate(() => (F0W.play && F0W.screen === 'play') ? F0W.play.seed : null).catch(() => null); if (sa && sb && sa !== (await A.evaluate(() => window.__seed).catch(() => sa)) && sa === sb) break; }
+  const ra = await A.evaluate(() => ({ traps: F0W.play.traps.list.length, credited: Save.data.specimens.length - window.__spec, newSeed: F0W.play.seed !== window.__seed })), rb = await B.evaluate(() => ({ traps: F0W.play.traps.list.length, newSeed: F0W.play.seed !== window.__seedB }));
+  ok(ra.newSeed && rb.newSeed && ra.traps === 0 && rb.traps === 0 && ra.credited === 0, 'after the vote the trap is gone for both and its catch is not credited', [ra, rb]);
   await browser.close(); srv.kill(); console.log(bad ? 'FAILED ' + bad : 'ALL PASS'); process.exit(bad ? 1 : 0);
 })();

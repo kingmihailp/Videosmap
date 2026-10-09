@@ -89,10 +89,11 @@
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
   App.start = (biomeId, seed, at) => {
     if (!Maps.allowed(biomeId)) { App.toMap(); return; }          // a secret location can only be entered with its map
+    if (App.play && App.play.biome.id === biomeId && App.play.traps && App.play.traps.own().length) { App.trapsLost = App.play.traps.lose(); }       // a new landscape of the same place: the traps vanish with their catch
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp) => {
       if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
-      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0; if (App.trapsLost) { App.play.toast(`Местность создана заново: ваши ловушки (${App.trapsLost}) пропали вместе с уловом`, 6, true); App.trapsLost = 0; }
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };

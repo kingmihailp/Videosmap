@@ -2077,10 +2077,12 @@ const Traps = (() => {
   const rarK = (hn, rar) => 1 + 0.9 * quality(hn) * (rar - 1);                                           // multiplier of the weight of a species of rarity rar
   // the species a trap can lure: daytime butterflies of the location (no glowing or night ones)
   const lure = biome => biome.species.filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
-  function pick(biome, hn, type) {
-    const pool = lure(biome).map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
+  // the visitor: only species of the current landscape (the 9-10 butterflies that live here, Play.pool); src is that list (or a biome: its daytime species, for tests)
+  function pick(src, hn, type) {
+    const list = (Array.isArray(src) ? src : lure(src)).filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
+    const pool = list.map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
     if (!pool.length) return null; let r = Math.random() * pool.reduce((a, o) => a + o.w, 0); let sp = pool[pool.length - 1].sp; for (const o of pool) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
-    const abp = Math.max(TYPES[type].ab, (HN[hn] && HN[hn].ab) || 0);
+    const abp = TYPES[type].ab + ((HN[hn] && HN[hn].ab) || 0);          // the imported trap's 1% adds to what the bait gives
     return (abp && Aberr.eligible(sp) && Math.random() < abp) ? Aberr.make(sp, Aberr.randomCode()) : sp;
   }
   const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -2329,6 +2331,10 @@ const Traps = (() => {
       else { const t = this.list.find(q => q.tid === m.tid && !q.mine); if (!t) return; if (m.k === 'set') { t.fl = m.fl; t.hn = m.hn; t.dirty = true; } else if (m.k === 'cnt') { t.n = m.n; t.dirty = true; } else if (m.k === 'del') this.drop(t); else if (m.k === 'arr') { if (!t.broken) this.spawn(t, null); } }
     }
     spawn(t, sp) { const idx = (t.mine ? t.items.length : t.n) + t.inflight; t.inflight++; this.fliers.push({ f: new Flier(this, t, sp, idx), t, sp }); }
+    // a trap wears out: it vanishes together with everything in it (no catch is credited)
+    expire(t) { if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — вместе с ней пропал улов (${t.items.length})`, 5, true); Snd.sfx.deny(); this.send({ k: 'del', tid: t.tid }); } this.drop(t); }
+    // the landscape was regenerated: your traps and their catch are gone, nothing is credited
+    lose() { const n = this.own().length; for (const t of this.own().slice()) { this.send({ k: 'del', tid: t.tid }); this.drop(t); } this.lost = n; return n; }
     drop(t) { this.list = this.list.filter(q => q !== t); this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); if (t.group) { this.group.remove(t.group); t.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } if (t.label) this.group.remove(t.label); const w = this.world, ci = w.colliders.indexOf(t.col); if (ci >= 0) w.colliders.splice(ci, 1); if (this.near === t) this.near = null; }
     send(o) { if (Net.on && this.play.mp) Net.send('trap', o); }
     // G: put a trap of the chosen type in front of the player
@@ -2347,11 +2353,10 @@ const Traps = (() => {
       this.flyAll(dt); this.near = this.play.entering ? null : this.nearest(); const tt = this.play.t;
       for (const t of this.list.slice()) {
         t.t += dt;
-        if (!t.broken && t.t >= t.life) { t.broken = true; t.dirty = true; this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); t.inflight = 0; if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — заберите улов`, 4, true); Snd.sfx.deny(); } }
+        if (t.t >= t.life) { this.expire(t); continue; }
         if (t.mine && !t.broken && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
-          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.biome, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
+          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.pool, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
         }
-        if (t.mine && t.broken && !t.items.length && !t.fl && !t.hn) { t.goneT += dt; if (t.goneT > 25) { this.send({ k: 'del', tid: t.tid }); this.drop(t); continue; } }
         if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); }
         const U = t.group && t.group.userData; if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
         if (U && !t.broken) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
@@ -2372,12 +2377,11 @@ const Traps = (() => {
       if (!t.mine || !t.items.length) return 0; const P = this.play, ids = t.items.splice(0); let fresh = 0; for (const id of ids) { if (!Save.has((SPECIES_BY_ID[id].base) || id)) fresh++; Save.add(id, P.biome.id); P.caughtHere.add(id); }
       t.dirty = true; this.send({ k: 'cnt', tid: t.tid, n: 0 }); Wings.announce(Wings.check(), (s, d, imp) => P.toast(s, d, imp));
       if (!quiet) { P.toast(`Из ловушки взято бабочек: ${ids.length}` + (fresh ? ` · новых видов: ${fresh}` : ''), 4, true); Snd.sfx.reward(); }
-      if (t.broken) { if (t.fl) add('fl', t.fl, 0); this.send({ k: 'del', tid: t.tid }); this.drop(t); }
       return ids.length;
     }
     // leaving the location: what is caught goes to the cabinet, the baits that were left are lost with the traps
     collectAll() { for (const t of this.own().slice()) { this.take(t, true); this.send({ k: 'del', tid: t.tid }); this.drop(t); } }
-    dispose() { this.collectAll(); for (const o of this.fliers) o.f.dispose(); this.fliers = []; this.play.scene.remove(this.group); }
+    dispose() { if (!this.lost) this.collectAll(); for (const o of this.fliers) o.f.dispose(); this.fliers = []; this.play.scene.remove(this.group); }
   }
 
   // ================================================================== the windows: put a trap (G) and look into one (E)
@@ -2406,8 +2410,8 @@ const Traps = (() => {
       else if (this.mode === 'manage') {
         const t = this.t; b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 });
         b.push({ id: 'take', label: t.items.length ? `Забрать улов (${t.items.length})` : 'Улова нет', x: 12, y: 232, w: 150, h: 18, disabled: !t.items.length });
-        if (t.broken && !t.items.length) b.push({ id: 'remove', label: 'Убрать обломки', x: 170, y: 232, w: 120, h: 18 });
       }
+      if (this.t && this.mode !== 'place' && this.play && !this.play.traps.list.includes(this.t)) b.length = 1;      // the trap is gone (it wore out): only the way out
       this.btns = b; return b;
     },
     click(x, y) {
@@ -2418,12 +2422,12 @@ const Traps = (() => {
       if (b.id === 'flp' || b.id === 'fln') { const o = owned('fl'); if (t.fl && !o.some(f => f.id === t.fl)) o.push(FL[t.fl]); const nx = this.cyc(o, t.fl, b.id === 'fln' ? 1 : -1); if (!S.bait(t, nx, undefined)) this.say(t.broken ? 'Ловушка сломана' : 'Нет таких цветов — купите их у цветочницы'); }
       else if (b.id === 'hnp' || b.id === 'hnn') { const o = owned('hn'); if (t.hn && !o.some(f => f.id === t.hn)) o.push(HN[t.hn]); const nx = this.cyc(o, t.hn, b.id === 'hnn' ? 1 : -1); if (!S.bait(t, undefined, nx)) this.say(t.broken ? 'Ловушка сломана' : 'Нет такого мёда — купите его у медовщика'); }
       else if (b.id === 'take') { S.take(t); if (!S.list.includes(t)) return 'close'; }
-      else if (b.id === 'remove') { S.send({ k: 'del', tid: t.tid }); S.drop(t); return 'close'; }
       return null;
     },
     draw(ctx, t, m, dt) {
       this.msgT = Math.max(0, this.msgT - dt); const cl = UIK.col, bs = this.layout(), P = this.play, S = P.traps; const hv = b => UIK.hit(b, m.x, m.y);
       ctx.fillStyle = 'rgba(4,12,10,0.78)'; ctx.fillRect(0, 0, SW, SH);
+      if (this.mode !== 'place' && this.t && !S.list.includes(this.t)) { UIK.panel(ctx, 90, 90, 300, 80, { fill: 'rgba(16,32,28,0.97)', border: '#e07060' }); T.draw(ctx, 'Ловушка сломалась', SW / 2, 104, { size: 10, align: 'c', color: '#e07060' }); T.para(ctx, 'Она исчезла вместе со всем, что в ней было.', 104, 126, 272, { size: 8, color: cl.text, lh: 10 }); UIK.btn(ctx, bs[0], hv(bs[0])); return; }
       if (this.mode === 'place') {
         UIK.panel(ctx, 20, 14, 440, 242, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Поставить ловушку', SW / 2, 22, { size: 12, align: 'c', color: cl.gold }); T.draw(ctx, 'Она встанет перед вами. Не больше четырёх своих ловушек на локацию.', SW / 2, 40, { size: 8, align: 'c', color: cl.dim });
         bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), h = hv(b); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n ? cl.gold : cl.line, shadow: false });
@@ -2443,7 +2447,8 @@ const Traps = (() => {
           for (const id of ['flp', 'fln', 'hnp', 'hnn']) { const b = bs.find(q => q.id === id); UIK.btn(ctx, b, hv(b)); }
           T.draw(ctx, f ? `в запасе: ${count('fl', f.id)}` : `в запасе видов: ${owned('fl').length}`, 166, 97, { size: 8, color: cl.dim }); T.draw(ctx, h ? `в запасе: ${count('hn', h.id)}` : `в запасе видов: ${owned('hn').length}`, 166, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
-          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` + (h.ab ? ` · аберрантов ${Math.round(h.ab * 100)}%` : '') : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
+          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
+          { const abp = TYPES[tr.type].ab + ((h && h.ab) || 0); if (abp > 0) T.draw(ctx, `Аберранты: ${+(abp * 100).toFixed(1)}% (ловушка ${+(TYPES[tr.type].ab * 100).toFixed(1)}%${h && h.ab ? ` + приманка ${Math.round(h.ab * 100)}%` : ''})`, 124, 184, { size: 8, color: '#ff9ae8' }); }
           // the catch
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
@@ -8102,7 +8107,7 @@ const Market = (() => {
     }
     // ------------------------------------------------------------ the three traders of the trap trade: flowers (scent), honey (rarity) and the traps themselves
     goodsOpen(kind) {
-      const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, а потом забирайте улов (E).' };
+      const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, забирайте улов (E) — до того, как ловушка сломается: вместе с ней пропадает и улов.' };
       this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
     }
     goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret); }
@@ -8771,10 +8776,11 @@ const SecretMarket = (() => {
   App.enterRoom = (id, ret) => { App.roomReturn = ret; go(() => { leave(); App.screen = 'loading'; App.loadText = '…'; setTimeout(() => { App.cab = new StubRoom(roomHooks, id); App.screen = 'cabinet'; App.fade = 1; App.fadeTarget = 0; lock(); }, 60); }); };
   App.start = (biomeId, seed, at) => {
     if (!Maps.allowed(biomeId)) { App.toMap(); return; }          // a secret location can only be entered with its map
+    if (App.play && App.play.biome.id === biomeId && App.play.traps && App.play.traps.own().length) { App.trapsLost = App.play.traps.lose(); }       // a new landscape of the same place: the traps vanish with their catch
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp) => {
       if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
-      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0;
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0; if (App.trapsLost) { App.play.toast(`Местность создана заново: ваши ловушки (${App.trapsLost}) пропали вместе с уловом`, 6, true); App.trapsLost = 0; }
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };

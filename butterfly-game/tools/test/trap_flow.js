@@ -41,12 +41,14 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const bt = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { fl: t.fl, hn: t.hn, stockFl: Traps.count('fl', t.fl), stockHn: Traps.count('hn', t.hn) }; });
   T('arrows put flowers and honey into the trap (and take them from the stock)', bt.fl && bt.hn && bt.stockFl === 0 && bt.stockHn === 0, bt);
   await pg.evaluate(() => { for (let i = 0; i < 240; i++) F0W.play.traps.update(0.25); }); const mid = await pg.evaluate(() => F0W.play.traps.list[0].items.length); T('with bait butterflies come', mid > 0, mid);
-  await pg.evaluate(() => { const t = F0W.play.traps.list[0]; t.t = t.life - 5; for (let i = 0; i < 40; i++) F0W.play.traps.update(0.5); });
-  const full = await pg.evaluate(() => { const t = F0W.play.traps.list[0]; return { n: t.items.length, cap: t.cap, broken: t.broken, left: t.life - t.t }; });
-  T('the trap breaks when its time is out and never holds more than its capacity', full.broken && full.n <= full.cap && full.n > 0, full); await shot('manage_full');
-  await pg.evaluate(() => { const t = F0W.play.traps.list[0]; const before = t.items.length; const r = Traps.UI.layout().find(q => q.id === 'take'); window.__n = before; window.__spec = Save.data.specimens.length; Traps.UI.click(r.x + 3, r.y + 3); });
-  const tk = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__spec, want: window.__n, left: F0W.play.traps.list.length }));
-  T('«Забрать улов» moves the butterflies into the cabinet; a broken trap is cleared away', tk.got === tk.want && tk.left === 0, tk);
+  // «Забрать улов» while the trap is still working
+  await pg.evaluate(() => { const t = F0W.play.traps.list[0]; const r = Traps.UI.layout().find(q => q.id === 'take'); window.__n = t.items.length; window.__spec = Save.data.specimens.length; Traps.UI.click(r.x + 3, r.y + 3); });
+  const tk = await pg.evaluate(() => ({ got: Save.data.specimens.length - window.__spec, want: window.__n, left: F0W.play.traps.list.length, now: F0W.play.traps.list[0].items.length }));
+  T('«Забрать улов» moves the butterflies into the cabinet; the trap stays', tk.got === tk.want && tk.want > 0 && tk.left === 1 && tk.now === 0, tk);
+  // a trap that wears out vanishes together with its catch (nothing is credited)
+  await pg.evaluate(() => { const p = F0W.play, t = p.traps.list[0]; for (let i = 0; i < 400 && t.items.length < 2; i++) p.traps.update(0.25); window.__n = t.items.length; window.__spec = Save.data.specimens.length; t.t = t.life - 1; for (let i = 0; i < 8; i++) p.traps.update(0.25); });
+  const worn = await pg.evaluate(() => ({ had: window.__n, listed: F0W.play.traps.list.length, fliers: F0W.play.traps.fliers.length, credited: Save.data.specimens.length - window.__spec, colliders: F0W.play.world.colliders.filter(c => c.trap).length }));
+  T('a trap that wears out disappears with its catch: nothing is credited, no collider and no flier is left', worn.had >= 2 && worn.listed === 0 && worn.fliers === 0 && worn.credited === 0 && worn.colliders === 0, worn); await shot('manage_full');
   // the imported trap: durability 4 minutes, aberrations possible, and leaving takes the catch
   await pg.evaluate(() => { F0W.overlay = null; const p = F0W.play; const t = p.traps.place('imp'); t.fl = 'lavender'; t.hn = 'heather'; for (let i = 0; i < 400 && !t.items.length; i++) p.traps.update(0.25); for (let i = 0; i < 80; i++) p.traps.update(0.25); window.__before = Save.data.specimens.length; window.__in = t.items.length; });
   const sw = await pg.evaluate(() => ({ life: F0W.play.traps.list[0].life, n: window.__in }));

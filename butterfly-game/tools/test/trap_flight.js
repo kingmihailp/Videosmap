@@ -46,7 +46,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     let first = null, steps = 0; while (steps < 6000 && t.items.length === 0) { S.update(0.1); steps++; if (first === null && S.fliers.length) first = { atStep: steps, items: t.items.length, fl: S.fliers.length }; } return { first, items: t.items.length, steps }; });
   T('a catch first appears as a flier on its way, and only later as a butterfly in the trap', roll.first && roll.first.items === 0 && roll.first.fl >= 1 && roll.items === 1 && roll.steps > roll.first.atStep + 20, roll);
   // a trap that breaks while a butterfly is on its way: it does not land
-  const brk = await pg.evaluate(() => { const p = F0W.play, S = p.traps, w = p.world, t = S.list.find(q => q.tid === 'ROLL'); const n0 = t.items.length; S.spawn(t, Traps.lure(p.biome)[0]); t.t = t.life + 1; S.update(0.1); for (let i = 0; i < 300; i++) S.update(0.1); return { n0, n1: t.items.length, fl: S.fliers.length, broken: t.broken }; });
-  T('when the trap breaks, butterflies on their way do not get in', brk.broken && brk.n1 === brk.n0 && brk.fl === 0, brk);
+  const brk = await pg.evaluate(() => { const p = F0W.play, S = p.traps, w = p.world, t = S.list.find(q => q.tid === 'ROLL'); const n0 = t.items.length; const b0 = Save.data.specimens.length; S.spawn(t, p.pool[0]); t.t = t.life + 1; S.update(0.1); for (let i = 0; i < 300; i++) S.update(0.1); return { n0, listed: S.list.includes(t), fl: S.fliers.length, credited: Save.data.specimens.length - b0 }; });
+  T('when the trap breaks, butterflies on their way do not get in', !brk.listed && brk.fl === 0 && brk.credited === 0, brk);
   console.log(errs.length ? 'ERRORS ' + errs.slice(0, 5) : bad ? 'FAILED ' + bad : 'ALL PASS'); await br.close(); process.exit(bad || errs.length ? 1 : 0);
 })();
