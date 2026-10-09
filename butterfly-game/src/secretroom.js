@@ -311,7 +311,7 @@ const SecretMarket = (() => {
       if (this.ov === 'shop') {
         const S0 = this.shop, coins = Save.data.coins || 0; S0.chars = Math.min(S0.line.length, S0.chars + dt * 34);
         ctx.fillStyle = 'rgba(4,2,8,0.62)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 20, 10, 440, 250, { fill: 'rgba(20,14,30,0.97)', border: '#a070e0' });
-        T.draw(ctx, 'Торговец в капюшоне · карты мест', 34, 19, { size: 10, color: '#c8a8f0' }); T.draw(ctx, `Монеты: ${coins}`, 446, 20, { size: 8, align: 'r', color: c.gold });
+        T.draw(ctx, S0.tab === 1 ? 'Торговец в капюшоне · предметы' : 'Торговец в капюшоне · карты мест', 34, 19, { size: 10, color: '#c8a8f0' }); T.draw(ctx, `Монеты: ${coins}`, 446, 20, { size: 8, align: 'r', color: c.gold });
         // the trader and what he says (in a bubble to the right of the portrait, inside the window)
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });

@@ -246,7 +246,7 @@ class Play {
     else if (!mp || mp.host) this.spawnInitial();
     this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
     Snd.startAmbient(this.world.env.amb);
-    this.toast(`${biome.name} — ${biome.place}`, 4.2, true);
+    this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
   applyQuality() { const low = Save.data.settings.quality === 'low'; const g = this.world.grassMesh; if (!this.grassFull) this.grassFull = g.count; g.count = Math.floor(this.grassFull * (low ? 0.55 : 1)); this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
@@ -532,7 +532,7 @@ class Play {
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.traps && this.traps.near && !this.doorNear && !this.pickNear) { const s2 = this.traps.label(this.traps.near), w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: this.traps.near.mine ? c.gold : '#6a9a80' }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
-    const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
+    const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   G — ловушка   Esc — пауза';
     if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
     // crosshair
     const cx = SW / 2, cy = SH / 2; const hot = this.reticle > 0; ctx.fillStyle = hot ? c.green : 'rgba(255,255,255,0.85)';
