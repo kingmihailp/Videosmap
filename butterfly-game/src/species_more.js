@@ -325,7 +325,7 @@
     ['Coenonympha oedippus', 'Сенница эдип', 'False ringlet', 'N', 36, 42, 3, 'owl', A('ringlet', ['#4a3422', '#5c4430'], ['#4a3422', '#5c4430'], { edge: ['#e8d8b0', 1], dots: '#e8b83c', sp: [...sp('f', [[.62, .5, 1.6, '#e8b83c'], [.62, .5, .8, DK]]), ...sp('h', [[.35, .45, 1.5, '#e8b83c'], [.35, .45, .8, DK], [.65, .6, 1.5, '#e8b83c'], [.65, .6, .8, DK]])] }),
       'Влажные низинные луга, сфагновые и осоковые болота', 'Европа, юг Сибири, Дальний Восток', 'пушица, осока, молиния', 'Редчайшая «глазчатая» сенница болот: золотые глазки на тёмном фоне, летает низко и очень неохотно.'],
   );
-  { const q = ROWS.bog[ROWS.bog.length - 1]; q.fixed = 1200; q.scarce = 0.18; }
+  { const q = ROWS.bog[ROWS.bog.length - 1]; q.fixed = 1200; q.scarce = 0.05; }
 
   // ============================================================ NEW GUINEA (a secret location: Oro province, the slopes of Mount Lamington)
   ROWS.papua = [
@@ -385,7 +385,7 @@
       'Опушки, лесные тропы, прибрежные заросли', 'Новая Гвинея, Молуккские острова, северо-восток Австралии', 'ваточниковые', 'Лёгкая белая бабочка со штриховкой, плавно парит у земли.'],
   ];
   // Queen Alexandra's birdwing: paid a fixed 2000 coins by the merchant (an aberration multiplies it) and many times rarer than anything else
-  { const q = ROWS.papua[0]; q.fixed = 2000; q.scarce = 0.18; }
+  { const q = ROWS.papua[0]; q.fixed = 2000; q.scarce = 0.05; }
 
   // ============================================================ VIETNAM (Hoang Lien Son / Sa Pa highlands)
   ROWS.vietnam = [
@@ -446,7 +446,7 @@
     ['Pieris canidia', 'Индийская капустница', 'Indian cabbage white', 'W', 45, 60, 1, 'pierid', A('pierid', [WH, '#f2efe0'], [WH, '#ecebd8'], { edge: ['#2a2820', 1], tip: ['#1c1a16', .8], sp: [...sp('f', [[.55, .38, 1.8, '#1c1a16'], [.5, .7, 1.6, '#1c1a16']]), ...sp('h', [[.82, .15, 1.4, '#1c1a16']])] }),
       'Поля, огороды, опушки и луга от равнин до среднегорий', 'Индия, Китай, Юго-Восточная Азия', 'крестоцветные (капуста и дикие виды)', 'Близкая родственница нашей капустницы: на горных склонах заселяет и огороды местных жителей.'],
   ];
-  { const q = ROWS.vietnam[0]; q.fixed = 1400; }
+  { const q = ROWS.vietnam[0]; q.fixed = 1400; q.scarce = 0.05; }
 
   // ============================================================ assemble
   const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_|_$/g, '');
