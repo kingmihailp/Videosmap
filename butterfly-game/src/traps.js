@@ -8,6 +8,7 @@ const Traps = (() => {
     std: { id: 'std', ru: 'Стандартная ловушка', real: 'по образцу ловушки Ван Сомерена — Райдона', price: 900, life: 120, cap: 10, ab: 0, desc: 'Сетчатый цилиндр на треноге с приманочной чашей снизу — классика полевой энтомологии. Служит 2 минуты.' },
     str: { id: 'str', ru: 'Прочная ловушка', real: 'деревянный каркас, как садок-ловушка Девриса', price: 1800, life: 360, cap: 20, ab: 0, desc: 'Деревянный каркас с латунными скобами и мелкой сеткой, вместительная. Служит 6 минут.' },
     imp: { id: 'imp', ru: 'Импортная ловушка', real: 'складная палаточная ловушка (pop-up), как у BioQuip', price: 2800, life: 240, cap: 14, ab: 0.01, desc: 'Складной купол из тонкой сетки с растяжками. Служит 4 минуты, и 1% попавшихся бабочек — аберранты.' },
+    scr: { id: 'scr', ru: 'Скритчушка', real: 'странная чёрная ловушка из океана', price: 2288, life: 426, cap: 12, ab: 0, only: 'ocean', baitOnly: 'pheromone', secret: true, desc: 'Чёрная, зубастая и улыбчивая. Ставится только в океане, берёт в приманку одну колбу феромонов и ничего больше. Ломается через 6 минут 66 секунд — с визгом.' },
   };
   // real flowers visited by butterflies; scent 1..5 = how far the smell carries (more butterflies come)
   const SCENT = ['', 'едва уловимый', 'слабый', 'заметный', 'сильный', 'пьянящий'];
@@ -55,12 +56,16 @@ const Traps = (() => {
   const lure = biome => biome.species.filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
   // the visitor: only species of the current landscape (the 9-10 butterflies that live here, Play.pool); src is that list (or a biome: its daytime species, for tests)
   function pick(src, hn, type) {
-    const list = (Array.isArray(src) ? src : lure(src)).filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
+    const list = type === 'scr' ? (Array.isArray(src) ? src : src.species) : (Array.isArray(src) ? src : lure(src)).filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
     const pool = list.map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
     if (!pool.length) return null; let r = Math.random() * pool.reduce((a, o) => a + o.w, 0); let sp = pool[pool.length - 1].sp; for (const o of pool) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
     const abp = TYPES[type].ab + ((HN[hn] && HN[hn].ab) || 0);          // the imported trap's 1% adds to what the bait gives
     return (abp && Aberr.eligible(sp) && Math.random() < abp) ? Aberr.make(sp, Aberr.randomCode()) : sp;
   }
+  // where a trap may stand: the skrichushka only in the ocean, every other trap anywhere but the ocean
+  const allowed = (type, loc) => (type === 'scr') === (loc === 'ocean') ? '' : (type === 'scr' ? 'Скритчушку можно поставить только в океане' : 'В океане можно поставить только скритчушку');
+  // what a trap accepts as bait (the skrichushka: one flask of pheromones, nothing else)
+  const accepts = (type, kind, id) => { const o = TYPES[type] && TYPES[type].baitOnly; return !o || (kind === 'hn' && id === o); };
   const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
   // ================================================================== models
@@ -78,6 +83,7 @@ const Traps = (() => {
     const out = [];
     if (type === 'std') for (let i = 0; i < 9; i++) { const y = 0.75 + (i % 3) * 0.3, a = i * 2.4, r = 0.3 + (1.5 - y) * 0.04 - 0.035; out.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, a }); }
     else if (type === 'str') for (let i = 0; i < 9; i++) { const y = 0.65 + (i % 3) * 0.28, a = i * 1.7, s = 0.415; const side = i % 4, t = ((i * 0.37) % 1 - 0.5) * 0.6; const p = [[t, s], [s, t], [t, -s], [-s, t]][side]; out.push({ x: p[0], y, z: p[1], a: [Math.PI, Math.PI * 1.5, 0, Math.PI * 0.5][side] }); }
+    else if (type === 'scr') for (let i = 0; i < 9; i++) out.push({ x: ((i % 3) - 1) * 0.08, y: 0.5, z: 0.3 + (i % 2) * 0.04, a: Math.PI });
     else for (let i = 0; i < 9; i++) { const y = 0.3 + (i % 3) * 0.24, a = i * 2.1, r = 0.55 * Math.sqrt(Math.max(0.05, 1 - (y / 1.1) * (y / 1.1))) - 0.03; out.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, a }); }
     return out;
   }
@@ -197,7 +203,7 @@ const Traps = (() => {
   }
   // the three trap bodies; every part touches its neighbour (the float test checks it); y = 0 is the ground
   function body(type) {
-    const g = new THREE.Group(), top = new THREE.Group(), baitG = new THREE.Group(); g.add(top); g.add(baitG); let trayY = 0.34, trayR = 0.26;
+    const g = new THREE.Group(), top = new THREE.Group(), baitG = new THREE.Group(); g.add(top); g.add(baitG); let trayY = 0.34, trayR = 0.26, jawRef = null;
     if (type === 'std') {
       const pole = M('#8a6a3a'), rope = M('#c8b890'), netc = NET('#d8e8d0', 0.4), rib = M('#9aa890');
       for (let k = 0; k < 3; k++) { const a = k * 2.094 + 0.4; g.add(rod([Math.cos(a) * 0.78, -0.02, Math.sin(a) * 0.78], [Math.cos(a) * 0.04, 2.08, Math.sin(a) * 0.04], 0.03, pole, 6)); }      // the tripod
@@ -219,6 +225,37 @@ const Traps = (() => {
       top.add(mesh(new THREE.ConeGeometry(0.78, 0.3, 4), M('#4a5a50'), 0, 1.56, 0, 0, Math.PI / 4, 0)); top.add(mesh(new THREE.SphereGeometry(0.045, 6, 5), M(BRASS), 0, 1.73, 0));   // hip roof and its finial
       g.add(cyl(0.12, 0.2, 0.2, dw, 0, 0.26, 0, 8)); baitG.add(cyl(0.3, 0.3, 0.04, M('#5a4028'), 0, 0.38, 0, 12)); trayY = 0.4; trayR = 0.3;     // a pedestal and the dish on it
       g.add(box(0.2, 0.1, 0.012, brass, 0, 0.13, 0.495));                                                                                    // maker's plate on the plank edge
+    } else if (type === 'scr') {
+      // the «скритчушка»: a black thing with a toothy smile, three odd eyes and tentacles; the lower jaw (U.jaw) swings open when a butterfly comes
+      const skin = M('#0c0a12'), skin2 = M('#181226'), lip = M('#2a0a1a'), tooth = M('#f4f0dc'), tongue = M('#b04a78'), eyeW = new THREE.MeshBasicMaterial({ color: '#e8f090' }), pupil = M('#050308'), orb = new THREE.MeshBasicMaterial({ color: '#b070ff' }), cavity = new THREE.MeshBasicMaterial({ color: '#5a0a22' });
+      const tap = (a, b, r0, r1, mat) => { const d = new THREE.Vector3().subVectors(b, a), L = d.length(), m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, L, 7), mat); m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return m; };
+      const sm = (u) => u * u * (3 - 2 * u), V = (x, y, z) => new THREE.Vector3(x, y, z);
+      const bodyM = mesh(new THREE.SphereGeometry(0.62, 20, 14), skin, 0, 0.82, 0); bodyM.scale.set(1.05, 1.08, 0.95); top.add(bodyM);
+      // tentacles: they start inside the body, spread over the ground and curl their tips up
+      const N = 8; for (let k = 0; k < N; k++) {
+        const a = k * Math.PI * 2 / N + 0.2, reach = (Math.abs(Math.sin(a - Math.PI / 2)) > 0.9 ? 0.85 : 1.15 + (k % 3) * 0.18), th = 0.13 + (k % 2) * 0.03, pts = [];
+        for (let i = 0; i <= 9; i++) { const u = i / 9, R = 0.38 + u * reach, y = u < 0.55 ? 0.42 - (0.42 - 0.06) * sm(u / 0.55) : 0.06 + Math.pow((u - 0.55) / 0.45, 2) * (0.22 + (k % 2) * 0.12), w = Math.sin(u * 5 + k) * 0.07 * u; pts.push(V(Math.cos(a) * R - Math.sin(a) * w, y, Math.sin(a) * R + Math.cos(a) * w)); }
+        for (let i = 0; i < pts.length; i++) { const r = th * (1 - 0.82 * i / 9) + 0.015; g.add(mesh(new THREE.SphereGeometry(r, 7, 5), skin, pts[i].x, pts[i].y, pts[i].z)); if (i) g.add(tap(pts[i - 1], pts[i], th * (1 - 0.82 * (i - 1) / 9) + 0.015, r, skin)); }
+        const tp = pts[9]; for (let q = 0; q < 2; q++) g.add(mesh(new THREE.SphereGeometry(0.02, 5, 4), skin2, tp.x + (q - 0.5) * 0.02, tp.y + 0.02, tp.z));       // a pale sucker at the tip
+      }
+      // three thin feelers on top with glowing tips
+      for (let k = 0; k < 3; k++) { const a = k * 2.1 + 0.4, root = V(Math.cos(a) * 0.22, 1.36, Math.sin(a) * 0.22), pts = []; for (let i = 0; i <= 6; i++) { const u = i / 6; pts.push(V(root.x + Math.cos(a) * u * 0.5, root.y + u * 0.55 - u * u * 0.08, root.z + Math.sin(a) * u * 0.5 + Math.sin(u * 4) * 0.05)); }
+        for (let i = 1; i < pts.length; i++) top.add(tap(pts[i - 1], pts[i], 0.035 - i * 0.003, 0.03 - i * 0.003, skin)); top.add(mesh(new THREE.SphereGeometry(0.055, 8, 6), orb, pts[6].x, pts[6].y + 0.03, pts[6].z)); }
+      // warts
+      for (let i = 0; i < 12; i++) { const th2 = i * 2.4 + 1, ph = 0.5 + (i * 0.37 % 1) * 2.1; if (Math.abs(Math.atan2(Math.sin(th2), Math.cos(th2)) - Math.PI / 2) < 0.9 && ph > 1.0 && ph < 2.3) continue; top.add(mesh(new THREE.SphereGeometry(0.04 + (i % 3) * 0.015, 6, 5), skin2, 0.63 * 0.96 * Math.sin(ph) * Math.cos(th2) * 1.05, 0.82 + 0.67 * 0.96 * Math.cos(ph), 0.59 * 0.96 * Math.sin(ph) * Math.sin(th2))); }
+      // three eyes
+      for (const [ex, ey, ez] of [[-0.22, 1.02, 0.5], [0.22, 1.02, 0.5], [0, 1.2, 0.44]]) { top.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), eyeW, ex, ey, ez)); top.add(box(0.016, 0.07, 0.02, pupil, ex, ey, ez + 0.07)); }
+      // the cavity of the mouth, the upper lip with hanging teeth
+      const cav = mesh(new THREE.SphereGeometry(1, 14, 8), cavity, 0, 0.56, 0.4); cav.scale.set(0.42, 0.17, 0.16); top.add(cav);
+      const upper = new THREE.CatmullRomCurve3([V(-0.44, 0.74, 0.34), V(-0.24, 0.66, 0.53), V(0, 0.62, 0.58), V(0.24, 0.66, 0.53), V(0.44, 0.74, 0.34)]); top.add(mesh(new THREE.TubeGeometry(upper, 24, 0.045, 6), lip, 0, 0, 0));
+      for (let i = 0; i < 10; i++) { const u = (i + 0.5) / 10, p = upper.getPoint(u), h = 0.085 + ((i * 7) % 4) * 0.018; top.add(mesh(new THREE.ConeGeometry(0.03, h, 5), tooth, p.x, p.y - 0.035 - h / 2 + 0.03, p.z - 0.012, Math.PI)); }
+      // the lower jaw swings about its hinge
+      const jaw = new THREE.Group(); jaw.position.set(0, 0.56, 0.36); top.add(jaw); const lower = new THREE.CatmullRomCurve3([V(-0.4, 0, 0), V(-0.22, -0.07, 0.17), V(0, -0.1, 0.22), V(0.22, -0.07, 0.17), V(0.4, 0, 0)]); jaw.add(mesh(new THREE.TubeGeometry(lower, 24, 0.045, 6), lip, 0, 0, 0));
+      for (let i = 0; i < 9; i++) { const u = (i + 0.5) / 9, p = lower.getPoint(u), h = 0.07 + ((i * 5) % 3) * 0.02; jaw.add(mesh(new THREE.ConeGeometry(0.028, h, 5), tooth, p.x, p.y + 0.03 + h / 2 - 0.02, p.z - 0.008)); }
+      const tg = mesh(new THREE.SphereGeometry(1, 10, 6), tongue, 0, -0.07, 0.1); tg.scale.set(0.27, 0.05, 0.15); jaw.add(tg); jaw.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 5), lip, 0, -0.02, 0.0, 0, 0, Math.PI / 2));   // tongue and the hinge pin
+      // a crooked bowl on the head for the flask
+      baitG.add(cyl(0.27, 0.21, 0.06, M('#241a30'), 0, 1.5, 0, 12)); baitG.add(mesh(new THREE.TorusGeometry(0.265, 0.018, 5, 14), M('#4a3a60'), 0, 1.53, 0, Math.PI / 2));
+      trayY = 1.53; trayR = 0.26; jawRef = jaw;
     } else {
       const netc = NET('#f4f6f0', 0.4), orange = M('#e8782a'), rib = M('#c8ccc4'), peg = M(IRON), line = M('#e8d8b0');
       g.add(mesh(new THREE.TorusGeometry(0.55, 0.022, 5, 18), rib, 0, 0.025, 0, Math.PI / 2));                                            // the base hoop on the ground
@@ -230,13 +267,14 @@ const Traps = (() => {
       for (let k = 0; k < 4; k++) { const a = k * 1.571 + 0.78, X = Math.cos(a), Z = Math.sin(a); g.add(rod([X * 1.0, -0.05, Z * 1.0], [X * 0.92, 0.2, Z * 0.92], 0.014, peg, 4)); top.add(rod([X * 0.92, 0.2, Z * 0.92], [X * 0.45, 0.62, Z * 0.45], 0.005, line, 3)); }    // pegs and guy lines to the dome
       baitG.add(cyl(0.3, 0.3, 0.035, M('#3a4a58'), 0, 0.05, 0, 12)); trayY = 0.07; trayR = 0.3;
     }
-    g.userData = { top, baitG, trayY, trayR, type };
+    g.userData = { top, baitG, trayY, trayR, type, jaw: jawRef };
     return g;
   }
   // a whole model with its contents: fl / hn ids, n resting butterflies (cols: their colours), broken: collapsed
   function model(type, o = {}) {
     const g = body(type), U = g.userData; bait(U.baitG, U.trayY, U.trayR, o.fl, o.hn);
     const wings = new THREE.Group(); U.top.add(wings); U.wings = [];
+    if (type === 'scr') { const nb = Math.min(9, o.n || 0); for (let i = 0; i < nb; i++) { const th = 2.0 + i * 0.52 + (i % 2) * 0.2, ph = 1.35 + (i % 3) * 0.4, col = (o.cols && o.cols[i]) || '#b070ff'; wings.add(mesh(new THREE.SphereGeometry(0.055, 7, 5), new THREE.MeshBasicMaterial({ color: col }), 0.62 * 1.05 * 0.93 * Math.sin(ph) * Math.cos(th), 0.82 + 0.67 * 0.93 * Math.cos(ph), 0.59 * 0.93 * Math.sin(ph) * Math.sin(th))); } return o.broken ? (setBroken(g, true), g) : g; }
     const spots = rests(type), n = Math.min(spots.length, o.n || 0);
     for (let i = 0; i < n; i++) { const s = spots[i], col = (o.cols && o.cols[i]) || '#e8a030', w = new THREE.Group(); w.position.set(s.x, s.y, s.z); w.rotation.y = -s.a + Math.PI / 2;
       const wl = mesh(new THREE.PlaneGeometry(0.07, 0.1), M(col, { side: THREE.DoubleSide }), -0.035, 0, 0.004), wr = mesh(new THREE.PlaneGeometry(0.07, 0.1), M(col, { side: THREE.DoubleSide }), 0.035, 0, 0.004);
@@ -261,15 +299,16 @@ const Traps = (() => {
   function doorway(type, a) {
     if (type === 'std') { const d = [Math.cos(a), Math.sin(a)]; return { dir: a, pts: [[d[0] * 1.2, 0.43, d[1] * 1.2], [d[0] * 0.26, 0.43, d[1] * 0.26], [d[0] * 0.05, 0.62, d[1] * 0.05], [0, 0.82, 0]] }; }
     if (type === 'str') { const k = Math.round(a / (Math.PI / 2)), aa = k * Math.PI / 2, d = [Math.round(Math.cos(aa)), Math.round(Math.sin(aa))]; return { dir: aa, pts: [[d[0] * 1.3, 0.48, d[1] * 1.3], [d[0] * 0.3, 0.48, d[1] * 0.3], [0, 0.52, 0], [0, 0.7, 0]] }; }
+    if (type === 'scr') return { dir: Math.PI / 2, pts: [[0, 0.5, 1.5], [0, 0.49, 0.78], [0, 0.49, 0.5], [0, 0.48, 0.34]] };       // the skrichushka: straight into the mouth (centred on +z)
     return { dir: Math.PI / 2, pts: [[0, 0.09, 1.3], [0, 0.09, 0.42], [0, 0.14, 0.15], [0, 0.4, 0.04]] };       // the dome: a doorway centred on +z
   }
   class Flier {
     constructor(sys, trap, sp, spotIdx) {
       this.sys = sys; this.trap = trap; this.sp = sp; this.done = false; this.t = Math.random() * 6; const w = sys.world, yaw = trap.yaw;
       const toW = (x, y, z) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, yaw).add(new THREE.Vector3(trap.x, trap.y, trap.z));
-      const a0 = trap.type === 'imp' ? Math.PI / 2 + (Math.random() - 0.5) * 1.5 : Math.random() * 6.283;             // the side it comes from (local); the dome only from its door
-      const door = doorway(trap.type, trap.type === 'imp' ? 0 : a0); const out = toW(...door.pts[0]), inn = toW(...door.pts[1]);
-      const away = trap.type === 'imp' ? new THREE.Vector3(0, 0, 1).applyAxisAngle(UP, yaw) : new THREE.Vector3(Math.cos(door.dir), 0, Math.sin(door.dir)).applyAxisAngle(UP, yaw);
+      const doorT = trap.type === 'imp' || trap.type === 'scr', a0 = doorT ? Math.PI / 2 + (Math.random() - 0.5) * 1.5 : Math.random() * 6.283;             // the side it comes from (local); the dome only from its door
+      const door = doorway(trap.type, doorT ? 0 : a0); const out = toW(...door.pts[0]), inn = toW(...door.pts[1]);
+      const away = doorT ? new THREE.Vector3(0, 0, 1).applyAxisAngle(UP, yaw) : new THREE.Vector3(Math.cos(door.dir), 0, Math.sin(door.dir)).applyAxisAngle(UP, yaw);
       const side = new THREE.Vector3(-away.z, 0, away.x), dist = 5 + Math.random() * 3, start = new THREE.Vector3(trap.x, 0, trap.z).addScaledVector(away, dist).addScaledVector(side, (Math.random() - 0.5) * 5); start.y = w.groundAt(start.x, start.z) + 1.1 + Math.random() * 1.1;
       const lat = (Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 0.8), p1 = start.clone().lerp(out, 0.35).addScaledVector(side, lat); p1.y += 0.35; const p2 = start.clone().lerp(out, 0.72).addScaledVector(side, -lat * 0.6); p2.y = Math.max(out.y + 0.2, p2.y - 0.5);
       const rest = rests(trap.type)[spotIdx % 9], rw = toW(rest.x, rest.y, rest.z), pts = [start, p1, p2, out, inn, toW(...door.pts[2]), toW(...door.pts[3]), rw];
@@ -311,7 +350,7 @@ const Traps = (() => {
     }
     spawn(t, sp) { const idx = (t.mine ? t.items.length : t.n) + t.inflight; t.inflight++; this.fliers.push({ f: new Flier(this, t, sp, idx), t, sp }); }
     // a trap wears out: it vanishes together with everything in it (no catch is credited)
-    expire(t) { if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — вместе с ней пропал улов (${t.items.length})`, 5, true); Snd.sfx.deny(); this.send({ k: 'del', tid: t.tid }); } this.drop(t); }
+    expire(t) { if (t.type === 'scr' && Math.hypot(t.x - this.play.player.pos.x, t.z - this.play.player.pos.z) < 45) Snd.sfx.scream(); if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — вместе с ней пропал улов (${t.items.length})`, 5, true); Snd.sfx.deny(); this.send({ k: 'del', tid: t.tid }); } this.drop(t); }
     // the landscape was regenerated: your traps and their catch are gone, nothing is credited
     lose() { const n = this.own().length; for (const t of this.own().slice()) { this.send({ k: 'del', tid: t.tid }); this.drop(t); } this.lost = n; return n; }
     drop(t) { this.list = this.list.filter(q => q !== t); this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); if (t.group) { this.group.remove(t.group); t.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); } if (t.label) this.group.remove(t.label); const w = this.world, ci = w.colliders.indexOf(t.col); if (ci >= 0) w.colliders.splice(ci, 1); if (this.near === t) this.near = null; }
@@ -320,7 +359,7 @@ const Traps = (() => {
     spot() { const P = this.play.player, w = this.world, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), x = P.pos.x + fx * 1.7, z = P.pos.z + fz * 1.7; if ((w.canWalk && !w.canWalk(x, z)) || (w.inWater && w.inWater(x, z, 0.6))) return null; if (w.slopeAt && w.slopeAt(x, z) > 0.55) return null;
       for (const c of w.colliders) if (Math.hypot(c.x - x, c.z - z) < c.r + 0.8) return null; if (Math.hypot(x, z) > w.R - 1.5) return null; return { x, z, y: w.groundAt(x, z), yaw: P.yaw + Math.PI }; }
     place(type) {
-      const P = this.play; if (!TYPES[type] || count('tr', type) < 1) return false;
+      const P = this.play; if (!TYPES[type] || count('tr', type) < 1) return false; { const why = allowed(type, P.biome.id); if (why) { P.toast(why, 3.5); Snd.sfx.deny(); return false; } }
       const s = this.spot(); if (!s) { P.toast('Здесь ловушку не поставить: нужна ровная свободная земля', 3); Snd.sfx.deny(); return false; }
       add('tr', type, -1); const tid = (Net.on && P.mp ? Net.id : 'L') + '-' + Date.now().toString(36) + (++this.seq);
       const t = this.mk({ tid, owner: Net.on ? Net.id : 0, name: Net.name || 'Вы', type, x: s.x, y: s.y, z: s.z, yaw: s.yaw, age: 0 }, true); this.send({ k: 'put', tid, type, x: +s.x.toFixed(2), y: +s.y.toFixed(2), z: +s.z.toFixed(2), yaw: +s.yaw.toFixed(2) });
@@ -337,23 +376,30 @@ const Traps = (() => {
           const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.pool, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
         }
         if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); }
-        const U = t.group && t.group.userData; if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
+        const U = t.group && t.group.userData;
+        if (U && U.jaw) {       // the skrichushka's mouth opens when a butterfly is about to come in, and shuts (with a snap) after it
+          const fo = this.fliers.find(o => o.t === t); if (fo && fo.f.s > fo.f.sOut * 0.55) t.hold = 0.7; t.hold = Math.max(0, (t.hold || 0) - dt); t.open = damp(t.open || 0, t.hold > 0 ? 1 : 0, 9, dt);
+          if (t.open > 0.6) t.wasOpen = true; if (t.wasOpen && t.open < 0.3) { t.wasOpen = false; if (Math.hypot(t.x - this.play.player.pos.x, t.z - this.play.player.pos.z) < 30) Snd.sfx.chomp(); }
+          U.jaw.rotation.x = 0.7 * t.open;
+        }
+        if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
         if (U && !t.broken) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
       }
     }
     flyAll(dt) {
-      for (const o of this.fliers.slice()) { o.f.update(dt); if (o.f.done) { const t = o.t; o.f.dispose(); this.fliers = this.fliers.filter(q => q !== o); t.inflight = Math.max(0, t.inflight - 1);
+      for (const o of this.fliers.slice()) { o.f.update(dt); if (o.f.done) { const t = o.t; o.f.dispose(); this.fliers = this.fliers.filter(q => q !== o); t.inflight = Math.max(0, t.inflight - 1); t.hold = Math.max(t.hold || 0, 0.5);
         if (t.mine && !t.broken && o.sp) { t.items.push(o.sp.id); t.dirty = true; this.send({ k: 'cnt', tid: t.tid, n: t.items.length }); } } }
     }
     bait(t, fl, hn) {      // put bait in: a slot is filled once and for all (nothing can be taken back out)
       if (!t.mine) return false; let ch = false;
-      if (fl && !t.fl && FL[fl] && count('fl', fl) >= 1) { add('fl', fl, -1); t.fl = fl; ch = true; }
-      if (hn && !t.hn && HN[hn] && count('hn', hn) >= 1) { add('hn', hn, -1); t.hn = hn; ch = true; }
+      if (fl && !t.fl && FL[fl] && accepts(t.type, 'fl', fl) && count('fl', fl) >= 1) { add('fl', fl, -1); t.fl = fl; ch = true; }
+      if (hn && !t.hn && HN[hn] && accepts(t.type, 'hn', hn) && count('hn', hn) >= 1) { add('hn', hn, -1); t.hn = hn; ch = true; }
       if (ch) { t.dirty = true; this.send({ k: 'set', tid: t.tid, fl: t.fl, hn: t.hn }); Snd.sfx.coin(); } return ch;
     }
     // take the butterflies out of an own trap (the new ones go to the cabinet as raw specimens)
     take(t, quiet) {
       if (!t.mine || !t.items.length) return 0; const P = this.play, ids = t.items.splice(0); let fresh = 0; for (const id of ids) { if (!Save.has((SPECIES_BY_ID[id].base) || id)) fresh++; Save.add(id, P.biome.id); P.caughtHere.add(id); }
+      if (ids.some(id => SPECIES_BY_ID[id].mystery) && typeof revealOcean === 'function' && revealOcean()) P.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true);
       t.dirty = true; this.send({ k: 'cnt', tid: t.tid, n: 0 }); Wings.announce(Wings.check(), (s, d, imp) => P.toast(s, d, imp));
       if (!quiet) { P.toast(`Из ловушки взято бабочек: ${ids.length}` + (fresh ? ` · новых видов: ${fresh}` : ''), 4, true); Snd.sfx.reward(); }
       return ids.length;
@@ -372,7 +418,7 @@ const Traps = (() => {
       try {
         const ren = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true }); ren.setSize(100, 150, false); ren.setPixelRatio(1); ren.setClearColor(0x000000, 0);
         const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-0.75, 0.75, 1.125, -1.125, 0.1, 20); sc.add(new THREE.HemisphereLight('#ffffff', '#6a7a60', 0.95)); const sun = new THREE.DirectionalLight('#fff4dc', 0.9); sun.position.set(2, 4, 3); sc.add(sun);
-        this.r = { close(g, t, h = 0.3, cy = 0.14, el = 0.5) { const old = g.parent; sc.add(g); g.rotation.y = t || 0; const c2 = new THREE.OrthographicCamera(-h * 0.5, h * 0.5, h * 0.75, -h * 0.75, 0.05, 20); c2.position.set(1.4, cy + el, 1.4); c2.lookAt(0, cy, 0); ren.render(sc, c2); sc.remove(g); if (old) old.add(g); return ren.domElement; }, draw(g, t) { const old = g.parent, pos = g.position.clone(), rot = g.rotation.y; sc.add(g); g.position.set(0, 0, 0); g.rotation.y = rot + (t || 0); const bb = new THREE.Box3().setFromObject(g), hh = Math.max(bb.max.y, 0.5), half = hh / 2 + 0.08; cam.top = half; cam.bottom = -half; cam.left = -half * 0.667; cam.right = half * 0.667; cam.updateProjectionMatrix(); cam.position.set(2.6, hh / 2 + 0.55, 2.6); cam.lookAt(0, hh / 2, 0); ren.render(sc, cam); sc.remove(g); g.position.copy(pos); g.rotation.y = rot; if (old) old.add(g); return ren.domElement; } };
+        this.r = { close(g, t, h = 0.3, cy = 0.14, el = 0.5) { const old = g.parent; sc.add(g); g.rotation.y = t || 0; const c2 = new THREE.OrthographicCamera(-h * 0.5, h * 0.5, h * 0.75, -h * 0.75, 0.05, 20); c2.position.set(1.4, cy + el, 1.4); c2.lookAt(0, cy, 0); ren.render(sc, c2); sc.remove(g); if (old) old.add(g); return ren.domElement; }, draw(g, t) { const old = g.parent, pos = g.position.clone(), rot = g.rotation.y; sc.add(g); g.position.set(0, 0, 0); g.rotation.y = rot + (t || 0); const bb = new THREE.Box3().setFromObject(g), hh = Math.max(bb.max.y, 0.5), wd = Math.max(bb.max.x, -bb.min.x, bb.max.z, -bb.min.z) * 1.08, half = Math.max(hh / 2 + 0.08, wd / 0.667); cam.top = half; cam.bottom = -half; cam.left = -half * 0.667; cam.right = half * 0.667; cam.updateProjectionMatrix(); cam.position.set(2.6 + wd, hh / 2 + 0.55 + wd * 0.2, 2.6 + wd); cam.lookAt(0, hh / 2, 0); ren.render(sc, cam); sc.remove(g); g.position.copy(pos); g.rotation.y = rot; if (old) old.add(g); return ren.domElement; } };
       } catch (e) { this.r = null; }
       return this.r;
     },
@@ -383,15 +429,15 @@ const Traps = (() => {
     openTrap(play, t) { this.mode = t.mine ? 'manage' : 'view'; this.play = play; this.t = t; this.pf = ''; this.ph = ''; this.msg = ''; this.msgT = 0; this.scroll = 0; },
     say(m) { this.msg = m; this.msgT = 3.5; },
     // the candidate shown in a slider (it is not in the trap yet): always one of the items in stock; the arrows go round in both directions
-    cand(kind) { const list = owned(kind), key = kind === 'fl' ? 'pf' : 'ph'; if (!list.length) return null; if (!list.some(x => x.id === this[key])) this[key] = list[0].id; return (kind === 'fl' ? FL : HN)[this[key]]; },
-    step(kind, d) { const list = owned(kind), key = kind === 'fl' ? 'pf' : 'ph', n = list.length; if (!n) return false; const cur = list.findIndex(x => x.id === this[key]); this[key] = list[cur < 0 ? (d > 0 ? 0 : n - 1) : (cur + d + n) % n].id; Snd.sfx.click(); return true; },
+    cand(kind) { const list = owned(kind).filter(x => !this.t || accepts(this.t.type, kind, x.id)), key = kind === 'fl' ? 'pf' : 'ph'; if (!list.length) return null; if (!list.some(x => x.id === this[key])) this[key] = list[0].id; return (kind === 'fl' ? FL : HN)[this[key]]; },
+    step(kind, d) { const list = owned(kind).filter(x => !this.t || accepts(this.t.type, kind, x.id)), key = kind === 'fl' ? 'pf' : 'ph', n = list.length; if (!n) return false; const cur = list.findIndex(x => x.id === this[key]); this[key] = list[cur < 0 ? (d > 0 ? 0 : n - 1) : (cur + d + n) % n].id; Snd.sfx.click(); return true; },
     cyc(list, cur, d) { const ids = [''].concat(list.map(x => x.id)); const i = ids.indexOf(cur || ''); return ids[(i + d + ids.length) % ids.length]; },
     layout() {
       const b = [{ id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 }];
-      if (this.mode === 'place') Object.values(TYPES).forEach((T0, i) => b.push({ id: 'type' + i, tid: T0.id, x: 40, y: 56 + i * 52, w: 400, h: 46 }));
+      if (this.mode === 'place') Object.values(TYPES).forEach((T0, i) => b.push({ id: 'type' + i, tid: T0.id, x: 40, y: 50 + i * 48, w: 400, h: 44 }));
       else if (this.mode === 'manage') {
         const t = this.t;
-        if (!t.fl) b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'flput', label: 'Положить', x: 162, y: 94, w: 78, h: 14, disabled: !this.cand('fl') });
+        if (!t.fl && !TYPES[t.type].baitOnly) b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'flput', label: 'Положить', x: 162, y: 94, w: 78, h: 14, disabled: !this.cand('fl') });
         if (!t.hn) b.push({ id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 }, { id: 'hnput', label: 'Положить', x: 162, y: 134, w: 78, h: 14, disabled: !this.cand('hn') });
         b.push({ id: 'take', label: t.items.length ? `Забрать улов (${t.items.length})` : 'Улова нет', x: 12, y: 232, w: 150, h: 18, disabled: !t.items.length });
       }
@@ -416,8 +462,8 @@ const Traps = (() => {
       if (this.mode !== 'place' && this.t && !S.list.includes(this.t)) { UIK.panel(ctx, 90, 90, 300, 80, { fill: 'rgba(16,32,28,0.97)', border: '#e07060' }); T.draw(ctx, 'Ловушка сломалась', SW / 2, 104, { size: 10, align: 'c', color: '#e07060' }); T.para(ctx, 'Она исчезла вместе со всем, что в ней было.', 104, 126, 272, { size: 8, color: cl.text, lh: 10 }); UIK.btn(ctx, bs[0], hv(bs[0])); return; }
       if (this.mode === 'place') {
         UIK.panel(ctx, 20, 14, 440, 242, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Поставить ловушку', SW / 2, 22, { size: 12, align: 'c', color: cl.gold }); T.draw(ctx, 'Она встанет перед вами.', SW / 2, 40, { size: 8, align: 'c', color: cl.dim });
-        bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), h = hv(b); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n ? cl.gold : cl.line, shadow: false });
-          T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ' · 1% аберрантов' : ''), b.x + 8, b.y + 17, { size: 8, color: cl.dim }); T.para(ctx, T0.desc, b.x + 8, b.y + 29, 300, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: n ? '#9af0a0' : '#c87060' }); });
+        bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), why = allowed(b.tid, P.biome.id), h = hv(b) && !why; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n && !why ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n && !why ? cl.gold : cl.line, shadow: false });
+          T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ' · 1% аберрантов' : ''), b.x + 8, b.y + 17, { size: 8, color: cl.dim }); T.para(ctx, T0.desc, b.x + 8, b.y + 27, 380, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, why ? (T0.id === 'scr' ? 'только в океане' : 'не в океане') : n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: why ? '#c8a060' : n ? '#9af0a0' : '#c87060' }); });
         T.draw(ctx, this.msgT > 0 ? this.msg : 'Купить ловушки можно у торговца ловушками на рынке насекомых.', SW / 2, 238, { size: 8, align: 'c', color: this.msgT > 0 ? '#ffb070' : cl.dim });
       } else if (this.t) {
         const tr = this.t, T0 = TYPES[tr.type], mine = this.mode === 'manage';
@@ -428,11 +474,11 @@ const Traps = (() => {
         const n = mine ? tr.items.length : tr.n; T.draw(ctx, `Бабочек внутри: ${n} из ${tr.cap}`, 290, 42, { size: 8, color: cl.text }); ctx.fillStyle = '#10201c'; ctx.fillRect(290, 54, 150, 6); ctx.fillStyle = '#e0a0e0'; ctx.fillRect(290, 54, Math.round(150 * n / tr.cap), 6);
         if (mine) {
           const f = FL[tr.fl], h = HN[tr.hn], rr = rate(tr.fl, tr.hn);
-          const cf = !tr.fl && this.cand('fl'), ch = !tr.hn && this.cand('hn'), sc = x => (x.scent ? `запах: ${SCENT[x.scent]}` : `${x.tag || QUAL[x.q]}`);
+          const only = !!TYPES[tr.type].baitOnly, cf = !tr.fl && !only && this.cand('fl'), ch = !tr.hn && this.cand('hn'), sc = x => (x.scent ? `запах: ${SCENT[x.scent]}` : `${x.tag || QUAL[x.q]}`);
           T.draw(ctx, 'Цветы — зовут бабочек', 124, 70, { size: 8, color: cl.dim });
-          T.draw(ctx, f ? `${f.ru} (запах: ${SCENT[f.scent]})` : cf ? `${cf.ru} (${sc(cf)})` : 'нет цветов в запасе — их продаёт цветочница', 124, 82, { size: 8, color: f ? '#9af0a0' : cf ? '#f0e8d0' : '#c87060' });
-          T.draw(ctx, 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim });
-          T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : ch ? `${ch.ru} (${sc(ch)})` : 'нет мёда в запасе — его продаёт медовщик', 124, 122, { size: 8, color: h ? '#9af0a0' : ch ? '#f0e8d0' : '#c87060' });
+          T.draw(ctx, only ? 'Цветы не принимает: ей нужна только колба феромонов' : f ? `${f.ru} (запах: ${SCENT[f.scent]})` : cf ? `${cf.ru} (${sc(cf)})` : 'нет цветов в запасе — их продаёт цветочница', 124, 82, { size: 8, color: only ? cl.dim : f ? '#9af0a0' : cf ? '#f0e8d0' : '#c87060' });
+          T.draw(ctx, only ? 'Феромоны — единственная приманка' : 'Мёд — приманивает редких', 124, 110, { size: 8, color: cl.dim });
+          T.draw(ctx, h ? `${h.ru} (${h.tag || QUAL[h.q]})` : ch ? `${ch.ru} (${sc(ch)})` : (only ? 'нет колбы феромонов — их продаёт торговец в капюшоне' : 'нет мёда в запасе — его продаёт медовщик'), 124, 122, { size: 8, color: h ? '#9af0a0' : ch ? '#f0e8d0' : '#c87060' });
           for (const id of ['flp', 'fln', 'flput', 'hnp', 'hnn', 'hnput']) { const b = bs.find(q => q.id === id); if (b) UIK.btn(ctx, b, !b.disabled && hv(b)); }
           if (f) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 97, { size: 8, color: '#e0a070' }); else T.draw(ctx, cf ? `в запасе: ${count('fl', cf.id)} (видов: ${owned('fl').length})` : '', 246, 97, { size: 8, color: cl.dim });
           if (h) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 137, { size: 8, color: '#e0a070' }); else T.draw(ctx, ch ? `в запасе: ${count('hn', ch.id)} (видов: ${owned('hn').length})` : '', 246, 137, { size: 8, color: cl.dim });
@@ -482,5 +528,5 @@ const Traps = (() => {
       const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : id === 'pheromone' ? [0.26, 0.09, 0.7] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     return cv;
   }
-  return { closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
+  return { allowed, accepts, closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
 })();

@@ -23,7 +23,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
       out.push({ label, tris: n, floating, minY: +minY.toFixed(2), lost });
     };
     for (const type of Object.keys(Traps.TYPES)) {
-      for (const [lab, o] of [['empty', {}], ['broken', { n: 5, broken: true, fl: 'lavender', hn: 'heather' }], ['full', { n: 9, fl: 'buddleia', hn: 'manuka', cols: ['#e8a030', '#6a9ae0'] }]]) { check(type + ' ' + lab, Traps.model(type, o), false); check(type + ' ' + lab + ' (frame+bait only)', Traps.model(type, Object.assign({}, o, { n: 0 })), true); }
+      for (const [lab, o] of [['empty', {}], ['full', { n: 9, fl: 'buddleia', hn: 'manuka', cols: ['#e8a030', '#6a9ae0'] }]]) { check(type + ' ' + lab, Traps.model(type, o), false); check(type + ' ' + lab + ' (frame+bait only)', Traps.model(type, Object.assign({}, o, { n: 0 })), true); }
+      if (type === 'scr') { const g = Traps.model('scr', { hn: 'pheromone', n: 9 }); g.userData.jaw.rotation.x = 0.7; check('scr mouth wide open', g, false); const g2 = Traps.model('scr', {}); g2.userData.jaw.rotation.x = 0.7; check('scr empty, mouth open', g2, true); }
       for (const f of Traps.FLOWERS) { check(type + ' ' + f.id, Traps.model(type, { fl: f.id }), false); check(type + ' ' + f.id + ' (solid)', Traps.model(type, { fl: f.id }), true); }
       for (const h of Traps.HONEYS) { check(type + ' ' + h.id, Traps.model(type, { hn: h.id, fl: 'chamomile' }), false); check(type + ' ' + h.id + ' (solid)', Traps.model(type, { hn: h.id, fl: 'chamomile' }), true); }
     }

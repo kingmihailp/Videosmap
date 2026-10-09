@@ -84,13 +84,13 @@ function voteCheck(name, l) {
 }
 
 // butterfly traps stand in a location while their owner is there (nothing of their contents is known to the server: only the count, so nobody else can take it)
-const TRAP_LIFE = { std: 120, str: 360, imp: 240 };
+const TRAP_LIFE = { std: 120, str: 360, imp: 240, scr: 426 };
 const trapView = (t, now) => ({ tid: t.tid, owner: t.owner, name: t.name, type: t.type, x: t.x, z: t.z, y: t.y, yaw: t.yaw, age: Math.round((now - t.at) / 1000), fl: t.fl, hn: t.hn, n: t.n });
 function trapMsg(me, m) {
   const l = me.loc && locs.get(me.loc); if (!l || !BIOMES.includes(me.loc)) return; l.traps = l.traps || new Map();
   const tid = String(m.tid || '').slice(0, 24); if (!tid) return; const t = l.traps.get(tid);
   if (m.k === 'put') {
-    if (t || !TRAP_LIFE[m.type] || ![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return;
+    if (t || !TRAP_LIFE[m.type] || (m.type === 'scr') !== (me.loc === 'ocean') || ![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return;
     const n = { tid, owner: me.id, name: me.name, type: m.type, x: m.x, y: m.y, z: m.z, yaw: m.yaw, at: Date.now(), fl: '', hn: '', n: 0 }; l.traps.set(tid, n); toLoc(me.loc, { t: 'trap', k: 'put', trap: trapView(n, Date.now()) }, me.id);
   } else if (t && t.owner === me.id) {             // only the owner changes or removes a trap
     if (m.k === 'set') { t.fl = String(m.fl || '').slice(0, 24); t.hn = String(m.hn || '').slice(0, 24); toLoc(me.loc, { t: 'trap', k: 'set', tid, fl: t.fl, hn: t.hn }, me.id); }

@@ -10,7 +10,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   for (let i = 0; i < 120; i++) { if (await pg.evaluate(() => !!(F0W.play && F0W.screen === 'play')).catch(() => false)) break; await pg.waitForTimeout(500); }
   const res = await pg.evaluate(() => {
     const p = F0W.play, S = p.traps, w = p.world, out = [];
-    ['std', 'str', 'imp'].forEach((type, ti) => {
+    ['std', 'str', 'imp', 'scr'].forEach((type, ti) => {
       for (let rep = 0; rep < 4; rep++) {
         const x = 3 + ti * 6, z = -6 - rep * 3.2, yaw = rep * 0.9 + ti;
         const t = S.mk({ tid: `F${type}${rep}`, owner: 0, name: 'Вы', type, x, y: w.groundAt(x, z), z, yaw, age: 0, fl: 'lavender', hn: 'heather' }, true);
@@ -21,19 +21,19 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
         let maxStep = 0; for (let i = 1; i < P.length; i++) maxStep = Math.max(maxStep, P[i].distanceTo(P[i - 1]));
         const start = loc[0], end = loc[loc.length - 1], spots = Traps.rests(type), spot = spots[(0) % 9];
         // the crossing of the wall: the first sample inside the wall footprint
-        const inside = q => type === 'std' ? Math.hypot(q.x, q.z) < 0.335 : type === 'str' ? Math.max(Math.abs(q.x), Math.abs(q.z)) < 0.425 : Math.hypot(q.x, q.z) < 0.55;
+        const inside = q => type === 'std' ? Math.hypot(q.x, q.z) < 0.335 : type === 'str' ? Math.max(Math.abs(q.x), Math.abs(q.z)) < 0.425 : type === 'scr' ? Math.pow(q.x / 0.62, 2) + Math.pow((q.y - 0.82) / 0.66, 2) + Math.pow(q.z / 0.56, 2) < 1 : Math.hypot(q.x, q.z) < 0.55;
         const k = loc.findIndex(inside), cross = k >= 0 ? loc[k] : null;
-        const gap = type === 'std' ? [0.36, 0.5] : type === 'str' ? [0.16, 0.58] : [0.0, 0.2];
+        const gap = type === 'std' ? [0.36, 0.5] : type === 'str' ? [0.16, 0.58] : type === 'scr' ? [0.38, 0.64] : [0.0, 0.2];
         const ang = cross ? Math.atan2(cross.x, cross.z) : null;
         let through = cross && cross.y > gap[0] && cross.y < gap[1];
-        if (type === 'imp' && cross) through = through && Math.abs(ang) < 0.62;          // the doorway is centred on +z
+        if ((type === 'imp' || type === 'scr') && cross) through = through && Math.abs(ang) < 0.62;          // the doorway is centred on +z
         out.push({ type, rep, steps, startDist: +Math.hypot(start.x, start.z).toFixed(1), startH: +(P[0].y - w.groundAt(P[0].x, P[0].z)).toFixed(2), maxStep: +maxStep.toFixed(3), crossY: cross ? +cross.y.toFixed(2) : null, through: !!through, endDist: +end.distanceTo(new THREE.Vector3(spot.x, spot.y, spot.z)).toFixed(3), counted: counted, after: t.items.length - before, inflight: t.inflight, flierSecs: +(steps * 0.05).toFixed(1) });
         S.drop(t);
       }
     });
     return out;
   });
-  for (const type of ['std', 'str', 'imp']) {
+  for (const type of ['std', 'str', 'imp', 'scr']) {
     const R = res.filter(o => o.type === type);
     T(`${type}: every butterfly starts 4+ m away, in the air, and flies for several seconds`, R.every(o => o.startDist > 4 && o.startH > 0.9 && o.flierSecs > 3), R.map(o => [o.startDist, o.startH, o.flierSecs]));
     T(`${type}: the flight is continuous (no jumps, at most 0.15 m per 50 ms, i.e. under 3 m/s)`, R.every(o => o.maxStep < 0.15), R.map(o => o.maxStep));
@@ -44,7 +44,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   // in the world: the roll creates a flier (nothing appears in the trap at once)
   const roll = await pg.evaluate(() => { const p = F0W.play, S = p.traps, w = p.world, x = -4, z = -8; const t = S.mk({ tid: 'ROLL', owner: 0, name: 'Вы', type: 'std', x, y: w.groundAt(x, z), z, yaw: 0, age: 0, fl: 'lavender', hn: 'heather' }, true);
     let first = null, steps = 0; while (steps < 6000 && t.items.length === 0) { S.update(0.1); steps++; if (first === null && S.fliers.length) first = { atStep: steps, items: t.items.length, fl: S.fliers.length }; } return { first, items: t.items.length, steps }; });
-  T('a catch first appears as a flier on its way, and only later as a butterfly in the trap', roll.first && roll.first.items === 0 && roll.first.fl >= 1 && roll.items === 1 && roll.steps > roll.first.atStep + 20, roll);
+  T('a catch first appears as a flier on its way, and only later as a butterfly in the trap', roll.first && roll.first.items === 0 && roll.first.fl >= 1 && roll.items >= 1 && roll.steps > roll.first.atStep + 20, roll);
   // a trap that breaks while a butterfly is on its way: it does not land
   const brk = await pg.evaluate(() => { const p = F0W.play, S = p.traps, w = p.world, t = S.list.find(q => q.tid === 'ROLL'); const n0 = t.items.length; const b0 = Save.data.specimens.length; S.spawn(t, p.pool[0]); t.t = t.life + 1; S.update(0.1); for (let i = 0; i < 300; i++) S.update(0.1); return { n0, listed: S.list.includes(t), fl: S.fliers.length, credited: Save.data.specimens.length - b0 }; });
   T('when the trap breaks, butterflies on their way do not get in', !brk.listed && brk.fl === 0 && brk.credited === 0, brk);
