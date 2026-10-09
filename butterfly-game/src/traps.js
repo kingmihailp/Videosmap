@@ -320,7 +320,7 @@ const Traps = (() => {
     spot() { const P = this.play.player, w = this.world, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), x = P.pos.x + fx * 1.7, z = P.pos.z + fz * 1.7; if ((w.canWalk && !w.canWalk(x, z)) || (w.inWater && w.inWater(x, z, 0.6))) return null; if (w.slopeAt && w.slopeAt(x, z) > 0.55) return null;
       for (const c of w.colliders) if (Math.hypot(c.x - x, c.z - z) < c.r + 0.8) return null; if (Math.hypot(x, z) > w.R - 1.5) return null; return { x, z, y: w.groundAt(x, z), yaw: P.yaw + Math.PI }; }
     place(type) {
-      const P = this.play; if (!TYPES[type] || count('tr', type) < 1) return false; if (this.own().length >= 4) { P.toast('Не больше четырёх своих ловушек в одной локации', 3); Snd.sfx.deny(); return false; }
+      const P = this.play; if (!TYPES[type] || count('tr', type) < 1) return false;
       const s = this.spot(); if (!s) { P.toast('Здесь ловушку не поставить: нужна ровная свободная земля', 3); Snd.sfx.deny(); return false; }
       add('tr', type, -1); const tid = (Net.on && P.mp ? Net.id : 'L') + '-' + Date.now().toString(36) + (++this.seq);
       const t = this.mk({ tid, owner: Net.on ? Net.id : 0, name: Net.name || 'Вы', type, x: s.x, y: s.y, z: s.z, yaw: s.yaw, age: 0 }, true); this.send({ k: 'put', tid, type, x: +s.x.toFixed(2), y: +s.y.toFixed(2), z: +s.z.toFixed(2), yaw: +s.yaw.toFixed(2) });
@@ -415,7 +415,7 @@ const Traps = (() => {
       ctx.fillStyle = 'rgba(4,12,10,0.78)'; ctx.fillRect(0, 0, SW, SH);
       if (this.mode !== 'place' && this.t && !S.list.includes(this.t)) { UIK.panel(ctx, 90, 90, 300, 80, { fill: 'rgba(16,32,28,0.97)', border: '#e07060' }); T.draw(ctx, 'Ловушка сломалась', SW / 2, 104, { size: 10, align: 'c', color: '#e07060' }); T.para(ctx, 'Она исчезла вместе со всем, что в ней было.', 104, 126, 272, { size: 8, color: cl.text, lh: 10 }); UIK.btn(ctx, bs[0], hv(bs[0])); return; }
       if (this.mode === 'place') {
-        UIK.panel(ctx, 20, 14, 440, 242, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Поставить ловушку', SW / 2, 22, { size: 12, align: 'c', color: cl.gold }); T.draw(ctx, 'Она встанет перед вами. Не больше четырёх своих ловушек на локацию.', SW / 2, 40, { size: 8, align: 'c', color: cl.dim });
+        UIK.panel(ctx, 20, 14, 440, 242, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Поставить ловушку', SW / 2, 22, { size: 12, align: 'c', color: cl.gold }); T.draw(ctx, 'Она встанет перед вами.', SW / 2, 40, { size: 8, align: 'c', color: cl.dim });
         bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), h = hv(b); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n ? cl.gold : cl.line, shadow: false });
           T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ' · 1% аберрантов' : ''), b.x + 8, b.y + 17, { size: 8, color: cl.dim }); T.para(ctx, T0.desc, b.x + 8, b.y + 29, 300, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: n ? '#9af0a0' : '#c87060' }); });
         T.draw(ctx, this.msgT > 0 ? this.msg : 'Купить ловушки можно у торговца ловушками на рынке насекомых.', SW / 2, 238, { size: 8, align: 'c', color: this.msgT > 0 ? '#ffb070' : cl.dim });
