@@ -160,7 +160,7 @@ wss.on('connection', ws => {
       case 'trap': trapMsg(me, m); break;
       case 'sig': { const l = me.loc && locs.get(me.loc); if (!l || typeof m.h !== 'number') break; const mine = { seed: String(m.seed || '').slice(0, 24), h: m.h, by: me.name, id: me.id };
         l.sigs = l.sigs || new Map(); for (const [id, q] of l.sigs) if (!l.ids.has(id)) l.sigs.delete(id);
-        for (const q of l.sigs.values()) if (q.seed === mine.seed && q.h !== mine.h) { for (const to of [me, players.get(q.id)]) if (to) send(to, { t: 'desync', with: to === me ? q.by : mine.by }); console.log('terrain desync in', me.loc, mine.by, 'vs', q.by); }
+        for (const q of l.sigs.values()) if (q.id !== me.id && q.seed === mine.seed && q.h !== mine.h) { for (const to of [me, players.get(q.id)]) if (to) send(to, { t: 'desync', with: to === me ? q.by : mine.by }); console.log('terrain desync in', me.loc, mine.by, 'vs', q.by); }
         l.sigs.set(me.id, mine); break; }
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }
     }

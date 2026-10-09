@@ -20,6 +20,6 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   const B = await openOnline('Bob'); const rb = await go(B); ok(rb.screen === 'play', 'Bob (current build) enters', rb); await B.waitForTimeout(2500);
   await B.evaluate(() => { window.__des = []; Net.hooks.desync = m => window.__des.push(m.with); const p = F0W.play; Net.send('sig', { seed: String(p.seed), h: 12345 }); });
   let da = [], db = []; for (let i = 0; i < 20 && !(da.length && db.length); i++) { await A.waitForTimeout(300); da = await A.evaluate(() => window.__des); db = await B.evaluate(() => window.__des); }
-  ok(da.includes('Bob') && db.includes('Alice'), 'two clients with different ground for the same seed are both told', [da, db]);
+  ok(da.includes('Bob') && db.includes('Alice') && !db.includes('Bob'), 'two clients with different ground for the same seed are both told', [da, db]);
   await browser.close(); srv.kill(); console.log(bad ? 'FAILED ' + bad : 'ALL PASS'); process.exit(bad ? 1 : 0);
 })();
