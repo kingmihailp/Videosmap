@@ -240,6 +240,7 @@ class Play {
     // spawn the herd
     this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
     this.helperT = 40;
+    this.traps = new Traps.Sys(this); if (mp && mp.traps) for (const t of mp.traps) if (t.owner !== Net.id) this.traps.mk(t, false);
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
@@ -293,8 +294,9 @@ class Play {
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
     H.regenNo = m => me.toast((m && m.msg) || 'Здесь сейчас нельзя сменить местность', 3); H.voteNew = () => { me.toast('Голосование: Y — за, N — против', 4); Snd.sfx.click(); };
     H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
+    H.trap = m => me.traps.net(m);
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = H.trap = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
@@ -528,6 +530,7 @@ class Play {
     const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
     if (this.pickNear && !this.doorNear) { const s2 = this.pickNear.label, w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
+    if (this.traps && this.traps.near && !this.doorNear && !this.pickNear) { const s2 = this.traps.label(this.traps.near), w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: this.traps.near.mine ? c.gold : '#6a9a80' }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
     const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   Esc — пауза';
     if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
@@ -580,7 +583,7 @@ class Play {
     T.draw(ctx, this.biome.place, x + 4, y + 51, { size: 8, color: c.dim }); if (rare) T.draw(ctx, 'РЕДКАЯ ДОБЫЧА', x + w - 6, y + 51, { size: 8, align: 'r', color: Rare.col });
     ctx.globalAlpha = 1; ctx.restore();
   }
-  dispose() { Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
+  dispose() { if (this.traps) { this.traps.dispose(); this.traps = null; } Snd.stopAmbient(); this.unhookNet(); if (this.remotes) this.remotes.dispose(); this.world.dispose(); }
 }
 // each visit meets a different local fauna: 9 of the biome's species, favouring ones you have not caught yet
 Play.pickPool = (biome, rng, size = 9, shared = false) => {

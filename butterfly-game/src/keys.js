@@ -7,7 +7,7 @@ const Keys = (() => {
     { id: 'fwd', ru: 'Вперёд', def: ['KeyW'] }, { id: 'back', ru: 'Назад', def: ['KeyS'] }, { id: 'left', ru: 'Влево', def: ['KeyA'] }, { id: 'right', ru: 'Вправо', def: ['KeyD'] },
     { id: 'sprint', ru: 'Бег', def: ['ShiftLeft', 'ShiftRight'] }, { id: 'crouch', ru: 'Красться', def: ['ControlLeft', 'KeyC', 'ControlRight'] },
     { id: 'swing', ru: 'Взмах сачка (и ЛКМ)', def: ['Space'] }, { id: 'use', ru: 'Действие / войти', def: ['KeyE'] }, { id: 'journal', ru: 'Журнал', def: ['Tab'] },
-    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] }, { id: 'stash', ru: 'Склад', def: ['KeyI'] },
+    { id: 'sense', ru: 'Нюх', def: ['KeyH'] }, { id: 'trap', ru: 'Поставить ловушку', def: ['KeyG'] }, { id: 'torch', ru: 'Фонарь', def: ['KeyF'] }, { id: 'pause', ru: 'Пауза', def: ['KeyP'] }, { id: 'chat', ru: 'Чат (мультиплеер)', def: ['KeyT'] }, { id: 'stash', ru: 'Склад', def: ['KeyI'] },
   ];
   const SYM = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Пробел', Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', CapsLock: 'Caps',
     ShiftLeft: 'Shift (лев.)', ShiftRight: 'Shift (прав.)', ControlLeft: 'Ctrl (лев.)', ControlRight: 'Ctrl (прав.)', AltLeft: 'Alt (лев.)', AltRight: 'Alt (прав.)',

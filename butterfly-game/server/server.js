@@ -60,7 +60,7 @@ let nextId = 1;
 const players = new Map();                 // id -> { id, name, ws, loc, idx }
 const locs = new Map();                    // loc -> { ids:Set, host, flies:[], caught:Map(fid -> time), mod }
 const cabView = () => ({ specimens: state.specimens, boxes: state.boxes });
-function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null, lastFlies: 0, bridges: {} }; locs.set(name, l); } return l; }
+function getLoc(name) { let l = locs.get(name); if (!l) { l = { ids: new Set(), host: 0, flies: [], caught: new Map(), mod: null, lastFlies: 0, bridges: {}, traps: new Map() }; locs.set(name, l); } return l; }
 const send = (p, o) => { if (p.ws.readyState === 1) p.ws.send(JSON.stringify(o)); };
 const broadcast = (o, except) => { const s = JSON.stringify(o); for (const p of players.values()) if (p.id !== except && p.ws.readyState === 1) p.ws.send(s); };
 const toLoc = (name, o, except) => { const l = locs.get(name); if (!l) return; const s = JSON.stringify(o); for (const id of l.ids) { if (id === except) continue; const p = players.get(id); if (p && p.ws.readyState === 1) p.ws.send(s); } };
@@ -71,7 +71,7 @@ const sendPlist = () => broadcast({ t: 'plist', list: plist() });
 const VOTE_MS = 30000; let nextVote = 1;
 function voteEnd(name, l, ok, why) {
   const v = l.vote; if (!v) return; clearTimeout(v.timer); l.vote = null; toLoc(name, { t: 'voteEnd', vid: v.vid, ok, why });
-  if (ok) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.bridges = {}; console.log('new landscape:', name, state.seeds[name], '(vote)'); toLoc(name, { t: 'reseed', loc: name, seed: state.seeds[name] }); }
+  if (ok) { state.seeds[name] = rnd(); dirty = true; l.flies = []; l.caught.clear(); l.bridges = {}; l.traps = new Map(); console.log('new landscape:', name, state.seeds[name], '(vote)'); toLoc(name, { t: 'reseed', loc: name, seed: state.seeds[name] }); }
 }
 function voteCheck(name, l) {
   const v = l.vote; if (!v) return; if (!l.ids.size) { clearTimeout(v.timer); l.vote = null; return; }
@@ -80,22 +80,37 @@ function voteCheck(name, l) {
   toLoc(name, { t: 'voteUpd', vid: v.vid, yes, need: l.ids.size });
 }
 
+// butterfly traps stand in a location while their owner is there (nothing of their contents is known to the server: only the count, so nobody else can take it)
+const TRAP_LIFE = { std: 120, str: 360, imp: 240 }, MAX_TRAPS = 4;
+const trapView = (t, now) => ({ tid: t.tid, owner: t.owner, name: t.name, type: t.type, x: t.x, z: t.z, y: t.y, yaw: t.yaw, age: Math.round((now - t.at) / 1000), fl: t.fl, hn: t.hn, n: t.n });
+function trapMsg(me, m) {
+  const l = me.loc && locs.get(me.loc); if (!l || !BIOMES.includes(me.loc)) return; l.traps = l.traps || new Map();
+  const tid = String(m.tid || '').slice(0, 24); if (!tid) return; const t = l.traps.get(tid);
+  if (m.k === 'put') {
+    if (t || !TRAP_LIFE[m.type] || ![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return; let own = 0; for (const q of l.traps.values()) if (q.owner === me.id) own++; if (own >= MAX_TRAPS) return;
+    const n = { tid, owner: me.id, name: me.name, type: m.type, x: m.x, y: m.y, z: m.z, yaw: m.yaw, at: Date.now(), fl: '', hn: '', n: 0 }; l.traps.set(tid, n); toLoc(me.loc, { t: 'trap', k: 'put', trap: trapView(n, Date.now()) }, me.id);
+  } else if (t && t.owner === me.id) {             // only the owner changes or removes a trap
+    if (m.k === 'set') { t.fl = String(m.fl || '').slice(0, 24); t.hn = String(m.hn || '').slice(0, 24); toLoc(me.loc, { t: 'trap', k: 'set', tid, fl: t.fl, hn: t.hn }, me.id); }
+    else if (m.k === 'cnt') { t.n = Math.max(0, Math.min(40, m.n | 0)); toLoc(me.loc, { t: 'trap', k: 'cnt', tid, n: t.n }, me.id); }
+    else if (m.k === 'del') { l.traps.delete(tid); toLoc(me.loc, { t: 'trap', k: 'del', tid }, me.id); }
+  }
+}
 function leaveLoc(p) {
   if (!p.loc) return; const name = p.loc, l = locs.get(name); p.loc = null; if (!l) return;
-  l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id });
+  l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id }); if (l.traps) for (const [tid, t] of l.traps) if (t.owner === p.id) { l.traps.delete(tid); toLoc(name, { t: 'trap', k: 'del', tid }); }
   if (l.host === p.id) { l.host = l.ids.values().next().value || 0; l.lastFlies = Date.now() + 8000; if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
   if (l.vote) voteCheck(name, l);
-  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; }
+  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; l.traps = new Map(); }
 }
 function joinLoc(p, name) {
   if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && name !== 'museum' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
   // a biome nobody is in gets a brand-new landscape (and an empty butterfly population) whenever a player walks into it
-  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; }
+  if (!l.ids.size && BIOMES.includes(name)) { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; l.traps = new Map(); }
   if (l.vote) voteEnd(name, l, false, 'join');
   p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now() + 15000; }      // grace while its client builds the world
-  send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
+  send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, traps: [...(l.traps || new Map()).values()].map(t => trapView(t, Date.now())), players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
   toLoc(name, { t: 'pjoin', id: p.id, name: p.name }, p.id); sendPlist();
 }
 
@@ -137,6 +152,7 @@ wss.on('connection', ws => {
       case 'voteReply': { const l = me.loc && locs.get(me.loc); if (!l || !l.vote || l.vote.vid !== m.vid || !l.ids.has(me.id) || l.vote.yes.has(me.id) || l.vote.no.has(me.id)) break; (m.ok ? l.vote.yes : l.vote.no).add(me.id); voteCheck(me.loc, l); break; }
       case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else { send(me, { t: 'opNo', k: m.op && m.op.k, uid: m.op && m.op.uid }); send(me, { t: 'resync', cab: cabView() }); } break; }
       case 'bridge': { const l = me.loc && locs.get(me.loc); if (!l || me.loc !== 'vietnam' || !(Number.isInteger(m.i) && m.i >= 0 && m.i < 40) || (m.k !== 'shake' && m.k !== 'snap')) break; l.bridges = l.bridges || {}; if (l.bridges[m.i] === 'snap') break; l.bridges[m.i] = m.k; toLoc(me.loc, { t: 'bridge', i: m.i, k: m.k, by: me.id }, me.id); break; }     // a rope bridge started to shake / snapped: everybody in the location sees it, and a later visitor finds it as it is now
+      case 'trap': trapMsg(me, m); break;
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }
     }
   });

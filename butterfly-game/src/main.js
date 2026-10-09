@@ -96,7 +96,7 @@
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };
-    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges }), 40)).catch(netFail);
+    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges, traps: info.traps }), 40)).catch(netFail);
     else setTimeout(() => make(seed || params.get('seed') || undefined), 60);
   };
   Net.hooks.reseed = m => go(() => App.start(m.loc));
@@ -174,9 +174,10 @@
         if (e.code === 'Escape' && S.journal.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') closeJournal(); else if (e.code === 'ArrowLeft' && !e.repeat) { S.journal.tab = (S.journal.tab + visibleBiomes().length - 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowRight' && !e.repeat) { S.journal.tab = (S.journal.tab + 1) % visibleBiomes().length; S.journal.sel = 0; } else if (e.code === 'ArrowUp') S.journal.turn(-1); else if (e.code === 'ArrowDown') S.journal.turn(1); return;
       }
       if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
+      if (App.overlay === 'trap') { if (e.code === 'Escape' || e.code === 'KeyE' || e.code === 'KeyG') { Snd.sfx.page(); resume(); } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
-      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyE' && App.play.traps && App.play.traps.near) { Snd.sfx.page(); Traps.UI.openTrap(App.play, App.play.traps.near); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyG' && App.play.traps) { Snd.sfx.page(); Traps.UI.openPlace(App.play); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
@@ -197,6 +198,7 @@
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'trap') { const r = Traps.UI.click(x, y); if (r === 'close') { Snd.sfx.page(); resume(); } return; }
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
@@ -233,12 +235,13 @@
     if (sc === 'play' && App.play) {
       const p = App.play;
       const running = !App.overlay && (App.locked || App.noLock || App.lockWant);
+      if (p.traps) p.traps.update(Math.min(dt, 0.25));       // traps run on the clock even under a menu
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; if (p.mp) p.update(dt, IDLE_INP); }   // online the world goes on under a menu (the host must keep leading the butterflies)
       postMat.uniforms.edgeD.value = p.world && p.world.env && p.world.env.highland ? 90 : 380; renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'trap') { p.draw(ctx); Traps.UI.draw(ctx, t, mouse, dt); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
-      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop', 'collect', 'wings'].includes(cb.ov);
+      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop', 'collect', 'wings', 'goods'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
       if (!full) { postMat.uniforms.edgeD.value = 380; renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';

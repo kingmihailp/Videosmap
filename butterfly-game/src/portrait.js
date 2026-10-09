@@ -69,6 +69,33 @@ const Portrait = (() => {
       ctx.strokeStyle = '#d8a830'; ctx.lineWidth = 1; ctx.strokeRect(ox + 22.5, oy + 18.5, 6, 5); R(ctx, ox, oy, 24, 19, 2, 1, 'rgba(255,255,255,0.7)');                                   // monocle
       for (let k = 0; k < 14; k++) R(ctx, ox, oy, 28 + Math.min(4, k >> 1), 23 + k * 1, 1, 1, '#d8a830');                                                                              // its chain
     },
+    // the florist: a straw hat with a poppy, rosy cheeks, a green apron and a bunch of flowers
+    florist(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#c8d8a0'); R(ctx, ox, oy, 0, 30, 40, 18, '#b0c888'); for (let i = 0; i < 40; i += 8) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(60,100,40,0.12)');
+      R(ctx, ox, oy, 3, 37, 34, 11, '#e8e0d0'); R(ctx, ox, oy, 5, 35, 30, 3, '#e8e0d0'); R(ctx, ox, oy, 12, 38, 16, 10, '#4a8a4a'); R(ctx, ox, oy, 12, 38, 2, 10, '#3a7a3a'); R(ctx, ox, oy, 9, 36, 2, 12, '#4a8a4a'); R(ctx, ox, oy, 29, 36, 2, 12, '#4a8a4a');
+      for (const [fx, fy, col] of [[5, 40, '#e84a6a'], [8, 43, '#f0c030'], [31, 41, '#c070e0'], [34, 44, '#ffffff'], [29, 44, '#ff8a40'], [4, 45, '#ffffff']]) { R(ctx, ox, oy, fx, fy, 3, 3, col); R(ctx, ox, oy, fx + 1, fy + 1, 1, 1, '#f8e070'); R(ctx, ox, oy, fx + 1, fy + 3, 1, 4, '#3a7a30'); }
+      R(ctx, ox, oy, 8, 12, 5, 16, '#6a3a20'); R(ctx, ox, oy, 28, 12, 5, 16, '#6a3a20');                                                    // hair
+      head(ctx, ox, oy, { skin: '#f0cca4', light: '#f8e0c0', dark: '#d0a07a', blush: 'rgba(240,100,110,0.55)', brow: '#6a3a20', iris: '#4a8a5a', blink: o.blink }); mouth(ctx, ox, oy, { talk: o.talk });
+      R(ctx, ox, oy, 4, 11, 32, 3, '#d8b050'); R(ctx, ox, oy, 9, 4, 22, 8, '#e0c060'); R(ctx, ox, oy, 11, 4, 5, 6, '#f0d878'); R(ctx, ox, oy, 9, 9, 22, 2, '#c03030'); R(ctx, ox, oy, 5, 12, 30, 1, '#b8903c'); R(ctx, ox, oy, 24, 5, 5, 5, '#e03a3a'); R(ctx, ox, oy, 26, 7, 1, 1, '#2a2018');   // straw hat, ribbon, a poppy
+    },
+    // the beekeeper: a wide hat with a net veil, cream jacket, a jar of golden honey
+    beekeeper(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#e0c880'); R(ctx, ox, oy, 0, 30, 40, 18, '#d0b068'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(140,90,20,0.14)');
+      R(ctx, ox, oy, 2, 37, 36, 11, '#f0e8d0'); R(ctx, ox, oy, 5, 35, 30, 3, '#f0e8d0'); R(ctx, ox, oy, 2, 37, 3, 11, '#d8cfb4'); R(ctx, ox, oy, 35, 37, 3, 11, '#d8cfb4'); R(ctx, ox, oy, 19, 35, 2, 13, '#b8a888');
+      R(ctx, ox, oy, 22, 39, 12, 9, '#e8a020'); R(ctx, ox, oy, 22, 39, 12, 2, '#6a4a2a'); R(ctx, ox, oy, 24, 42, 3, 4, '#f8d060'); R(ctx, ox, oy, 23, 40, 10, 1, '#f8e8a0');                // the jar
+      head(ctx, ox, oy, { skin: '#e0b890', light: '#f0d0a8', dark: '#c09468', blush: 'rgba(210,100,80,0.3)', brow: '#7a5a3a', iris: '#6a5a3a', blink: o.blink }); mouth(ctx, ox, oy, { talk: o.talk });
+      ctx.fillStyle = 'rgba(240,240,230,0.3)'; ctx.fillRect(ox + 8, oy + 10, 24, 22); ctx.strokeStyle = 'rgba(60,60,50,0.5)'; ctx.lineWidth = 1; for (let i = 0; i < 24; i += 3) { ctx.beginPath(); ctx.moveTo(ox + 8 + i + 0.5, oy + 10); ctx.lineTo(ox + 8 + i + 0.5, oy + 32); ctx.stroke(); } for (let j = 0; j < 22; j += 3) { ctx.beginPath(); ctx.moveTo(ox + 8, oy + 10 + j + 0.5); ctx.lineTo(ox + 32, oy + 10 + j + 0.5); ctx.stroke(); }   // the veil
+      R(ctx, ox, oy, 2, 9, 36, 3, '#e8d8a0'); R(ctx, ox, oy, 10, 3, 20, 7, '#f0e4b0'); R(ctx, ox, oy, 12, 3, 5, 5, '#fff4d0'); R(ctx, ox, oy, 10, 8, 20, 2, '#a07838'); R(ctx, ox, oy, 2, 11, 36, 1, '#b8a470');   // the wide hat
+    },
+    // the trapper: a khaki pith helmet, a thick moustache, binoculars on the chest, a collapsible trap folded under the arm
+    trapper(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#b0c0a8'); R(ctx, ox, oy, 0, 30, 40, 18, '#9cb094'); for (let i = 0; i < 40; i += 8) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(50,80,50,0.12)');
+      R(ctx, ox, oy, 3, 37, 34, 11, '#8a7a4a'); R(ctx, ox, oy, 5, 35, 30, 3, '#8a7a4a'); R(ctx, ox, oy, 3, 37, 3, 11, '#6a5c34'); R(ctx, ox, oy, 34, 37, 3, 11, '#6a5c34'); R(ctx, ox, oy, 14, 35, 12, 13, '#e8e0c0'); R(ctx, ox, oy, 15, 38, 3, 10, '#6a5c34'); R(ctx, ox, oy, 22, 38, 3, 10, '#6a5c34');
+      R(ctx, ox, oy, 12, 40, 6, 5, '#2a2a30'); R(ctx, ox, oy, 22, 40, 6, 5, '#2a2a30'); R(ctx, ox, oy, 18, 41, 4, 2, '#3a3a40'); R(ctx, ox, oy, 13, 41, 2, 1, '#8a9aa8'); R(ctx, ox, oy, 23, 41, 2, 1, '#8a9aa8');       // binoculars
+      R(ctx, ox, oy, 31, 28, 6, 20, '#e8f0e0'); R(ctx, ox, oy, 31, 28, 1, 20, '#b8c8b0'); R(ctx, ox, oy, 36, 28, 1, 20, '#b8c8b0'); for (let j = 30; j < 46; j += 4) R(ctx, ox, oy, 31, j, 6, 1, '#b8c8b0');          // the folded net trap
+      head(ctx, ox, oy, { skin: '#d8a070', light: '#e8c090', dark: '#b88050', blush: 'rgba(200,90,70,0.3)', brow: '#4a3020', iris: '#3a5a3a', blink: o.blink }); mouth(ctx, ox, oy, { mustache: '#4a3020', talk: o.talk, stubble: true });
+      R(ctx, ox, oy, 6, 11, 28, 3, '#b8a068'); R(ctx, ox, oy, 9, 4, 22, 8, '#d0b880'); R(ctx, ox, oy, 11, 3, 18, 3, '#d8c48c'); R(ctx, ox, oy, 12, 5, 5, 5, '#e8d8a8'); R(ctx, ox, oy, 9, 10, 22, 2, '#5a4a2a'); R(ctx, ox, oy, 6, 13, 28, 1, '#8a7240');   // pith helmet with a band
+    },
     // the hooded trader: a deep hood with nothing but darkness inside, pale folded hands holding a glowing orb
     hooded(ctx, ox, oy, o) {
       R(ctx, ox, oy, 0, 0, 40, 48, '#2a2238'); R(ctx, ox, oy, 0, 30, 40, 18, '#1c1628'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(160,120,220,0.07)');

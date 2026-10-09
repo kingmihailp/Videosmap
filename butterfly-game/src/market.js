@@ -99,6 +99,7 @@ const Market = (() => {
     jars: { title: 'Медовщик', line: 'Гречишный мёд! Бабочки любят — и вы полюбите.', o: { hat: 'straw', body: '#c8a040', apron: '#f0e8d0' } },
     pins: { title: 'Булавочник', line: 'Булавки, расправилки, стёкла — всё для вашей коллекции.', o: { hat: 'cap', hatCol: '#3a3a4a', body: '#4a5a6a', apron: '#2a2a30', glasses: true } },
     collector: { title: 'Торговец коллекциями', line: 'Готовые рамки с бабочками? Несите, оценю. Чем стройнее подобрана коллекция — тем больше плачу.', o: { hat: 'top', body: '#2c3a2a', apron: '#7a2a2a', glasses: true } },
+    traps: { title: 'Торговец ловушками', line: 'Ловушки для дневных бабочек — как в полевых экспедициях. Нужна приманка: цветы и мёд продаются рядом.', o: { hat: 'cap', hatCol: '#b8a068', body: '#8a7a4a', apron: '#e8e0c0', glasses: false } },
     boxes: { title: 'Торговец коробками', line: sign => `«${sign}»: лучшие экземпляры — на витрине. А свои приносите к скупщику под красным навесом.`, o: { hat: 'scarf', hatCol: '#2f6fb0', body: '#e8e0d0' } },
   };
 
@@ -230,6 +231,7 @@ const Market = (() => {
         B.cyl(0.28, 0.23, 0.42, 0, y + 0.21, z, '#6a4a2a', 10); B.cyl(0.285, 0.285, 0.04, 0, y + 0.4, z, IRON, 10);
         for (let i = -2; i <= 2; i++) { const outer = new THREE.Group(); outer.position.set(i * 0.1, y + 0.12, z); outer.rotation.z = -i * 0.14; const nm = makeNetModel(); nm.roll.rotation.z = (i % 2 ? Math.PI / 2 : -Math.PI / 2); nm.g.rotation.x = Math.PI / 2; nm.g.scale.setScalar(0.6); nm.g.traverse(o => { o.castShadow = true; o.frustumCulled = false; }); outer.add(nm.g); g.add(outer); }
         B.box(w - 0.3, 0.04, 0.3, 0, y + 0.02, z + 0.38, '#c8b078'); for (let i = 0; i < 3; i++) B.box(0.25, 0.14, 0.25, -w / 2 + 0.5 + i * 0.4, y + 0.09, z + 0.38, ['#e8d890', '#d8b0a0', '#b8d0c0'][i]); }
+      else if (kind === 'traps') { ['std', 'str', 'imp'].forEach((tp, i) => { const m = Traps.model(tp, {}); m.scale.setScalar(0.3); m.position.set(-w / 2 + 0.55 + i * (w - 1.1) / 2, y, z); m.rotation.y = 0.3 - i * 0.25; g.add(m); }); }
       else if (kind === 'jars') { for (let i = 0; i < Math.floor(w / 0.4); i++) { const x = -w / 2 + 0.3 + i * 0.4; B.cyl(0.1, 0.1, 0.22, x, y + 0.11, z + (i % 2) * 0.15, '#e0a030', 8); B.cyl(0.105, 0.105, 0.04, x, y + 0.24, z + (i % 2) * 0.15, '#6a4a2a', 8); } }
       else if (kind === 'books') { for (let i = 0; i < 14; i++) { const x = -w / 2 + 0.2 + i * (w - 0.4) / 14; B.box(0.1, 0.28 + (i % 3) * 0.04, 0.2, x, y + 0.16, z, ['#8a2a3a', '#2a5a8a', '#3a7a4a', '#c8a040', '#6a3a7a'][i % 5]); } }
       else if (kind === 'tea') { for (let i = 0; i < 2; i++) { const x = -w / 4 + i * w / 2; B.cyl(0.2, 0.26, 0.5, x, y + 0.25, z, '#c8a040', 10); B.cyl(0.14, 0.2, 0.14, x, y + 0.56, z, '#c8a040', 10); B.cyl(0.04, 0.04, 0.1, x, y + 0.68, z, '#2a2018', 6); } for (let i = 0; i < 5; i++) B.cyl(0.07, 0.05, 0.1, -w / 2 + 0.4 + i * 0.3, y + 0.05, z + 0.3, '#f0f0e8', 8); }
@@ -249,7 +251,7 @@ const Market = (() => {
         else this.goods(kind, g, w - 0.4, 0.96, 0.27);
         if (o.sign) { const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.4), new THREE.MeshLambertMaterial({ map: signTex(o.sign, 96, 26, '#3a2414', '#f0d890', '#c8a040') })); sg.position.set(0, 1.96, pz + 0.19); g.add(sg); }
         if (!o.nocrate) this.crates(g, w / 2 + 0.55, -0.1, 3);
-        this.vendor(g, 0, -0.5, kind, o.sign);
+        this.vendor(g, 0, -0.5, kind, o.sign, o.shop);
         for (const sx of [-1, 1]) { B.box(0.3, 0.04, 0.04, sx * (w / 2 + 0.1), 2.13, pz, DWOOD); this.lamp(sx * (w / 2 + 0.22), 1.867, pz, 0.11, null, 0.1); }
       });
     }
@@ -334,10 +336,11 @@ const Market = (() => {
       });
       this.stations.push({ id: 'sell', x: x + Math.sin(ry) * 1.6 + 0.0, z: z + Math.cos(ry) * 1.6, r: 2.4, label: () => 'E — продать бабочек торговцу' });
     }
-    vendor(g, x, z, key, sign) {
+    vendor(g, x, z, key, sign, shop) {
       const pr = PROF[key] || PROF.boxes, p = person(Object.assign({ skin: this.rng.pick(['#e8c8a0', '#d8a878', '#c8946a']) }, pr.o)); p.position.set(x, 0, z); p.rotation.y = Math.PI; p.userData.ph = this.rng.range(0, 6); g.add(p); this.vendors.push(p);
       const line = typeof pr.line === 'function' ? pr.line(sign || 'Коллекции') : pr.line; const wp = new THREE.Vector3(); g.updateMatrixWorld(true); p.getWorldPosition(wp);
       if (key === 'collector') { const ns = nameSprite('Торговец коллекциями', '#a8e8b0'); ns.position.set(x, 2.3, z); g.add(ns); }
+      if (shop) { this.stations.push({ id: 'goods', kind: shop, x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, label: () => `E — ${pr.title.toLowerCase()}: купить` }); return; }
       this.stations.push({ id: key === 'nets' ? 'netshop' : key === 'collector' ? 'collect' : 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => key === 'nets' ? 'E — купить детали для сачков' : key === 'collector' ? 'E — продать рамку торговцу коллекциями' : `E — поговорить: ${pr.title}` });
     }
 
@@ -350,11 +353,11 @@ const Market = (() => {
     buildStalls() {
       const W = (t, s, w, a, o) => this.wallStall(t, s, w, a, o);
       // main street, north side (backs against the houses at z = -4)
-      W('table', 'N', -4, -24.4, { goods: 'flowers', ci: 2, sign: 'Цветы' }); W('kiosk', 'N', -4, -19.6, { ci: 0, pal: 1, sign: 'Парусники' }); this.stallMerchant(-6.2, -4 + 1.15, 0);
+      W('table', 'N', -4, -24.4, { goods: 'flowers', ci: 2, sign: 'Цветы', shop: 'fl' }); W('kiosk', 'N', -4, -19.6, { ci: 0, pal: 1, sign: 'Парусники' }); this.stallMerchant(-6.2, -4 + 1.15, 0);
       W('table', 'N', -4, -0.5, { ci: 3, sign: 'Нимфалиды' }); W('cart', 'N', -4, 4.4, { ci: 4, sign: 'Бабочки в коробках' }); W('table', 'N', -4, 8.6, { ci: 5, sign: 'Голубянки' });
       // main street, south side
       W('table', 'S', 4, -18, { goods: 'nets', ci: 1, sign: 'Сачки' }); W('kiosk', 'S', 4, -12.5, { ci: 1, pal: 2, sign: 'Тропики' }); W('table', 'S', 4, -6, { goods: 'books', ci: 4, sign: 'Книги' }); W('table', 'S', 4, -2.2, { goods: 'tea', ci: 6, sign: 'Чай' });
-      W('table', 'S', 4, 6.4, { goods: 'jars', ci: 0, sign: 'Мёд' }); W('cart', 'S', 4, 10.6, { ci: 2, sign: 'Коллекции' }); W('table', 'S', 4, 14.2, { ci: 3, sign: 'Африка' });
+      W('table', 'S', 4, 6.4, { goods: 'jars', ci: 0, sign: 'Мёд', shop: 'hn' }); W('table', 'S', 4, 10.6, { goods: 'traps', ci: 2, sign: 'Ловушки', shop: 'tr' }); W('table', 'S', 4, 14.2, { ci: 3, sign: 'Африка' });
       // the alleys are 4 m wide: stalls alternate between the two walls (never opposite each other) so a zig-zag path stays open all the way to the plaza
       // first alley (north, x -16..-12)
       W('table', 'W', -16, -6.8, { ci: 1, sign: 'Альпы' }); W('table', 'E', -12, -11.6, { goods: 'pins', ci: 3, sign: 'Булавки' }); W('kiosk', 'W', -16, -16.2, { ci: 5, pal: 4, sign: 'Ночные' }); W('table', 'E', -12, -20.6, { goods: 'flowers', ci: 5, sign: 'Букеты' }); this.stallShelves(-15.45, -21.6, Math.PI / 2, { sign: 'Мотыльки' });
@@ -599,6 +602,7 @@ const Market = (() => {
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'sell') { Snd.sfx.page(); this.open('sell'); }
+      else if (s.id === 'goods') { Snd.sfx.page(); this.open('goods'); this.goodsOpen(s.kind); }
       else if (s.id === 'collect') { Snd.sfx.page(); this.open('collect'); }
       else if (s.id === 'netshop') { Snd.sfx.page(); this.open('shop'); }
       else if (s.id === 'strange') { Snd.sfx.page(); this.openTalk('strange'); }
@@ -616,6 +620,7 @@ const Market = (() => {
       if (ov === 'code') { if (e.code === 'Escape') this.close(); else if (Secret.lock.key(e) === 'ok') this.codeCloseT = 1.5; return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
       if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
+      if (ov === 'goods') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.goodsMove(-1); else if (e.code === 'ArrowDown') this.goodsMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.goodsBuy(); return; }
       if (ov === 'collect') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.collMove(-1); else if (e.code === 'ArrowDown') this.collMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.collSell(); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
@@ -625,12 +630,13 @@ const Market = (() => {
       else if (ov === 'help') this.closeHelp();
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'sell') this.sellClick(x, y);
+      else if (ov === 'goods') this.goodsClick(x, y);
       else if (ov === 'collect') this.collClick(x, y);
       else if (ov === 'shop') this.shopClick(x, y);
       else if (ov === 'code') { if (Secret.lock.click(x, y) === 'ok') this.codeCloseT = 1.5; }
       else if (ov === 'talk') this.talkNext();
     }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'collect') this.collMove(dy > 0 ? 1 : -1); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'goods') this.goodsMove(dy > 0 ? 1 : -1); else if (this.ov === 'collect') this.collMove(dy > 0 ? 1 : -1); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
     pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
@@ -757,6 +763,54 @@ const Market = (() => {
       UIK.btn(ctx, L.sellBtn, !L.sellBtn.disabled && UIK.hit(L.sellBtn, m.x, m.y));
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
+    // ------------------------------------------------------------ the three traders of the trap trade: flowers (scent), honey (rarity) and the traps themselves
+    goodsOpen(kind) {
+      const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, а потом забирайте улов (E).' };
+      this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
+    }
+    goodsList() { return Traps.KINDS[this.gd.kind].list; }
+    goodsMove(d) { const G = this.gd, n = this.goodsList().length; G.sel = clamp(G.sel + d, 0, n - 1); if (G.sel < G.scroll) G.scroll = G.sel; if (G.sel >= G.scroll + 6) G.scroll = G.sel - 5; Snd.sfx.page(); }
+    goodsBuy() {
+      const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(G.kind, it.id);
+      if (got) { G.msg = G.kind === 'tr' ? 'Хороший выбор! Не забудьте приманку.' : ['Свежайшее!', 'Берите, не пожалеете.', 'Отличный выбор для приманки.'][(Math.random() * 3) | 0]; G.last = -got; G.flash = 0.8; Snd.sfx.coin(); }
+      else { G.msg = 'Не хватает монет. Продайте бабочек или рамку коллекционеру.'; Snd.sfx.deny(); } G.msgT = 5;
+    }
+    goodsLayout() {
+      const G = this.gd, list = this.goodsList(), rows = []; for (let k = 0; k < 6; k++) { const i = G.scroll + k; if (i >= list.length) break; rows.push({ id: 'row', i, x: 8, y: 44 + k * 35, w: 226, h: 33 }); }
+      return { rows, buy: { id: 'buy', label: 'Купить', x: 244, y: 232, w: 110, h: 18 }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 }, up: { id: 'up', label: '^', x: 176, y: 252, w: 26, h: 12 }, dn: { id: 'dn', label: 'v', x: 206, y: 252, w: 26, h: 12 } };
+    }
+    goodsClick(x, y) {
+      const G = this.gd, L = this.goodsLayout(); if (UIK.hit(L.closeBtn, x, y)) { Snd.sfx.page(); this.close(); return; }
+      const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { if (G.sel !== r.i) { G.sel = r.i; Snd.sfx.click(); } else this.goodsBuy(); return; }
+      if (UIK.hit(L.buy, x, y)) this.goodsBuy(); else if (UIK.hit(L.up, x, y)) this.goodsMove(-1); else if (UIK.hit(L.dn, x, y)) this.goodsMove(1);
+    }
+    goodsIcon(ctx, kind, it, x, y, k) { if (kind === 'fl') Traps.drawFlower(ctx, x, y, it, k); else if (kind === 'hn') Traps.drawJar(ctx, x, y, it, k); else { if (!this.trapThumb) this.trapThumb = {}; const g = this.trapThumb[it.id] || (this.trapThumb[it.id] = Traps.model(it.id, {})); Traps.UI.preview(ctx, { group: g }, this.t * 0.7, x, y, Math.round(k * 0.67), k); } }
+    drawGoods(ctx, t, m, dt) {
+      const G = this.gd, K = G.kind, list = this.goodsList(), L = this.goodsLayout(), it = list[G.sel]; G.msgT = Math.max(0, G.msgT - dt); G.flash = Math.max(0, G.flash - dt);
+      const title = { fl: 'Цветы', hn: 'Мёд', tr: 'Ловушки для бабочек' }[K], por = { fl: 'florist', hn: 'beekeeper', tr: 'trapper' }[K];
+      ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
+      T.draw(ctx, title, 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите товар и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim }); T.draw(ctx, G.who, 8, 32, { size: 8, color: c.dim });
+      this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
+      UIK.panel(ctx, 6, 42, 230, 212, { fill: '#2a2018', border: '#5a4430', shadow: false });
+      L.rows.forEach(r => { const q = list[r.i], on = r.i === G.sel, hv = UIK.hit(r, m.x, m.y), own = Traps.count(K, q.id); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        ctx.fillStyle = '#16100c'; ctx.fillRect(r.x + 2, r.y + 2, 32, 29); this.goodsIcon(ctx, K, q, r.x + (K === 'tr' ? 8 : 4), r.y + (K === 'tr' ? 2 : 5), K === 'tr' ? 29 : 1.8);
+        T.draw(ctx, fitTxt(q.ru, 150), r.x + 38, r.y + 4, { size: 8, color: '#f0e8d0' }); const sub = K === 'fl' ? `запах: ${Traps.SCENT[q.scent]}` : K === 'hn' ? `качество: ${Traps.QUAL[q.q]}` : `служит ${Traps.mmss(q.life)} · вмещает ${q.cap}`; T.draw(ctx, fitTxt(sub, 150), r.x + 38, r.y + 15, { size: 8, color: '#9ac88a' });
+        if (own) T.draw(ctx, `есть: ${own}`, r.x + 38, r.y + 24, { size: 8, color: c.dim }); this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 4); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 4, { size: 8, align: 'r', color: c.gold }); });
+      if (list.length > 6) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${G.sel + 1}/${list.length}`, 12, 255, { size: 8, color: c.dim }); }
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, por, 247, 43, t, G.msgT > 0); T.para(ctx, G.msg, 294, 44, 176, { size: 8, color: '#2a1a0c', lh: 9 });
+      UIK.panel(ctx, 240, 98, 234, 130, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
+      if (it) {
+        ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 62, 62); this.goodsIcon(ctx, K, it, K === 'tr' ? 265 : 250, K === 'tr' ? 103 : 108, K === 'tr' ? 60 : 3.4);
+        T.draw(ctx, fitTxt(it.ru, 160), 312, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, fitTxt(it.la || it.real || '', 160), 312, 114, { size: 8, color: '#8a2a1a' });
+        if (K === 'fl') { T.draw(ctx, `Запах: ${it.scent} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `≈ ${(1.1 * it.scent).toFixed(1)} бабочек/мин`, 312, 137, { size: 8, color: '#4a3a20' }); }
+        else if (K === 'hn') { T.draw(ctx, `Качество: ${it.q} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `редкие гости до ×${Traps.rarK(it.id, 3).toFixed(1)}`, 312, 137, { size: 8, color: '#4a3a20' }); }
+        else { T.draw(ctx, `Служит ${Traps.mmss(it.life)}`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `Вмещает ${it.cap} бабочек`, 312, 137, { size: 8, color: '#4a3a20' }); }
+        T.para(ctx, it.desc, 248, 170, 222, { size: 8, color: '#4a3a20', lh: 9 });
+        ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 212, 222, 1); T.draw(ctx, 'Цена', 248, 215, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 216); T.draw(ctx, String(it.price), 466, 215, { size: 8, align: 'r', color: '#8a5a10' });
+      }
+      UIK.btn(ctx, L.buy, UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, it ? `у вас: ${Traps.count(K, it.id)}` : '', 372, 237, { size: 8, color: c.dim });
+      if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash * 2); T.draw(ctx, String(G.last), SW - 8, 40 - (0.8 - G.flash) * 8, { size: 10, align: 'r', color: '#ff9070', shadow: '#000' }); ctx.globalAlpha = 1; }
+    }
     // ------------------------------------------------------------ the net seller: parts for nets
     shopOpen() { this.shop = { tab: 0, sel: 0, msg: 'Всё для настоящего сачка! Собрать его можно на верстаке в кабинете.', msgT: 5, flash: 0, last: 0 }; }
     shopList() { const slot = NetParts.SLOTS[this.shop.tab].id; return NetParts.SHOP.filter(id => NetParts.PARTS[id].slot === slot).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); }
@@ -808,6 +862,7 @@ const Market = (() => {
     draw(ctx, t, m, dt) {
       const ov = this.ov;
       if (ov === 'sell') return this.drawSell(ctx, t, m, dt);
+      if (ov === 'goods') return this.drawGoods(ctx, t, m, dt);
       if (ov === 'collect') return this.drawColl(ctx, t, m, dt);
       if (ov === 'shop') return this.drawShop(ctx, t, m, dt);
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
