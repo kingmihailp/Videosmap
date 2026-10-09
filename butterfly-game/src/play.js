@@ -463,7 +463,9 @@ class Play {
     const speedNow = moved / Math.max(dt, 1e-4); w.pstate = { speed: speedNow, sprint };
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
     const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
-    const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : 0.7) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
+    // after a run the steps stay heavy for a while: walking is louder (4 bars on the meter) than ordinary walking (3 bars)
+    P.tired = sprint && speedNow > 2 ? 6 : Math.max(0, (P.tired || 0) - dt);
+    const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : P.tired > 0 ? 0.8 : 0.6) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
     P.swingNoise = Math.max(0, P.swingNoise - dt * 1.2); P.noise = damp(P.noise, targetNoise + P.swingNoise, 5, dt);
     P.pos.y = P.y + Math.sin(P.bob) * 0.035 * Math.min(1, speedNow / 3);
     this.camera.position.copy(P.pos); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
