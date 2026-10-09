@@ -246,9 +246,12 @@ const Traps = (() => {
   }
   // a worn-out trap: the body sags and leans, the net hangs torn (everything stays on its place so nothing floats)
   function setBroken(g, b) { const t = g.userData.top; t.scale.set(1, b ? 0.72 : 1, 1); t.rotation.z = b ? 0.12 : 0; t.position.y = 0; g.userData.broken = b; }
-  function sprite(text, col = '#f0f0dc') {
-    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 24; const x = cv.getContext('2d'); x.font = 'bold 14px sans-serif'; x.textAlign = 'center'; x.fillStyle = 'rgba(16,28,24,0.7)'; x.fillRect(0, 0, 128, 24); x.fillStyle = col; x.fillText(text.slice(0, 18), 64, 17);
-    const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true })); s.scale.set(1.2, 0.225, 1); s.renderOrder = 9; return s;
+  // the label above a trap: its name and «сломается в m:ss» (redrawn when the text changes)
+  function sprite(l1, l2, col = '#f0f0dc') {
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const x = cv.getContext('2d'), t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true })); s.scale.set(2.6, 0.65, 1); s.renderOrder = 9;
+    s.userData.set = (a, b, c2, warn) => { const key = a + '|' + b + '|' + warn; if (s.userData.key === key) return; s.userData.key = key; x.clearRect(0, 0, 256, 64); x.fillStyle = 'rgba(16,28,24,0.85)'; x.fillRect(0, 0, 256, 64); x.strokeStyle = warn ? '#e07060' : '#8abaa0'; x.lineWidth = 3; x.strokeRect(1.5, 1.5, 253, 61); x.font = 'bold 21px sans-serif'; x.textAlign = 'center'; x.fillStyle = c2; x.fillText(a.slice(0, 24), 128, 25); x.fillStyle = warn ? '#ff9a80' : '#ffe9a0'; x.fillText(b, 128, 52); t.needsUpdate = true; };
+    s.userData.set(l1, l2, col, false); return s;
   }
   const specCol = sp => { const b = SPECIES_BY_ID[sp.base] || sp; const a = b.art; const h = a && ((a.f && a.f[0]) || (a.h && a.h[0])); return typeof h === 'string' && h[0] === '#' ? h : '#e8a030'; };
 
@@ -300,7 +303,7 @@ const Traps = (() => {
       if (t.group) { this.group.remove(t.group); t.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
       const cols = t.mine ? t.items.slice(0, 9).map(specCol) : Array.from({ length: Math.min(9, t.n) }, (_, i) => ['#e8a030', '#6a9ae0', '#f0f0e0', '#d05a5a', '#8ad060'][i % 5]);
       const g = model(t.type, { fl: t.fl, hn: t.hn, n: t.mine ? t.items.length : t.n, cols, broken: t.broken }); g.position.set(t.x, t.y, t.z); g.rotation.y = t.yaw; this.group.add(g); t.group = g; t.dirty = false;
-      if (!t.label) { t.label = sprite(t.mine ? TYPES[t.type].ru : t.name, t.mine ? '#f0e8c0' : '#9ae0b0'); t.label.position.set(t.x, t.y + 2.4, t.z); this.group.add(t.label); }
+      if (!t.label) { t.label = sprite(t.mine ? TYPES[t.type].ru : t.name, 'сломается в ' + mmss(t.life - t.t), t.mine ? '#f0e8c0' : '#9ae0b0'); t.label.position.set(t.x, t.y + 2.4, t.z); this.group.add(t.label); }
     }
     net(m) {      // a message from the server about somebody else's trap
       if (m.k === 'put') { if (m.trap && !this.list.some(t => t.tid === m.trap.tid)) this.mk(m.trap, false); }
@@ -328,7 +331,7 @@ const Traps = (() => {
     update(dt) {
       this.flyAll(dt); this.near = this.play.entering ? null : this.nearest(); const tt = this.play.t;
       for (const t of this.list.slice()) {
-        t.t += dt;
+        t.t += dt; if (t.label) { const left = Math.max(0, t.life - t.t); t.label.userData.set(t.mine ? TYPES[t.type].ru : t.name, 'сломается в ' + mmss(left), t.mine ? '#f0e8c0' : '#9ae0b0', left < 20); }
         if (t.t >= t.life) { this.expire(t); continue; }
         if (t.mine && !t.broken && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
           const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.pool, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }

@@ -562,10 +562,10 @@ class Play {
     if (!best) return; const q = best.pos.clone().project(this.camera); const behind = q.z > 1; let sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (behind) { sx = SW - sx; sy = SH - 30; }
     const m = 14; const inside = sx > m && sx < SW - m && sy > m && sy < SH - m && !behind; sx = clamp(sx, m, SW - m); sy = clamp(sy, m + 30, SH - m - 22);
     const a = Math.atan2(sy - SH / 2, sx - SW / 2); const pulse = 0.6 + 0.4 * Math.sin(this.t * 5);
-    ctx.globalAlpha = pulse; ctx.fillStyle = UIK.col.gold;
+    ctx.globalAlpha = pulse; ctx.fillStyle = '#4aa8ff';
     if (inside) { ctx.fillRect(sx - 7, sy - 9, 3, 1); ctx.fillRect(sx + 4, sy - 9, 3, 1); ctx.fillRect(sx - 7, sy + 9, 3, 1); ctx.fillRect(sx + 4, sy + 9, 3, 1); ctx.fillRect(sx - 8, sy - 8, 1, 3); ctx.fillRect(sx + 7, sy - 8, 1, 3); ctx.fillRect(sx - 8, sy + 6, 1, 3); ctx.fillRect(sx + 7, sy + 6, 1, 3); }
     else { ctx.save(); ctx.translate(sx, sy); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -5); ctx.lineTo(-2, 0); ctx.lineTo(-4, 5); ctx.closePath(); ctx.fill(); ctx.restore(); }
-    ctx.globalAlpha = 1; T.draw(ctx, `${Math.round(bd)} м`, sx, sy + 11, { size: 8, align: 'c', color: UIK.col.gold, shadow: '#000' });
+    ctx.globalAlpha = 1; T.draw(ctx, `${Math.round(bd)} м`, sx, sy + 11, { size: 8, align: 'c', color: '#7ac4ff', shadow: '#000' });
   }
   // position / scale of the catch card (top-left, below the player list by default; the player can move and scale it in the pause menu)
   cardPos() {

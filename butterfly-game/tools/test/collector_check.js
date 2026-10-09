@@ -30,7 +30,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   });
   T('frame price by size: 100 / 200 / 300', p.frames.S === 100 && p.frames.M === 200 && p.frames.L === 300, p.frames);
   T('total = frame + butterflies + bonus', p.same.total === p.same.frame + p.same.sum + p.same.bonus && p.same.sum === p.sumCheck, p.same);
-  T('one family in a row gives a bonus of 400..1000, a mixed frame none', p.same.bonus >= 400 && p.same.bonus <= 1000 && p.mixed.bonus === 0, [p.same, p.mixed]);
+  T('a family in a row gives a bonus (at least 400 per pattern), a mixed frame none', p.same.bonus >= 400 && p.mixed.bonus === 0, [p.same, p.mixed]);
   T('spread butterflies are worth more than raw ones', p.spread > p.raw, [p.raw, p.spread]);
   T('a half-empty large frame earns no collection bonus (needs at least half filled)', p.L.frame === 300 && p.L.bonus === 0 && p.L.total === 300 + p.L.sum, p.L);
   // themes: aberrants only, one location, one species, ordering matters
@@ -48,6 +48,13 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   T('one location → bonus, four different locations → no location bonus', q.biome.bonus >= 400 && q.biome.found.includes('biome') && !q.mixB.found.includes('biome'), [q.biome, q.mixB]);
   T('one species four times → bonus', q.oneSp.bonus >= 400 && q.oneSp.found.includes('species'), q.oneSp);
   T('order matters: the same butterflies in a row earn more than alternating ones', q.alt.bonus < q.biome.bonus, [q.alt, q.biome]);
+  // every pattern is paid, not only the first one: four aberrants of one location and one family
+  const mt = await pg.evaluate(() => {
+    const fam = {}; for (const s of SPECIES) { if (s.mystery || s.ab || s.biome === 'ocean' || !Aberr.eligible(s)) continue; const k = s.biome + '|' + s.fam; (fam[k] = fam[k] || []).push(s); }
+    const pickList = Object.values(fam).sort((a, b) => b.length - a.length)[0].slice(0, 4); const b = Save.addBox('S', 0); pickList.forEach((sp, i) => { const ab = Aberr.make(sp, 'ABCDE'); Save.add(ab.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 80; s.box = b.uid; b.items[i] = s.uid; });
+    const r = Collection.info(b); return { n: r.n, ids: r.themes.map(t => t.id), bonuses: r.themes.map(t => t.bonus), bonus: r.bonus, sum: r.themes.reduce((a, t) => a + t.bonus, 0), total: r.total, parts: r.frame + r.sum + r.bonus };
+  });
+  T('aberrants of one location and one family: the aberration, location and family patterns are all counted and their bonuses add up', mt.n === 4 && ['aberr', 'biome', 'family'].every(x => mt.ids.includes(x)) && mt.bonus === mt.sum && mt.bonus >= 1200 && mt.total === mt.parts, mt);
   // ---- selling a frame: the butterflies and the box go, the coins come
   const s1 = await pg.evaluate(uid => { const c0 = Save.data.coins, inf = Collection.info(Save.box(uid)); const got = Save.sellBox(uid); return { got, exp: inf.total, d: Save.data.coins - c0, box: !!Save.box(uid), left: Save.data.specimens.some(s => s.box === uid) }; }, p.uid);
   T('selling a frame pays its price and removes the box with its butterflies', s1.got === s1.exp && s1.d === s1.exp && !s1.box && !s1.left, s1);

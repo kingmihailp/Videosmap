@@ -34,9 +34,10 @@ const Collection = (() => {
       }
     }
     found.sort((a, b) => b.strength - a.strength);
-    let strength = 0, bonus = 0, theme = null;
-    if (found.length) { theme = found[0]; strength = clamp(found[0].strength + 0.12 * found.slice(1).filter(f => f.strength > 0.3).length); const fillK = 0.6 + 0.4 * (n / cap); bonus = Math.round((BONUS_MIN + (BONUS_MAX - BONUS_MIN) * clamp(strength * fillK)) / 10) * 10; }
-    return { n, cap, frame, rows, sum, theme, found, bonus, total: frame + sum + bonus, need };
+    // every pattern that holds is paid on its own (400-1000 each, by how clean it is and how full the frame is), and the bonuses add up
+    const fillK = 0.6 + 0.4 * (n / cap), themes = found.map(f => Object.assign({}, f, { bonus: Math.round((BONUS_MIN + (BONUS_MAX - BONUS_MIN) * clamp(f.strength * fillK)) / 10) * 10 }));
+    const bonus = themes.reduce((a, f) => a + f.bonus, 0), theme = themes[0] || null;
+    return { n, cap, frame, rows, sum, theme, themes, found, bonus, total: frame + sum + bonus, need };
   }
   return { FRAME, RARE_K, info, colourOf, purity };
 })();

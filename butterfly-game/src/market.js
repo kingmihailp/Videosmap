@@ -716,7 +716,7 @@ const Market = (() => {
       if (e.wing) { const r = Wings.sell(); if (!r) return; S.msg = 'Крылья путеводной бабочки... со всех концов света! Вот ваша карта океана — и ' + r.coins + ' монет за рамку. Берегите себя там, за горизонтом.'; S.msgT = 9; S.flash = 0.8; S.last = r.coins; Snd.sfx.reward(); this.toast('Получена карта океана! Она открыта на карте мира.', 6); this.collRefresh(); return; }
       if (e.inf.n >= 3 && e.inf.rows.some(r => r.ab || r.rare) && S.confirm !== e.box.uid) { S.confirm = e.box.uid; S.confirmT = 4; S.msg = 'В рамке аберранты или редчайшие находки! Уверены? Нажмите «Продать» ещё раз.'; S.msgT = 4; Snd.sfx.deny(); return; }
       S.confirm = 0; const p = Save.sellBox(e.box.uid); if (!p) return;
-      S.msg = e.inf.theme ? `Прекрасно подобрано: ${e.inf.theme.name}! Держите ${p} монет.` : `Беру. ${p} монет. Соберёте её по какому-нибудь признаку — заплачу больше.`; S.msgT = 6; S.flash = 0.8; S.last = p; Snd.sfx.reward(); this.collRefresh();
+      S.msg = e.inf.themes.length ? `Прекрасно подобрано (закономерностей: ${e.inf.themes.length})! Держите ${p} монет.` : `Беру. ${p} монет. Соберёте её по какому-нибудь признаку — заплачу больше.`; S.msgT = 6; S.flash = 0.8; S.last = p; Snd.sfx.reward(); this.collRefresh();
     }
     collLayout() {
       const S = this.col, rows = []; for (let k = 0; k < 6; k++) { const idx = S.scroll + k; if (idx >= S.items.length) break; rows.push({ id: 'row', idx, x: 8, y: 44 + k * 35, w: 226, h: 33 }); }
@@ -739,7 +739,7 @@ const Market = (() => {
       L.rows.forEach(r => { const e = S.items[r.idx], on = r.idx === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.26)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
         ctx.fillStyle = '#0c1612'; ctx.fillRect(r.x + 2, r.y + 2, 54, 29);
         if (e.wing) { ctx.fillStyle = '#6a4a2c'; ctx.fillRect(r.x + 8, r.y + 6, 42, 21); const a = Art.specimen(SPECIES_BY_ID.lux_ductrix || SPECIES[0]); ctx.drawImage(a, r.x + 10, r.y + 8, 38, 17); T.draw(ctx, 'Рамка путеводных крыльев', r.x + 60, r.y + 5, { size: 8, color: '#a8e8b0' }); T.draw(ctx, '8 крыльев · особый заказ', r.x + 60, r.y + 17, { size: 8, color: c.dim }); }
-        else { this.drawBoxThumb(ctx, e.box, r.x + 3, r.y + 3, 52, 27); T.draw(ctx, fitTxt(Boxes.boxLabel ? Boxes.boxLabel(e.box) : `${Boxes.SIZE_NAME[e.box.size]} · ${e.inf.n}/${e.inf.cap}`, 160), r.x + 60, r.y + 5, { size: 8, color: '#f0e8d0' }); T.draw(ctx, e.inf.theme ? fitTxt(e.inf.theme.name, 120) : 'без закономерности', r.x + 60, r.y + 17, { size: 8, color: e.inf.theme ? '#9ae0b0' : c.dim }); }
+        else { this.drawBoxThumb(ctx, e.box, r.x + 3, r.y + 3, 52, 27); T.draw(ctx, fitTxt(Boxes.boxLabel ? Boxes.boxLabel(e.box) : `${Boxes.SIZE_NAME[e.box.size]} · ${e.inf.n}/${e.inf.cap}`, 160), r.x + 60, r.y + 5, { size: 8, color: '#f0e8d0' }); T.draw(ctx, e.inf.themes.length > 1 ? `закономерностей: ${e.inf.themes.length}` : e.inf.theme ? fitTxt(e.inf.theme.name, 120) : 'без закономерности', r.x + 60, r.y + 17, { size: 8, color: e.inf.themes.length ? '#9ae0b0' : c.dim }); }
         this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(e.total), 8), r.y + 5); T.draw(ctx, String(e.total), r.x + r.w - 6, r.y + 5, { size: 8, align: 'r', color: c.gold }); });
       if (S.items.length > 6) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${S.sel + 1}/${S.items.length}`, 12, 255, { size: 8, color: c.dim }); }
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'collector', 247, 43, t, S.msgT > 0);
@@ -752,12 +752,12 @@ const Market = (() => {
         line(0, 'Рамка (большая)', String(Collection.FRAME.L)); line(1, 'Карта океана', 'в подарок', '#2a6a1a'); T.para(ctx, 'Такой рамки в моей коллекции ещё не было. За неё отдаю карту океана.', 248, 172, 218, { size: 8, color: '#4a3a20', lh: 10 });
         ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 212, 222, 1); T.draw(ctx, 'Цена', 248, 215, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 216); T.draw(ctx, String(e.total), 466, 215, { size: 8, align: 'r', color: '#8a5a10' });
       } else if (e) {
-        const i = e.inf; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 42); this.drawBoxThumb(ctx, e.box, 246, 103, 86, 40);
-        T.draw(ctx, `Бабочек: ${i.n} из ${i.cap}`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, i.theme ? fitTxt(i.theme.name, 128) : i.n < i.need ? `нужно хотя бы ${i.need}` : 'закономерность не видна', 340, 114, { size: 8, color: i.theme ? '#2a6a1a' : '#8a2a1a' });
-                let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
-        const nr = i.rows.filter(r => r.rare).length; if (nr) line(k++, `в т. ч. редчайших ×${Collection.RARE_K}`, String(nr)); if (i.rows.some(r => r.ab)) line(k++, 'в т. ч. аберрантов', String(i.rows.filter(r => r.ab).length));
-        line(k++, 'Подбор коллекции', i.bonus ? '+' + i.bonus : '—', i.bonus ? '#2a6a1a' : '#8a7050');
-        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; одинаковые бабочки должны стоять подряд. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
+        const i = e.inf; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 32); this.drawBoxThumb(ctx, e.box, 246, 103, 86, 30);
+        T.draw(ctx, `Бабочек: ${i.n} из ${i.cap}`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, i.themes.length ? `закономерностей: ${i.themes.length}` : i.n < i.need ? `нужно хотя бы ${i.need}` : 'закономерность не видна', 340, 114, { size: 8, color: i.themes.length ? '#2a6a1a' : '#8a2a1a' });
+        const L9 = (k, a2, b2, col) => { T.draw(ctx, a2, 248, 138 + k * 9, { size: 8, color: col || '#2a1a0c' }); T.draw(ctx, b2, 466, 138 + k * 9, { size: 8, align: 'r', color: col || '#6a5030' }); };
+        let k = 0; L9(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); L9(k++, `Бабочки (${i.n})`, String(i.sum));
+        i.themes.slice(0, 6).forEach(th => L9(k++, fitTxt(th.name, 170), '+' + th.bonus, '#2a6a1a'));
+        if (!i.themes.length) T.para(ctx, 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; одинаковые бабочки должны стоять подряд. Каждая закономерность оплачивается отдельно: 400–1000.', 248, 138 + k * 9, 218, { size: 8, color: '#4a3a20', lh: 9 });
         ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 214, 222, 1); T.draw(ctx, 'Цена', 248, 217, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 218); T.draw(ctx, String(i.total), 466, 217, { size: 8, align: 'r', color: '#8a5a10' });
       } else T.draw(ctx, 'Выберите рамку слева', 357, 150, { size: 8, align: 'c', color: '#6a5030' });
       UIK.btn(ctx, L.sellBtn, !L.sellBtn.disabled && UIK.hit(L.sellBtn, m.x, m.y));
