@@ -1917,8 +1917,6 @@ const Collection = (() => {
   }
   // how well a sequence of keys runs in a row: the sum of the squares of the lengths of the runs of equal keys, over n squared (all equal = 1, alternating = about 1/n)
   const purity = keys => { const n = keys.length; if (!n) return 0; let sum = 0, run = 1; for (let i = 1; i <= n; i++) { if (i < n && keys[i] === keys[i - 1] && keys[i] !== null) run++; else { sum += run * run; run = 1; } } return sum / (n * n); };
-  // how sorted a sequence of numbers is (0 = mixed, 1 = fully ascending or descending)
-  const sortedness = v => { let c = 0, d = 0; for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) { if (v[j] > v[i]) c++; else if (v[j] < v[i]) d++; } const t = v.length * (v.length - 1) / 2; return t ? Math.abs(c - d) / t : 0; };
   const THEMES = [
     { id: 'species', w: 0.85, key: (sp, spec) => baseOf(sp).id, name: (sp) => `один вид: ${baseOf(sp).ru}` },
     { id: 'aberr', w: 1.0, key: (sp) => sp.ab ? 'ab' : 'n', only: 'ab', name: () => 'только аберранты' },
@@ -1926,10 +1924,6 @@ const Collection = (() => {
     { id: 'biome', w: 0.6, key: (sp) => baseOf(sp).biome, name: (sp) => `одна локация: ${(BIOME_BY_ID[baseOf(sp).biome] || {}).short || (BIOME_BY_ID[baseOf(sp).biome] || {}).place || baseOf(sp).biome}` },
     { id: 'colour', w: 0.6, key: (sp) => colourOf(sp), name: (sp) => `один цвет: ${colourOf(sp)}` },
     { id: 'rarity', w: 0.5, key: (sp) => Rare.is(sp) ? 'rare' : (baseOf(sp).rar === 3 ? 'r3' : 'other'), only: 'rare', name: () => 'только редчайшие находки' },
-  ];
-  const ORDERS = [
-    { id: 'size', w: 0.55, val: (sp) => (baseOf(sp).mm[0] + baseOf(sp).mm[1]) / 2, name: (asc) => asc ? 'по возрастанию размаха крыльев' : 'по убыванию размаха крыльев' },
-    { id: 'quality', w: 0.45, val: (sp, spec) => spec.q, name: (asc) => asc ? 'по возрастанию качества расправки' : 'по убыванию качества расправки' },
   ];
   function info(box) {
     const rows = []; for (const u of box.items) { if (!u) continue; const spec = Save.spec(u); if (!spec) continue; const sp = SPECIES_BY_ID[spec.sp]; if (!sp) continue; const i = Econ.info(spec); const rare = Rare.is(sp); rows.push({ spec, sp, ab: !!sp.ab, rare, price: Math.round((i ? i.price : 0) * (rare ? RARE_K : 1)), base: i ? i.price : 0 }); }
@@ -1940,14 +1934,13 @@ const Collection = (() => {
         const keys = rows.map(r => t.key(r.sp, r.spec)); if (t.only) { if (keys.filter(k => k === t.only).length < n * 0.5) continue; } if (keys.some(k => k === null)) continue;
         const p = purity(keys), s = clamp((p - 0.7) / 0.3) * t.w; if (s > 0) found.push({ id: t.id, strength: s, p, name: t.name(rows[0].sp) });
       }
-      if (n >= 4) for (const o of ORDERS) { const v = rows.map(r => o.val(r.sp, r.spec)); if (v.some(x => typeof x !== 'number')) continue; const p = sortedness(v), s = clamp((p - 0.85) / 0.15) * o.w; if (s > 0 && new Set(v).size > 1) found.push({ id: o.id, strength: s, p, name: o.name(v[v.length - 1] > v[0]) }); }
     }
     found.sort((a, b) => b.strength - a.strength);
     let strength = 0, bonus = 0, theme = null;
     if (found.length) { theme = found[0]; strength = clamp(found[0].strength + 0.12 * found.slice(1).filter(f => f.strength > 0.3).length); const fillK = 0.6 + 0.4 * (n / cap); bonus = Math.round((BONUS_MIN + (BONUS_MAX - BONUS_MIN) * clamp(strength * fillK)) / 10) * 10; }
     return { n, cap, frame, rows, sum, theme, found, bonus, total: frame + sum + bonus, need };
   }
-  return { FRAME, RARE_K, info, colourOf, purity, sortedness };
+  return { FRAME, RARE_K, info, colourOf, purity };
 })();
 
 // ---------------------------------------------------------------- the wings of the guiding butterfly: one per starting location whose butterflies are all caught; eight of them in a frame buy the map of the ocean
@@ -7581,11 +7574,10 @@ const Market = (() => {
       } else if (e) {
         const i = e.inf; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 42); this.drawBoxThumb(ctx, e.box, 246, 103, 86, 40);
         T.draw(ctx, `Бабочек: ${i.n} из ${i.cap}`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, i.theme ? fitTxt(i.theme.name, 128) : i.n < i.need ? `нужно хотя бы ${i.need}` : 'закономерность не видна', 340, 114, { size: 8, color: i.theme ? '#2a6a1a' : '#8a2a1a' });
-        const o = i.found.find(f => f !== i.theme && (f.id === 'size' || f.id === 'quality')); T.draw(ctx, o ? fitTxt('и ' + o.name, 128) : '', 340, 125, { size: 8, color: '#2a6a1a' });
-        let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
+                let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
         const nr = i.rows.filter(r => r.rare).length; if (nr) line(k++, `в т. ч. редчайших ×${Collection.RARE_K}`, String(nr)); if (i.rows.some(r => r.ab)) line(k++, 'в т. ч. аберрантов', String(i.rows.filter(r => r.ab).length));
         line(k++, 'Подбор коллекции', i.bonus ? '+' + i.bonus : '—', i.bonus ? '#2a6a1a' : '#8a7050');
-        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; можно ещё упорядочить по размеру или качеству. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
+        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; одинаковые бабочки должны стоять подряд. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
         ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 214, 222, 1); T.draw(ctx, 'Цена', 248, 217, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 218); T.draw(ctx, String(i.total), 466, 217, { size: 8, align: 'r', color: '#8a5a10' });
       } else T.draw(ctx, 'Выберите рамку слева', 357, 150, { size: 8, align: 'c', color: '#6a5030' });
       UIK.btn(ctx, L.sellBtn, !L.sellBtn.disabled && UIK.hit(L.sellBtn, m.x, m.y));

@@ -748,11 +748,10 @@ const Market = (() => {
       } else if (e) {
         const i = e.inf; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 42); this.drawBoxThumb(ctx, e.box, 246, 103, 86, 40);
         T.draw(ctx, `Бабочек: ${i.n} из ${i.cap}`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, i.theme ? fitTxt(i.theme.name, 128) : i.n < i.need ? `нужно хотя бы ${i.need}` : 'закономерность не видна', 340, 114, { size: 8, color: i.theme ? '#2a6a1a' : '#8a2a1a' });
-        const o = i.found.find(f => f !== i.theme && (f.id === 'size' || f.id === 'quality')); T.draw(ctx, o ? fitTxt('и ' + o.name, 128) : '', 340, 125, { size: 8, color: '#2a6a1a' });
-        let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
+                let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
         const nr = i.rows.filter(r => r.rare).length; if (nr) line(k++, `в т. ч. редчайших ×${Collection.RARE_K}`, String(nr)); if (i.rows.some(r => r.ab)) line(k++, 'в т. ч. аберрантов', String(i.rows.filter(r => r.ab).length));
         line(k++, 'Подбор коллекции', i.bonus ? '+' + i.bonus : '—', i.bonus ? '#2a6a1a' : '#8a7050');
-        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; можно ещё упорядочить по размеру или качеству. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
+        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; одинаковые бабочки должны стоять подряд. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
         ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 214, 222, 1); T.draw(ctx, 'Цена', 248, 217, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 218); T.draw(ctx, String(i.total), 466, 217, { size: 8, align: 'r', color: '#8a5a10' });
       } else T.draw(ctx, 'Выберите рамку слева', 357, 150, { size: 8, align: 'c', color: '#6a5030' });
       UIK.btn(ctx, L.sellBtn, !L.sellBtn.disabled && UIK.hit(L.sellBtn, m.x, m.y));

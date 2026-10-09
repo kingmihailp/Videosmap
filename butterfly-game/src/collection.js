@@ -15,8 +15,6 @@ const Collection = (() => {
   }
   // how well a sequence of keys runs in a row: the sum of the squares of the lengths of the runs of equal keys, over n squared (all equal = 1, alternating = about 1/n)
   const purity = keys => { const n = keys.length; if (!n) return 0; let sum = 0, run = 1; for (let i = 1; i <= n; i++) { if (i < n && keys[i] === keys[i - 1] && keys[i] !== null) run++; else { sum += run * run; run = 1; } } return sum / (n * n); };
-  // how sorted a sequence of numbers is (0 = mixed, 1 = fully ascending or descending)
-  const sortedness = v => { let c = 0, d = 0; for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) { if (v[j] > v[i]) c++; else if (v[j] < v[i]) d++; } const t = v.length * (v.length - 1) / 2; return t ? Math.abs(c - d) / t : 0; };
   const THEMES = [
     { id: 'species', w: 0.85, key: (sp, spec) => baseOf(sp).id, name: (sp) => `один вид: ${baseOf(sp).ru}` },
     { id: 'aberr', w: 1.0, key: (sp) => sp.ab ? 'ab' : 'n', only: 'ab', name: () => 'только аберранты' },
@@ -24,10 +22,6 @@ const Collection = (() => {
     { id: 'biome', w: 0.6, key: (sp) => baseOf(sp).biome, name: (sp) => `одна локация: ${(BIOME_BY_ID[baseOf(sp).biome] || {}).short || (BIOME_BY_ID[baseOf(sp).biome] || {}).place || baseOf(sp).biome}` },
     { id: 'colour', w: 0.6, key: (sp) => colourOf(sp), name: (sp) => `один цвет: ${colourOf(sp)}` },
     { id: 'rarity', w: 0.5, key: (sp) => Rare.is(sp) ? 'rare' : (baseOf(sp).rar === 3 ? 'r3' : 'other'), only: 'rare', name: () => 'только редчайшие находки' },
-  ];
-  const ORDERS = [
-    { id: 'size', w: 0.55, val: (sp) => (baseOf(sp).mm[0] + baseOf(sp).mm[1]) / 2, name: (asc) => asc ? 'по возрастанию размаха крыльев' : 'по убыванию размаха крыльев' },
-    { id: 'quality', w: 0.45, val: (sp, spec) => spec.q, name: (asc) => asc ? 'по возрастанию качества расправки' : 'по убыванию качества расправки' },
   ];
   function info(box) {
     const rows = []; for (const u of box.items) { if (!u) continue; const spec = Save.spec(u); if (!spec) continue; const sp = SPECIES_BY_ID[spec.sp]; if (!sp) continue; const i = Econ.info(spec); const rare = Rare.is(sp); rows.push({ spec, sp, ab: !!sp.ab, rare, price: Math.round((i ? i.price : 0) * (rare ? RARE_K : 1)), base: i ? i.price : 0 }); }
@@ -38,14 +32,13 @@ const Collection = (() => {
         const keys = rows.map(r => t.key(r.sp, r.spec)); if (t.only) { if (keys.filter(k => k === t.only).length < n * 0.5) continue; } if (keys.some(k => k === null)) continue;
         const p = purity(keys), s = clamp((p - 0.7) / 0.3) * t.w; if (s > 0) found.push({ id: t.id, strength: s, p, name: t.name(rows[0].sp) });
       }
-      if (n >= 4) for (const o of ORDERS) { const v = rows.map(r => o.val(r.sp, r.spec)); if (v.some(x => typeof x !== 'number')) continue; const p = sortedness(v), s = clamp((p - 0.85) / 0.15) * o.w; if (s > 0 && new Set(v).size > 1) found.push({ id: o.id, strength: s, p, name: o.name(v[v.length - 1] > v[0]) }); }
     }
     found.sort((a, b) => b.strength - a.strength);
     let strength = 0, bonus = 0, theme = null;
     if (found.length) { theme = found[0]; strength = clamp(found[0].strength + 0.12 * found.slice(1).filter(f => f.strength > 0.3).length); const fillK = 0.6 + 0.4 * (n / cap); bonus = Math.round((BONUS_MIN + (BONUS_MAX - BONUS_MIN) * clamp(strength * fillK)) / 10) * 10; }
     return { n, cap, frame, rows, sum, theme, found, bonus, total: frame + sum + bonus, need };
   }
-  return { FRAME, RARE_K, info, colourOf, purity, sortedness };
+  return { FRAME, RARE_K, info, colourOf, purity };
 })();
 
 // ---------------------------------------------------------------- the wings of the guiding butterfly: one per starting location whose butterflies are all caught; eight of them in a frame buy the map of the ocean

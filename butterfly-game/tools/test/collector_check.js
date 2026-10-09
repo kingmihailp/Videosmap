@@ -41,13 +41,13 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     out.ab = info('S', ab); const first = Wings.START[0].species.slice(0, 4).map(s => s.id), mixedBiomes = Wings.START.slice(0, 4).map(b => b.species[0].id);
     out.biome = info('S', first); out.mixB = info('S', mixedBiomes);
     const sp1 = first[0]; out.oneSp = info('S', [sp1, sp1, sp1, sp1]);
-    out.sortedQ = info('S', first, [20, 40, 60, 80]); out.shuffledQ = info('S', first, [60, 20, 80, 40]);
+    const f2 = Wings.START[1].species[0].id; out.alt = info('S', [first[0], f2, first[1], f2]);
     return out;
   });
   T('only aberrants → bonus', q.ab.bonus >= 400 && q.ab.found.includes('aberr'), q.ab);
   T('one location → bonus, four different locations → no location bonus', q.biome.bonus >= 400 && q.biome.found.includes('biome') && !q.mixB.found.includes('biome'), [q.biome, q.mixB]);
   T('one species four times → bonus', q.oneSp.bonus >= 400 && q.oneSp.found.includes('species'), q.oneSp);
-  T('order matters: butterflies sorted by quality earn more than the same ones shuffled', q.sortedQ.found.includes('quality') && !q.shuffledQ.found.includes('quality') && q.sortedQ.bonus >= q.shuffledQ.bonus, [q.sortedQ, q.shuffledQ]);
+  T('order matters: the same butterflies in a row earn more than alternating ones', q.alt.bonus < q.biome.bonus, [q.alt, q.biome]);
   // ---- selling a frame: the butterflies and the box go, the coins come
   const s1 = await pg.evaluate(uid => { const c0 = Save.data.coins, inf = Collection.info(Save.box(uid)); const got = Save.sellBox(uid); return { got, exp: inf.total, d: Save.data.coins - c0, box: !!Save.box(uid), left: Save.data.specimens.some(s => s.box === uid) }; }, p.uid);
   T('selling a frame pays its price and removes the box with its butterflies', s1.got === s1.exp && s1.d === s1.exp && !s1.box && !s1.left, s1);
