@@ -55,6 +55,9 @@ function applyOp(op) {
   return false;
 }
 
+// the version (BUILD_ID) of the game file this server serves: a client with another build would generate other landscapes from the same seed, so it may not join places
+let buildCache = { mt: 0, id: '' };
+function currentBuild() { try { const st = fs.statSync(GAME); if (st.mtimeMs !== buildCache.mt) { const head = fs.readFileSync(GAME, 'utf8').slice(0, 400000); const m = /const BUILD_ID = '([0-9a-f]+)'/.exec(head); buildCache = { mt: st.mtimeMs, id: m ? m[1] : '' }; } } catch (e) { return ''; } return buildCache.id; }
 // ------------------------------------------------------------------ players & locations
 let nextId = 1;
 const players = new Map();                 // id -> { id, name, ws, loc, idx }
@@ -101,9 +104,10 @@ function leaveLoc(p) {
   l.ids.delete(p.id); toLoc(name, { t: 'pleave', id: p.id }); if (l.traps) for (const [tid, t] of l.traps) if (t.owner === p.id) { l.traps.delete(tid); toLoc(name, { t: 'trap', k: 'del', tid }); }
   if (l.host === p.id) { l.host = l.ids.values().next().value || 0; l.lastFlies = Date.now() + 8000; if (l.host) toLoc(name, { t: 'host', id: l.host, flies: l.flies }); }
   if (l.vote) voteCheck(name, l);
-  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; l.traps = new Map(); }
+  if (!l.ids.size) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; l.traps = new Map(); l.sigs = new Map(); }
 }
 function joinLoc(p, name) {
+  { const cur = currentBuild(); if (cur && p.build !== cur) { send(p, { t: 'denied', loc: name, reason: 'version' }); return; } }
   if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && name !== 'museum' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
@@ -131,7 +135,7 @@ wss.on('connection', ws => {
     if (!me) {
       if (m.t !== 'hello') return;
       const name = String(m.name || 'Гость').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, MAX_NAME) || 'Гость';
-      me = { id: nextId++, name, ws, loc: null, idx: state.nextIdx++ }; players.set(me.id, me); dirty = true;
+      me = { id: nextId++, name, ws, loc: null, idx: state.nextIdx++, build: String(m.build || '').slice(0, 16) }; players.set(me.id, me); dirty = true;
       send(me, { t: 'welcome', id: me.id, idx: me.idx, name, cab: cabView(), seeds: state.seeds, players: plist() });
       sendPlist(); console.log('+', name, `(${players.size} online)`); return;
     }
@@ -154,6 +158,10 @@ wss.on('connection', ws => {
       case 'op': { const ok = m.op && applyOp(m.op); if (ok) { dirty = true; broadcast({ t: 'op', op: m.op, by: me.id }, me.id); } else { send(me, { t: 'opNo', k: m.op && m.op.k, uid: m.op && m.op.uid }); send(me, { t: 'resync', cab: cabView() }); } break; }
       case 'bridge': { const l = me.loc && locs.get(me.loc); if (!l || me.loc !== 'vietnam' || !(Number.isInteger(m.i) && m.i >= 0 && m.i < 40) || (m.k !== 'shake' && m.k !== 'snap')) break; l.bridges = l.bridges || {}; if (l.bridges[m.i] === 'snap') break; l.bridges[m.i] = m.k; toLoc(me.loc, { t: 'bridge', i: m.i, k: m.k, by: me.id }, me.id); break; }     // a rope bridge started to shake / snapped: everybody in the location sees it, and a later visitor finds it as it is now
       case 'trap': trapMsg(me, m); break;
+      case 'sig': { const l = me.loc && locs.get(me.loc); if (!l || typeof m.h !== 'number') break; const mine = { seed: String(m.seed || '').slice(0, 24), h: m.h, by: me.name, id: me.id };
+        l.sigs = l.sigs || new Map(); for (const [id, q] of l.sigs) if (!l.ids.has(id)) l.sigs.delete(id);
+        for (const q of l.sigs.values()) if (q.seed === mine.seed && q.h !== mine.h) { for (const to of [me, players.get(q.id)]) if (to) send(to, { t: 'desync', with: to === me ? q.by : mine.by }); console.log('terrain desync in', me.loc, mine.by, 'vs', q.by); }
+        l.sigs.set(me.id, mine); break; }
       case 'chat': { const text = String(m.text || '').slice(0, 120); if (text) broadcast({ t: 'chat', name: me.name, text }); break; }
     }
   });

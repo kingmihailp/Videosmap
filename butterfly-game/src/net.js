@@ -16,7 +16,7 @@ const Net = (() => {
     try { ws = new WebSocket(url); } catch (e) { rej(new Error('Неверный адрес')); return; }
     N.ws = ws; N.url = addr.trim(); connWait = { res, rej };
     const to = setTimeout(() => { if (!done) { done = true; try { ws.close(); } catch (e) {} rej(new Error('Сервер не отвечает')); } }, 15000);
-    ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name }));
+    ws.onopen = () => ws.send(JSON.stringify({ t: 'hello', name, build: BUILD_ID }));
     ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.t === 'welcome') { done = true; clearTimeout(to); } handle(m); };
     ws.onerror = () => { lastErr = 'Не удалось подключиться'; };
     ws.onclose = () => { clearTimeout(to); if (!done) { done = true; rej(new Error(lastErr || 'Соединение закрыто')); } if (ws === N.ws) { const was = N.on; N.on = false; N.ws = null; N.remote = {}; N.list = []; N.loc = null; N.host = false; Save.leaveMP(!N.bye); N.bye = false; N.status = ''; if (was && N.hooks.closed) N.hooks.closed(); } };
@@ -34,7 +34,7 @@ const Net = (() => {
       case 'welcome': N.on = true; N.id = m.id; N.idx = m.idx; N.name = m.name; N.seeds = m.seeds; N.list = m.players; Save.enterMP(m.cab, m.idx); N.status = 'Онлайн'; if (connWait) { connWait.res(m); connWait = null; } break;
       case 'plist': N.list = m.list; break;
       case 'joined': N.vote = null; N.host = m.host === N.id; for (const p of m.players) N.remote[p.id] = mkRemote(p.id, p.name); if (joinWait) { const r = joinWait; joinWait = null; r(m); } break;
-      case 'denied': if (joinWait) { joinWait = null; if (joinRej) joinRej(new Error('для этого места нужна карта')); } break;
+      case 'denied': if (joinWait) { joinWait = null; if (joinRej) joinRej(new Error(m.reason === 'version' ? 'версия игры отличается от серверной — обновите страницу (Ctrl+F5) или откройте игру по адресу сервера' : 'для этого места нужна карта')); } break;
       case 'pjoin': N.remote[m.id] = mkRemote(m.id, m.name); if (N.hooks.pjoin) N.hooks.pjoin(m); break;
       case 'pleave': { const r = N.remote[m.id]; delete N.remote[m.id]; if (N.hooks.pleave) N.hooks.pleave(m, r); break; }
       case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.nt = typeof m.nt === 'string' ? m.nt : ''; r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }

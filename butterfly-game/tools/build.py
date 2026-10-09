@@ -10,9 +10,12 @@ for name in ORDER:
     if os.path.exists(p):
         parts.append(f"// ===== {name} =====\n" + open(p, encoding="utf-8").read())
 game = "\n".join(parts)
+import hashlib
+BUILD = hashlib.sha1(game.encode("utf-8")).hexdigest()[:10]
+game = f"const BUILD_ID = '{BUILD}';   // the version of this build: players with different builds must not share a landscape\n" + game
 three = open(os.path.join(ROOT, "vendor", "three.min.js"), encoding="utf-8").read()
 tpl = open(os.path.join(src, "index.template.html"), encoding="utf-8").read()
 out = tpl.replace("/*__THREE__*/", three.replace("</script", "<\\/script")).replace("/*__GAME__*/", game.replace("</script", "<\\/script"))
 dst = os.path.join(ROOT, "Flora0world_Butterflies.html")
 open(dst, "w", encoding="utf-8").write(out)
-print("built", dst, len(out) // 1024, "KB")
+print("built", dst, len(out) // 1024, "KB", BUILD)

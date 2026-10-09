@@ -241,6 +241,7 @@ class Play {
     this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
     this.helperT = 40;
     this.traps = new Traps.Sys(this); if (mp && mp.traps) for (const t of mp.traps) if (t.owner !== Net.id) this.traps.mk(t, false);
+    if (mp && Net.on) { const w = this.world; let h = 0; for (let x = -60; x <= 60; x += 4) for (let z = -60; z <= 60; z += 4) h = (h * 31 + Math.round(w.heightAt(x, z) * 100)) | 0; setTimeout(() => { if (this.traps) Net.send('sig', { seed: String(this.seed), h }); }, 800); }       // the others compare it: the same seed must give the same ground
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
@@ -295,8 +296,9 @@ class Play {
     H.regenNo = m => me.toast((m && m.msg) || 'Здесь сейчас нельзя сменить местность', 3); H.voteNew = () => { me.toast('Голосование: Y — за, N — против', 4); Snd.sfx.click(); };
     H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
     H.trap = m => me.traps.net(m);
+    H.desync = m => me.toast(`Рассинхрон местности с игроком ${m.with}: у вас разные версии игры или произошёл сбой. Обновите страницу (Ctrl+F5) и зайдите снова`, 12, true);
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = H.trap = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = H.trap = H.desync = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
