@@ -54,6 +54,21 @@ const Portrait = (() => {
       mouth(ctx, ox, oy, { talk: o.talk, stubble: true });
       R(ctx, ox, oy, 8, 9, 24, 4, '#4a6a2a'); R(ctx, ox, oy, 10, 3, 20, 7, '#5a7a3a'); R(ctx, ox, oy, 12, 3, 4, 5, '#6a8a48'); R(ctx, ox, oy, 6, 11, 14, 2, '#3a5a20'); R(ctx, ox, oy, 8, 12, 24, 1, '#3a5a20'); R(ctx, ox, oy, 19, 5, 3, 3, '#e8d070');   // cap with visor and badge
     },
+    // the collector of framed collections: bald with white side tufts, a monocle with a chain, green waistcoat, a pinned butterfly on the lapel
+    collector(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#a8bca0'); R(ctx, ox, oy, 0, 30, 40, 18, '#98ac90'); for (let i = 0; i < 40; i += 8) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(40,70,40,0.12)');
+      R(ctx, ox, oy, 4, 6, 9, 11, '#6a4a2c'); R(ctx, ox, oy, 5, 7, 7, 9, '#e8d8a8'); R(ctx, ox, oy, 6, 9, 5, 4, '#6a9ac8'); R(ctx, ox, oy, 8, 8, 1, 7, '#2a2018');     // a little framed butterfly on the wall
+      R(ctx, ox, oy, 3, 37, 34, 11, '#2c3a2a'); R(ctx, ox, oy, 5, 35, 30, 3, '#2c3a2a'); R(ctx, ox, oy, 3, 37, 3, 11, '#1c281c'); R(ctx, ox, oy, 34, 37, 3, 11, '#1c281c');    // coat
+      R(ctx, ox, oy, 14, 35, 12, 13, '#7a2a2a'); R(ctx, ox, oy, 14, 35, 2, 13, '#5a1a1a'); R(ctx, ox, oy, 15, 36, 10, 2, '#f0e8d4'); R(ctx, ox, oy, 19, 36, 2, 3, '#2a2a2a');   // waistcoat, collar, tie knot
+      R(ctx, ox, oy, 17, 42, 1, 1, '#e8c040'); R(ctx, ox, oy, 22, 42, 1, 1, '#e8c040'); R(ctx, ox, oy, 17, 45, 1, 1, '#e8c040'); R(ctx, ox, oy, 22, 45, 1, 1, '#e8c040');
+      R(ctx, ox, oy, 29, 38, 4, 3, '#6aa0e0'); R(ctx, ox, oy, 28, 38, 1, 2, '#2a4a8a'); R(ctx, ox, oy, 33, 38, 1, 2, '#2a4a8a'); R(ctx, ox, oy, 30, 39, 1, 1, '#f4f0e8'); // pinned butterfly
+      head(ctx, ox, oy, { skin: '#e4c09a', light: '#f2d8b6', dark: '#c49468', blush: 'rgba(225,110,100,0.3)', brow: '#d8d8d8', iris: '#3a6a4a', blink: o.blink });
+      R(ctx, ox, oy, 8, 13, 4, 9, '#e8e8ea'); R(ctx, ox, oy, 28, 13, 4, 9, '#e8e8ea'); R(ctx, ox, oy, 7, 15, 2, 5, '#d0d0d4'); R(ctx, ox, oy, 31, 15, 2, 5, '#d0d0d4');              // white tufts
+      R(ctx, ox, oy, 12, 11, 16, 2, '#f0d4b0'); R(ctx, ox, oy, 15, 10, 10, 1, '#f6e0c4'); R(ctx, ox, oy, 18, 11, 4, 1, '#fff0dc');                                                  // bald crown
+      mouth(ctx, ox, oy, { mustache: '#e0e0e2', talk: o.talk });
+      ctx.strokeStyle = '#d8a830'; ctx.lineWidth = 1; ctx.strokeRect(ox + 22.5, oy + 18.5, 6, 5); R(ctx, ox, oy, 24, 19, 2, 1, 'rgba(255,255,255,0.7)');                                   // monocle
+      for (let k = 0; k < 14; k++) R(ctx, ox, oy, 28 + Math.min(4, k >> 1), 23 + k * 1, 1, 1, '#d8a830');                                                                              // its chain
+    },
     // the hooded trader: a deep hood with nothing but darkness inside, pale folded hands holding a glowing orb
     hooded(ctx, ox, oy, o) {
       R(ctx, ox, oy, 0, 0, 40, 48, '#2a2238'); R(ctx, ox, oy, 0, 30, 40, 18, '#1c1628'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(160,120,220,0.07)');

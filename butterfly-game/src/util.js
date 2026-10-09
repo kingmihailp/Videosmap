@@ -111,7 +111,7 @@ const Save = {
   freeSpread() { return this.data.specimens.filter(s => s.q !== null && !s.box).sort((a, b) => b.q - a.q); },
   spec(uid) { return this.data.specimens.find(s => s.uid === uid); },
   // ---- selling to the market merchant (coins are personal; the specimen leaves the shared cabinet)
-  sold: {},
+  sold: {}, soldBox: {},
   sellable(spec) { return !!spec && !spec.box; },
   sell(uid) {
     const s = this.spec(uid); if (!this.sellable(s)) return 0; const p = Econ.price(s);
@@ -120,6 +120,13 @@ const Save = {
   },
   sellRejected(uid) { const p = this.sold[uid]; if (p) { this.data.coins = Math.max(0, (this.data.coins || 0) - p); delete this.sold[uid]; this.write(); } },
   box(uid) { return this.data.boxes.find(b => b.uid === uid); },
+  // sell a whole frame (not hung up) with its butterflies to the collector; returns the price (0 = refused)
+  sellBox(uid) {
+    const b = this.box(uid); if (!b || b.loc) return 0; const inf = Collection.info(b); if (!inf.n) return 0;
+    this.data.specimens = this.data.specimens.filter(s => !b.items.includes(s.uid)); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid);
+    this.data.coins = (this.data.coins || 0) + inf.total; this.soldBox[uid] = inf.total; setTimeout(() => { delete this.soldBox[uid]; }, 30000); this._op({ k: 'sellBox', uid }); this.write(); return inf.total;
+  },
+  sellBoxRejected(uid) { const p = this.soldBox[uid]; if (p) { this.data.coins = Math.max(0, (this.data.coins || 0) - p); delete this.soldBox[uid]; this.write(); } },
   addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style } }); this.write(); return b; },
   removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this._op({ k: 'delBox', uid }); this.write(); return true; },
   putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this._op({ k: 'putIn', box: box.uid, slot, spec: specUid }); this.write(); return true; },
@@ -135,6 +142,7 @@ const Save = {
       case 'spread': { const s = this.spec(op.uid); if (s) { s.q = op.q; s.pose = op.pose; } break; }
       case 'delSpec': D.specimens = D.specimens.filter(x => x.uid !== op.uid); break;
       case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
+      case 'sellBox': { const b = this.box(op.uid); if (b) { D.specimens = D.specimens.filter(s => !b.items.includes(s.uid)); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
       case 'delBox': { const b = this.box(op.uid); if (b) { b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
       case 'putIn': { const b = this.box(op.box), s = this.spec(op.spec); if (b && s) { b.items[op.slot] = s.uid; s.box = b.uid; } break; }
       case 'takeOut': { const b = this.box(op.box); if (b) { const s = this.spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; } break; }

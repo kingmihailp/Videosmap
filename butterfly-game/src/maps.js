@@ -10,7 +10,8 @@ const Maps = (() => {
   const api = {
     LIST,
     has: id => !!ids()[id],
-    owned: () => LIST.filter(m => ids()[m.id]).map(m => m.id),
+    owned: () => Object.keys(ids()).filter(k => ids()[k]),                 // every map the player has (the ocean map is not sold: the collector gives it for the frame of guiding wings)
+    grant(id) { if (ids()[id]) return false; ids()[id] = true; Save.write(); return true; },
     buy(id) { const m = LIST.find(x => x.id === id); if (!m || ids()[id]) return 'have'; if ((Save.data.coins || 0) < m.price) return 'poor'; Save.data.coins -= m.price; ids()[id] = true; Save.write(); return 'ok'; },
     // biomes the player may see/enter: every ordinary one, the ocean, and the secret ones whose map he owns
     visible: () => BIOMES.filter(b => !b.map || ids()[b.map]),

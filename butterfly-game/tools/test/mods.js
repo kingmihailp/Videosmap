@@ -3,7 +3,7 @@ const path = require('path'); const { chromium } = require(process.env.PW_CORE |
   const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'] });
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } }); page.on('pageerror', e => console.log('[pageerror]', e.message, (e.stack||'').split('\n')[1]));
   await page.goto('file://' + path.resolve(__dirname, '../../Flora0world_Butterflies.html') + '#debug&nolock'); await page.waitForTimeout(1000);
-  await page.evaluate(() => F0W.start('ocean', 'MODS')); await page.waitForTimeout(2500);
+  await page.evaluate(() => (Save.data.maps = Save.data.maps || {}, BIOMES.forEach(b => { if (b.map) Save.data.maps[b.map] = true; }), F0W.start)('ocean', 'MODS')); await page.waitForTimeout(2500);
   await page.evaluate(() => { F0W.overlay = null; F0W.locked = true; F0W.fade = 0; F0W.fadeTarget = 0; });
   const r = await page.evaluate(() => { const p = F0W.play, ids = Object.keys(PLAY_MODS); let good = 0, N = 2000; for (let i = 0; i < N; i++) if (PLAY_MODS[p.rollMod()].good) good++;
     const inp = { keys: new Set(['KeyW']), dx: 3, dy: 0, fire: false }; const errs = [];

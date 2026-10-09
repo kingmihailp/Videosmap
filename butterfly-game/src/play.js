@@ -416,6 +416,7 @@ class Play {
     const first = Save.add(sp.id, this.biome.id); const twin = Math.random() < this.netStats.dbl; if (twin) Save.add(sp.id, this.biome.id);     // gem handle / deep mesh: a second one
     if (this.netStats.coin) { Save.data.coins = (Save.data.coins || 0) + this.netStats.coin; Save.write(); } if (sp.mystery && revealOcean()) this.toast('Все бабочки океана пойманы — тайна раскрыта!', 5, true); this.stats.catches++; this.caughtHere.add(sp.id);
     if (twin) this.toast('Двойной улов!', 2.5);
+    Wings.announce(Wings.check(), (s, d, imp) => this.toast(s, d, imp));       // all the butterflies of a starting location are caught: a wing of the guiding butterfly goes to the stash
     if (Rare.is(sp)) Snd.sfx.catchRare(first); else Snd.sfx.catchSp(first, sp.rar); this.cards.push({ sp, first, t: 5.2, d: 5.2, count: Save.count(sp.id) });
     // sparkles at the hoop
     this.hoopWorld(_v); const q = _v.clone().project(this.camera); const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH;

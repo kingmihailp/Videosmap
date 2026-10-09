@@ -40,7 +40,7 @@ const Net = (() => {
       case 'p': { const r = N.remote[m.id] || (N.remote[m.id] = mkRemote(m.id, (N.list.find(p => p.id === m.id) || {}).name || '?')); r.pos.set(m.x, m.y, m.z); r.yaw = m.yaw; r.pitch = m.pitch; EUL.set(m.pitch, m.yaw, 0, 'YXZ'); r.fwd.set(0, 0, -1).applyEuler(EUL); r.nt = typeof m.nt === 'string' ? m.nt : ''; r.noise = m.nz || 0; r.flashOn = !!m.fl; r.swinging = !!m.sw; r.speedNow = m.sp || 0; r.sit = m.st || 0; r.t = performance.now(); r.fresh = true; break; }
       case 'host': N.host = m.id === N.id; if (N.hooks.host) N.hooks.host(m); break;
       case 'op': Save.applyOp(m.op); if (N.hooks.cab) N.hooks.cab(m.op); break;
-      case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); break;
+      case 'opNo': if (m.k === 'delSpec') Save.sellRejected(m.uid); else if (m.k === 'sellBox') Save.sellBoxRejected(m.uid); break;
       case 'resync': Save.setCab(m.cab); if (N.hooks.cab) N.hooks.cab(null); break;
       case 'vote': N.vote = { vid: m.vid, by: m.by, yes: m.yes, need: m.need, end: performance.now() + m.ms, ms: m.ms, mine: m.byId === N.id ? 'yes' : null }; sys(`${m.by} предлагает сгенерировать новую местность`); if (m.byId !== N.id && N.hooks.voteNew) N.hooks.voteNew(m); break;
       case 'voteUpd': if (N.vote && N.vote.vid === m.vid) { N.vote.yes = m.yes; N.vote.need = m.need; } break;

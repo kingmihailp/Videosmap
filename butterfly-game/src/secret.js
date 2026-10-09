@@ -52,6 +52,9 @@ const Secret = (() => {
       const owned = Object.keys(NetParts.PARTS).filter(id => Save.partCount(id) > 0);
       if (!owned.length) T.draw(ctx, 'Пока нет. Их продаёт продавец сачков на рынке насекомых.', 54, 194, { size: 8, color: c.dim });
       owned.slice(0, 8).forEach((id, i) => { const col = i % 2, row = Math.floor(i / 2); T.draw(ctx, fitStr(`${NetParts.PARTS[id].ru} ×${Save.partCount(id)}`, 180), 54 + col * 190, 194 + row * 9, { size: 8, color: c.text }); });
+      // the wings of the guiding butterfly (one per starting location)
+      Wings.START.forEach((b, i) => { const x = 52 + i * 17, got = Wings.have(b.id); ctx.fillStyle = '#10201c'; ctx.fillRect(x, 232, 15, 18); ctx.strokeStyle = got ? c.gold : c.line; ctx.strokeRect(x + 0.5, 232.5, 14, 17); if (got) WingsUI.icon(ctx, x + 1, 235, 13, 12, Wings.placed(b.id) ? 0.45 : 1, null); });
+      T.draw(ctx, `Крылья: ${Wings.count()}/${Wings.START.length}`, 300, 238, { size: 8, color: Wings.count() ? c.gold : c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
     },
     click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },

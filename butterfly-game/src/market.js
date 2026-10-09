@@ -98,7 +98,8 @@ const Market = (() => {
     tea: { title: 'Чайный торговец', line: 'Липовый чай с мёдом — лучшее, что бывает после долгой охоты.', o: { hat: 'scarf', hatCol: '#a83a3a', body: '#8a4a3a', apron: '#e8e0d0' } },
     jars: { title: 'Медовщик', line: 'Гречишный мёд! Бабочки любят — и вы полюбите.', o: { hat: 'straw', body: '#c8a040', apron: '#f0e8d0' } },
     pins: { title: 'Булавочник', line: 'Булавки, расправилки, стёкла — всё для вашей коллекции.', o: { hat: 'cap', hatCol: '#3a3a4a', body: '#4a5a6a', apron: '#2a2a30', glasses: true } },
-    boxes: { title: 'Торговец коллекциями', line: sign => `«${sign}»: лучшие экземпляры — на витрине. А свои приносите к скупщику под красным навесом.`, o: { hat: 'scarf', hatCol: '#2f6fb0', body: '#e8e0d0' } },
+    collector: { title: 'Торговец коллекциями', line: 'Готовые рамки с бабочками? Несите, оценю. Чем стройнее подобрана коллекция — тем больше плачу.', o: { hat: 'top', body: '#2c3a2a', apron: '#7a2a2a', glasses: true } },
+    boxes: { title: 'Торговец коробками', line: sign => `«${sign}»: лучшие экземпляры — на витрине. А свои приносите к скупщику под красным навесом.`, o: { hat: 'scarf', hatCol: '#2f6fb0', body: '#e8e0d0' } },
   };
 
   // ------------------------------------------------------------ the market
@@ -111,7 +112,7 @@ const Market = (() => {
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
       this.build(); this.applyTime(this.realHour());
       Snd.startAmbient('market'); this.toast('Рынок насекомых', 3);
-      this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.pjoin = m => this.toast(`${m.name} пришёл на рынок`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} ушёл с рынка`, 2.5); Net.hooks.cab = () => { if (this.ov === 'sell') this.sellRefresh(); }; }
+      this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.pjoin = m => this.toast(`${m.name} пришёл на рынок`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} ушёл с рынка`, 2.5); Net.hooks.cab = () => { if (this.ov === 'sell') this.sellRefresh(); if (this.ov === 'collect') this.collRefresh(); }; }
       if (at) { this.player.pos.set(at.x, 0, at.z); this.player.yaw = at.yaw; this.player.pitch = 0; }
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
@@ -265,7 +266,7 @@ const Market = (() => {
         for (let i = 0; i < N; i++) { const a = (i + 0.5) * 2 * Math.PI / N; B.box(0.55, 0.2, 0.03, Math.sin(a) * (R - 0.03), 2.55, PZ + Math.cos(a) * (R - 0.03), cl[i % 2], 0.0, a, 0); }
         for (let i = 0; i < 5; i++) { const a = -Math.PI * 0.42 + i * Math.PI * 0.21; this.frame(g, 0.5, 0.375, this.boxTexFor(2, 2), Math.sin(a) * 0.72, 1.12, CZ + Math.cos(a) * 0.72, -0.5, a); }
         this.lamp(0.55, 2.2, CZ + 0.5, 0.12, null, 0.37); this.lamp(-0.55, 2.2, CZ + 0.5, 0.12, null, 0.37); B.cyl(0.04, 0.04, 0.2, 0, 3.55, PZ, BRASS, 6);
-        this.vendor(g, 0, VZ, 'boxes', o.sign || 'Коллекции');
+        this.vendor(g, 0, VZ, o.collector ? 'collector' : 'boxes', o.sign || 'Коллекции');
       });
     }
     stallKiosk(x, z, ry, o = {}) {
@@ -336,7 +337,8 @@ const Market = (() => {
     vendor(g, x, z, key, sign) {
       const pr = PROF[key] || PROF.boxes, p = person(Object.assign({ skin: this.rng.pick(['#e8c8a0', '#d8a878', '#c8946a']) }, pr.o)); p.position.set(x, 0, z); p.rotation.y = Math.PI; p.userData.ph = this.rng.range(0, 6); g.add(p); this.vendors.push(p);
       const line = typeof pr.line === 'function' ? pr.line(sign || 'Коллекции') : pr.line; const wp = new THREE.Vector3(); g.updateMatrixWorld(true); p.getWorldPosition(wp);
-      this.stations.push({ id: key === 'nets' ? 'netshop' : 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => key === 'nets' ? 'E — купить детали для сачков' : `E — поговорить: ${pr.title}` });
+      if (key === 'collector') { const ns = nameSprite('Торговец коллекциями', '#a8e8b0'); ns.position.set(x, 2.3, z); g.add(ns); }
+      this.stations.push({ id: key === 'nets' ? 'netshop' : key === 'collector' ? 'collect' : 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => key === 'nets' ? 'E — купить детали для сачков' : key === 'collector' ? 'E — продать рамку торговцу коллекциями' : `E — поговорить: ${pr.title}` });
     }
 
     // a stall standing against a wall: side N/S = wall at z (customers on the street side), W/E = wall at x
@@ -363,7 +365,7 @@ const Market = (() => {
       // short alley (south-west): the tea garden
       W('table', 'W', -24, 7.2, { goods: 'tea', ci: 6, sign: 'Чайная' }); W('table', 'E', -20, 11.6, { goods: 'jars', ci: 2, sign: 'Мёд' }); for (const [tx, tz] of [[-23.4, 14.2], [-20.6, 14.2], [-22, 17.6]]) this.teaTable(tx, tz);
       // east plaza: round stalls around the fountain
-      for (const [sx, sz] of [[26.7, 5.1], [26.7, -5.1], [21.3, 5.1], [21.3, -5.1]]) this.stallRound(sx, sz, Math.atan2(24 - sx, 0 - sz) + Math.PI * 0, { ci: Math.abs(Math.round(sx + sz)) % 7, sign: 'Бабочки' });
+      for (const [sx, sz] of [[26.7, 5.1], [26.7, -5.1], [21.3, 5.1], [21.3, -5.1]]) this.stallRound(sx, sz, Math.atan2(24 - sx, 0 - sz) + Math.PI * 0, { ci: Math.abs(Math.round(sx + sz)) % 7, sign: 'Бабочки', collector: sx > 26 && sz < 0 });
     }
 
     // ------------------------------------------------------------ secrets: the strange stall in the first alley and the code door in the far corner of the north plaza
@@ -586,7 +588,7 @@ const Market = (() => {
     }
 
     // ------------------------------------------------------------ interaction
-    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); }
+    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); if (name === 'collect') this.collOpen(); }
     close() { this.ov = null; this.hooks.lock(); }
     openTalk(who) { const sp = Secret.speech(who); this.talk = { who, lines: sp.lines, give: sp.give, giveAt: sp.giveAt, i: 0, chars: 0 }; this.open('talk'); }
     talkNext() {
@@ -597,6 +599,7 @@ const Market = (() => {
     interact() {
       const s = this.prompt; if (!s) return;
       if (s.id === 'sell') { Snd.sfx.page(); this.open('sell'); }
+      else if (s.id === 'collect') { Snd.sfx.page(); this.open('collect'); }
       else if (s.id === 'netshop') { Snd.sfx.page(); this.open('shop'); }
       else if (s.id === 'strange') { Snd.sfx.page(); this.openTalk('strange'); }
       else if (s.id === 'codedoor') { if (Secret.unlocked()) { Snd.sfx.door(); this.hooks.secret(); } else { Secret.lock.reset(); this.open('code'); } }
@@ -613,6 +616,7 @@ const Market = (() => {
       if (ov === 'code') { if (e.code === 'Escape') this.close(); else if (Secret.lock.key(e) === 'ok') this.codeCloseT = 1.5; return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
       if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
+      if (ov === 'collect') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.collMove(-1); else if (e.code === 'ArrowDown') this.collMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.collSell(); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
     click(x, y) {
@@ -621,11 +625,12 @@ const Market = (() => {
       else if (ov === 'help') this.closeHelp();
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'sell') this.sellClick(x, y);
+      else if (ov === 'collect') this.collClick(x, y);
       else if (ov === 'shop') this.shopClick(x, y);
       else if (ov === 'code') { if (Secret.lock.click(x, y) === 'ok') this.codeCloseT = 1.5; }
       else if (ov === 'talk') this.talkNext();
     }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'collect') this.collMove(dy > 0 ? 1 : -1); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
     pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
@@ -691,6 +696,68 @@ const Market = (() => {
       T.draw(ctx, S.bulk.length ? `Все обычные: ${S.bulkSum} монет` : '', 244, 246, { size: 8, color: c.dim });
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
+    // ------------------------------------------------------------ the collector: buys framed collections that are not hung up (and the frame of the guiding butterfly's wings)
+    collOpen() { Wings.announce(Wings.check(), (s, d) => this.toast(s, d)); this.col = { sel: 0, scroll: 0, msg: 'Принесли рамку? Покажите, что в ней. Стройная коллекция стоит дороже набора случайных бабочек.', msgT: 6, flash: 0, last: 0, confirm: 0, clickT: 0, clickIdx: -1 }; this.collRefresh(); }
+    collRefresh() {
+      const S = this.col; if (!S) return; const items = [];
+      if (Wings.built()) items.push({ wing: true, total: Collection.FRAME.L });
+      for (const b of Save.data.boxes) if (!b.loc && b.items.some(Boolean)) { const inf = Collection.info(b); if (inf.n) items.push({ box: b, inf, total: inf.total }); }
+      S.items = items.sort((a, b) => (b.wing ? 1e9 : b.total) - (a.wing ? 1e9 : a.total)); S.sel = clamp(S.sel, 0, Math.max(0, items.length - 1)); const vis = 6; S.scroll = clamp(S.scroll, 0, Math.max(0, items.length - vis)); if (S.sel < S.scroll) S.scroll = S.sel; if (S.sel >= S.scroll + vis) S.scroll = S.sel - vis + 1;
+    }
+    collMove(d) { const S = this.col; if (!S || !S.items.length) return; S.confirm = 0; S.sel = clamp(S.sel + d, 0, S.items.length - 1); this.collRefresh(); Snd.sfx.page(); }
+    collSell() {
+      const S = this.col, e = S.items[S.sel]; if (!e) return;
+      if (e.wing) { const r = Wings.sell(); if (!r) return; S.msg = 'Крылья путеводной бабочки... со всех концов света! Вот ваша карта океана — и ' + r.coins + ' монет за рамку. Берегите себя там, за горизонтом.'; S.msgT = 9; S.flash = 0.8; S.last = r.coins; Snd.sfx.reward(); this.toast('Получена карта океана! Она открыта на карте мира.', 6); this.collRefresh(); return; }
+      if (e.inf.n >= 3 && e.inf.rows.some(r => r.ab || r.rare) && S.confirm !== e.box.uid) { S.confirm = e.box.uid; S.confirmT = 4; S.msg = 'В рамке аберранты или редчайшие находки! Уверены? Нажмите «Продать» ещё раз.'; S.msgT = 4; Snd.sfx.deny(); return; }
+      S.confirm = 0; const p = Save.sellBox(e.box.uid); if (!p) return;
+      S.msg = e.inf.theme ? `Прекрасно подобрано: ${e.inf.theme.name}! Держите ${p} монет.` : `Беру. ${p} монет. Соберёте её по какому-нибудь признаку — заплачу больше.`; S.msgT = 6; S.flash = 0.8; S.last = p; Snd.sfx.reward(); this.collRefresh();
+    }
+    collLayout() {
+      const S = this.col, rows = []; for (let k = 0; k < 6; k++) { const idx = S.scroll + k; if (idx >= S.items.length) break; rows.push({ id: 'row', idx, x: 8, y: 44 + k * 35, w: 226, h: 33 }); }
+      const e = S.items[S.sel];
+      return { rows, sellBtn: { id: 'sell', label: (e && !e.wing && S.confirm === e.box.uid) ? 'Точно продать?' : e && e.wing ? 'Отдать рамку' : 'Продать рамку', x: 244, y: 232, w: 120, h: 18, size: 8, disabled: !e }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 }, up: { id: 'up', label: '^', x: 176, y: 252, w: 26, h: 12 }, dn: { id: 'dn', label: 'v', x: 206, y: 252, w: 26, h: 12 } };
+    }
+    collClick(x, y) {
+      const S = this.col, L = this.collLayout(); if (UIK.hit(L.closeBtn, x, y)) { Snd.sfx.page(); this.close(); return; }
+      const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { const now = performance.now(); if (S.sel === r.idx && S.clickIdx === r.idx && now - S.clickT < 450) { this.collSell(); S.clickIdx = -1; } else { S.sel = r.idx; S.clickIdx = r.idx; S.clickT = now; S.confirm = 0; this.collRefresh(); Snd.sfx.click(); } return; }
+      if (!L.sellBtn.disabled && UIK.hit(L.sellBtn, x, y)) this.collSell(); else if (UIK.hit(L.up, x, y)) this.collMove(-1); else if (UIK.hit(L.dn, x, y)) this.collMove(1);
+    }
+    drawBoxThumb(ctx, box, x, y, w, h) { const sz = Boxes.pxSize(box.size), k = Math.min(w / sz.w, h / sz.h), dw = Math.round(sz.w * k), dh = Math.round(sz.h * k); ctx.imageSmoothingEnabled = k < 1; ctx.drawImage(Boxes.canvas(box), Math.round(x + (w - dw) / 2), Math.round(y + (h - dh) / 2), dw, dh); ctx.imageSmoothingEnabled = false; }
+    drawColl(ctx, t, m, dt) {
+      const S = this.col; S.msgT = Math.max(0, S.msgT - dt); if (S.confirm) { S.confirmT -= dt; if (S.confirmT <= 0) S.confirm = 0; } S.flash = Math.max(0, S.flash - dt); const L = this.collLayout();
+      ctx.fillStyle = '#14201a'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#1a2a22' : '#16241c'; ctx.fillRect(i, 0, 3, SH); }
+      T.draw(ctx, 'Торговец коллекциями', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Покупает готовые рамки, не повешенные на стену. Выберите рамку и нажмите «Продать»', 8, 20, { size: 8, color: c.dim });
+      T.draw(ctx, 'Рамки (не на стене)', 8, 32, { size: 8, color: c.dim }); this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
+      UIK.panel(ctx, 6, 42, 230, 212, { fill: '#1e2c24', border: '#46604f', shadow: false });
+      if (!S.items.length) T.para(ctx, 'Здесь пусто. Соберите в кабинете рамку с бабочками (верстак → коробка) и не вешайте её на стену — или снимите со стены.', 16, 90, 210, { size: 8, color: c.dim, lh: 10 });
+      L.rows.forEach(r => { const e = S.items[r.idx], on = r.idx === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.26)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        ctx.fillStyle = '#0c1612'; ctx.fillRect(r.x + 2, r.y + 2, 54, 29);
+        if (e.wing) { ctx.fillStyle = '#6a4a2c'; ctx.fillRect(r.x + 8, r.y + 6, 42, 21); const a = Art.specimen(SPECIES_BY_ID.lux_ductrix || SPECIES[0]); ctx.drawImage(a, r.x + 10, r.y + 8, 38, 17); T.draw(ctx, 'Рамка путеводных крыльев', r.x + 60, r.y + 5, { size: 8, color: '#a8e8b0' }); T.draw(ctx, '8 крыльев · особый заказ', r.x + 60, r.y + 17, { size: 8, color: c.dim }); }
+        else { this.drawBoxThumb(ctx, e.box, r.x + 3, r.y + 3, 52, 27); T.draw(ctx, fitTxt(Boxes.boxLabel ? Boxes.boxLabel(e.box) : `${Boxes.SIZE_NAME[e.box.size]} · ${e.inf.n}/${e.inf.cap}`, 160), r.x + 60, r.y + 5, { size: 8, color: '#f0e8d0' }); T.draw(ctx, e.inf.theme ? fitTxt(e.inf.theme.name, 120) : 'без закономерности', r.x + 60, r.y + 17, { size: 8, color: e.inf.theme ? '#9ae0b0' : c.dim }); }
+        this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(e.total), 8), r.y + 5); T.draw(ctx, String(e.total), r.x + r.w - 6, r.y + 5, { size: 8, align: 'r', color: c.gold }); });
+      if (S.items.length > 6) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${S.sel + 1}/${S.items.length}`, 12, 255, { size: 8, color: c.dim }); }
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'collector', 247, 43, t, S.msgT > 0);
+      T.para(ctx, S.msg, 294, 44, 176, { size: 8, color: '#2a1a0c', lh: 9 });
+      const e = S.items[S.sel]; UIK.panel(ctx, 240, 98, 234, 130, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
+      const line = (k, a, b, col) => { T.draw(ctx, a, 248, 148 + k * 10, { size: 8, color: col || '#2a1a0c' }); T.draw(ctx, b, 466, 148 + k * 10, { size: 8, align: 'r', color: col || '#6a5030' }); };
+      if (e && e.wing) {
+        ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 42); const a = Art.specimen(SPECIES_BY_ID.lux_ductrix || SPECIES[0]); ctx.drawImage(a, 247, 105, 84, 36);
+        T.draw(ctx, 'Рамка путеводных крыльев', 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, 'по крылу с каждой начальной локации', 340, 114, { size: 8, color: '#8a2a1a' });
+        line(0, 'Рамка (большая)', String(Collection.FRAME.L)); line(1, 'Карта океана', 'в подарок', '#2a6a1a'); T.para(ctx, 'Такой рамки в моей коллекции ещё не было. За неё отдаю карту океана.', 248, 172, 218, { size: 8, color: '#4a3a20', lh: 10 });
+        ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 212, 222, 1); T.draw(ctx, 'Цена', 248, 215, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 216); T.draw(ctx, String(e.total), 466, 215, { size: 8, align: 'r', color: '#8a5a10' });
+      } else if (e) {
+        const i = e.inf; ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 42); this.drawBoxThumb(ctx, e.box, 246, 103, 86, 40);
+        T.draw(ctx, `Бабочек: ${i.n} из ${i.cap}`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, i.theme ? fitTxt(i.theme.name, 128) : i.n < i.need ? `нужно хотя бы ${i.need}` : 'закономерность не видна', 340, 114, { size: 8, color: i.theme ? '#2a6a1a' : '#8a2a1a' });
+        const o = i.found.find(f => f !== i.theme && (f.id === 'size' || f.id === 'quality')); T.draw(ctx, o ? fitTxt('и ' + o.name, 128) : '', 340, 125, { size: 8, color: '#2a6a1a' });
+        let k = 0; line(k++, `Рамка (${Boxes.SIZE_NAME[e.box.size].toLowerCase()})`, String(i.frame)); line(k++, `Бабочки (${i.n})`, String(i.sum));
+        const nr = i.rows.filter(r => r.rare).length; if (nr) line(k++, `в т. ч. редчайших ×${Collection.RARE_K}`, String(nr)); if (i.rows.some(r => r.ab)) line(k++, 'в т. ч. аберрантов', String(i.rows.filter(r => r.ab).length));
+        line(k++, 'Подбор коллекции', i.bonus ? '+' + i.bonus : '—', i.bonus ? '#2a6a1a' : '#8a7050');
+        T.para(ctx, i.bonus ? 'Закономерность в ряду ценится: чем чище она и полнее рамка — тем щедрее бонус.' : 'Соберите по признаку: семейство, локация, цвет, вид или одни аберранты; можно ещё упорядочить по размеру или качеству. Бонус 400–1000.', 248, 148 + k * 10 + 2, 218, { size: 8, color: '#4a3a20', lh: 9 });
+        ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 214, 222, 1); T.draw(ctx, 'Цена', 248, 217, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 218); T.draw(ctx, String(i.total), 466, 217, { size: 8, align: 'r', color: '#8a5a10' });
+      } else T.draw(ctx, 'Выберите рамку слева', 357, 150, { size: 8, align: 'c', color: '#6a5030' });
+      UIK.btn(ctx, L.sellBtn, !L.sellBtn.disabled && UIK.hit(L.sellBtn, m.x, m.y));
+      if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
+    }
     // ------------------------------------------------------------ the net seller: parts for nets
     shopOpen() { this.shop = { tab: 0, sel: 0, msg: 'Всё для настоящего сачка! Собрать его можно на верстаке в кабинете.', msgT: 5, flash: 0, last: 0 }; }
     shopList() { const slot = NetParts.SLOTS[this.shop.tab].id; return NetParts.SHOP.filter(id => NetParts.PARTS[id].slot === slot).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); }
@@ -742,6 +809,7 @@ const Market = (() => {
     draw(ctx, t, m, dt) {
       const ov = this.ov;
       if (ov === 'sell') return this.drawSell(ctx, t, m, dt);
+      if (ov === 'collect') return this.drawColl(ctx, t, m, dt);
       if (ov === 'shop') return this.drawShop(ctx, t, m, dt);
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       this.hud(ctx, t);

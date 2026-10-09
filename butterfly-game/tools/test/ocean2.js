@@ -4,7 +4,7 @@ const path = require('path'); const { chromium } = require(process.env.PW_CORE |
   const page = await browser.newPage({ viewport: { width: 1440, height: 810 } });
   page.on('pageerror', e => console.log('[pageerror]', e.message));
   await page.goto('file://' + path.resolve(__dirname, '../../Flora0world_Butterflies.html') + '#debug&nolock'); await page.waitForTimeout(1200);
-  await page.evaluate(() => { F0W.start('ocean', 'NIGHT2'); }); await page.waitForTimeout(2500);
+  await page.evaluate(() => { (Save.data.maps = Save.data.maps || {}, BIOMES.forEach(b => { if (b.map) Save.data.maps[b.map] = true; }), F0W.start)('ocean', 'NIGHT2'); }); await page.waitForTimeout(2500);
   await page.evaluate(() => { F0W.overlay = null; F0W.locked = true; F0W.fade = 0; F0W.fadeTarget = 0; });
   const shot = async n => { await page.waitForTimeout(800); await page.screenshot({ path: '/tmp/oc2_' + n + '.png' }); };
   const stage = (names) => page.evaluate((names) => { const p = F0W.play; p.toasts = []; p.cards = []; p.hintT = 0; p.player.pos.set(0, p.world.heightAt(0, 0) + 1.65, 0); p.player.yaw = 0; p.player.pitch = -0.05; p.flickT = 0;

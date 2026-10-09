@@ -23,7 +23,7 @@ const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
   await pg.keyboard.type('12345678'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(300); ok(!(await ev(() => Secret.unlocked())), 'a wrong code does not open the door'); await pg.screenshot({ path: '/tmp/sf_lock_wrong.png' });
   await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
   // --- 2: the lighthouse
-  await ev(() => { F0W.toMap(); }); await pg.waitForTimeout(300); await ev(() => F0W.start('ocean', 'T9')); await pg.waitForTimeout(5000); await unfade(); await ev(() => { F0W.overlay = null; F0W.locked = true; });
+  await ev(() => { F0W.toMap(); }); await pg.waitForTimeout(300); await ev(() => (Save.data.maps = Save.data.maps || {}, BIOMES.forEach(b => { if (b.map) Save.data.maps[b.map] = true; }), F0W.start)('ocean', 'T9')); await pg.waitForTimeout(5000); await unfade(); await ev(() => { F0W.overlay = null; F0W.locked = true; });
   const lh = await ev(() => { const w = F0W.play.world, pk = w.pickups && w.pickups[0]; if (!pk) return null; const u = [pk.x - w.lhPos.x, pk.z - w.lhPos.z], L = Math.hypot(...u); const P = F0W.play.player; P.pos.x = pk.x + u[0] / L * 1.5; P.pos.z = pk.z + u[1] / L * 1.5; P.yaw = Math.atan2(u[0] / L, u[1] / L); P.pitch = -0.1; return pk.id; });
   ok(lh === 3, 'the ocean lighthouse carries a pickup (fragment 3)'); await pg.waitForTimeout(1200); await pg.screenshot({ path: '/tmp/sf_lighthouse.png' });
   ok(await ev(() => !!F0W.play.pickNear), 'the prompt appears next to the note'); await pg.keyboard.press('KeyE'); await pg.waitForTimeout(500); ok((await frags()) === '1010', 'fragment 88 taken (' + await frags() + ')');

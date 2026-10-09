@@ -238,7 +238,7 @@
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
       if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
-      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop'].includes(cb.ov);
+      const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'journal', 'sell', 'shop', 'collect', 'wings'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
       ctx.clearRect(0, 0, SW, SH);
       if (!full) { postMat.uniforms.edgeD.value = 380; renderer.setRenderTarget(rt); renderer.render(cb.scene, cb.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam); gl.style.visibility = 'visible'; } else gl.style.visibility = 'hidden';

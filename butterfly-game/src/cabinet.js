@@ -87,8 +87,8 @@ const Cabinet = (() => {
       this.colliders = []; this.stations = []; this.toastT = 0; this.toastText = ''; this.prompt = null;
       this.dynamic = new THREE.Group(); this.scene.add(this.dynamic);
       { const hp = new URLSearchParams(location.hash.replace('#', '?')).get('hour'); if (hp !== null && !isNaN(+hp)) this.hourOverride = +hp; }
-      this.build(); this.applyTime(this.realHour()); this.refresh();
-      Snd.startAmbient('cabinet'); this.toast('Добро пожаловать в кабинет!', 3);
+      const newWings = Wings.check(); this.build(); this.applyTime(this.realHour()); this.refresh();
+      Snd.startAmbient('cabinet'); this.toast('Добро пожаловать в кабинет!', 3); Wings.announce(newWings, (s2, d) => this.toast(s2, d));
       this.netAcc = 0; if (Net.on) { this.remotes = new Remotes(this.scene); Net.hooks.cab = () => this.refresh(); Net.hooks.pjoin = m => this.toast(`${m.name} вошёл в кабинет`, 2.5); Net.hooks.pleave = (m, r) => this.toast(`${r ? r.name : 'Игрок'} вышел`, 2.5); }
       this.camera.position.set(this.player.pos.x, 1.62, this.player.pos.z);
     }
@@ -263,6 +263,12 @@ const Cabinet = (() => {
       const gl = new THREE.Group(); gl.position.set(-1.75, 0, -2.3); S.add(gl); cyl(gl, 0.18, 0.2, 0.05, 0, 0.9 + 0.02, 0, darkWood, 10); cyl(gl, 0.04, 0.04, 0.88, 0, 0.48, 0, darkWood, 8); cyl(gl, 0.26, 0.2, 0.06, 0, 0.03, 0, darkWood, 10);
       const gtex = ctex(64, 32, (x, w, h) => { x.fillStyle = '#3a78a8'; x.fillRect(0, 0, w, h); const nz = new Noise2(9); for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const v = nz.fbm(i * 0.09, j * 0.12, 3); if (v > 0.52) { x.fillStyle = v > 0.66 ? '#6a8a3a' : '#4e9a48'; x.fillRect(i, j, 1, 1); } } }, 0, 0, false);
       const globe = mesh(new THREE.SphereGeometry(0.3, 14, 10), lam('#ffffff', { map: gtex }), 0, 1.3, 0, {}); globe.rotation.z = 0.4; gl.add(globe); this.globe = globe; this.addCol(-2.1, -1.4, -2.65, -1.95);
+      // --- the easel with the frame of the guiding butterfly's wings (west side; the picture itself is made in refresh())
+      { const ez = 2.05, ex = -2.0, ea = new THREE.Group(); ea.position.set(ex, 0, ez); S.add(ea);
+        for (const sx of [-1, 1]) cube(ea, 0.06, 1.65, 0.05, sx * 0.66, 0.82, 0.12, darkWood);
+        cube(ea, 1.32, 0.05, 0.05, 0, 1.55, 0.12, darkWood);
+        cube(ea, 1.5, 0.05, 0.3, 0, 0.62, -0.03, wood); cube(ea, 1.46, 0.05, 0.04, 0, 0.62, -0.19, brass);
+        this.easelPos = { x: ex, y: 1.06, z: ez + 0.02 }; this.addCol(ex - 0.8, ex + 0.8, ez - 0.25, ez + 0.25); }
       // wall hook guides for the exhibition wall are part of refresh()
       // --- window sill light spot marker none; interactions
       this.stations = [
@@ -272,6 +278,7 @@ const Cabinet = (() => {
         { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
         { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
         { id: 'exit', x: 4.0, z: -1.6, r: 1.1, label: () => 'E — выйти на карту экспедиций' },
+        { id: 'wings', x: -2.0, z: 1.3, r: 1.2, label: () => Wings.done() ? 'E — рамка путеводных крыльев (продана)' : `E — рамка с крыльями путеводной бабочки (${Wings.inFrame()}/${Wings.START.length})` },
         { id: 'museum', x: 4.0, z: 0.1, r: 0.95, label: () => `E — войти в музей (на экспозиции: ${Save.data.boxes.filter(b => b.loc && Boxes.MUS[b.loc.t]).length})` },
       ];
       this.addCol(-HX, HX, -HZ - 1, -HZ + 0.12); // keep away from the north wall displays
@@ -290,7 +297,7 @@ const Cabinet = (() => {
 
     // rebuild everything that depends on saved boxes: wall and desk-top displays
     refresh() {
-      const D = this.dynamic; while (D.children.length) { const o = D.children.pop(); o.traverse(n => { if (n.geometry) n.geometry.dispose(); }); }
+      const D = this.dynamic; if (this.wingMap) { this.wingMap.dispose(); this.wingMap = null; } while (D.children.length) { const o = D.children.pop(); o.traverse(n => { if (n.geometry) n.geometry.dispose(); }); }
       const frameMats = Boxes.STYLES.map(s => lam(s.fr[1]));
       const mk = (box, flat) => {
         const { w, h } = Boxes.pxSize(box.size), W = w / PPM, H = h / PPM; const tx = texFor(box);
@@ -316,6 +323,9 @@ const Cabinet = (() => {
         if (occ) { const { m } = mk(occ, true); m.position.set(px, 0.92, pz); m.rotation.y = 0; D.add(m); }
         else { const tex = ctex(64, 48, (g, w2, h2) => { g.strokeStyle = 'rgba(220,190,110,0.5)'; g.setLineDash([3, 3]); g.strokeRect(2.5, 2.5, w2 - 5, h2 - 5); }, 0, 0, true); const q = mesh(new THREE.PlaneGeometry(1.0, 0.78), bas('#ffffff', { map: tex, transparent: true, depthWrite: false }), px, 0.905, pz, { cast: false, recv: false }); q.rotation.x = -Math.PI / 2; D.add(q); }
       }
+      // the frame of the guiding butterfly's wings on the easel (it fills up as the wings are laid into it)
+      if (this.easelPos) { const E = this.easelPos, tx = WingsUI.tex(); this.wingMap = tx; const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.77), new THREE.MeshLambertMaterial({ map: tx })); pic.rotation.y = Math.PI; pic.position.set(E.x, E.y, E.z - 0.02); D.add(pic);
+        const fm = lam(Wings.built() ? '#d8b048' : '#4a2c18'); for (const [w, h, x, y] of [[1.5, 0.05, 0, 0.41], [1.5, 0.05, 0, -0.41], [0.05, 0.87, 0.725, 0], [0.05, 0.87, -0.725, 0]]) cube(D, w, h, 0.05, E.x + x, E.y + y, E.z - 0.01, fm); }
       // drawers indicator: count of boxes inside on the desk label
     }
 
@@ -398,7 +408,7 @@ const Cabinet = (() => {
       if (!this.sitDir && this.sit <= 0) this.sitFrom = null;
     }
     standUp() { if (this.sit > 0 || this.sitDir) { this.sitDir = 0; this.sitOpen = null; Snd.sfx.step('wood'); } }
-    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'pick') Spread.pick.open(); if (name === 'bench') Boxes.bench.open(); }
+    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'pick') Spread.pick.open(); if (name === 'bench') Boxes.bench.open(); if (name === 'wings') WingsUI.open(); }
     close() { this.ov = null; this.standUp(); this.refresh(); this.hooks.lock(); }
     interact() {
       const s = this.prompt; if (!s) return;
@@ -408,6 +418,7 @@ const Cabinet = (() => {
       else if (s.id === 'desk') { Snd.sfx.page(); Boxes.place.open('desk'); this.open('place'); }
       else if (s.id === 'wall') { Snd.sfx.page(); Boxes.place.open('wall'); this.open('place'); }
       else if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exit(); }
+      else if (s.id === 'wings') { Snd.sfx.page(); this.open('wings'); }
       else if (s.id === 'museum') { Snd.sfx.door(); this.hooks.museum(); }
     }
     key(e) {
@@ -423,7 +434,7 @@ const Cabinet = (() => {
         return;
       }
       if (ov === 'journal') { const J = Screens.journal, nb = visibleBiomes().length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
-      if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'pick') this.close(); }
+      if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'pick' || this.ov === 'wings') this.close(); }
     }
     click(x, y) {
       const ov = this.ov;
@@ -432,6 +443,7 @@ const Cabinet = (() => {
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'bench') { const r = Boxes.bench.click(x, y); if (r === 'close') this.close(); }
       else if (ov === 'place') { const r = Boxes.place.click(x, y); if (r === 'close') this.close(); else if (r === 'changed') this.refresh(); }
+      else if (ov === 'wings') { const r = WingsUI.click(x, y); if (r === 'close') { Snd.sfx.page(); this.close(); } else if (r === 'changed') this.refresh(); }
       else if (ov === 'pause') { const id = Cab.pauseClick(x, y); this.pauseAct(id); }
       else if (ov === 'help') this.closeHelp();
     }
@@ -457,6 +469,7 @@ const Cabinet = (() => {
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       if (ov === 'bench') return Boxes.bench.draw(ctx, t, m);
       if (ov === 'place') return Boxes.place.draw(ctx, t, m);
+      if (ov === 'wings') return WingsUI.draw(ctx, t, m, dt);
       this.hud(ctx, t);
       if (ov === 'pause') this.drawPause(ctx, m);
       else if (ov === 'help') this.drawHelp(ctx);

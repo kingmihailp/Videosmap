@@ -4,7 +4,7 @@ const path = require('path'); const { chromium } = require(process.env.PW_CORE |
   const page = await browser.newPage({ viewport: { width: 1440, height: 810 } }); page.on('pageerror', e => console.log('[pageerror]', e.message));
   await page.goto('file://' + path.resolve(__dirname, '../../Flora0world_Butterflies.html') + '#debug&nolock'); await page.waitForTimeout(1000);
   const run = async (biome, seed) => {
-    await page.evaluate(([b, s]) => F0W.start(b, s), [biome, seed]); await page.waitForTimeout(2500);
+    await page.evaluate(([b, s]) => (Save.data.maps = Save.data.maps || {}, BIOMES.forEach(b => { if (b.map) Save.data.maps[b.map] = true; }), F0W.start)(b, s), [biome, seed]); await page.waitForTimeout(2500);
     await page.evaluate(() => { F0W.overlay = null; F0W.locked = true; F0W.fade = 0; F0W.fadeTarget = 0; });
     return page.evaluate(() => { const p = F0W.play, w = p.world, P = p.player; let sp = null;
       for (let a = 0; a < 6.28 && !sp; a += 0.1) for (let d = 8; d < 44; d += 1) { const x = Math.cos(a) * d, z = Math.sin(a) * d; if (w.inWater(x, z, 0) && !w.inWater(Math.cos(a) * (d - 1.5), Math.sin(a) * (d - 1.5), 0)) { sp = { x, z, a, d }; break; } }

@@ -13,7 +13,7 @@ const PORT = +(process.argv[2] || process.env.PORT || 3000);
 const GAME = path.resolve(process.env.GAME || path.join(__dirname, '..', 'Flora0world_Butterflies.html'));   // GAME=/path/to/file.html overrides
 const DATA_DIR = path.join(__dirname, 'data'), STATE_FILE = path.join(DATA_DIR, 'state.json');
 const BIOMES = ['russia', 'alps', 'med', 'amazon', 'borneo', 'kenya', 'prairie', 'japan', 'bog', 'papua', 'vietnam', 'ocean'];
-const SECRET_MAP = { bog: 'bog', papua: 'papua', vietnam: 'vietnam' };      // secret locations: a player may enter only when his client says he owns the map (maps are personal; players with the same map meet there)
+const SECRET_MAP = { bog: 'bog', papua: 'papua', vietnam: 'vietnam', ocean: 'ocean' };      // secret locations: a player may enter only when his client says he owns the map (maps are personal; players with the same map meet there)
 const MAX_NAME = 16;
 
 // ------------------------------------------------------------------ persistent shared state
@@ -45,6 +45,7 @@ function applyOp(op) {
     case 'delSpec': { const s = spec(op.uid); if (!s || s.box) return false; state.specimens = state.specimens.filter(x => x.uid !== op.uid); return true; }
     case 'spread': { const s = spec(op.uid); if (!s || s.q !== null || !(op.q >= 1 && op.q <= 100) || !op.pose) return false; s.q = op.q; s.pose = op.pose; return true; }
     case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 120) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
+    case 'sellBox': { const b = box(op.uid); if (!b || b.loc || !b.items.some(Boolean)) return false; state.specimens = state.specimens.filter(s => !b.items.includes(s.uid)); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }      // a frame sold to the collector: the box and its butterflies are gone
     case 'delBox': { const b = box(op.uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = spec(u); if (s) s.box = null; }); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }
     case 'putIn': { const b = box(op.box), s = spec(op.spec); if (!b || !s || s.q === null || s.box || op.slot < 0 || op.slot >= b.items.length || b.items[op.slot]) return false; b.items[op.slot] = s.uid; s.box = b.uid; return true; }
     case 'takeOut': { const b = box(op.box); if (!b || op.slot < 0 || op.slot >= b.items.length || !b.items[op.slot]) return false; const s = spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; return true; }
