@@ -800,7 +800,7 @@ const Market = (() => {
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, por, 247, 43, t, G.msgT > 0); T.para(ctx, G.msg, 294, 44, 176, { size: 8, color: '#2a1a0c', lh: 9 });
       UIK.panel(ctx, 240, 98, 234, 130, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
       if (it) {
-        ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 62, 62); this.goodsIcon(ctx, K, it, K === 'tr' ? 265 : 250, K === 'tr' ? 103 : 108, K === 'tr' ? 60 : 3.4);
+        ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 62, 62); this.goodsIcon(ctx, K, it, K === 'tr' ? 255 : 250, K === 'tr' ? 103 : 108, K === 'tr' ? 60 : 3.4);
         T.draw(ctx, fitTxt(it.ru, 160), 312, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, fitTxt(it.la || it.real || '', 160), 312, 114, { size: 8, color: '#8a2a1a' });
         if (K === 'fl') { T.draw(ctx, `Запах: ${it.scent} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `≈ ${(1.1 * it.scent).toFixed(1)} бабочек/мин`, 312, 137, { size: 8, color: '#4a3a20' }); }
         else if (K === 'hn') { T.draw(ctx, `Качество: ${it.q} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `редкие гости до ×${Traps.rarK(it.id, 3).toFixed(1)}`, 312, 137, { size: 8, color: '#4a3a20' }); }
