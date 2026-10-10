@@ -312,7 +312,7 @@ const Art = (() => {
   function partTexture(sp, part) { const k = sp.id + part; if (partTex[k]) return partTex[k]; const t = new THREE.CanvasTexture(wingParts(sp)[part]); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return (partTex[k] = t); }
   const restSize = sp => ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF * (sp.glow ? 2.4 : 1) / 2 / 0.9;            // the wing length (the same as in makeButterfly)
   function makeResting(sp, opt) {
-    opt = opt || {}; const u = opt.u || restSize(sp), parts = wingParts(sp), g = new THREE.Group(), top = new THREE.Group(); g.add(top); top.position.y = 0.235 * u;
+    opt = opt || {}; const u = opt.u || restSize(sp), parts = wingParts(sp), g = new THREE.Group(), top = new THREE.Group(); g.add(top); top.position.y = 0.075 * u;
     // colours: the fur takes a darkened tint of the fore wing's colour
     const f0 = (sp.art && sp.art.f && sp.art.f[0]) || (sp.art && sp.art.h && sp.art.h[0]) || '#8a6a3a'; const fc = new THREE.Color(typeof f0 === 'string' && f0[0] === '#' ? f0 : '#8a6a3a'), fur = fc.clone().multiplyScalar(0.55).lerp(new THREE.Color('#2a1c10'), 0.35), fur2 = fur.clone().multiplyScalar(1.25);
     const L = c => new THREE.MeshLambertMaterial({ color: c }), mFur = L(fur), mFur2 = L(fur2), mDark = L('#16100c'), mEye = new THREE.MeshLambertMaterial({ color: '#0a0808', emissive: '#1a2230' }), mLeg = L('#1c1510');
@@ -333,11 +333,12 @@ const Art = (() => {
     // the body, head and antennae are the game's own butterfly model (makeButterfly) without its wings, turned to look along +x
     { const body = makeButterfly(sp); body.remove(body.userData.L, body.userData.R); body.rotation.y = -Math.PI / 2; body.scale.setScalar(u / restSize(sp)); top.add(body); }
     // legs: hip -> knee (up and out) -> ankle -> foot on the perch (y = -0.27 u); the front pair is tucked against the chest
-    // all three pairs grow from the underside of the thorax (the hind pair just behind the middle one, the longest); the knees point up and back, the feet stand under the body
+    // the specimen is dead: the body lies on the surface and the legs are drawn up under it, folded at the knees and crossed (every foot reaches over to the other side)
     const legs = [[0.1, 1, 'f'], [0.1, -1, 'f'], [0.045, 1, 'm'], [0.045, -1, 'm'], [-0.02, 1, 'h'], [-0.02, -1, 'h']];
-    legs.forEach(([x, sd, kind]) => { const P = kind === 'f' ? [[x, -0.055, sd * 0.03], [x + 0.05, -0.085, sd * 0.06], [x + 0.095, -0.065, sd * 0.07], [x + 0.1, -0.1, sd * 0.066]]
-        : kind === 'm' ? [[x, -0.06, sd * 0.035], [x + 0.055, -0.095, sd * 0.1], [x + 0.07, -0.18, sd * 0.12], [x + 0.075, -0.233, sd * 0.115], [x + 0.105, -0.236, sd * 0.115]]
-        : [[x, -0.06, sd * 0.035], [x - 0.065, -0.1, sd * 0.095], [x - 0.055, -0.19, sd * 0.115], [x - 0.03, -0.233, sd * 0.11], [x, -0.236, sd * 0.11]];
+    legs.forEach(([x, sd, kind]) => { const y = sd > 0 ? 0 : -0.012;                  // the two sides at slightly different heights, so that the crossing legs do not run into each other
+      const P = kind === 'f' ? [[x, -0.06, sd * 0.03], [x + 0.045, -0.085 + y, sd * 0.075], [x + 0.085, -0.075 + y, sd * 0.03], [x + 0.115, -0.07 + y, -sd * 0.035]]
+        : kind === 'm' ? [[x, -0.06, sd * 0.035], [x + 0.03, -0.095 + y, sd * 0.09], [x + 0.075, -0.09 + y, sd * 0.04], [x + 0.11, -0.085 + y, -sd * 0.04]]
+        : [[x, -0.06, sd * 0.035], [x - 0.055, -0.09 + y, sd * 0.09], [x - 0.105, -0.085 + y, sd * 0.035], [x - 0.145, -0.08 + y, -sd * 0.045]];
       blocky(P, kind === 'f' ? 0.0075 : kind === 'm' ? 0.0085 : 0.0095, mLeg); const e = P[P.length - 1], ft = new THREE.Mesh(new THREE.BoxGeometry(0.03 * u, 0.014 * u, 0.02 * u), mDark); ft.position.set(e[0] * u, e[1] * u, e[2] * u); top.add(ft); });
     g.userData = { u, resting: true }; return g;
   }
