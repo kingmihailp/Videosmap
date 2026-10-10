@@ -16,8 +16,6 @@ const Boxes = (() => {
   function pxSize(size) { const d = DIM[size]; return { w: d.c * CW + FR * 2, h: d.r * CH + FR * 2 }; }
   function sig(box) { return box.size + box.style + '|' + box.items.map(u => { const s = Save.spec(u); return s ? u + ':' + s.q : 0; }).join(','); }
 
-  // the butterflies of one frame keep their true proportions: the largest wingspan gets (almost) the whole cell, the rest are scaled by their wingspans in mm
-  function frameScales(box) { const sps = box.items.map(u => { const s = u ? Save.spec(u) : null; return s && SPECIES_BY_ID[s.sp] ? SPECIES_BY_ID[s.sp] : null; }), real = sps.filter(Boolean), sc = Art.groupScales(real, 1.12, 0.14); let k = 0; return sps.map(sp => sp ? sc[k++] : 1); }
   function canvas(box, bare) {
     const key = sig(box) + (bare ? '|bare' : ''); if (cache.has(key)) return cache.get(key);
     const d = DIM[box.size], st = STYLES[box.style] || STYLES[0], { w, h } = pxSize(box.size);
@@ -32,12 +30,11 @@ const Boxes = (() => {
     if (st.kind === 'linen') { x.fillStyle = 'rgba(0,0,0,0.04)'; for (let i = FR; i < w - FR; i += 2) x.fillRect(i, FR, 1, h - FR * 2); }
     x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(FR - 2, FR - 2, w - FR * 2 + 4, 2); x.fillRect(FR - 2, FR - 2, 2, h - FR * 2 + 4);
     // cells
-    const SCL = frameScales(box);
     box.items.forEach((u, i) => {
       const cx0 = FR + (i % d.c) * CW, cy0 = FR + Math.floor(i / d.c) * CH; const s = Save.spec(u);
       if (!s) { x.strokeStyle = 'rgba(0,0,0,0.12)'; x.setLineDash([2, 3]); x.strokeRect(cx0 + 10.5, cy0 + 8.5, CW - 21, CH - 21); x.setLineDash([]); return; }
       const sp = SPECIES_BY_ID[s.sp];
-      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, SCL[i]);
+      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
         x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1); }
       // label
       x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1);
@@ -98,7 +95,7 @@ const Boxes = (() => {
   const mountGroup = e => { const g = new THREE.Group(); const a = new THREE.Mesh(e.wg, e.wm), b = new THREE.Mesh(e.bg, e.bm); a.userData.noFloat = b.userData.noFloat = true; g.add(a, b); return g; };
   function mount3D(box, ppm) {
     const key = sig(box) + '|' + ppm; let e = m3cache.get(key);
-    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = [], SC = frameScales(box); box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + 32, sc: SC[i] }); });
+    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + 32, sc: 1 }); });
       e = buildMount(items, w, h, ppm); m3cache.set(key, e); if (m3cache.size > 160) m3cache.delete(m3cache.keys().next().value); }
     return mountGroup(e);
   }

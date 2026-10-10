@@ -310,10 +310,6 @@ const Art = (() => {
   // rare ones go through the same wing canvases) and the size follows the species' wingspan. The head looks to +x, up is +y, the near wing is towards +z; feet at y = 0.
   const partTex = {};
   function partTexture(sp, part) { const k = sp.id + part; if (partTex[k]) return partTex[k]; const t = new THREE.CanvasTexture(wingParts(sp)[part]); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return (partTex[k] = t); }
-  // real size: the average wingspan of the species in mm (an aberration carries its own, scaled), and a scale for 2D / 3D displays that keeps the true proportions:
-  // the largest butterfly of the group shown gets `top` (>= 70 mm so that a group of tiny ones is not blown up), the others are in proportion to their wingspans
-  const spanMm = sp => (sp.mm[0] + sp.mm[1]) / 2;
-  function groupScales(list, top, lo) { const mx = Math.max(70, ...list.map(spanMm)); return list.map(sp => Math.min(top, Math.max(lo, top * spanMm(sp) / mx))); }
   const restSize = sp => ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF * (sp.glow ? 2.4 : 1) / 2 / 0.9;            // the wing length (the same as in makeButterfly)
   function makeResting(sp, opt) {
     opt = opt || {}; const u = opt.u || restSize(sp), parts = wingParts(sp), g = new THREE.Group(), top = new THREE.Group(); g.add(top); top.position.y = 0.235 * u;
@@ -362,5 +358,5 @@ const Art = (() => {
     } catch (e) { return (rpCache[key] = null); }
   }
 
-  return { spanMm, groupScales, makeResting, restingPic, wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
+  return { makeResting, restingPic, wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
 })();
