@@ -150,7 +150,7 @@ const Cabinet = (() => {
       cube(bd, 0.46, 0.02, 0.62, 0, 0.01, 0, lam('#6a4a28')); cube(bd, 0.19, 0.03, 0.6, -0.135, 0.035, 0, lam('#c29a5c')); cube(bd, 0.19, 0.03, 0.6, 0.135, 0.035, 0, lam('#c29a5c'));
       // a butterfly as a real 3D model (wings raised a little, a body with antennae), scaled to a wing span
       const model3 = (sp, span, flap) => { const m = Art.makeButterfly(sp); Art.setFlap(m, flap); m.scale.setScalar(span / m.userData.span); m.traverse(o => { if (o.material && o.material.map) o.material = new THREE.MeshLambertMaterial({ map: o.material.map, alphaTest: 0.5, side: THREE.DoubleSide, color: '#b8ac98' }); }); return m; };
-      const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const sm = model3(sample, 0.4, 0.08); sm.position.set(0, 0.0545, 0); bd.add(sm);
+      const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const sm = model3(sample, Math.min(0.44, Math.max(0.1, Art.spanMm(sample) / 1000 * 3.2)), 0.08); sm.position.set(0, 0.0545, 0); bd.add(sm);
       for (const zz of [-0.17, -0.06, 0.07, 0.18]) { cube(bd, 0.004, 0.03, 0.004, 0.05, 0.065, zz, metalM, { cast: false }); cube(bd, 0.12, 0.002, 0.012, 0.0, 0.0535, zz * 1.0, lam('#efe6c8'), { cast: false }); }
       // jar with a lid, standing on the desk
       cyl(sd, 0.05, 0.05, 0.12, dx0 + 0.25, 0.895, -0.75, lam('#a8d0d8', { transparent: true, opacity: 0.55 }), 10); cyl(sd, 0.053, 0.053, 0.02, dx0 + 0.25, 0.965, -0.75, metalM, 10);
@@ -223,7 +223,7 @@ const Cabinet = (() => {
       this.hHand = cube(clock, 0.02, 0.16, 0.01, 0, 0, 0.02, bas('#14100c'), { cast: false }); this.mHand = cube(clock, 0.015, 0.23, 0.01, 0, 0, 0.03, bas('#14100c'), { cast: false });
       this.hHand.geometry.translate(0, 0.08, 0); this.mHand.geometry.translate(0, 0.115, 0);
       // --- framed specimens
-      const fr = (x, y, z, ry, sp) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; S.add(g); cube(g, 0.66, 0.46, 0.05, 0, 0, 0, darkWood, { cast: false }); cube(g, 0.56, 0.36, 0.01, 0, 0, 0.03, lam('#efe6c8'), { cast: false }); const q = model3(sp, 0.5, 0.18); q.rotation.x = Math.PI / 2; q.position.set(0, 0, 0.042); g.add(q); cube(g, 0.006, 0.006, 0.03, 0, -0.01, 0.03, metalM, { cast: false }); };
+      const fr = (x, y, z, ry, sp) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; S.add(g); cube(g, 0.66, 0.46, 0.05, 0, 0, 0, darkWood, { cast: false }); cube(g, 0.56, 0.36, 0.01, 0, 0, 0.03, lam('#efe6c8'), { cast: false }); const q = model3(sp, Math.min(0.55, Math.max(0.12, Art.spanMm(sp) / 1000 * 3.2)), 0.18); q.rotation.x = Math.PI / 2; q.position.set(0, 0, 0.042); g.add(q); cube(g, 0.006, 0.006, 0.03, 0, -0.01, 0.03, metalM, { cast: false }); };
       fr(-HX + 0.04, 1.85, -2.4, Math.PI / 2, SPECIES_BY_ID.machaon || SPECIES[0]); fr(-HX + 0.04, 1.85, 2.4, Math.PI / 2, SPECIES[Math.min(10, SPECIES.length - 1)]);
       // --- pendant lamp, plants, globe
       cyl(S, 0.01, 0.01, 0.7, 0.3, RH - 0.45, 0.4, bas('#14100c'), 4, { cast: false }); cyl(S, 0.08, 0.34, 0.26, 0.3, RH - 0.9, 0.4, lam('#2a6a4a', { side: THREE.DoubleSide }), 14); this.bulb = mesh(new THREE.SphereGeometry(0.08, 8, 6), bas('#fff2c0'), 0.3, RH - 0.98, 0.4, { cast: false, recv: false }); S.add(this.bulb);
@@ -333,7 +333,7 @@ const Cabinet = (() => {
       // the raw (not yet spread) specimens waiting on a cork tray at the spreading desk: little 3D models of resting butterflies (folded wings, bent legs, antennae)
       { const raw = Save.rawList().slice(0, 4), tr = new THREE.Group(); tr.position.set(-3.88, 0.835, -0.38); D.add(tr);
         cube(tr, 0.4, 0.022, 0.46, 0, 0.011, 0, lam('#5a3a20'), { cast: false }); cube(tr, 0.36, 0.01, 0.42, 0, 0.027, 0, lam('#c8a870'), { cast: false });
-        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = clamp(((sp.mm[0] + sp.mm[1]) / 2 / 1000 * 5 / 2 / 0.9) * 0.6, 0.1, 0.17), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
+        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = Math.max(0.025, Art.spanMm(sp) / 1000 * 5 / 2 / 0.9 * 0.25), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
       // drawers indicator: count of boxes inside on the desk label
     }
 

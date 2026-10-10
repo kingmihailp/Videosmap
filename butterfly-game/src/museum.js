@@ -224,7 +224,7 @@ const Museum = (() => {
         for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.045, 0.2, 0.045, lc.x + sx * (lc.w / 2 - 0.05), 1.0, lc.z + sz * (lc.d / 2 - 0.05), DARK);
         B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z - lc.d / 2 + 0.05, brassC); B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z + lc.d / 2 - 0.05, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x - lc.w / 2 + 0.05, 1.115, lc.z, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x + lc.w / 2 - 0.05, 1.115, lc.z, brassC);
         const gl = mesh(new THREE.PlaneGeometry(lc.w - 0.12, lc.d - 0.12), bas('#cfe8ff', { transparent: true, opacity: 0.12, depthWrite: false }), lc.x, 1.1, lc.z); gl.rotation.x = -Math.PI / 2; S.add(gl);
-        const nq = 3; for (let i = 0; i < nq; i++) pinned(pick(qspecies), lc.x + (i - 1) * (lc.w / 3.1), 0.962, lc.z + R.range(-0.04, 0.04), 0.4, R.range(-0.3, 0.3), 0.16);
+        const nq = 3; for (let i = 0; i < nq; i++) { const sp = pick(qspecies); pinned(sp, lc.x + (i - 1) * (lc.w / 3.1), 0.962, lc.z + R.range(-0.04, 0.04), Math.min(0.5, Math.max(0.1, Art.spanMm(sp) / 1000 * 3.2)), R.range(-0.3, 0.3), 0.16); }
         for (let i = 0; i < 4; i++) { const col = pick(['#a8d0d8', '#c04a2a', '#2a6a4a', '#e0d4a0', '#8a5a9a']); B.cyl(0.05, 0.05, 0.14, lc.x + (i - 1.5) * 0.42 + R.range(-0.04, 0.04), 1.185, lc.z, col, 8); }
         this.addCol(lc.x - lc.w / 2, lc.x + lc.w / 2, lc.z - lc.d / 2, lc.z + lc.d / 2);
       });
@@ -324,7 +324,7 @@ const Museum = (() => {
       });
       for (const [x, z, i] of [[-9.6, -1.6, 0], [-9.6, 1.6, 1], [9.6, -1.6, 2], [9.6, 1.6, 3]]) {
         B.unit = 'dome' + i; B.box(0.6, 0.1, 0.6, x, 0.05, z, '#2a1a0e'); B.box(0.5, 1.05, 0.5, x, 0.625, z, '#d8c8a0'); B.box(0.58, 0.07, 0.58, x, 1.185, z, brassC); B.cyl(0.2, 0.2, 0.012, x, 1.22, z, '#6a1c1c', 14);
-        const sp = SPECIES_BY_ID.ornithoptera_alexandrae || SPECIES[i]; pinned(sp, x, 1.26, z, 0.34, i * 0.8, 0.3);
+        const sp = SPECIES_BY_ID.ornithoptera_alexandrae || SPECIES[i]; pinned(sp, x, 1.26, z, Math.min(0.5, Math.max(0.1, Art.spanMm(sp) / 1000 * 3.2)), i * 0.8, 0.3);
         const dome = mesh(new THREE.SphereGeometry(0.28, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), bas('#cfe8ff', { transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }), x, 1.22, z); S.add(dome);
         B.cyl(0.285, 0.285, 0.02, x, 1.225, z, brassC, 14); B.ball(0.03, x, 1.5, z, brassC, 6); this.addCol(x - 0.34, x + 0.34, z - 0.34, z + 0.34);
       }
