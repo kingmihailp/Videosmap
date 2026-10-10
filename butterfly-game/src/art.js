@@ -318,6 +318,10 @@ const Art = (() => {
     const L = c => new THREE.MeshLambertMaterial({ color: c }), mFur = L(fur), mFur2 = L(fur2), mDark = L('#16100c'), mEye = new THREE.MeshLambertMaterial({ color: '#0a0808', emissive: '#1a2230' }), mLeg = L('#1c1510');
     const sph = (r, sx, sy, sz, x, y, z, m, seg = 10) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.max(5, seg - 3)), m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); top.add(o); return o; };
     const tube = (pts, r, m, seg = 10, rad = 5) => { const o = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0] * u, p[1] * u, p[2] * u))), seg, r * u, rad, false), m); top.add(o); return o; };
+    // a blocky limb like the game's own antennae: straight square segments joined by cubes at the joints (no smooth tubes)
+    const blocky = (pts, r, m) => { const V = pts.map(p => new THREE.Vector3(p[0] * u, p[1] * u, p[2] * u)), w = r * u * 2, ax = new THREE.Vector3(1, 0, 0);
+      for (let i = 0; i < V.length - 1; i++) { const d = V[i + 1].clone().sub(V[i]), len = d.length(); if (len < 1e-6) continue; const o = new THREE.Mesh(new THREE.BoxGeometry(len + w * 0.6, w, w), m); o.position.copy(V[i]).addScaledVector(d, 0.5); o.quaternion.setFromUnitVectors(ax, d.normalize()); top.add(o); }
+      V.forEach((v, i) => { if (i && i < V.length - 1) { const j = new THREE.Mesh(new THREE.BoxGeometry(w * 1.25, w * 1.25, w * 1.25), m); j.position.copy(v); top.add(j); } }); };
     // wings: fore and hind, near and far, hinged on the back and standing up; the leading edge looks to the head
     const wing = (part, theta, rx, ry, rz, flare) => {
       const piv = PIV[part], geo = new THREE.PlaneGeometry(u, u); geo.translate(u / 2, -(0.5 - piv / N) * u, 0);
@@ -334,7 +338,7 @@ const Art = (() => {
     legs.forEach(([x, sd, kind]) => { const P = kind === 'f' ? [[x, -0.055, sd * 0.03], [x + 0.05, -0.085, sd * 0.06], [x + 0.095, -0.065, sd * 0.07], [x + 0.1, -0.1, sd * 0.066]]
         : kind === 'm' ? [[x, -0.06, sd * 0.035], [x + 0.055, -0.095, sd * 0.1], [x + 0.07, -0.18, sd * 0.12], [x + 0.075, -0.233, sd * 0.115], [x + 0.105, -0.236, sd * 0.115]]
         : [[x, -0.06, sd * 0.035], [x - 0.065, -0.1, sd * 0.095], [x - 0.055, -0.19, sd * 0.115], [x - 0.03, -0.233, sd * 0.11], [x, -0.236, sd * 0.11]];
-      tube(P, kind === 'f' ? 0.0075 : kind === 'm' ? 0.0085 : 0.0095, mLeg, 14, 4); const e = P[P.length - 1]; sph(1, 0.014 * u, 0.008 * u, 0.014 * u, e[0] * u, e[1] * u, e[2] * u, mDark, 5); });
+      blocky(P, kind === 'f' ? 0.0075 : kind === 'm' ? 0.0085 : 0.0095, mLeg); const e = P[P.length - 1], ft = new THREE.Mesh(new THREE.BoxGeometry(0.03 * u, 0.014 * u, 0.02 * u), mDark); ft.position.set(e[0] * u, e[1] * u, e[2] * u); top.add(ft); });
     g.userData = { u, resting: true }; return g;
   }
   // a picture of the resting model for the 2D windows (rendered once per species by a small renderer of its own, 3/4 view)
