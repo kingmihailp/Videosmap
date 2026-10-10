@@ -329,11 +329,12 @@ const Art = (() => {
     // the body, head and antennae are the game's own butterfly model (makeButterfly) without its wings, turned to look along +x
     { const body = makeButterfly(sp); body.remove(body.userData.L, body.userData.R); body.rotation.y = -Math.PI / 2; body.scale.setScalar(u / restSize(sp)); top.add(body); }
     // legs: hip -> knee (up and out) -> ankle -> foot on the perch (y = -0.27 u); the front pair is tucked against the chest
-    const legs = [[0.09, 1, 'f'], [0.09, -1, 'f'], [0.02, 1, 'm'], [0.02, -1, 'm'], [-0.05, 1, 'h'], [-0.05, -1, 'h']];
-    legs.forEach(([x, sd, kind]) => { const P = kind === 'f' ? [[x, -0.055, sd * 0.035], [x + 0.06, -0.1, sd * 0.07], [x + 0.1, -0.075, sd * 0.08], [x + 0.115, -0.11, sd * 0.075]]
-        : kind === 'm' ? [[x, -0.06, sd * 0.04], [x + 0.075, -0.1, sd * 0.11], [x + 0.1, -0.175, sd * 0.13], [x + 0.115, -0.233, sd * 0.125], [x + 0.15, -0.236, sd * 0.125]]
-        : [[x, -0.06, sd * 0.04], [x - 0.085, -0.1, sd * 0.11], [x - 0.115, -0.18, sd * 0.13], [x - 0.1, -0.233, sd * 0.125], [x - 0.065, -0.236, sd * 0.125]];
-      tube(P, kind === 'f' ? 0.0055 : 0.0065, mLeg, 14, 4); const e = P[P.length - 1]; sph(1, 0.014 * u, 0.008 * u, 0.014 * u, e[0] * u, e[1] * u, e[2] * u, mDark, 5); });
+    // all three pairs grow from the underside of the thorax (the hind pair just behind the middle one, the longest); the knees point up and back, the feet stand under the body
+    const legs = [[0.1, 1, 'f'], [0.1, -1, 'f'], [0.045, 1, 'm'], [0.045, -1, 'm'], [-0.02, 1, 'h'], [-0.02, -1, 'h']];
+    legs.forEach(([x, sd, kind]) => { const P = kind === 'f' ? [[x, -0.055, sd * 0.03], [x + 0.05, -0.085, sd * 0.06], [x + 0.095, -0.065, sd * 0.07], [x + 0.1, -0.1, sd * 0.066]]
+        : kind === 'm' ? [[x, -0.06, sd * 0.035], [x + 0.055, -0.095, sd * 0.1], [x + 0.07, -0.18, sd * 0.12], [x + 0.075, -0.233, sd * 0.115], [x + 0.105, -0.236, sd * 0.115]]
+        : [[x, -0.06, sd * 0.035], [x - 0.065, -0.1, sd * 0.095], [x - 0.055, -0.19, sd * 0.115], [x - 0.03, -0.233, sd * 0.11], [x, -0.236, sd * 0.11]];
+      tube(P, kind === 'f' ? 0.0075 : kind === 'm' ? 0.0085 : 0.0095, mLeg, 14, 4); const e = P[P.length - 1]; sph(1, 0.014 * u, 0.008 * u, 0.014 * u, e[0] * u, e[1] * u, e[2] * u, mDark, 5); });
     g.userData = { u, resting: true }; return g;
   }
   // a picture of the resting model for the 2D windows (rendered once per species by a small renderer of its own, 3/4 view)
