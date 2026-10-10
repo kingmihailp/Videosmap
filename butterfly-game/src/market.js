@@ -650,6 +650,12 @@ const Market = (() => {
     // ------------------------------------------------------------ selling
     sellTabs() { return [{ id: 'all', label: 'Все', f: () => true }, { id: 'spread', label: 'Расправленные', f: i => i.spread }, { id: 'raw', label: 'Сырые', f: i => !i.spread }, { id: 'ab', label: 'Аберранты', f: i => i.isAb || i.isOcean }]; }
     sellOpen() { this.sell = { tab: 0, sel: 0, scroll: 0, msg: 'Добро пожаловать! Что у вас сегодня?', msgT: 4, last: 0, flash: 0, confirm: 0, clickT: 0, clickIdx: -1 }; this.sellRefresh(); }
+    // a specimen for sale: a spread one is the flat picture, a raw (dead, unspread) one is the 3D model of the resting butterfly with folded wings and crossed legs
+    drawSpecimenPic(ctx, e, x, y, w, h) {
+      const rp = e.spec && e.spec.q === null ? Art.restingPic(e.i.sp) : null;
+      if (rp) { const k = Math.min(w / rp.width, h / rp.height), dw = Math.max(1, Math.round(rp.width * k)), dh = Math.max(1, Math.round(rp.height * k)); ctx.imageSmoothingEnabled = true; ctx.drawImage(rp, Math.round(x + (w - dw) / 2), Math.round(y + (h - dh) / 2), dw, dh); ctx.imageSmoothingEnabled = false; }
+      else { ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(e.i.sp), x, y, w, h); }
+    }
     sellRefresh() {
       const S = this.sell; if (!S) return; const tab = this.sellTabs()[S.tab];
       S.items = Save.data.specimens.filter(s => Save.sellable(s)).map(s => ({ spec: s, i: Econ.info(s) })).filter(e => e.i && tab.f(e.i)).sort((a, b) => b.i.price - a.i.price || b.spec.date - a.spec.date);
@@ -687,7 +693,7 @@ const Market = (() => {
       UIK.panel(ctx, 6, 56, 230, 208, { fill: '#2a2018', border: '#5a4430', shadow: false });
       if (!S.items.length) T.para(ctx, S.tab === 0 ? 'Нечего продавать. Наловите бабочек в экспедициях! Экземпляры в коробках сначала достаньте из коробки.' : 'В этой вкладке пусто.', 16, 110, 210, { size: 8, color: c.dim, lh: 10 });
       L.rows.forEach(r => { const e = S.items[r.idx], on = r.idx === S.sel, hv = UIK.hit(r, m.x, m.y); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        ctx.fillStyle = '#c8a870'; ctx.fillRect(r.x + 2, r.y + 2, 42, 22); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(e.i.sp), r.x + 3, r.y + 3, 40, 20);
+        ctx.fillStyle = '#c8a870'; ctx.fillRect(r.x + 2, r.y + 2, 42, 22); this.drawSpecimenPic(ctx, e, r.x + 3, r.y + 3, 40, 20);
         T.draw(ctx, fitTxt(e.i.sp.ru.replace(' · аберрант', ''), 112), r.x + 48, r.y + 3, { size: 8, color: e.i.isAb ? '#ff9ae8' : Rare.is(e.i.sp) ? '#ff5a5a' : '#f0e8d0' }); T.draw(ctx, e.i.isAb ? 'аберрант' + (e.i.spread ? ` · ${e.spec.q}%` : '') : e.i.spread ? `расправлен ${e.spec.q}%` : 'сырой', r.x + 48, r.y + 14, { size: 8, color: e.i.isAb ? '#c070b0' : c.dim });
         this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(e.i.price), 8), r.y + 8); T.draw(ctx, String(e.i.price), r.x + r.w - 6, r.y + 8, { size: 8, align: 'r', color: c.gold }); });
       if (S.items.length > 7) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${S.sel + 1}/${S.items.length}`, 12, 253, { size: 8, color: c.dim }); }
@@ -695,7 +701,7 @@ const Market = (() => {
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'buyer', 247, 43, t, S.msgT > 0);
       T.para(ctx, S.msg, 294, 46, 176, { size: 8, color: '#2a1a0c', lh: 10 });
       const e = S.items[S.sel]; UIK.panel(ctx, 240, 98, 234, 102, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
-      if (e) { const i = e.i; ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 90, 46); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(i.sp), 247, 103, 84, 42);
+      if (e) { const i = e.i; ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 90, 46); this.drawSpecimenPic(ctx, e, 247, 103, 84, 42);
         T.draw(ctx, fitTxt(i.sp.ru, 130), 340, 103, { size: 8, color: Rare.is(i.sp) ? '#c01818' : '#2a1a0c' }); T.draw(ctx, fitTxt(i.sp.la, 130), 340, 114, { size: 8, color: '#8a2a1a' }); T.draw(ctx, `${i.sp.mm[0]}–${i.sp.mm[1]} мм`, 340, 125, { size: 8, color: '#6a5030' }); T.draw(ctx, e.spec.by ? `поймал: ${e.spec.by}` : i.spread ? `качество ${e.spec.q}%` : 'не расправлен', 340, 136, { size: 8, color: '#6a5030' });
         const rows = [[`Вид (${i.isOcean ? 'редкость ???' : '★'.repeat(0) + 'редкость ' + (i.species.rar || 1) + '/3'})`, `${i.base}`], i.loc > 1 ? ['Особая локация', `×${i.loc}`] : null, i.isAb ? ['Аберрант', `×${i.ab.toFixed(1)}`] : null, [i.spread ? `Расправлен ${e.spec.q}%` : 'Сырой экземпляр', `×${i.cond.toFixed(2)}`]].filter(Boolean);
         rows.forEach((r, k) => { const ry = rows.length > 3 ? 148 + k * 9 : 154 + k * 11; T.draw(ctx, r[0], 248, ry, { size: 8, color: '#2a1a0c' }); T.draw(ctx, r[1], 466, ry, { size: 8, align: 'r', color: '#6a5030' }); });
