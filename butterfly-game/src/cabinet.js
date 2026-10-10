@@ -330,6 +330,10 @@ const Cabinet = (() => {
       // the frame of the guiding butterfly's wings on the easel (it fills up as the wings are laid into it)
       if (this.easelPos) { const E = this.easelPos, tx = WingsUI.tex(); this.wingMap = tx; const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.77), new THREE.MeshLambertMaterial({ map: tx })); pic.rotation.y = Math.PI; pic.position.set(E.x, E.y, E.z - 0.02); D.add(pic);
         const fm = lam(Wings.built() ? '#d8b048' : '#4a2c18'); for (const [w, h, x, y] of [[1.5, 0.05, 0, 0.41], [1.5, 0.05, 0, -0.41], [0.05, 0.87, 0.725, 0], [0.05, 0.87, -0.725, 0]]) cube(D, w, h, 0.05, E.x + x, E.y + y, E.z - 0.01, fm); }
+      // the raw (not yet spread) specimens waiting on a cork tray at the spreading desk: little 3D models of resting butterflies (folded wings, bent legs, antennae)
+      { const raw = Save.rawList().slice(0, 4), tr = new THREE.Group(); tr.position.set(-3.88, 0.835, -0.38); D.add(tr);
+        cube(tr, 0.4, 0.022, 0.46, 0, 0.011, 0, lam('#5a3a20'), { cast: false }); cube(tr, 0.36, 0.01, 0.42, 0, 0.027, 0, lam('#c8a870'), { cast: false });
+        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = clamp(((sp.mm[0] + sp.mm[1]) / 2 / 1000 * 5 / 2 / 0.9) * 0.6, 0.1, 0.17), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
       // drawers indicator: count of boxes inside on the desk label
     }
 

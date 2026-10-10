@@ -303,5 +303,61 @@ const Art = (() => {
   }
   function setFlap(g, ang) { g.userData.R.rotation.z = ang; g.userData.L.rotation.z = -ang; }
 
-  return { wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
+
+  // ------------------------------------------------------------ the resting butterfly (a raw, not yet spread specimen): a 3D model after a photo of a swallowtail at rest
+  // Wings folded up over the back (fore wing leaning to the head, hind wing back, the tail hangs behind), a furry thorax, a segmented abdomen, a head with big eyes, palps and a
+  // proboscis, curved antennae with clubs, six jointed legs bent like a perching insect (the front pair tucked). The pattern of the wings is the species' own (aberrations and the
+  // rare ones go through the same wing canvases) and the size follows the species' wingspan. The head looks to +x, up is +y, the near wing is towards +z; feet at y = 0.
+  const partTex = {};
+  function partTexture(sp, part) { const k = sp.id + part; if (partTex[k]) return partTex[k]; const t = new THREE.CanvasTexture(wingParts(sp)[part]); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return (partTex[k] = t); }
+  const restSize = sp => ((sp.mm[0] + sp.mm[1]) / 2) / 1000 * SF * (sp.glow ? 2.4 : 1) / 2 / 0.9;            // the wing length (the same as in makeButterfly)
+  function makeResting(sp, opt) {
+    opt = opt || {}; const u = opt.u || restSize(sp), parts = wingParts(sp), g = new THREE.Group(), top = new THREE.Group(); g.add(top); top.position.y = 0.235 * u;
+    // colours: the fur takes a darkened tint of the fore wing's colour
+    const f0 = (sp.art && sp.art.f && sp.art.f[0]) || (sp.art && sp.art.h && sp.art.h[0]) || '#8a6a3a'; const fc = new THREE.Color(typeof f0 === 'string' && f0[0] === '#' ? f0 : '#8a6a3a'), fur = fc.clone().multiplyScalar(0.55).lerp(new THREE.Color('#2a1c10'), 0.35), fur2 = fur.clone().multiplyScalar(1.25);
+    const L = c => new THREE.MeshLambertMaterial({ color: c }), mFur = L(fur), mFur2 = L(fur2), mDark = L('#16100c'), mEye = new THREE.MeshLambertMaterial({ color: '#0a0808', emissive: '#1a2230' }), mLeg = L('#1c1510');
+    const sph = (r, sx, sy, sz, x, y, z, m, seg = 10) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.max(5, seg - 3)), m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); top.add(o); return o; };
+    const tube = (pts, r, m, seg = 10, rad = 5) => { const o = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0] * u, p[1] * u, p[2] * u))), seg, r * u, rad, false), m); top.add(o); return o; };
+    // wings: fore and hind, near and far, hinged on the back and standing up; the leading edge looks to the head
+    const wing = (part, theta, rx, ry, rz, flare) => {
+      const piv = PIV[part], geo = new THREE.PlaneGeometry(u, u); geo.translate(u / 2, -(0.5 - piv / N) * u, 0);
+      const mat = new THREE.MeshLambertMaterial({ map: partTexture(sp, part), alphaTest: 0.5, side: THREE.DoubleSide, emissive: '#ffffff', emissiveMap: partTexture(sp, part), emissiveIntensity: 0.16 });
+      const node = new THREE.Group(), m = new THREE.Mesh(geo, mat); m.scale.y = -1; node.add(m); node.rotation.z = theta; node.rotation.y = flare; node.position.set(rx * u, ry * u, rz * u); top.add(node); return node;
+    };
+    wing('h', 1.5, 0.0, 0.075, -0.012, 0.02); wing('f', 1.4, 0.06, 0.08, -0.012, 0.02);       // the far pair
+    wing('h', 1.48, 0.0, 0.075, 0.014, -0.02); wing('f', 1.38, 0.06, 0.08, 0.014, -0.02);       // the near pair (on top of the far one)
+    // the body: thorax (fur), abdomen of segments tapering to the tail, head with eyes
+    sph(1, 0.14 * u, 0.1 * u, 0.1 * u, 0.025 * u, 0.0, 0, mFur, 12); sph(1, 0.08 * u, 0.07 * u, 0.07 * u, 0.105 * u, -0.005 * u, 0, mFur2, 10);
+    for (let i = 0; i < 7; i++) { const t = i / 6, x = -(0.07 + i * 0.052) * u, r = (0.075 - 0.045 * t) * u; sph(1, 0.047 * u, r, r * 1.05, x, -(0.015 + 0.012 * i) * u, 0, i % 2 ? mFur : mFur2, 9); }
+    sph(1, 0.058 * u, 0.056 * u, 0.056 * u, 0.175 * u, -0.012 * u, 0, mFur2, 10);
+    for (const sz of [-1, 1]) { sph(1, 0.036 * u, 0.04 * u, 0.03 * u, 0.2 * u, 0.0, sz * 0.04 * u, mEye, 9); sph(1, 0.013 * u, 0.013 * u, 0.013 * u, 0.222 * u, 0.01 * u, sz * 0.05 * u, L('#d8e4f0'), 6); const pl = new THREE.Mesh(new THREE.ConeGeometry(0.014 * u, 0.06 * u, 5), mFur); pl.rotation.z = -Math.PI / 2 - 0.4; pl.position.set(0.225 * u, -0.05 * u, sz * 0.02 * u); top.add(pl); }
+    tube([[0.225, -0.035, 0], [0.265, -0.05, 0], [0.28, -0.09, 0], [0.25, -0.115, 0]], 0.005, mDark, 8, 4);        // the proboscis, curled
+    // antennae: up and forward, then curving out and down, with a club
+    for (const sz of [-1, 1]) { const A = [[0.2, 0.04, sz * 0.012], [0.27, 0.15, sz * 0.035], [0.35, 0.23, sz * 0.08], [0.44, 0.24, sz * 0.13], [0.5, 0.2, sz * 0.16]]; tube(A, 0.0048, mLeg, 14, 4); const e = A[A.length - 1]; sph(1, 0.014 * u, 0.012 * u, 0.012 * u, e[0] * u, e[1] * u - 0.004 * u, e[2] * u, mDark, 6); }
+    // legs: hip -> knee (up and out) -> ankle -> foot on the perch (y = -0.27 u); the front pair is tucked against the chest
+    const legs = [[0.09, 1, 'f'], [0.09, -1, 'f'], [0.02, 1, 'm'], [0.02, -1, 'm'], [-0.05, 1, 'h'], [-0.05, -1, 'h']];
+    legs.forEach(([x, sd, kind]) => { const P = kind === 'f' ? [[x, -0.07, sd * 0.035], [x + 0.06, -0.1, sd * 0.07], [x + 0.1, -0.075, sd * 0.08], [x + 0.115, -0.11, sd * 0.075]]
+        : kind === 'm' ? [[x, -0.075, sd * 0.04], [x + 0.075, -0.1, sd * 0.11], [x + 0.1, -0.175, sd * 0.13], [x + 0.115, -0.233, sd * 0.125], [x + 0.15, -0.236, sd * 0.125]]
+        : [[x, -0.075, sd * 0.04], [x - 0.085, -0.1, sd * 0.11], [x - 0.115, -0.18, sd * 0.13], [x - 0.1, -0.233, sd * 0.125], [x - 0.065, -0.236, sd * 0.125]];
+      tube(P, kind === 'f' ? 0.0055 : 0.0065, mLeg, 14, 4); const e = P[P.length - 1]; sph(1, 0.014 * u, 0.008 * u, 0.014 * u, e[0] * u, e[1] * u, e[2] * u, mDark, 5); });
+    g.userData = { u, resting: true }; return g;
+  }
+  // a picture of the resting model for the 2D windows (rendered once per species by a small renderer of its own, 3/4 view)
+  let rpR = null, rpTried = false; const rpCache = {};
+  function restingPic(sp, w = 152, h = 96) {
+    const key = sp.id + w; if (rpCache[key] !== undefined) return rpCache[key];
+    if (!rpR && !rpTried) { rpTried = true; try { const ren = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true }); ren.setPixelRatio(1); ren.setClearColor(0x000000, 0); const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#ffffff', '#7a6a50', 0.9)); const dl = new THREE.DirectionalLight('#fff2d8', 0.95); dl.position.set(2, 4, 3); sc.add(dl); rpR = { ren, sc, cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 50) }; } catch (e) { rpR = null; } }
+    if (!rpR) return (rpCache[key] = null);
+    try {
+      const m = makeResting(sp, { u: 1 }), { ren, sc, cam } = rpR; ren.setSize(w, h, false); sc.add(m); m.updateMatrixWorld(true);
+      const az = 0.5, el = 0.18, dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)); const bb = new THREE.Box3().setFromObject(m), ctr = bb.getCenter(new THREE.Vector3());
+      cam.position.copy(ctr).addScaledVector(dir, 8); cam.up.set(0, 1, 0); cam.lookAt(ctr); cam.updateMatrixWorld(true);
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const inv = cam.matrixWorldInverse; for (const xx of [bb.min.x, bb.max.x]) for (const yy of [bb.min.y, bb.max.y]) for (const zz of [bb.min.z, bb.max.z]) { const v = new THREE.Vector3(xx, yy, zz).applyMatrix4(inv); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); }
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hw = Math.max((x1 - x0) / 2, (y1 - y0) / 2 * w / h) * 1.06, hh = hw * h / w; cam.left = cx - hw; cam.right = cx + hw; cam.top = cy + hh; cam.bottom = cy - hh; cam.updateProjectionMatrix();
+      ren.render(sc, cam); const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(ren.domElement, 0, 0);
+      sc.remove(m); m.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); return (rpCache[key] = cv);
+    } catch (e) { return (rpCache[key] = null); }
+  }
+
+  return { makeResting, restingPic, wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
 })();
