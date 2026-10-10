@@ -131,11 +131,12 @@ const Museum = (() => {
       const pick = a => a[(R.next() * a.length) | 0], glow = [];     // glow: emissive bits (bulbs, flames, skylights) kept as separate meshes
       const emit = (r, x, y, z, col = '#fff2c0') => { const m = mesh(new THREE.SphereGeometry(r, 8, 6), bas(col), x, y, z); S.add(m); return m; };
       // --- light: a warm hall; pendant lamps carry real lights, chandeliers and sconces are only bright
-      S.add(new THREE.HemisphereLight('#ffeacc', '#4a3624', 1.05));
-      this.lamps = []; for (const [x, z] of [[-6, -4], [0, -4], [6, -4], [-6, 4], [0, 4], [6, 4]]) { const p = new THREE.PointLight('#ffd89a', 0.55, 12, 1.5); p.position.set(x, 3.4, z); S.add(p); this.lamps.push([x, z]); }
+      S.add(new THREE.HemisphereLight('#ffd6a0', '#24160c', 0.24));
+      this.lamps = []; for (const [x, z] of [[-6, -4], [0, -4], [6, -4], [-6, 4], [0, 4], [6, 4]]) { const p = new THREE.PointLight('#ffc87a', 1.0, 10, 1.6); p.position.set(x, 3.3, z); S.add(p); this.lamps.push([x, z]); (this.warm = this.warm || []).push({ l: p, base: 1.0, ph: x * 1.7 + z }); }
+      if (Save.data.settings.quality !== 'low') for (const sgz of [-1, 1]) for (const x of [-9, -3, 3, 9]) { const p = new THREE.PointLight('#ffa850', 0.85, 7.5, 1.6); p.position.set(x, 2.5, sgz * (HZ - 0.55)); S.add(p); this.warm.push({ l: p, base: 0.85, ph: x * 0.9 + sgz }); }       // the sconces light the long walls and the frames
       // --- floor (parquet with an inlaid border and a medallion), ceiling, walls (the west wall has the door)
       const floor = mesh(new THREE.PlaneGeometry(RW, RD), lam('#ffffff', { map: T_FLOOR() }), 0, 0, 0); floor.rotation.x = -Math.PI / 2; floor.userData.noFloat = true; S.add(floor);
-      const ceil = mesh(new THREE.PlaneGeometry(RW, RD), lam('#e4d8b4'), 0, RH, 0); ceil.rotation.x = Math.PI / 2; ceil.userData.noFloat = true; S.add(ceil);
+      const ceil = mesh(new THREE.PlaneGeometry(RW, RD), lam('#c8b890'), 0, RH, 0); ceil.rotation.x = Math.PI / 2; ceil.userData.noFloat = true; S.add(ceil);
       const medal = mesh(new THREE.CircleGeometry(1.45, 40), lam('#ffffff', { map: T_MEDAL() }), 0, 0.016, 0); medal.rotation.x = -Math.PI / 2; S.add(medal);
       const mkWall = (L, rotY, x, z, door) => {
         const sh = new THREE.Shape(), hl = L / 2;
@@ -164,7 +165,7 @@ const Museum = (() => {
       for (const x of [-10.5, -4.5, 1.5, 7.5]) for (const z of [-6, -2, 2, 6]) B.ball(0.07, x, RH - 0.3, z, brassC, 6);      // brass bosses at some beam crossings
       for (const x of [-9, -3, 3, 9]) for (const z of [-4, 4]) {        // skylights: a brass frame and mullions around a bright pane
         for (const [w, d, dx, dz] of [[2.4, 0.08, 0, -1.4], [2.4, 0.08, 0, 1.4], [0.08, 2.88, -1.2, 0], [0.08, 2.88, 1.2, 0], [0.05, 2.8, 0, 0], [2.3, 0.05, 0, 0]]) B.box(w, 0.06, d, x + dx, RH - 0.03, z + dz, brassD);
-        const sk = mesh(new THREE.PlaneGeometry(2.3, 2.78), bas('#ffffff', { map: T_SKY() }), x, RH - 0.02, z); sk.rotation.x = Math.PI / 2; S.add(sk);
+        const sk = mesh(new THREE.PlaneGeometry(2.3, 2.78), bas('#4a5878', { map: T_SKY() }), x, RH - 0.02, z); sk.rotation.x = Math.PI / 2; S.add(sk);
       }
       // --- the door (west wall): a frame with a pediment, a panelled leaf, hinges and a brass plate
       B.unit = 'door';
@@ -288,7 +289,19 @@ const Museum = (() => {
       });
       // --- wall sconces between the frames on the long walls and a picture light above every wall frame
       for (const sgz of [-1, 1]) for (const x of [-9, -3, 3, 9]) { B.unit = 'sconce'; const z = sgz * (HZ - 0.12); B.box(0.16, 0.3, 0.04, x, 2.3, sgz * (HZ - 0.02), brassD); B.limb(V(x, 2.3, sgz * (HZ - 0.04)), V(x, 2.3, z), 0.015, 0.015, brassC, 5); B.lathe([[0.03, 0], [0.09, 0.06], [0.11, 0.2], [0.06, 0.26]], x, 2.32, z, ['#e8f0e0', '#f8f4d8'], 10); glow.push(emit(0.05, x, 2.44, z, '#ffe8a0')); }
-      for (const s of LAYOUT.slots.mw) { B.unit = 'plight'; const ox = Math.sin(s.ry), oz = Math.cos(s.ry), wx = s.x - ox * 0.0, wz = s.z; B.box(0.3, 0.04, 0.03, s.x + ox * 0.02, 3.1, s.z + oz * 0.02, brassC, s.ry); B.box(0.2, 0.05, 0.04, s.x + ox * 0.17, 3.13, s.z + oz * 0.17, brassD, s.ry); B.limb(V(s.x + ox * 0.02, 3.1, s.z + oz * 0.02), V(s.x + ox * 0.17, 3.1, s.z + oz * 0.17), 0.012, 0.012, brassC, 4); }
+      for (const s of LAYOUT.slots.mw) { B.unit = 'plight'; const ox = Math.sin(s.ry), oz = Math.cos(s.ry), wx = s.x - ox * 0.0, wz = s.z; B.box(0.3, 0.04, 0.03, s.x + ox * 0.02, 3.1, s.z + oz * 0.02, brassC, s.ry); B.box(0.2, 0.05, 0.04, s.x + ox * 0.17, 3.13, s.z + oz * 0.17, brassD, s.ry); B.limb(V(s.x + ox * 0.02, 3.1, s.z + oz * 0.02), V(s.x + ox * 0.17, 3.1, s.z + oz * 0.17), 0.012, 0.012, brassC, 4); glow.push(emit(0.025, s.x + ox * 0.17, 3.1, s.z + oz * 0.17, '#ffe6a8')); }
+      // --- cosy light: soft halos round every bulb, warm pools on the floor under the pendants, wall washes under the picture lights and round the sconces (additive, no extra lights)
+      { const mkTex = (w, h, draw) => { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; draw(cv.getContext('2d'), w, h); const t = new THREE.CanvasTexture(cv); return t; };
+        const halo = mkTex(64, 64, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.18, 'rgba(255,240,200,0.7)'); r.addColorStop(0.5, 'rgba(255,200,120,0.18)'); r.addColorStop(1, 'rgba(255,180,90,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+        const wash = mkTex(32, 64, (g, w, h) => { g.save(); g.scale(1, 2); const r = g.createRadialGradient(w / 2, 0, 0, w / 2, 0, w / 2); r.addColorStop(0, 'rgba(255,225,160,0.95)'); r.addColorStop(0.45, 'rgba(255,200,120,0.4)'); r.addColorStop(1, 'rgba(255,170,80,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h / 2); g.restore(); });
+        const AD = { blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false, side: THREE.DoubleSide };
+        this.flick = [];
+        const sprite = (x, y, z, size, col, op, flick) => { const m = new THREE.SpriteMaterial(Object.assign({ map: halo, color: col, opacity: op }, AD)); const sp = new THREE.Sprite(m); sp.position.set(x, y, z); sp.scale.set(size, size, 1); S.add(sp); if (flick) this.flick.push({ m, base: op, ph: x * 2.3 + z, k: flick }); return sp; };
+        const decal = (tex, x, y, z, w, h, ry, rx, col, op) => { const m = new THREE.MeshBasicMaterial(Object.assign({ map: tex, color: col, opacity: op }, AD)); const d = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); d.position.set(x, y, z); d.rotation.order = 'YXZ'; d.rotation.y = ry; d.rotation.x = rx; d.userData.noFloat = true; S.add(d); return m; };
+        this.lamps.forEach(([x, z]) => { sprite(x, RH - 1.34, z, 1.9, '#ffd890', 0.6, 0.06); decal(halo, x, 0.03, z, 4.6, 4.6, 0, -Math.PI / 2, '#ffb860', 0.2); });
+        [-6, 0, 6].forEach(x => { for (let a = 0; a < 6; a++) { const an = a * Math.PI / 3; sprite(x + Math.sin(an) * 0.62, RH - 1.35 + 0.16, Math.cos(an) * 0.62, 0.62, '#ffd070', 0.55, 0.18); } sprite(x, RH - 1.35 + 0.1, 0, 2.2, '#ffc880', 0.22, 0.05); });
+        for (const sgz of [-1, 1]) for (const x of [-9, -3, 3, 9]) { const z = sgz * (HZ - 0.12), ry = sgz < 0 ? 0 : Math.PI; sprite(x, 2.44, z, 0.95, '#ffcf80', 0.75, 0.28); decal(wash, x, 2.0, sgz * (HZ - 0.015), 2.2, 2.6, ry, 0, '#ffb35c', 0.55); decal(wash, x, 2.58, sgz * (HZ - 0.016), 1.6, -1.2, ry, 0, '#ffc878', 0.35); }
+        for (const sl of LAYOUT.slots.mw) { const ox = Math.sin(sl.ry), oz = Math.cos(sl.ry); sprite(sl.x + ox * 0.17, 3.12, sl.z + oz * 0.17, 0.42, '#ffe0a0', 0.8, 0.06); decal(wash, sl.x + ox * 0.012, 2.35, sl.z + oz * 0.012, 1.7, 1.9, sl.ry, 0, '#ffcc88', 0.5); } }
       // --- brass plates under the wall frames, benches with cushions, a visitors' stand with a book, display pedestals with glass domes
       for (const s of LAYOUT.slots.mw) { B.unit = 'plate'; B.box(0.22, 0.07, 0.012, s.x + Math.sin(s.ry) * 0.006, 1.5, s.z + Math.cos(s.ry) * 0.006, brassC, s.ry); }
       [[-5, 1], [5, -1]].forEach(([x, dir], i) => {        // benches in the gaps between the large tables, their long side along z; the back is on the far side from the tables
@@ -349,6 +362,7 @@ const Museum = (() => {
     }
     update(dt, inp) {
       this.t += dt; const P = this.player;
+      if (this.flick) { const T0 = this.t; for (const f of this.flick) f.m.opacity = f.base * (1 + f.k * (Math.sin(T0 * 7.3 + f.ph) * 0.5 + Math.sin(T0 * 12.1 + f.ph * 1.7) * 0.5)); if (this.warm) for (const w of this.warm) w.l.intensity = w.base * (1 + 0.035 * Math.sin(T0 * 5.1 + w.ph) + 0.02 * Math.sin(T0 * 11.7 + w.ph)); }
       P.yaw -= inp.dx * 0.0022; P.pitch = clamp(P.pitch - inp.dy * 0.0022, -1.3, 1.3); inp.dx = inp.dy = 0;
       P.yaw += ((inp.keys.has('ArrowLeft') ? 1 : 0) - (inp.keys.has('ArrowRight') ? 1 : 0)) * dt * 1.9; P.pitch = clamp(P.pitch + ((inp.keys.has('ArrowUp') ? 1 : 0) - (inp.keys.has('ArrowDown') ? 1 : 0)) * dt * 1.4, -1.3, 1.3);
       let mx = 0, mz = 0; if (inp.keys.has('KeyW')) mz -= 1; if (inp.keys.has('KeyS')) mz += 1; if (inp.keys.has('KeyA')) mx -= 1; if (inp.keys.has('KeyD')) mx += 1;
