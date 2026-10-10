@@ -276,13 +276,12 @@ const Cabinet = (() => {
         { id: 'spread', x: -3.0, z: 0.1, r: 1.6, label: () => { const n = Save.rawList().length; return n ? `E — расправить бабочку (ждут: ${n})` : 'E — расправилка (нет бабочек — наловите новых)'; } },
         { id: 'journal', x: 2.3, z: -1.75, r: 1.3, label: () => `E — открыть коллекцию (${collText()})` },
         { id: 'bench', x: 3.1, z: 1.7, r: 1.5, label: () => `E — мастерская: коробки и сачки (коробок: ${Save.data.boxes.length})` },
-        { id: 'desk', x: 0, z: 0.4, r: 1.8, label: () => 'E — разместить коробки на столе' },
-        { id: 'wall', x: 0, z: -2.5, r: 3.4, label: () => 'E — развесить коробки на стене' },
         { id: 'exit', x: 4.0, z: -1.6, r: 1.1, label: () => 'E — выйти на карту экспедиций' },
         { id: 'wings', x: -2.0, z: 1.75, r: 1.2, label: () => Wings.done() ? 'E — рамка путеводных крыльев (продана)' : `E — рамка с крыльями путеводной бабочки (${Wings.inFrame()}/${Wings.START.length})` },
         { id: 'museum', x: 4.0, z: 0.1, r: 0.95, label: () => `E — войти в музей (на экспозиции: ${Save.data.boxes.filter(b => b.loc && Boxes.MUS[b.loc.t]).length})` },
       ];
       this.addCol(-HX, HX, -HZ - 1, -HZ + 0.12); // keep away from the north wall displays
+      { const hx = ctex(64, 64, (g, w, h) => { g.fillStyle = 'rgba(255,230,160,0.12)'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(255,236,170,0.95)'; g.lineWidth = 4; g.strokeRect(2, 2, w - 4, h - 4); }, 0, 0, true); this.hl = mesh(new THREE.PlaneGeometry(1, 1), bas('#ffffff', { map: hx, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }), 0, 0, 0, { cast: false, recv: false }); this.hl.visible = false; S.add(this.hl); }
     }
 
     bookcase(cx, cz, w, h) {
@@ -307,10 +306,11 @@ const Cabinet = (() => {
         const mats = [frameMats[box.style], frameMats[box.style], new THREE.MeshLambertMaterial({ map: tx }), frameMats[box.style], frameMats[box.style], frameMats[box.style]];
         const mm = mesh(new THREE.BoxGeometry(W, 0.05, H), mats, 0, 0, 0); m3.rotation.x = -Math.PI / 2; m3.position.set(0, 0.026, 0); mm.add(m3); return { m: mm, W, H };
       };
+      this.slotPts = [];
       // wall: 6 slots along the north wall
       const gap = 0.24; const widths = Boxes.WALL.map(s => Boxes.pxSize(s).w / PPM); const total = widths.reduce((a, b) => a + b, 0) + gap * 5; let x = -total / 2;
       Boxes.WALL.forEach((cls, i) => {
-        const wd = widths[i], cx = x + wd / 2; x += wd + gap; const occ = Boxes.boxesAt('wall', i)[0]; const cy = 1.95;
+        const wd = widths[i], cx = x + wd / 2; x += wd + gap; const occ = Boxes.boxesAt('wall', i)[0]; const cy = 1.95; { const sz = Boxes.pxSize(occ ? occ.size : cls); this.slotPts.push({ t: 'wall', i, x: cx, y: cy, z: -HZ, w: sz.w / PPM, h: sz.h / PPM }); }
         if (occ) { const { m, W, H } = mk(occ, false); m.position.set(cx, cy, -HZ + 0.045); D.add(m); const ny = cy + H / 2 + 0.1, top = cy + H / 2; cube(D, 0.026, 0.026, 0.02, cx, ny, -HZ + 0.02, lam('#c8a040'), { cast: false });
           for (const sx of [-1, 1]) { const ax = cx + sx * W * 0.28, dx = cx - ax, dy = ny - top, L = Math.hypot(dx, dy); const str = cube(D, 0.006, L, 0.006, ax + dx / 2, top + dy / 2, -HZ + 0.032, lam('#14100c'), { cast: false }); str.rotation.z = Math.atan2(-dx, dy); }   // two cords run from the frame's top corners up to the nail (a "V")
         }
@@ -319,7 +319,9 @@ const Cabinet = (() => {
           const q = mesh(new THREE.PlaneGeometry(wd, hh), bas('#ffffff', { map: tex, transparent: true, depthWrite: false }), cx, cy, -HZ + 0.015, { cast: false, recv: false }); D.add(q); cube(D, 0.03, 0.03, 0.02, cx, cy + hh / 2 - 0.05, -HZ + 0.02, lam('#c8a040'), { cast: false });
         }
       });
-      // desk top: two flat slots
+      // desk top: two flat slots (and the drawers in the front of the desk)
+      for (let i = 0; i < Boxes.TOPN; i++) { this.slotPts.push({ t: 'top', i, x: (i ? 1 : -1) * 0.6, y: 0.945, z: 0.4, w: Boxes.pxSize('M').w / PPM, h: Boxes.pxSize('M').h / PPM }); }
+      for (const side of [-1, 1]) for (let i = 0; i < 3; i++) this.slotPts.push({ t: 'drawer', i, side, x: -0.78 + i * 0.78, y: 0.5, z: 0.4 + side * 0.595, w: 0.7, h: 0.5 });
       for (let i = 0; i < Boxes.TOPN; i++) {
         const occ = Boxes.boxesAt('top', i)[0]; const px = (i ? 1 : -1) * 0.6, pz = 0.4;
         if (occ) { const { m } = mk(occ, true); m.position.set(px, 0.92, pz); m.rotation.y = 0; D.add(m); }
@@ -365,7 +367,19 @@ const Cabinet = (() => {
     }
 
     // ------------------------------------------------------------ per-frame
+    // the place for a frame under the crosshair (wall places, the two desk-top cases, the drawers of the desk): within 2.4 m and about 18 degrees of the line of sight
+    lookSlot() {
+      const P = this.player, cp = Math.cos(P.pitch), dx = -Math.sin(P.yaw) * cp, dy = Math.sin(P.pitch), dz = -Math.cos(P.yaw) * cp; let best = null, bc = 0.95;
+      for (const p of this.slotPts || []) { const vx = p.x - P.pos.x, vy = p.y - 1.62, vz = p.z - P.pos.z, d = Math.hypot(vx, vy, vz); if (d > 2.4 || d < 0.2) continue; const cs = (vx * dx + vy * dy + vz * dz) / d - d * 0.004; if (cs > bc) { bc = cs; best = p; } }
+      return best;
+    }
+    markSlot() {
+      const h = this.hl; if (!h) return; const pr = this.prompt, p = pr && pr.id === 'slot' && !this.ov ? pr.pt : null; h.visible = !!p; if (!p) return;
+      h.material.opacity = 0.55 + 0.25 * Math.sin(this.t * 4.5); h.rotation.order = 'YXZ'; h.rotation.set(0, 0, 0); h.scale.set(p.w + 0.06, p.h + 0.06, 1);
+      if (p.t === 'top') { h.rotation.x = -Math.PI / 2; h.position.set(p.x, p.y + 0.03, p.z); } else if (p.t === 'drawer') { h.rotation.y = p.side > 0 ? 0 : Math.PI; h.position.set(p.x, p.y, p.z + p.side * 0.04); } else { h.position.set(p.x, p.y, p.z + 0.045); }
+    }
     nearest() {
+      const sl = this.lookSlot(); if (sl) { const occ = Boxes.boxesAt(sl.t, sl.i); return { id: 'slot', t: sl.t, i: sl.i, pt: sl, label: () => `E — ${Boxes.slotName(sl.t, sl.i).toLowerCase()}: ${sl.t === 'drawer' ? (occ.length ? 'убрать или достать коробки' : 'убрать коробку') : occ.length ? 'снять коробку' : sl.t === 'wall' ? 'повесить коробку' : 'положить коробку'}` }; }
       const P = this.player; let best = null, bs = 9; const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
       for (const s of this.stations) { const dx = s.x - P.pos.x, dz = s.z - P.pos.z, d = Math.hypot(dx, dz); if (d > s.r) continue; const dot = d > 0.9 ? (dx * fx + dz * fz) / d : 1; if (dot < -0.1 && s.id !== 'desk') continue; const sc = d / s.r; if (sc < bs) { bs = sc; best = s; } }
       return best;
@@ -385,7 +399,7 @@ const Cabinet = (() => {
       const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002; P.bob += moved * 2.4; P.stepD += moved;
       if (P.stepD > 0.85) { P.stepD = 0; Snd.sfx.step('wood'); }
       this.camera.position.set(P.pos.x, 1.62 + Math.sin(P.bob) * 0.025, P.pos.z); this.camera.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
-      this.prompt = this.nearest(); this.toastT = Math.max(0, this.toastT - dt);
+      this.prompt = this.ov ? this.prompt : this.nearest(); this.toastT = Math.max(0, this.toastT - dt); this.markSlot();
       this.animate(dt);
     }
     animate(dt) {
@@ -417,8 +431,7 @@ const Cabinet = (() => {
       if (s.id === 'spread') { if (!Save.rawList().length) { Snd.sfx.deny(); this.toast('Нет неразобранных бабочек: наловите их в экспедиции', 3); return; } Snd.sfx.page(); this.sitFrom = { x: this.player.pos.x, z: this.player.pos.z, yaw: this.player.yaw, pitch: this.player.pitch }; this.sitDir = 1; this.sitOpen = 'pick'; }
       else if (s.id === 'journal') { Snd.sfx.page(); this.open('journal'); }
       else if (s.id === 'bench') { Snd.sfx.page(); this.open('bench'); }
-      else if (s.id === 'desk') { Snd.sfx.page(); Boxes.place.open('desk'); this.open('place'); }
-      else if (s.id === 'wall') { Snd.sfx.page(); Boxes.place.open('wall'); this.open('place'); }
+      else if (s.id === 'slot') { Snd.sfx.page(); Boxes.slot.open(s.t, s.i); this.open('slot'); }
       else if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exit(); }
       else if (s.id === 'wings') { Snd.sfx.page(); this.open('wings'); }
       else if (s.id === 'museum') { Snd.sfx.door(); this.hooks.museum(); }
@@ -436,7 +449,7 @@ const Cabinet = (() => {
         return;
       }
       if (ov === 'journal') { const J = Screens.journal, nb = visibleBiomes().length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
-      if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'pick' || this.ov === 'wings') this.close(); }
+      if (e.code === 'Escape' || (e.code === 'KeyE' && ov !== 'pick')) { if (this.ov === 'bench' || this.ov === 'place' || this.ov === 'slot' || this.ov === 'pick' || this.ov === 'wings') this.close(); }
     }
     click(x, y) {
       const ov = this.ov;
@@ -445,12 +458,13 @@ const Cabinet = (() => {
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'bench') { const r = Boxes.bench.click(x, y); if (r === 'close') this.close(); }
       else if (ov === 'place') { const r = Boxes.place.click(x, y); if (r === 'close') this.close(); else if (r === 'changed') this.refresh(); }
+      else if (ov === 'slot') { const r = Boxes.slot.click(x, y); if (r === 'close' || r === 'done') this.close(); else if (r === 'again') this.refresh(); }
       else if (ov === 'wings') { const r = WingsUI.click(x, y); if (r === 'close') { Snd.sfx.page(); this.close(); } else if (r === 'changed') this.refresh(); }
       else if (ov === 'pause') { const id = Cab.pauseClick(x, y); this.pauseAct(id); }
       else if (ov === 'help') this.closeHelp();
     }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'bench') Boxes.bench.wheel(dy); else if (this.ov === 'place') Boxes.place.wheel(dy); else if (this.ov === 'slot') Boxes.slot.wheel(dy); }
     pauseAct(id) {
       if (!id) return; Snd.sfx.click();
       if (id === 'resume') { this.ov = null; this.hooks.lock(); } else if (id === 'help') { this.ov = 'help'; this.helpBack = true; } else if (id === 'settings') this.hooks.settings(); else if (id === 'stash') this.hooks.stash(); else if (id === 'market') this.hooks.market(); else if (id === 'map') this.hooks.map(); else if (id === 'title') this.hooks.title();
@@ -471,6 +485,7 @@ const Cabinet = (() => {
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);
       if (ov === 'bench') return Boxes.bench.draw(ctx, t, m);
       if (ov === 'place') return Boxes.place.draw(ctx, t, m);
+      if (ov === 'slot') return Boxes.slot.draw(ctx, t, m);
       if (ov === 'wings') return WingsUI.draw(ctx, t, m, dt);
       this.hud(ctx, t);
       if (ov === 'pause') this.drawPause(ctx, m);

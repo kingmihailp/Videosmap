@@ -285,20 +285,21 @@ const Boxes = (() => {
 
 
   // ================================================================== ONE PLACE IN THE MUSEUM (the player is looking at it): put a frame there, or take the frame away
-  const slotName = (t, i) => t === 'mt' ? `Стол ${Math.floor(i / 2) + 1}, место ${i % 2 + 1}` : t === 'ml' ? `Большой стол ${i + 1}` : t === 'mr' ? `Стеллаж ${Math.floor(i / 6) + 1}, полка ${Math.floor((i % 6) / 2) + 1}, ${i % 2 ? 'справа' : 'слева'}` : `Стена ${i + 1}`;
-  const slotRule = (t, i) => t === 'mw' ? `Подходят: ${MWCLS(i) === 'L' ? 'любая коробка' : MWCLS(i) === 'M' ? 'малая и средняя' : 'только малая'}` : t === 'ml' ? 'Подходит любая коробка' : 'Подходят малые и средние коробки';
+  const slotName = (t, i) => t === 'wall' ? `Стена ${i + 1}` : t === 'top' ? `Витрина стола ${i + 1}` : t === 'drawer' ? `Ящик ${i + 1}` : t === 'mt' ? `Стол ${Math.floor(i / 2) + 1}, место ${i % 2 + 1}` : t === 'ml' ? `Большой стол ${i + 1}` : t === 'mr' ? `Стеллаж ${Math.floor(i / 6) + 1}, полка ${Math.floor((i % 6) / 2) + 1}, ${i % 2 ? 'справа' : 'слева'}` : `Стена ${i + 1}`;
+  const slotRule = (t, i) => t === 'wall' ? `Подходят: ${WALL[i] === 'L' ? 'любая коробка' : WALL[i] === 'M' ? 'малая и средняя' : 'только малая'}` : t === 'top' ? 'Подходят малые и средние коробки' : t === 'drawer' ? `Свободно ${DRAWER_UNITS - boxesAt('drawer', i).reduce((a, b) => a + UNITS[b.size], 0)} из ${DRAWER_UNITS} (малая 1, средняя 2, большая 4)` : t === 'mw' ? `Подходят: ${MWCLS(i) === 'L' ? 'любая коробка' : MWCLS(i) === 'M' ? 'малая и средняя' : 'только малая'}` : t === 'ml' ? 'Подходит любая коробка' : 'Подходят малые и средние коробки';
   const slotUI = {
     t: 'mw', i: 0, scroll: 0, rows: [], btns: [], msg: '',
     open(t, i) { this.t = t; this.i = i; this.scroll = 0; this.msg = ''; },
     occ() { return boxesAt(this.t, this.i)[0] || null; },
+    drawer() { return this.t === 'drawer'; },
     layout() {
-      const occ = this.occ(); this.btns = [{ id: 'close', label: '← В музей', x: 70, y: 232, w: 80, h: 16 }]; this.rows = [];
+      const occ = this.t === 'drawer' ? null : this.occ(); this.btns = [{ id: 'close', label: this.t === 'wall' || this.t === 'top' || this.t === 'drawer' ? '← В кабинет' : '← В музей', x: 70, y: 232, w: 80, h: 16 }]; this.rows = []; this.inside = this.t === 'drawer' ? boxesAt('drawer', this.i).map((b, k) => ({ b, x: 282, y: 66 + k * 23, w: 134, h: 21 })) : [];
       if (occ) this.btns.push({ id: 'take', label: 'Снять коробку', x: 330, y: 206, w: 100, h: 18 });
       else { const all = Save.data.boxes.filter(b => !b.loc), fit = all.filter(b => fits(b, this.t, this.i)); this.fit = fit; this.nAll = all.length; const vis = 7; this.scroll = clamp(this.scroll, 0, Math.max(0, fit.length - vis));
         this.rows = fit.slice(this.scroll, this.scroll + vis).map((b, k) => ({ b, x: 70, y: 66 + k * 23, w: 200, h: 21 })); }
     },
     draw(ctx, t, m) {
-      this.layout(); Cab2.backdrop(ctx); const occ = this.occ();
+      this.layout(); Cab2.backdrop(ctx); const occ = this.drawer() ? null : this.occ();
       UIK.panel(ctx, 56, 14, 368, 240, { fill: 'rgba(16,28,24,0.94)', border: c.gold, shadow: false });
       T.draw(ctx, slotName(this.t, this.i), SW / 2, 20, { size: 10, align: 'c', color: c.gold }); T.draw(ctx, slotRule(this.t, this.i), SW / 2, 34, { size: 8, align: 'c', color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
@@ -311,14 +312,17 @@ const Boxes = (() => {
         this.rows.forEach(r => { const hv = UIK.hit(r, m.x, m.y); if (hv) hov = r.b; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hv ? '#2a5a46' : '#1a3228', border: hv ? c.gold : c.line, shadow: false }); drawBoxScaled(ctx, r.b, r.x + 2, r.y + 1, 38, 19); T.draw(ctx, fitStr(`${SIZE_NAME[r.b.size]} · ${STYLES[r.b.style].name} · ${fillOf(r.b)}/${r.b.items.length}`, 150), r.x + 44, r.y + 6, { size: 8, color: c.text }); });
         if (this.fit.length > 7) T.draw(ctx, `${this.scroll + 1}–${Math.min(this.fit.length, this.scroll + 7)} из ${this.fit.length} (колесо мыши)`, 70, 230 - 12, { size: 8, color: c.dim });
         UIK.panel(ctx, 282, 66, 134, 140, { fill: '#10201c', border: c.line, shadow: false });
-        if (hov) { drawBoxScaled(ctx, hov, 286, 70, 126, 80); const lst = hov.items.map(u => Save.spec(u)).filter(Boolean).map(sp => SPECIES_BY_ID[sp.sp].ru); T.para(ctx, lst.length ? lst.join(', ') : 'коробка пуста', 286, 154, 126, { size: 8, color: '#9ab8a4', lh: 9 }); }
+        if (this.drawer()) { T.draw(ctx, this.inside.length ? 'В ящике (щёлк — достать):' : 'Ящик пуст', 286, 54, { size: 8, color: c.dim }); this.inside.forEach(r => { const hv = UIK.hit(r, m.x, m.y); UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hv ? '#5a3a3a' : '#2a1c12', border: hv ? c.red : '#6a4a2a', shadow: false }); drawBoxScaled(ctx, r.b, r.x + 2, r.y + 1, 34, 19); T.draw(ctx, fitStr(`${SIZE_NAME[r.b.size]} ${fillOf(r.b)}/${r.b.items.length}`, 90), r.x + 40, r.y + 6, { size: 8, color: c.text }); }); }
+        else if (hov) { drawBoxScaled(ctx, hov, 286, 70, 126, 80); const lst = hov.items.map(u => Save.spec(u)).filter(Boolean).map(sp => SPECIES_BY_ID[sp.sp].ru); T.para(ctx, lst.length ? lst.join(', ') : 'коробка пуста', 286, 154, 126, { size: 8, color: '#9ab8a4', lh: 9 }); }
         else T.para(ctx, 'Наведите курсор на коробку, чтобы увидеть, что в ней.', 288, 100, 122, { size: 8, color: '#6a8a78', lh: 10 });
+        if (this.drawer() && hov) { drawBoxScaled(ctx, hov, 286, 150, 126, 52); }
       }
     },
     click(x, y) {
       this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y));
       if (b) { Snd.sfx.click(); if (b.id === 'close') return 'close'; if (b.id === 'take') { const o = this.occ(); if (o) { unplace(o); Snd.sfx.page(); return 'done'; } } return null; }
-      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r && fits(r.b, this.t, this.i)) { place(r.b, this.t, this.i); Snd.sfx.pin(); return 'done'; }
+      const ins = this.inside.find(r => UIK.hit(r, x, y)); if (ins) { unplace(ins.b); Snd.sfx.page(); return this.drawer() ? 'again' : 'done'; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r && fits(r.b, this.t, this.i)) { place(r.b, this.t, this.i); Snd.sfx.pin(); return this.drawer() ? 'again' : 'done'; }
       return null;
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
