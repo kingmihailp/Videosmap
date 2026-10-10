@@ -333,7 +333,7 @@ const Cabinet = (() => {
       // the raw (not yet spread) specimens waiting on a cork tray at the spreading desk: little 3D models of resting butterflies (folded wings, bent legs, antennae)
       { const raw = Save.rawList().slice(0, 4), tr = new THREE.Group(); tr.position.set(-3.88, 0.835, -0.38); D.add(tr);
         cube(tr, 0.4, 0.022, 0.46, 0, 0.011, 0, lam('#5a3a20'), { cast: false }); cube(tr, 0.36, 0.01, 0.42, 0, 0.027, 0, lam('#c8a870'), { cast: false });
-        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = Math.max(0.03, Art.spanMm(sp) / 1000 * 5 / 2 / 0.9 * 0.25), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
+        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = clamp(((sp.mm[0] + sp.mm[1]) / 2 / 1000 * 5 / 2 / 0.9) * 0.6, 0.1, 0.17), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
       // drawers indicator: count of boxes inside on the desk label
     }
 
