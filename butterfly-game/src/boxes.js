@@ -16,8 +16,8 @@ const Boxes = (() => {
   function pxSize(size) { const d = DIM[size]; return { w: d.c * CW + FR * 2, h: d.r * CH + FR * 2 }; }
   function sig(box) { return box.size + box.style + '|' + box.items.map(u => { const s = Save.spec(u); return s ? u + ':' + s.q : 0; }).join(','); }
 
-  function canvas(box) {
-    const key = sig(box); if (cache.has(key)) return cache.get(key);
+  function canvas(box, bare) {
+    const key = sig(box) + (bare ? '|bare' : ''); if (cache.has(key)) return cache.get(key);
     const d = DIM[box.size], st = STYLES[box.style] || STYLES[0], { w, h } = pxSize(box.size);
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
     // frame
@@ -34,8 +34,8 @@ const Boxes = (() => {
       const cx0 = FR + (i % d.c) * CW, cy0 = FR + Math.floor(i / d.c) * CH; const s = Save.spec(u);
       if (!s) { x.strokeStyle = 'rgba(0,0,0,0.12)'; x.setLineDash([2, 3]); x.strokeRect(cx0 + 10.5, cy0 + 8.5, CW - 21, CH - 21); x.setLineDash([]); return; }
       const sp = SPECIES_BY_ID[s.sp];
-      Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
-      x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1);
+      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
+        x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1); }
       // label
       x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1);
       let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…';
@@ -49,6 +49,55 @@ const Boxes = (() => {
     x.fillStyle = 'rgba(255,255,255,0.28)'; x.fillRect(FR - 1, FR - 1, w - FR * 2 + 2, 1); x.fillRect(FR - 1, FR - 1, 1, h - FR * 2 + 2);
     if (cache.size > 40) cache.delete(cache.keys().next().value);
     cache.set(key, cv); return cv;
+  }
+
+
+  // ---- the pinned butterflies as real 3D models (for the cabinet and the museum): four wings per butterfly in their spread pose, slightly raised towards the tips,
+  // a body with a head and antennae, a pin. One merged mesh for all the wings (a texture atlas of the wing parts) and one for the bodies, per frame.
+  // The group is in "face" coordinates (x right, y up, z out of the frame), 1 canvas pixel = 1 / ppm metres, the origin at the middle of the frame.
+  const m3cache = new Map();
+  // items: [{ sp: species, pose, cx, cy (canvas pixels, the body centre as in Art.drawPose), sc (pixel scale, 1 = the framed boxes) }]; w, h: the canvas size in pixels
+  function buildMount(items, w, h, ppm) {
+    {
+      const N = Art.N, list = items.map(it => [it, it]);
+      const COLS = 6, tiles = list.length * 2, rows = Math.max(1, Math.ceil(tiles / COLS)), at = document.createElement('canvas'); at.width = COLS * N; at.height = rows * N; const ax = at.getContext('2d'); ax.imageSmoothingEnabled = false;
+      const P = [], U = [], I = [], NR = [], BP = [], BN = [], BC = [], BI = []; let t = 0;
+      const X = px => (px - w / 2) / ppm, Y = py => (h / 2 - py) / ppm;
+      list.forEach(([it]) => {
+        const sp = it.sp, parts = Art.wingParts(sp), cx = it.cx, cy = it.cy, sc = it.sc || 1, pose = it.pose || Art.RAW, tile = {};
+        for (const part of ['h', 'f']) { const c0 = t % COLS, r0 = Math.floor(t / COLS); t++; ax.drawImage(parts[part], c0 * N, r0 * N); tile[part] = [c0, r0]; }
+        for (const [k, part, m] of [['lh', 'h', -1], ['rh', 'h', 1], ['lf', 'f', -1], ['rf', 'f', 1]]) {
+          const wg = pose[k]; if (!wg) continue; const piv = Art.PIV[part], ca = Math.cos(wg.a), sa = Math.sin(wg.a), base = part === 'h' ? 0.0045 : 0.0075, [c0, r0] = tile[part], SU = 4, SV = 2, i0 = P.length / 3;
+          for (let a = 0; a <= SU; a++) for (let b = 0; b <= SV; b++) {
+            const u = a / SU * N, v = b / SV * N, qx = wg.s * u, qy = v - piv, rx = (qx * ca - qy * sa) * sc, ry = (qx * sa + qy * ca) * sc, pxX = cx + m * rx, pxY = cy + (piv - 20) * sc + ry, tt = a / SU;
+            P.push(X(pxX), Y(pxY), base + 0.014 * sc * Math.pow(tt, 1.4)); U.push((c0 * N + u) / at.width, 1 - (r0 * N + v) / at.height);
+          }
+          for (let a = 0; a < SU; a++) for (let b = 0; b < SV; b++) { const q = i0 + a * (SV + 1) + b; I.push(q, q + 1, q + SV + 1, q + 1, q + SV + 2, q + SV + 1); }
+        }
+        // the body: thorax, abdomen, head, two antennae, a pin with a bright head
+        const bx = (px0, py0, wpx, hpx, z0, dz, col, rot) => { px0 = cx + (px0 - cx) * sc; py0 = cy + (py0 - cy) * sc; wpx *= sc; hpx *= sc; z0 *= sc; dz *= sc; const cxx = X(px0 + wpx / 2), cyy = Y(py0 + hpx / 2), hx = wpx / 2 / ppm, hy = hpx / 2 / ppm, hz = dz / 2, zc = z0 + hz, base = BP.length / 3, cr = Math.cos(rot || 0), sr = Math.sin(rot || 0);
+          const V = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]; const F = [[0, 1, 2, 3, 0, 0, -1], [5, 4, 7, 6, 0, 0, 1], [4, 0, 3, 7, -1, 0, 0], [1, 5, 6, 2, 1, 0, 0], [3, 2, 6, 7, 0, 1, 0], [4, 5, 1, 0, 0, -1, 0]];
+          const c = new THREE.Color(col);
+          for (const f of F) { const o = BP.length / 3; for (let q = 0; q < 4; q++) { const v = V[f[q]], lx = v[0] * hx, ly = v[1] * hy; BP.push(cxx + lx * cr - ly * sr, cyy + lx * sr + ly * cr, zc + v[2] * hz); BN.push(f[4] * cr - f[5] * sr, f[4] * sr + f[5] * cr, f[6]); BC.push(c.r, c.g, c.b); } BI.push(o, o + 1, o + 2, o, o + 2, o + 3); } };
+        const ox = cx - w / 2 + w / 2, bz = 0.004;                        // body in canvas pixels relative to (cx, cy): drawBody's rectangles, y shifted by -20
+        bx(cx - 2, cy - 9, 4, 6, bz, 0.011, '#2a1e16'); bx(cx - 1.2, cy - 3, 2.4, 13, bz, 0.008, '#1e1612'); bx(cx - 1.6, cy - 12, 3.2, 3.2, bz, 0.009, '#2a201a');
+        bx(cx - 2.6, cy - 14.4, 0.9, 5, bz + 0.003, 0.002, '#120e0a', 0.35); bx(cx + 1.7, cy - 14.4, 0.9, 5, bz + 0.003, 0.002, '#120e0a', -0.35);
+        bx(cx - 0.5, cy - 6, 1, 1, bz + 0.011, 0.012, '#c8ccd4'); bx(cx - 1.5, cy - 7, 3, 3, bz + 0.022, 0.004, '#f0f2f6');
+      });
+      const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); wg.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); wg.setIndex(I); wg.computeVertexNormals();
+      const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(BP, 3)); bg.setAttribute('normal', new THREE.Float32BufferAttribute(BN, 3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(BC, 3)); bg.setIndex(BI);
+      const tex = new THREE.CanvasTexture(at); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+      const wm = new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, emissive: new THREE.Color('#ffffff'), emissiveMap: tex, emissiveIntensity: 0.3 }), bm = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: new THREE.Color('#2a2420') });
+      for (const g of [wg, bg]) g.dispose = () => {};         // shared between refreshes (the scenes dispose what they remove)
+      return { wg, bg, wm, bm };
+    }
+  }
+  const mountGroup = e => { const g = new THREE.Group(); const a = new THREE.Mesh(e.wg, e.wm), b = new THREE.Mesh(e.bg, e.bm); a.userData.noFloat = b.userData.noFloat = true; g.add(a, b); return g; };
+  function mount3D(box, ppm) {
+    const key = sig(box) + '|' + ppm; let e = m3cache.get(key);
+    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + 32, sc: 1 }); });
+      e = buildMount(items, w, h, ppm); m3cache.set(key, e); if (m3cache.size > 160) m3cache.delete(m3cache.keys().next().value); }
+    return mountGroup(e);
   }
 
   // ---- slot rules
@@ -325,7 +374,7 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { PRICE, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
 
 // the empty boxes in stock (personal, like coins): bought from the collection trader, used up at the workbench, returned when a box is taken apart

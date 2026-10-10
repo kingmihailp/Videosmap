@@ -74,7 +74,7 @@ const Cabinet = (() => {
   // box textures keyed by signature
   const boxTex = new Map();
   function texFor(box) {
-    const cv = Boxes.canvas(box); const key = cv; if (boxTex.has(key)) return boxTex.get(key);
+    const cv = Boxes.canvas(box, true); const key = cv; if (boxTex.has(key)) return boxTex.get(key);
     const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; boxTex.set(key, t); return t;
   }
 
@@ -148,8 +148,9 @@ const Cabinet = (() => {
       // spreading board: base plate, two slats with a groove between them, specimen lying across the groove
       const bd = new THREE.Group(); bd.position.set(dx0 + 0.02, 0.835, 0.2); sd.add(bd);
       cube(bd, 0.46, 0.02, 0.62, 0, 0.01, 0, lam('#6a4a28')); cube(bd, 0.19, 0.03, 0.6, -0.135, 0.035, 0, lam('#c29a5c')); cube(bd, 0.19, 0.03, 0.6, 0.135, 0.035, 0, lam('#c29a5c'));
-      const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const st = new THREE.CanvasTexture(Art.specimen(sample)); st.magFilter = st.minFilter = THREE.NearestFilter;
-      const sm = mesh(new THREE.PlaneGeometry(0.4, 0.2), new THREE.MeshLambertMaterial({ map: st, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }), 0, 0.0515, 0, { cast: false }); sm.rotation.x = -Math.PI / 2; sm.rotation.z = Math.PI / 2; bd.add(sm);
+      // a butterfly as a real 3D model (wings raised a little, a body with antennae), scaled to a wing span
+      const model3 = (sp, span, flap) => { const m = Art.makeButterfly(sp); Art.setFlap(m, flap); m.scale.setScalar(span / m.userData.span); m.traverse(o => { if (o.material && o.material.map) o.material.color.set('#d8ccb8'); }); return m; };
+      const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const sm = model3(sample, 0.4, 0.08); sm.position.set(0, 0.0545, 0); bd.add(sm);
       for (const zz of [-0.17, -0.06, 0.07, 0.18]) { cube(bd, 0.004, 0.03, 0.004, 0.05, 0.065, zz, metalM, { cast: false }); cube(bd, 0.12, 0.002, 0.012, 0.0, 0.0535, zz * 1.0, lam('#efe6c8'), { cast: false }); }
       // jar with a lid, standing on the desk
       cyl(sd, 0.05, 0.05, 0.12, dx0 + 0.25, 0.895, -0.75, lam('#a8d0d8', { transparent: true, opacity: 0.55 }), 10); cyl(sd, 0.053, 0.053, 0.02, dx0 + 0.25, 0.965, -0.75, metalM, 10);
@@ -222,7 +223,7 @@ const Cabinet = (() => {
       this.hHand = cube(clock, 0.02, 0.16, 0.01, 0, 0, 0.02, bas('#14100c'), { cast: false }); this.mHand = cube(clock, 0.015, 0.23, 0.01, 0, 0, 0.03, bas('#14100c'), { cast: false });
       this.hHand.geometry.translate(0, 0.08, 0); this.mHand.geometry.translate(0, 0.115, 0);
       // --- framed specimens
-      const fr = (x, y, z, ry, sp) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; S.add(g); cube(g, 0.66, 0.46, 0.05, 0, 0, 0, darkWood, { cast: false }); cube(g, 0.56, 0.36, 0.01, 0, 0, 0.03, lam('#efe6c8'), { cast: false }); const tx = new THREE.CanvasTexture(Art.specimen(sp)); tx.magFilter = tx.minFilter = THREE.NearestFilter; const q = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshLambertMaterial({ map: tx, transparent: true, alphaTest: 0.5 })); q.position.z = 0.04; g.add(q); };
+      const fr = (x, y, z, ry, sp) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; S.add(g); cube(g, 0.66, 0.46, 0.05, 0, 0, 0, darkWood, { cast: false }); cube(g, 0.56, 0.36, 0.01, 0, 0, 0.03, lam('#efe6c8'), { cast: false }); const q = model3(sp, 0.5, 0.18); q.rotation.x = Math.PI / 2; q.position.set(0, 0, 0.042); g.add(q); cube(g, 0.006, 0.006, 0.03, 0, -0.01, 0.03, metalM, { cast: false }); };
       fr(-HX + 0.04, 1.85, -2.4, Math.PI / 2, SPECIES_BY_ID.machaon || SPECIES[0]); fr(-HX + 0.04, 1.85, 2.4, Math.PI / 2, SPECIES[Math.min(10, SPECIES.length - 1)]);
       // --- pendant lamp, plants, globe
       cyl(S, 0.01, 0.01, 0.7, 0.3, RH - 0.45, 0.4, bas('#14100c'), 4, { cast: false }); cyl(S, 0.08, 0.34, 0.26, 0.3, RH - 0.9, 0.4, lam('#2a6a4a', { side: THREE.DoubleSide }), 14); this.bulb = mesh(new THREE.SphereGeometry(0.08, 8, 6), bas('#fff2c0'), 0.3, RH - 0.98, 0.4, { cast: false, recv: false }); S.add(this.bulb);
@@ -301,9 +302,10 @@ const Cabinet = (() => {
       const frameMats = Boxes.STYLES.map(s => lam(s.fr[1]));
       const mk = (box, flat) => {
         const { w, h } = Boxes.pxSize(box.size), W = w / PPM, H = h / PPM; const tx = texFor(box);
-        if (!flat) { const mats = [frameMats[box.style], frameMats[box.style], frameMats[box.style], frameMats[box.style], new THREE.MeshLambertMaterial({ map: tx }), frameMats[box.style]]; return { m: mesh(new THREE.BoxGeometry(W, H, 0.07), mats, 0, 0, 0), W, H }; }
+        const m3 = Boxes.mount3D(box, PPM);
+        if (!flat) { const mats = [frameMats[box.style], frameMats[box.style], frameMats[box.style], frameMats[box.style], new THREE.MeshLambertMaterial({ map: tx }), frameMats[box.style]]; const mm = mesh(new THREE.BoxGeometry(W, H, 0.07), mats, 0, 0, 0); m3.position.set(0, 0, 0.036); mm.add(m3); return { m: mm, W, H }; }
         const mats = [frameMats[box.style], frameMats[box.style], new THREE.MeshLambertMaterial({ map: tx }), frameMats[box.style], frameMats[box.style], frameMats[box.style]];
-        return { m: mesh(new THREE.BoxGeometry(W, 0.05, H), mats, 0, 0, 0), W, H };
+        const mm = mesh(new THREE.BoxGeometry(W, 0.05, H), mats, 0, 0, 0); m3.rotation.x = -Math.PI / 2; m3.position.set(0, 0.026, 0); mm.add(m3); return { m: mm, W, H };
       };
       // wall: 6 slots along the north wall
       const gap = 0.24; const widths = Boxes.WALL.map(s => Boxes.pxSize(s).w / PPM); const total = widths.reduce((a, b) => a + b, 0) + gap * 5; let x = -total / 2;

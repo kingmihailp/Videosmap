@@ -108,7 +108,7 @@ const Museum = (() => {
   }
   function signTex(text, w, h, bg, fg, border) { return ctex(w, h, (x) => { x.fillStyle = border || BRASS; x.fillRect(0, 0, w, h); x.fillStyle = bg; x.fillRect(2, 2, w - 4, h - 4); T.draw(x, text, w / 2, Math.round((h - 8) / 2), { size: 8, align: 'c', color: fg }); }, 0, 0, true); }
   const boxTex = new Map();
-  function texFor(box) { const cv = Boxes.canvas(box); if (boxTex.has(cv)) return boxTex.get(cv); const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; boxTex.set(cv, t); return t; }
+  function texFor(box) { const cv = Boxes.canvas(box, true); if (boxTex.has(cv)) return boxTex.get(cv); const t = new THREE.CanvasTexture(cv); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; boxTex.set(cv, t); return t; }
   const outlineTex = {}; function outline(wd, hh, label) { const key = label + wd; return outlineTex[key] || (outlineTex[key] = ctex(64, 48, (g, w2, h2) => { g.strokeStyle = 'rgba(220,190,110,0.55)'; g.setLineDash([3, 3]); g.strokeRect(2.5, 2.5, w2 - 5, h2 - 5); if (label) T.draw(g, label, w2 / 2, h2 / 2 - 4, { size: 8, align: 'c', color: 'rgba(220,190,110,0.7)' }); }, 0, 0, true)); }
 
   // ------------------------------------------------------------ the room
@@ -213,6 +213,8 @@ const Museum = (() => {
         this.addCol(k.x - hw, k.x + hw, k.z - k.d / 2, k.z + k.d / 2);
       });
       // --- low display cabinets under the wall frames: plinth, three drawers with pulls, a glass-topped case with specimens inside
+      // a butterfly pinned under glass: the real 3D model (wings raised a little, body, antennae), scaled to a given wing span, a brass pin under it
+      const pinned = (sp, x, y, z, span, rot, flap = 0.2) => { const g = Art.makeButterfly(sp), k = span / g.userData.span; Art.setFlap(g, flap); g.scale.setScalar(k); g.position.set(x, y, z); g.rotation.y = rot; g.traverse(o => { if (o.material && o.material.map) o.material.color.set('#c8bca8'); }); g.userData.noFloat = true; S.add(g); S.add(mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 5), bas('#c8ccd4'), x, y - 0.02, z)); S.add(mesh(new THREE.SphereGeometry(0.01, 6, 5), bas('#f0f2f6'), x, y + 0.012, z)); return g; };
       const qb = [], qspecies = SPECIES.filter(s => !s.mystery && s.biome !== 'ocean').filter((s, i) => i % 9 === 0).slice(0, 7); qspecies.forEach(sp => { const tx = new THREE.CanvasTexture(Art.specimen(sp)); tx.magFilter = tx.minFilter = THREE.NearestFilter; qb.push(new QuadBatch(tx)); });
       LAYOUT.lowcases.forEach((lc, k) => {
         B.unit = 'lowcase' + k; const g = lc.ry ? -1 : 1, fz = lc.z + g * (lc.d / 2);
@@ -222,7 +224,7 @@ const Museum = (() => {
         for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(0.045, 0.2, 0.045, lc.x + sx * (lc.w / 2 - 0.05), 1.0, lc.z + sz * (lc.d / 2 - 0.05), DARK);
         B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z - lc.d / 2 + 0.05, brassC); B.box(lc.w - 0.04, 0.03, 0.04, lc.x, 1.115, lc.z + lc.d / 2 - 0.05, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x - lc.w / 2 + 0.05, 1.115, lc.z, brassC); B.box(0.04, 0.03, lc.d - 0.04, lc.x + lc.w / 2 - 0.05, 1.115, lc.z, brassC);
         const gl = mesh(new THREE.PlaneGeometry(lc.w - 0.12, lc.d - 0.12), bas('#cfe8ff', { transparent: true, opacity: 0.12, depthWrite: false }), lc.x, 1.1, lc.z); gl.rotation.x = -Math.PI / 2; S.add(gl);
-        const nq = 3; for (let i = 0; i < nq; i++) pick(qb).quad(lc.x + (i - 1) * (lc.w / 3.1), 0.952, lc.z + R.range(-0.04, 0.04), 0.46, 0.23, R.range(-0.3, 0.3));
+        const nq = 3; for (let i = 0; i < nq; i++) pinned(pick(qspecies), lc.x + (i - 1) * (lc.w / 3.1), 0.962, lc.z + R.range(-0.04, 0.04), 0.4, R.range(-0.3, 0.3), 0.16);
         for (let i = 0; i < 4; i++) { const col = pick(['#a8d0d8', '#c04a2a', '#2a6a4a', '#e0d4a0', '#8a5a9a']); B.cyl(0.05, 0.05, 0.14, lc.x + (i - 1.5) * 0.42 + R.range(-0.04, 0.04), 1.185, lc.z, col, 8); }
         this.addCol(lc.x - lc.w / 2, lc.x + lc.w / 2, lc.z - lc.d / 2, lc.z + lc.d / 2);
       });
@@ -322,7 +324,7 @@ const Museum = (() => {
       });
       for (const [x, z, i] of [[-9.6, -1.6, 0], [-9.6, 1.6, 1], [9.6, -1.6, 2], [9.6, 1.6, 3]]) {
         B.unit = 'dome' + i; B.box(0.6, 0.1, 0.6, x, 0.05, z, '#2a1a0e'); B.box(0.5, 1.05, 0.5, x, 0.625, z, '#d8c8a0'); B.box(0.58, 0.07, 0.58, x, 1.185, z, brassC); B.cyl(0.2, 0.2, 0.012, x, 1.22, z, '#6a1c1c', 14);
-        const sp = SPECIES_BY_ID.ornithoptera_alexandrae || SPECIES[i]; const qd = new QuadBatch(new THREE.CanvasTexture(Art.specimen(sp))); qd.tex.magFilter = qd.tex.minFilter = THREE.NearestFilter; qd.quad(x, 1.23, z, 0.34, 0.17, i * 0.8); S.add(qd.build());
+        const sp = SPECIES_BY_ID.ornithoptera_alexandrae || SPECIES[i]; pinned(sp, x, 1.26, z, 0.34, i * 0.8, 0.3);
         const dome = mesh(new THREE.SphereGeometry(0.28, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), bas('#cfe8ff', { transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }), x, 1.22, z); S.add(dome);
         B.cyl(0.285, 0.285, 0.02, x, 1.225, z, brassC, 14); B.ball(0.03, x, 1.5, z, brassC, 6); this.addCol(x - 0.34, x + 0.34, z - 0.34, z + 0.34);
       }
@@ -345,8 +347,9 @@ const Museum = (() => {
       const fm = Boxes.STYLES.map(s => lam(s.fr[1]));
       const frame = (box, mode) => {                      // a group in a local frame: the support (wall / back panel / table top) at z = 0 / y = 0, the face towards +z (mode 'flat': face up)
         const { w, h } = Boxes.pxSize(box.size), W = w / PPM, H = h / PPM, tx = texFor(box), g = new THREE.Group(), fr = fm[box.style];
-        if (mode === 'flat') { const m = mesh(new THREE.BoxGeometry(W, 0.05, H), [fr, fr, new THREE.MeshLambertMaterial({ map: tx }), fr, fr, fr], 0, 0.025 + 0.002, 0); g.add(m); }
-        else { const m = mesh(new THREE.BoxGeometry(W, H, 0.07), [fr, fr, fr, fr, new THREE.MeshLambertMaterial({ map: tx }), fr], 0, mode === 'up' ? H / 2 + 0.004 : 0, 0.037); g.add(m);
+        const m3 = Boxes.mount3D(box, PPM);
+        if (mode === 'flat') { const m = mesh(new THREE.BoxGeometry(W, 0.05, H), [fr, fr, new THREE.MeshLambertMaterial({ map: tx }), fr, fr, fr], 0, 0.025 + 0.002, 0); g.add(m); m3.rotation.x = -Math.PI / 2; m3.position.set(0, 0.027 + 0.025 + 0.001, 0); g.add(m3); }
+        else { const m = mesh(new THREE.BoxGeometry(W, H, 0.07), [fr, fr, fr, fr, new THREE.MeshLambertMaterial({ map: tx }), fr], 0, mode === 'up' ? H / 2 + 0.004 : 0, 0.037); g.add(m); m3.position.set(0, mode === 'up' ? H / 2 + 0.004 : 0, 0.037 + 0.035 + 0.001); g.add(m3);
           if (mode === 'wall') { const cy = 0, ny = H / 2 + 0.1, top = H / 2; g.add(mesh(new THREE.BoxGeometry(0.026, 0.026, 0.02), lam(BRASS), 0, ny, 0.012));
             for (const sx of [-1, 1]) { const ax = sx * W * 0.28, dx = -ax, dy = ny - top, L = Math.hypot(dx, dy), str = mesh(new THREE.BoxGeometry(0.006, L, 0.006), lam('#14100c'), ax + dx / 2, top + dy / 2, 0.034); str.rotation.z = Math.atan2(dx, dy) * -1; g.add(str); } } }
         g.userData = { W, H }; return g;
