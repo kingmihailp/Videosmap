@@ -27,14 +27,12 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await click('mw', 5, Lb); T('...but fits the large one', (await loc(Lb)) === 'mw:5', await loc(Lb));
   await click('mw', 0, 0); T('a click on a taken place takes the box back', (await loc(S1)) === null, await loc(S1));
   // walking up to furniture
-  const st = await pg.evaluate(() => { const c = F0W.cab, t = Museum.LAYOUT.tables[3]; c.player.pos.set(t.x, 0, t.z + (t.z < 0 ? 1.1 : -1.1)); c.player.yaw = t.z < 0 ? 0 : Math.PI; c.prompt = c.nearest(); return c.prompt && c.prompt.tab; });
-  T('at a table E offers the tables tab', st === 'mt', st);
-  const st2 = await pg.evaluate(() => { const c = F0W.cab, k = Museum.LAYOUT.racks[4]; c.player.pos.set(k.x, 0, k.z + k.f * 1.1); c.player.yaw = k.f > 0 ? 0 : Math.PI; c.prompt = c.nearest(); return c.prompt && c.prompt.tab; });
-  T('at a rack E offers the racks tab', st2 === 'mr', st2);
-  const st3 = await pg.evaluate(() => { const c = F0W.cab; c.player.pos.set(-4, 0, -6.4); c.player.yaw = Math.PI; c.prompt = c.nearest(); return c.prompt && c.prompt.tab; });
-  T('at the north wall E offers the walls tab', st3 === 'mw', st3);
-  await pg.evaluate(() => { const c = F0W.cab; c.player.pos.set(-4, 0, -6.4); c.player.yaw = Math.PI; c.prompt = c.nearest(); c.key({ code: 'KeyE' }); });
-  const ov = await pg.evaluate(() => [F0W.cab.ov, Boxes.place.tab]); T('E opens the placement window on that tab', ov[0] === 'place' && ov[1] === 'mw', ov);
+  const lookAt = (t, i, dz, pitch) => pg.evaluate(([t, i, dz, pitch]) => { const c = F0W.cab, p = c.slotPts.find(q => q.t === t && q.i === i), side = p.z < 0 ? 1 : -1; c.ov = null; c.player.pos.set(p.x, 0, p.z + side * dz); c.player.yaw = side > 0 ? 0 : Math.PI; c.player.pitch = pitch; c.prompt = c.nearest(); return c.prompt && { id: c.prompt.id, t: c.prompt.t, i: c.prompt.i }; }, [t, i, dz, pitch]);
+  const st = await lookAt('mt', 6, 1.6, -0.45); T('looking at a table place E offers exactly that place', st && st.id === 'slot' && st.t === 'mt' && st.i === 6, st);
+  const st2 = await lookAt('mr', 13, 1.7, -0.47); T('looking at a rack place E offers that place', st2 && st2.id === 'slot' && st2.t === 'mr' && st2.i === 13, st2);
+  const st3 = await lookAt('mw', 3, 2.2, 0.08); T('looking at a wall place E offers that place', st3 && st3.id === 'slot' && st3.t === 'mw' && st3.i === 3, st3);
+  await pg.evaluate(() => F0W.cab.key({ code: 'KeyE' }));
+  const ov = await pg.evaluate(() => [F0W.cab.ov, Boxes.slot.t, Boxes.slot.i]); T('E opens the window of that one place', ov[0] === 'slot' && ov[1] === 'mw' && ov[2] === 3, ov);
   await pg.waitForTimeout(500); await pg.screenshot({ path: '/tmp/m_place.png' });
   await pg.evaluate(() => F0W.cab.key({ code: 'Escape' })); T('Esc closes it', await pg.evaluate(() => F0W.cab.ov === null));
   // the antique clock

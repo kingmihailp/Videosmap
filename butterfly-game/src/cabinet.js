@@ -149,7 +149,7 @@ const Cabinet = (() => {
       const bd = new THREE.Group(); bd.position.set(dx0 + 0.02, 0.835, 0.2); sd.add(bd);
       cube(bd, 0.46, 0.02, 0.62, 0, 0.01, 0, lam('#6a4a28')); cube(bd, 0.19, 0.03, 0.6, -0.135, 0.035, 0, lam('#c29a5c')); cube(bd, 0.19, 0.03, 0.6, 0.135, 0.035, 0, lam('#c29a5c'));
       // a butterfly as a real 3D model (wings raised a little, a body with antennae), scaled to a wing span
-      const model3 = (sp, span, flap) => { const m = Art.makeButterfly(sp); Art.setFlap(m, flap); m.scale.setScalar(span / m.userData.span); m.traverse(o => { if (o.material && o.material.map) o.material.color.set('#d8ccb8'); }); return m; };
+      const model3 = (sp, span, flap) => { const m = Art.makeButterfly(sp); Art.setFlap(m, flap); m.scale.setScalar(span / m.userData.span); m.traverse(o => { if (o.material && o.material.map) o.material = new THREE.MeshLambertMaterial({ map: o.material.map, alphaTest: 0.5, side: THREE.DoubleSide, color: '#b8ac98' }); }); return m; };
       const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const sm = model3(sample, 0.4, 0.08); sm.position.set(0, 0.0545, 0); bd.add(sm);
       for (const zz of [-0.17, -0.06, 0.07, 0.18]) { cube(bd, 0.004, 0.03, 0.004, 0.05, 0.065, zz, metalM, { cast: false }); cube(bd, 0.12, 0.002, 0.012, 0.0, 0.0535, zz * 1.0, lam('#efe6c8'), { cast: false }); }
       // jar with a lid, standing on the desk
