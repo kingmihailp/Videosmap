@@ -202,6 +202,14 @@ const Museum = (() => {
         for (let j = 0; j < 3; j++) { const py = 0.2 + 0.45 + j * 0.9; B.box(k.w - 0.4, 0.74, 0.012, k.x, py + 0.0, back + k.f * 0.004, '#7a6044'); for (const sx of [-1, 1]) B.box(0.03, 0.74, 0.016, k.x + sx * (k.w / 2 - 0.2), py, back + k.f * 0.004, DARK); }
         B.box(k.w + 0.1, 0.1, k.d + 0.06, k.x, k.h - 0.05, k.z, DARK); B.box(k.w + 0.14, 0.05, k.d + 0.1, k.x, k.h + 0.025, k.z, brassD); B.box(k.w - 0.5, 0.2, 0.05, k.x, k.h - 0.22, k.z + k.f * (k.d / 2 + 0.01), '#2a1a0e'); B.box(k.w - 0.56, 0.14, 0.02, k.x, k.h - 0.22, k.z + k.f * (k.d / 2 + 0.04), brassC);
         for (const sy of sh) { B.box(k.w - 0.18, 0.04, k.d - 0.04, k.x, sy - 0.02, k.z, WOOD[0]); B.box(k.w - 0.18, 0.06, 0.02, k.x, sy + 0.03, k.z + k.f * (k.d / 2 - 0.03), brassC); }
+        // small museum lamps under every shelf (and under the cornice) above each of the two frames: a brass plate, an arm, a hood with a glowing bulb
+        for (let j = 0; j < 3; j++) { const yt = j < 2 ? sh[j + 1] - 0.04 : k.h - 0.1, zl = k.z - k.f * 0.1; for (const sx of [-1, 1]) {
+          const lx = k.x + sx * 0.54; B.box(0.2, 0.012, 0.08, lx, yt - 0.006, zl, brassD); B.box(0.12, 0.016, 0.05, lx, yt - 0.02, zl, brassC);
+          B.limb(V(lx, yt - 0.02, zl), V(lx, yt - 0.075, zl + k.f * 0.07), 0.009, 0.009, brassC, 5);
+          B.lathe([[0.018, 0], [0.05, -0.012], [0.085, -0.04], [0.095, -0.075], [0.09, -0.078], [0.08, -0.07], [0.045, -0.04], [0.016, -0.02]], lx, yt - 0.07, zl + k.f * 0.07, [brassC, '#e8c870'], 14);
+          B.cyl(0.095, 0.095, 0.008, lx, yt - 0.147, zl + k.f * 0.07, brassD, 14); B.ball(0.016, lx, yt - 0.063, zl + k.f * 0.07, brassD, 6);
+          glow.push(emit(0.026, lx, yt - 0.125, zl + k.f * 0.07, '#fff0c0')); (this.rackLamps = this.rackLamps || []).push({ x: lx, y: yt - 0.125, z: zl + k.f * 0.07, f: k.f, fy: sh[j], fz: k.z - k.f * 0.22 });
+        } }
         this.addCol(k.x - hw, k.x + hw, k.z - k.d / 2, k.z + k.d / 2);
       });
       // --- low display cabinets under the wall frames: plinth, three drawers with pulls, a glass-topped case with specimens inside
@@ -301,6 +309,7 @@ const Museum = (() => {
         this.lamps.forEach(([x, z]) => { sprite(x, RH - 1.34, z, 1.9, '#ffd890', 0.6, 0.06); decal(halo, x, 0.03, z, 4.6, 4.6, 0, -Math.PI / 2, '#ffb860', 0.2); });
         [-6, 0, 6].forEach(x => { for (let a = 0; a < 6; a++) { const an = a * Math.PI / 3; sprite(x + Math.sin(an) * 0.62, RH - 1.35 + 0.16, Math.cos(an) * 0.62, 0.62, '#ffd070', 0.55, 0.18); } sprite(x, RH - 1.35 + 0.1, 0, 2.2, '#ffc880', 0.22, 0.05); });
         for (const sgz of [-1, 1]) for (const x of [-9, -3, 3, 9]) { const z = sgz * (HZ - 0.12), ry = sgz < 0 ? 0 : Math.PI; sprite(x, 2.44, z, 0.95, '#ffcf80', 0.75, 0.28); decal(wash, x, 2.25, sgz * (HZ - 0.015), 3.2, 3.6, ry, 0, '#ffb35c', 0.5); }
+        for (const rl of this.rackLamps || []) { sprite(rl.x, rl.y, rl.z, 0.3, '#ffe2a8', 0.85, 0.05); decal(wash, rl.x, rl.fy + 0.42, rl.fz + rl.f * 0.09, 1.2, 1.1, rl.f > 0 ? 0 : Math.PI, 0, '#ffd69a', 0.32); }
         for (const sl of LAYOUT.slots.mw) { const ox = Math.sin(sl.ry), oz = Math.cos(sl.ry); sprite(sl.x + ox * 0.17, 3.12, sl.z + oz * 0.17, 0.42, '#ffe0a0', 0.8, 0.06); decal(wash, sl.x + ox * 0.012, 2.55, sl.z + oz * 0.012, 2.5, 2.7, sl.ry, 0, '#ffcc88', 0.45); } }
       // --- brass plates under the wall frames, benches with cushions, a visitors' stand with a book, display pedestals with glass domes
       for (const s of LAYOUT.slots.mw) { B.unit = 'plate'; B.box(0.22, 0.07, 0.012, s.x + Math.sin(s.ry) * 0.006, 1.5, s.z + Math.cos(s.ry) * 0.006, brassC, s.ry); }
