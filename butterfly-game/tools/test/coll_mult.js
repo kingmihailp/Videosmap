@@ -10,7 +10,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     Save.data.specimens = []; Save.data.boxes = []; Save.data.boxStock = { S: 0, M: 9, L: 9 };
     const mk = (size, sps) => { const b = Save.addBox(size, 0); sps.forEach((sp, i) => { Save.add(sp.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 80; s.box = b.uid; b.items[i] = s.uid; }); return Collection.info(b); };
     const out = {}, pool = SPECIES.filter(s => !s.mystery && !s.ab && s.biome !== 'ocean' && !(s.id || '').includes('#'));
-    const brief = i => ({ ids: i.themes.map(t => t.id), coefs: Object.fromEntries(i.themes.map(t => [t.id, t.coef])), mult: i.mult, base: i.baseSum, total: i.total, exp: Math.round(i.baseSum * i.mult) });
+    const brief = i => ({ ids: i.themes.map(t => t.id), coefs: Object.fromEntries(i.themes.map(t => [t.id, t.coef])), mult: i.mult, base: i.baseSum, total: i.total, minQ: i.minQ, exp: Math.round(i.baseSum * i.mult * i.minQ / 100) });
     // only aberrations (different species)
     const el = pool.filter(s => Aberr.eligible(s)), abs = []; const seen = new Set(); for (const s of el) { if (abs.length >= 4) break; if (seen.has(s.fam)) continue; seen.add(s.fam); try { abs.push(Aberr.make(s, 'ABCDE')); } catch (e) {} }
     out.ab = brief(mk('M', abs));
@@ -35,11 +35,21 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   T('one family ×1.5', R.famN >= 3 && R.family.coefs.family === 1.5 && R.family.total === R.family.exp, [R.famN, R.family]);
   T('one location ×1.4', R.biome.coefs.biome === 1.4 && R.biome.total === R.biome.exp, R.biome);
   T('one colour ×1.2', R.colour.coefs.colour === 1.2 && R.colour.total === R.colour.exp, R.colour);
-  T('only different butterflies ×1.5 and nothing else', R.difN === 4 && R.diff.ids.join() === 'distinct' && R.diff.coefs.distinct === 1.5 && R.diff.total === R.diff.exp && R.diff.total > R.diff.base, R.diff);
-  T('the same two kinds alternating, or a half-empty frame: no patterns, price = frame + butterflies', R.alt.ids.length === 0 && R.alt.mult === 1 && R.two.ids.length === 0 && R.two.total === R.two.base, [R.alt, R.two]);
+  T('only different butterflies ×1.5 and nothing else', R.difN === 4 && R.diff.ids.join() === 'distinct' && R.diff.coefs.distinct === 1.5 && R.diff.total === R.diff.exp && R.diff.total > R.diff.base * 1.1 && R.diff.minQ === 80, R.diff);
+  T('the same two kinds alternating, or a half-empty frame: no patterns, price = (frame + butterflies) × accuracy', R.alt.ids.length === 0 && R.alt.mult === 1 && R.two.ids.length === 0 && R.two.total === Math.round(R.two.base * 0.8), [R.alt, R.two]);
   // the coefficients multiply together
-  const M = await pg.evaluate(() => { const el = SPECIES.filter(s => !s.mystery && !s.ab && s.biome !== 'ocean' && Aberr.eligible(s)); const sp = el[0], b = Save.addBox('M', 0); for (let i = 0; i < 4; i++) { const ab = Aberr.make(sp, 'ABCDE'); Save.add(ab.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 80; s.box = b.uid; b.items[i] = s.uid; } const r = Collection.info(b); return { ids: r.themes.map(t => t.id), mult: r.mult, prod: r.themes.reduce((a, t) => a * t.coef, 1), total: r.total, exp: Math.round(r.baseSum * r.mult) }; });
+  const M = await pg.evaluate(() => { const el = SPECIES.filter(s => !s.mystery && !s.ab && s.biome !== 'ocean' && Aberr.eligible(s)); const sp = el[0], b = Save.addBox('M', 0); for (let i = 0; i < 4; i++) { const ab = Aberr.make(sp, 'ABCDE'); Save.add(ab.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 80; s.box = b.uid; b.items[i] = s.uid; } const r = Collection.info(b); return { ids: r.themes.map(t => t.id), mult: r.mult, prod: r.themes.reduce((a, t) => a * t.coef, 1), total: r.total, exp: Math.round(r.baseSum * r.mult * r.minQ / 100) }; });
   T('four aberrations of one species: aberration × species × family × location × colour multiply', ['aberr', 'species', 'family', 'biome', 'colour'].every(x => M.ids.includes(x)) && Math.abs(M.mult - 1.7 * 1.2 * 1.5 * 1.4 * 1.2) < 1e-9 && M.total === M.exp, M);
+  // the minimum accuracy: the worst butterfly (in %) multiplies the whole price at the very end
+  const Q = await pg.evaluate(() => {
+    const pool = SPECIES.filter(s => !s.mystery && !s.ab && s.biome !== 'ocean'), b = Save.addBox('M', 0), qs = [100, 100, 40, 100];
+    qs.forEach((q, i) => { const sp = pool[i * 5]; Save.add(sp.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = q; s.box = b.uid; b.items[i] = s.uid; });
+    const i1 = Collection.info(b); const before = { minQ: i1.minQ, total: i1.total, mult: i1.mult, baseSum: i1.baseSum, pre: i1.pre };
+    const s0 = Save.spec(b.items[2]); s0.q = 100; const i2 = Collection.info(b); const s3 = Save.spec(b.items[0]); s3.q = 0; const i3 = Collection.info(b);
+    return { before, hundred: { minQ: i2.minQ, total: i2.total, pre: i2.pre }, zero: { minQ: i3.minQ, total: i3.total } };
+  });
+  T('the worst butterfly (40%) multiplies the final price: total = round(base × patterns × 0.40)', Q.before.minQ === 40 && Q.before.total === Math.round(Q.before.baseSum * Q.before.mult * 0.4) && Q.before.total < Q.before.pre, Q.before);
+  T('all at 100% → the price is not reduced; a 0% butterfly → nothing', Q.hundred.minQ === 100 && Q.hundred.total === Q.hundred.pre && Q.zero.minQ === 0 && Q.zero.total === 0, Q);
   // the workbench filters
   await pg.evaluate(() => { Save.data.specimens = []; Save.data.boxes = []; Save.data.boxStock = { S: 3, M: 3, L: 3 };
     const picks = SPECIES.filter(s => !s.mystery && !s.ab && s.biome !== 'ocean').slice(0, 40); picks.forEach((sp, i) => { Save.add(sp.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 60 + (i % 40); s.pose = {}; s.date = Date.now() - (i % 4) * 4 * 864e5; });

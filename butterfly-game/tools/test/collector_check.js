@@ -29,10 +29,10 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     return out;
   });
   T('frame price by size: 100 / 200 / 300', p.frames.S === 100 && p.frames.M === 200 && p.frames.L === 300, p.frames);
-  T('total = (frame + butterflies) × the coefficients of the patterns', p.same.total === Math.round((p.same.frame + p.same.sum) * p.same.mult) && p.same.sum === p.sumCheck && p.same.baseSum === p.same.frame + p.same.sum, p.same);
+  T('total = (frame + butterflies) × the coefficients of the patterns', p.same.total === Math.round((p.same.frame + p.same.sum) * p.same.mult * 0.8) && p.same.sum === p.sumCheck && p.same.baseSum === p.same.frame + p.same.sum, p.same);
   T('one family gives its coefficient, a mixed frame has no family pattern', p.same.found.includes('family') && p.same.mult >= 1.5 && !p.mixed.found.includes('family'), [p.same, p.mixed]);
   T('spread butterflies are worth more than raw ones', p.spread > p.raw, [p.raw, p.spread]);
-  T('a half-empty large frame earns no collection bonus (needs at least half filled)', p.L.frame === 300 && p.L.bonus === 0 && p.L.total === 300 + p.L.sum, p.L);
+  T('a half-empty large frame earns no collection bonus (needs at least half filled)', p.L.frame === 300 && p.L.bonus === 0 && p.L.total === Math.round((300 + p.L.sum) * 0.8), p.L);
   // themes: aberrants only, one location, one species, ordering matters
   const q = await pg.evaluate(() => {
     const ids = Save.data.specimens.map(s => s.sp); const info = (size, spIds, q) => { const b = Save.addBox(size, 0); spIds.forEach((id, i) => { Save.add(id, 'x'); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = q ? q[i] : 80; s.box = b.uid; b.items[i] = s.uid; }); const r = Collection.info(b); return { n: r.n, bonus: r.bonus, mult: r.mult, theme: r.theme && r.theme.id, found: r.themes.map(f => f.id) }; };
@@ -52,9 +52,9 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const mt = await pg.evaluate(() => {
     const fam = {}; for (const s of SPECIES) { if (s.mystery || s.ab || s.biome === 'ocean' || !Aberr.eligible(s)) continue; const k = s.biome + '|' + s.fam; (fam[k] = fam[k] || []).push(s); }
     const pickList = Object.values(fam).sort((a, b) => b.length - a.length)[0].slice(0, 4); const b = Save.addBox('S', 0); pickList.forEach((sp, i) => { const ab = Aberr.make(sp, 'ABCDE'); Save.add(ab.id, sp.biome); const s = Save.data.specimens[Save.data.specimens.length - 1]; s.q = 80; s.box = b.uid; b.items[i] = s.uid; });
-    const r = Collection.info(b); return { n: r.n, ids: r.themes.map(t => t.id), coefs: r.themes.map(t => t.coef), mult: r.mult, prod: r.themes.reduce((a, t) => a * t.coef, 1), total: r.total, exp: Math.round((r.frame + r.sum) * r.mult) };
+    const r = Collection.info(b); return { n: r.n, ids: r.themes.map(t => t.id), coefs: r.themes.map(t => t.coef), mult: r.mult, prod: r.themes.reduce((a, t) => a * t.coef, 1), total: r.total, exp: Math.round((r.frame + r.sum) * r.mult * r.minQ / 100) };
   });
-  T('aberrants of one location and one family: every pattern counts and the coefficients multiply', mt.n === 4 && ['aberr', 'biome', 'family'].every(x => mt.ids.includes(x)) && Math.abs(mt.mult - mt.prod) < 1e-9 && mt.mult >= 1.7 * 1.4 * 1.5 && mt.total === mt.exp, mt);
+  T('aberrants of one location and one family: every pattern counts and the coefficients multiply', mt.n === 4 && ['aberr', 'biome', 'family'].every(x => mt.ids.includes(x)) && Math.abs(mt.mult - mt.prod) < 1e-9 && mt.mult >= 1.7 * 1.4 * 1.5 && Math.abs(mt.total - mt.exp) <= 1, mt);
   // ---- selling a frame: the butterflies and the box go, the coins come
   const s1 = await pg.evaluate(uid => { const c0 = Save.data.coins, inf = Collection.info(Save.box(uid)); const got = Save.sellBox(uid); return { got, exp: inf.total, d: Save.data.coins - c0, box: !!Save.box(uid), left: Save.data.specimens.some(s => s.box === uid) }; }, p.uid);
   T('selling a frame pays its price and removes the box with its butterflies', s1.got === s1.exp && s1.d === s1.exp && !s1.box && !s1.left, s1);

@@ -36,8 +36,10 @@ const Collection = (() => {
         if (ok) themes.push({ id: t.id, coef: t.k, name: t.name(rows[0].sp) });
       }
     }
-    const baseSum = frame + sum, mult = themes.reduce((a, t) => a * t.coef, 1), total = Math.round(baseSum * mult), bonus = total - baseSum, theme = themes[0] || null;
-    return { n, cap, frame, rows, sum, theme, themes, mult, baseSum, bonus, total, need };
+    // the minimum spreading accuracy: the worst butterfly of the frame (in %) multiplies the whole price, as the very last step
+    const minQ = n ? Math.min(...rows.map(r => r.spec.q || 0)) : 0, qk = minQ / 100;
+    const baseSum = frame + sum, mult = themes.reduce((a, t) => a * t.coef, 1), pre = Math.round(baseSum * mult), total = Math.round(baseSum * mult * qk), bonus = pre - baseSum, theme = themes[0] || null;
+    return { n, cap, frame, rows, sum, theme, themes, mult, baseSum, bonus, pre, minQ, qk, total, need };
   }
   return { FRAME, RARE_K, info, colourOf, purity };
 })();
