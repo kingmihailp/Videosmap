@@ -150,15 +150,18 @@ const Boxes = (() => {
   };
 
   const bench = {
-    sel: 0, style: 0, scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '',
-    open() { this.sel = Math.min(this.sel, Save.data.boxes.length - 1); },
+    sel: 0, style: 0, scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '', f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
+    open() { this.sel = Math.min(this.sel, Save.data.boxes.length - 1); this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; },
     cur() { return Save.data.boxes[this.sel] || null; },
     layout() {
       const B = Save.data.boxes; this.rows = []; const vis = 7;
       this.scroll = clamp(this.scroll, 0, Math.max(0, B.length - vis));
       B.slice(this.scroll, this.scroll + vis).forEach((b, i) => this.rows.push({ b, idx: this.scroll + i, x: 8, y: 84 + i * 21, w: 138, h: 19 }));
-      const free = Save.freeSpread(); const vis2 = 12; this.sscroll = clamp(this.sscroll, 0, Math.max(0, free.length - vis2));
-      this.srows = free.slice(this.sscroll, this.sscroll + vis2).map((s, i) => ({ s, x: 338, y: 52 + i * 15, w: 134, h: 14 })); this.nfree = free.length;
+      this.allFree = Save.freeSpread(); const FL = Spread.pick.filtersFor(this.allFree); FL.forEach(fl => { this.f[fl.id] = Math.min(this.f[fl.id] || 0, fl.opts.length - 1); });
+      const free = this.allFree.filter(sp => FL.every(fl => fl.opts[this.f[fl.id]].t(sp))); const vis2 = 9; this.sscroll = clamp(this.sscroll, 0, Math.max(0, free.length - vis2)); this.free = free;
+      const SHORT = { rar: 'Ред', loc: 'Лок', ab: 'Абер', date: 'Дата', fam: 'Сем' };
+      this.fbtns = FL.map((fl, i) => ({ id: 'f_' + fl.id, fid: fl.id, n: fl.opts.length, tip: fl.name + ': ' + fl.opts[this.f[fl.id]].n, label: SHORT[fl.id] + ': ' + fl.opts[this.f[fl.id]].n, on: this.f[fl.id] > 0, x: i < 4 ? 338 + (i % 2) * 68 : 338, y: 50 + (i < 4 ? Math.floor(i / 2) : 2) * 13, w: i < 4 ? 66 : 134, h: 12 }));
+      this.srows = free.slice(this.sscroll, this.sscroll + vis2).map((s, i) => ({ s, x: 338, y: 92 + i * 15, w: 134, h: 14 })); this.nfree = free.length;
       const cb = this.cur();
       this.btns = [
         { id: 'S', label: 'Мал. ' + Save.stock('S'), x: 8, y: 32, w: 48, h: 16, disabled: !Save.stock('S') }, { id: 'M', label: 'Сред. ' + Save.stock('M'), x: 58, y: 32, w: 50, h: 16, disabled: !Save.stock('M') }, { id: 'L', label: 'Бол. ' + Save.stock('L'), x: 110, y: 32, w: 50, h: 16, disabled: !Save.stock('L') },
@@ -168,7 +171,7 @@ const Boxes = (() => {
         { id: 'clear', label: 'Вынуть всё', x: 224, y: 248, w: 72, h: 16, disabled: !cb || !fillOf(cb) },
         { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать (в запас)', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
         { id: 'lup', label: '↑', x: 114, y: 67, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 67, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
-        { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 12) },
+        { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 9) },
       ];
       this.slots = [];
       if (cb) { const area = { x: 170, y: 50, w: 160, h: 170 }; const r = (this._r = drawBoxScaled({ drawImage() {}, set imageSmoothingEnabled(v) {} }, cb, area.x, area.y, area.w, area.h)); const d = DIM[cb.size]; for (let i = 0; i < cb.items.length; i++) this.slots.push({ i, x: r.x + (FR + (i % d.c) * CW) * r.k, y: r.y + (FR + Math.floor(i / d.c) * CH) * r.k, w: CW * r.k, h: CH * r.k }); }
@@ -198,14 +201,17 @@ const Boxes = (() => {
         T.draw(ctx, hs ? `${SPECIES_BY_ID[hs.sp].ru} ${hs.q}% — щёлк: вынуть` : cb.loc ? 'Коробка висит: ' + locName(cb) : 'Щёлкните экземпляр справа, чтобы положить', 250, 226, { size: 8, align: 'c', color: hs ? c.red : c.dim });
       } else T.para(ctx, 'Создайте коробку слева.', 176, 120, 150, { size: 8, color: '#6a8a78', lh: 10 });
       // right: free spread specimens
-      T.draw(ctx, `Расправленные (${this.nfree})`, 338, 38, { size: 8, color: c.dim });
-      if (!this.nfree) T.para(ctx, 'Нет свободных расправленных бабочек. Расправьте новых на расправилке!', 338, 56, 130, { size: 8, color: '#6a8a78', lh: 10 });
+      T.draw(ctx, this.nfree === this.allFree.length ? `Расправленные (${this.nfree})` : `Расправленные (${this.nfree} из ${this.allFree.length})`, 338, 38, { size: 8, color: c.dim });
+      this.fbtns.forEach(b => { const hv = UIK.hit(b, m.x, m.y); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: b.on ? '#4a3a1c' : hv ? '#244a3c' : '#1a3228', border: b.on ? c.gold : c.line, shadow: false }); T.draw(ctx, fitStr(b.label, b.w - 4), b.x + b.w / 2, b.y + 2, { size: 8, align: 'c', color: b.on ? '#fff' : c.text }); });
+      const hf = this.fbtns.find(b => UIK.hit(b, m.x, m.y)); if (hf) T.draw(ctx, hf.tip, 338, 238, { size: 8, color: c.gold });
+      if (!this.nfree) T.para(ctx, this.allFree.length ? 'Под фильтры ничего не подходит — щёлкните фильтр, чтобы сменить значение.' : 'Нет свободных расправленных бабочек. Расправьте новых на расправилке!', 338, 96, 130, { size: 8, color: '#6a8a78', lh: 10 });
       this.srows.forEach(r => { const hv = UIK.hit(r, m.x, m.y); const g = Grade(r.s.q); ctx.fillStyle = hv ? '#2a5a46' : '#1a3228'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.fillStyle = g.col; ctx.fillRect(r.x + 1, r.y + 2, 3, 10); let nm = SPECIES_BY_ID[r.s.sp].ru; while (T.width(nm, 8) > 96 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(ctx, nm, r.x + 8, r.y + 3, { size: 8, color: hv ? '#fff' : c.text }); T.draw(ctx, r.s.q + '%', r.x + r.w - 3, r.y + 3, { size: 8, align: 'r', color: g.col }); });
     },
     click(x, y) {
       const tb = this.tabBtns().find(b => UIK.hit(b, x, y)); if (tb) { if (this.tab !== tb.id) { this.tab = tb.id; Snd.sfx.page(); } return null; }
       if (this.tab === 'nets') return nbench.click(x, y);
-      this.layout(); const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      this.layout(); const fb = this.fbtns.find(b => UIK.hit(b, x, y)); if (fb) { this.f[fb.fid] = (this.f[fb.fid] + 1) % fb.n; this.sscroll = 0; Snd.sfx.click(); return null; }
+      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
@@ -213,7 +219,7 @@ const Boxes = (() => {
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
-        if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
+        if (b.id === 'auto' && cb) { const free = this.free.slice(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
         if (b.id === 'clear' && cb) { cb.items.forEach((u, i) => { if (u) Save.takeOut(cb, i); }); return 'changed'; }
         if (b.id === 'del' && cb) { const sz = cb.size; if (Save.removeBox(cb.uid)) Save.addStock(sz, 1); this.sel = Math.max(0, this.sel - 1); Snd.sfx.deny(); return 'changed'; }
         return null;

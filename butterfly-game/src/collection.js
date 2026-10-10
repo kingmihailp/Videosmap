@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------- the collector: what a framed collection is worth, and the wings of the guiding butterfly (the way to the ocean)
 // A frame (box) that is not hung up can be sold to the collector of the insect market. Its price is the price of the frame (by size) + the price of every butterfly in it
-// (spread quality, aberration and, for the three rarest finds, a rarity bonus) + a bonus of 400-1000 coins for a systematically assembled collection (one family, only aberrations,
-// one location, one colour, one species ...; the order of the butterflies in the frame matters: a pattern must run in a row).
+// (spread quality, aberration and, for the three rarest finds, a rarity bonus) 
+// multiplied by a coefficient for every pattern the whole frame follows (only aberrations x1.7, only rare x1.9, one species x1.2, one family x1.5, one location x1.4, one colour x1.2, only different butterflies x1.5).
 const Collection = (() => {
-  const FRAME = { S: 100, M: 200, L: 300 }, RARE_K = 1.5, BONUS_MIN = 400, BONUS_MAX = 1000;
+  const FRAME = { S: 100, M: 200, L: 300 }, RARE_K = 1.5;
   const baseOf = sp => SPECIES_BY_ID[sp.base] || sp;
   // a rough colour name of a butterfly (from its forewing colour)
   function colourOf(sp) {
@@ -15,29 +15,29 @@ const Collection = (() => {
   }
   // how well a sequence of keys runs in a row: the sum of the squares of the lengths of the runs of equal keys, over n squared (all equal = 1, alternating = about 1/n)
   const purity = keys => { const n = keys.length; if (!n) return 0; let sum = 0, run = 1; for (let i = 1; i <= n; i++) { if (i < n && keys[i] === keys[i - 1] && keys[i] !== null) run++; else { sum += run * run; run = 1; } } return sum / (n * n); };
+  // every pattern that holds for the whole frame multiplies the price of the collection (frame + butterflies) by its coefficient; the coefficients of all the patterns multiply together
   const THEMES = [
-    { id: 'species', w: 0.85, key: (sp, spec) => baseOf(sp).id, name: (sp) => `один вид: ${baseOf(sp).ru}` },
-    { id: 'aberr', w: 1.0, key: (sp) => sp.ab ? 'ab' : 'n', only: 'ab', name: () => 'только аберранты' },
-    { id: 'family', w: 0.65, key: (sp) => baseOf(sp).fam, name: (sp) => `одно семейство: ${baseOf(sp).fam}` },
-    { id: 'biome', w: 0.6, key: (sp) => baseOf(sp).biome, name: (sp) => `одна локация: ${(BIOME_BY_ID[baseOf(sp).biome] || {}).short || (BIOME_BY_ID[baseOf(sp).biome] || {}).place || baseOf(sp).biome}` },
-    { id: 'colour', w: 0.6, key: (sp) => colourOf(sp), name: (sp) => `один цвет: ${colourOf(sp)}` },
-    { id: 'rarity', w: 0.5, key: (sp) => Rare.is(sp) ? 'rare' : (baseOf(sp).rar === 3 ? 'r3' : 'other'), only: 'rare', name: () => 'только редчайшие находки' },
+    { id: 'aberr', k: 1.7, key: (sp) => sp.ab ? 'ab' : 'n', only: 'ab', name: () => 'только аберранты' },
+    { id: 'rarity', k: 1.9, key: (sp) => Rare.is(sp) ? 'rare' : 'other', only: 'rare', name: () => 'только редкие' },
+    { id: 'species', k: 1.2, key: (sp) => baseOf(sp).id, name: (sp) => `один вид: ${baseOf(sp).ru}` },
+    { id: 'family', k: 1.5, key: (sp) => baseOf(sp).fam, name: (sp) => `одно семейство: ${baseOf(sp).fam}` },
+    { id: 'biome', k: 1.4, key: (sp) => baseOf(sp).biome, name: (sp) => `одна локация: ${(BIOME_BY_ID[baseOf(sp).biome] || {}).short || (BIOME_BY_ID[baseOf(sp).biome] || {}).place || baseOf(sp).biome}` },
+    { id: 'colour', k: 1.2, key: (sp) => colourOf(sp), name: (sp) => `один цвет: ${colourOf(sp)}` },
+    { id: 'distinct', k: 1.5, distinct: true, key: (sp) => baseOf(sp).id, name: () => 'только разные бабочки' },
   ];
   function info(box) {
     const rows = []; for (const u of box.items) { if (!u) continue; const spec = Save.spec(u); if (!spec) continue; const sp = SPECIES_BY_ID[spec.sp]; if (!sp) continue; const i = Econ.info(spec); const rare = Rare.is(sp); rows.push({ spec, sp, ab: !!sp.ab, rare, price: Math.round((i ? i.price : 0) * (rare ? RARE_K : 1)), base: i ? i.price : 0 }); }
     const n = rows.length, cap = box.items.length, frame = FRAME[box.size] || 100, sum = rows.reduce((a, r) => a + r.price, 0), need = Math.max(3, Math.ceil(cap / 2));
-    const found = [];                                                                      // every pattern that holds (strength 0..1) with its name
+    const themes = [];                                                                     // every pattern that holds for ALL the butterflies in the frame
     if (n >= need) {
       for (const t of THEMES) {
-        const keys = rows.map(r => t.key(r.sp, r.spec)); if (t.only) { if (keys.filter(k => k === t.only).length < n * 0.5) continue; } if (keys.some(k => k === null)) continue;
-        const p = purity(keys), s = clamp((p - 0.7) / 0.3) * t.w; if (s > 0) found.push({ id: t.id, strength: s, p, name: t.name(rows[0].sp) });
+        const keys = rows.map(r => t.key(r.sp, r.spec)); if (keys.some(k => k === null || k === undefined)) continue;
+        const ok = t.only ? keys.every(k => k === t.only) : t.distinct ? new Set(keys).size === n : keys.every(k => k === keys[0]);
+        if (ok) themes.push({ id: t.id, coef: t.k, name: t.name(rows[0].sp) });
       }
     }
-    found.sort((a, b) => b.strength - a.strength);
-    // every pattern that holds is paid on its own (400-1000 each, by how clean it is and how full the frame is), and the bonuses add up
-    const fillK = 0.6 + 0.4 * (n / cap), themes = found.map(f => Object.assign({}, f, { bonus: Math.round((BONUS_MIN + (BONUS_MAX - BONUS_MIN) * clamp(f.strength * fillK)) / 10) * 10 }));
-    const bonus = themes.reduce((a, f) => a + f.bonus, 0), theme = themes[0] || null;
-    return { n, cap, frame, rows, sum, theme, themes, found, bonus, total: frame + sum + bonus, need };
+    const baseSum = frame + sum, mult = themes.reduce((a, t) => a * t.coef, 1), total = Math.round(baseSum * mult), bonus = total - baseSum, theme = themes[0] || null;
+    return { n, cap, frame, rows, sum, theme, themes, mult, baseSum, bonus, total, need };
   }
   return { FRAME, RARE_K, info, colourOf, purity };
 })();

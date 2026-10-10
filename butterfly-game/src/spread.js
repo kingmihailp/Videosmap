@@ -44,9 +44,10 @@ const Spread = (() => {
     page: 0, hover: -1, cards: [], btns: [], list: [], all: [], f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
     open() { this.page = 0; this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; },
     // the filters: every one cycles through «все» and the values that occur among the waiting butterflies
-    filters() {
+    filters() { return this.filtersFor(this.all); },
+    filtersFor(all) {
       const base = s => SPECIES_BY_ID[s.sp].base ? SPECIES_BY_ID[SPECIES_BY_ID[s.sp].base] || SPECIES_BY_ID[s.sp] : SPECIES_BY_ID[s.sp], DAY = 864e5, now = Date.now();
-      const uniq = f => [...new Set(this.all.map(f))];
+      const uniq = f => [...new Set(all.map(f))];
       const locName = id => { const b = BIOME_BY_ID[id]; return b ? (b.short || (b.place || b.name).split(',')[0]) : id; };
       return [
         { id: 'rar', name: 'Редкость', opts: [{ n: 'все', t: () => true }].concat(uniq(s => base(s).rar || 1).sort().map(r => ({ n: '★'.repeat(r), t: s => (base(s).rar || 1) === r }))) },
