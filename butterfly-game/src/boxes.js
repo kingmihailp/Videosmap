@@ -4,6 +4,7 @@ const Boxes = (() => {
   const CW = 104, CH = 80, FR = 8;
   const DIM = { S: { c: 1, r: 1 }, M: { c: 2, r: 2 }, L: { c: 3, r: 3 } };
   const SIZE_NAME = { S: 'Малая', M: 'Средняя', L: 'Большая' };
+  const PRICE = { S: 200, M: 300, L: 400 };            // what the collection trader asks for an empty box
   const UNITS = { S: 1, M: 2, L: 4 };
   const STYLES = [
     { name: 'Орех', fr: ['#3a2210', '#5a3820', '#7e5232'], bg: '#d8cfb0', lab: '#efe6c8', ink: '#3a2008', kind: 'linen' },
@@ -160,12 +161,12 @@ const Boxes = (() => {
       this.srows = free.slice(this.sscroll, this.sscroll + vis2).map((s, i) => ({ s, x: 338, y: 52 + i * 15, w: 134, h: 14 })); this.nfree = free.length;
       const cb = this.cur();
       this.btns = [
-        { id: 'S', label: 'Малая', x: 8, y: 32, w: 44, h: 16 }, { id: 'M', label: 'Средняя', x: 54, y: 32, w: 52, h: 16 }, { id: 'L', label: 'Большая', x: 108, y: 32, w: 52, h: 16 },
+        { id: 'S', label: 'Мал. ' + Save.stock('S'), x: 8, y: 32, w: 48, h: 16, disabled: !Save.stock('S') }, { id: 'M', label: 'Сред. ' + Save.stock('M'), x: 58, y: 32, w: 50, h: 16, disabled: !Save.stock('M') }, { id: 'L', label: 'Бол. ' + Save.stock('L'), x: 110, y: 32, w: 50, h: 16, disabled: !Save.stock('L') },
         { id: 'style', label: 'Стиль: ' + STYLES[this.style].name, x: 8, y: 50, w: 152, h: 14 },
         { id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 },
         { id: 'auto', label: 'Авто', x: 168, y: 248, w: 52, h: 16, disabled: !cb || !this.nfree },
         { id: 'clear', label: 'Вынуть всё', x: 224, y: 248, w: 72, h: 16, disabled: !cb || !fillOf(cb) },
-        { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
+        { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать (в запас)', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
         { id: 'lup', label: '↑', x: 114, y: 67, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 67, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
         { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 12) },
       ];
@@ -179,11 +180,11 @@ const Boxes = (() => {
       if (this.tab === 'nets') return nbench.draw(ctx, t, m);
       this.mx = m.x; this.layout();
       T.draw(ctx, 'Мастерская коробок', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
-      T.draw(ctx, 'Новая коробка:', 8, 21, { size: 8, color: c.dim });
+      T.draw(ctx, 'Новая коробка (из запаса):', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       // list
       T.draw(ctx, `Ваши коробки (${Save.data.boxes.length})`, 8, 70, { size: 8, color: c.dim });
-      if (!Save.data.boxes.length) T.para(ctx, 'Пока пусто. Выберите размер и стиль — и создайте первую коробку.', 10, 86, 134, { size: 8, color: '#6a8a78', lh: 10 });
+      if (!Save.data.boxes.length) T.para(ctx, Save.stockTotal() ? 'Пока пусто. Выберите размер (число — сколько коробок в запасе) и стиль — и создайте первую коробку.' : 'Пока пусто. Коробки продаёт торговец коллекциями на рынке насекомых: малая — 200, средняя — 300, большая — 400 монет. Стиль можно менять здесь.', 10, 86, 134, { size: 8, color: '#6a8a78', lh: 10 });
       this.rows.forEach(r => { const hv = UIK.hit(r, m.x, m.y), sl = r.idx === this.sel; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false }); T.draw(ctx, `${r.b.size} ${STYLES[r.b.style].name} ${fillOf(r.b)}/${r.b.items.length}`, r.x + 4, r.y + 2, { size: 8, color: c.text }); T.draw(ctx, r.b.loc ? '▪' : '', r.x + r.w - 8, r.y + 2, { size: 8, color: c.gold }); });
       // centre: box view
       const cb = this.cur();
@@ -208,13 +209,13 @@ const Boxes = (() => {
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
-        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 100) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
+        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 100 || !Save.useStock(b.id)) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = Save.freeSpread(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
         if (b.id === 'clear' && cb) { cb.items.forEach((u, i) => { if (u) Save.takeOut(cb, i); }); return 'changed'; }
-        if (b.id === 'del' && cb) { Save.removeBox(cb.uid); this.sel = Math.max(0, this.sel - 1); Snd.sfx.deny(); return 'changed'; }
+        if (b.id === 'del' && cb) { const sz = cb.size; if (Save.removeBox(cb.uid)) Save.addStock(sz, 1); this.sel = Math.max(0, this.sel - 1); Snd.sfx.deny(); return 'changed'; }
         return null;
       }
       const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.idx; this.style = r.b.style; Snd.sfx.click(); return null; }
@@ -318,5 +319,15 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { PRICE, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
+
+// the empty boxes in stock (personal, like coins): bought from the collection trader, used up at the workbench, returned when a box is taken apart
+Object.assign(Save, {
+  stockObj() { return this.data.boxStock || (this.data.boxStock = { S: 0, M: 0, L: 0 }); },
+  stock(size) { return this.stockObj()[size] || 0; },
+  stockTotal() { const o = this.stockObj(); return (o.S || 0) + (o.M || 0) + (o.L || 0); },
+  addStock(size, n = 1) { const o = this.stockObj(); o[size] = Math.max(0, (o[size] || 0) + n); this.write(); },
+  useStock(size) { if (!this.stock(size)) return false; this.addStock(size, -1); return true; },
+  buyBox(size) { const p = Boxes.PRICE[size]; if (!p || (this.data.coins || 0) < p) return 0; this.data.coins -= p; this.addStock(size, 1); return p; },
+});

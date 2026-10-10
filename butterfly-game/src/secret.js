@@ -31,33 +31,50 @@ const Secret = (() => {
     g.userData.paper = p; return g;
   }
 
-  // ------------------------------------------------------------ the stash (a modal window: fragments + net parts)
+  // ------------------------------------------------------------ the stash (a modal window): slots with everything the player owns except butterflies and collections
   const stash = {
-    btns: [],
-    layout() { this.btns = [{ id: 'close', label: 'Закрыть', x: SW / 2 - 50, y: 232, w: 100, h: 18, size: 10 }]; },
-    draw(ctx, t, m) {
-      const c = UIK.col; this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.8)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 40, 14, 400, 242, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
-      T.draw(ctx, 'Склад', SW / 2, 20, { size: 14, align: 'c', color: c.gold });
-      T.draw(ctx, 'Обрывки записки', 54, 30, { size: 8, color: c.dim });
-      FRAGS.forEach((f, i) => {
-        const x = 54 + i * 92, y = 40, got = has(f.n); UIK.panel(ctx, x, y, 86, 62, { fill: '#10201c', border: got ? c.gold : c.line, shadow: false });
-        if (got) { ctx.imageSmoothingEnabled = false; ctx.drawImage(paperCanvas(f.digits), x + 4, y + 4, 78, 54); } else { ctx.globalAlpha = 0.35; ctx.imageSmoothingEnabled = false; ctx.drawImage(paperCanvas('??', 3), x + 4, y + 4, 78, 54); ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(8,16,14,0.6)'; ctx.fillRect(x + 4, y + 4, 78, 54); T.draw(ctx, '?', x + 43, y + 24, { size: 14, align: 'c', color: c.dim }); }
-        T.draw(ctx, `Обрывок ${f.n}`, x + 43, y + 66, { size: 8, align: 'c', color: got ? c.text : c.dim });
-      });
-      const full = count() === 4; T.draw(ctx, full ? 'Код: ' + FRAGS.map(f => f.digits).join('') : 'Код: ' + FRAGS.map(f => has(f.n) ? f.digits : '??').join(' '), SW / 2, 120, { size: 10, align: 'c', color: full ? '#9af0a0' : c.text });
-      let y = 136;
-      FRAGS.forEach(f => { if (has(f.n)) { T.draw(ctx, `${f.n}. ${f.where}`, 54, y, { size: 8, color: c.text }); y += 10; } });
-      if (!count()) T.para(ctx, 'Здесь будут лежать найденные обрывки. Говорят, они разбросаны по всему свету…', 54, y, 372, { size: 8, color: c.dim, lh: 10 });
-      T.draw(ctx, 'Детали сачков', 54, 182, { size: 8, color: c.dim });
-      const owned = Object.keys(NetParts.PARTS).filter(id => Save.partCount(id) > 0);
-      if (!owned.length) T.draw(ctx, 'Пока нет. Их продаёт продавец сачков на рынке насекомых.', 54, 194, { size: 8, color: c.dim });
-      owned.slice(0, 8).forEach((id, i) => { const col = i % 2, row = Math.floor(i / 2); T.draw(ctx, fitStr(`${NetParts.PARTS[id].ru} ×${Save.partCount(id)}`, 180), 54 + col * 190, 194 + row * 9, { size: 8, color: c.text }); });
-      // the wings of the guiding butterfly (one per starting location)
-      Wings.START.forEach((b, i) => { const x = 52 + i * 17, got = Wings.have(b.id); ctx.fillStyle = '#10201c'; ctx.fillRect(x, 232, 15, 18); ctx.strokeStyle = got ? c.gold : c.line; ctx.strokeRect(x + 0.5, 232.5, 14, 17); if (got) WingsUI.icon(ctx, x + 1, 235, 13, 12, Wings.placed(b.id) ? 0.45 : 1, null); });
-      T.draw(ctx, `Крылья: ${Wings.count()}/${Wings.START.length}`, 300, 238, { size: 8, color: Wings.count() ? c.gold : c.dim });
-      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+    btns: [], scroll: 0, mx: 0, my: 0, COLS: 10, ROWS: 5, X: 56, Y: 36, S: 32, G: 3, tcache: {},
+    // every item the player has: { name, desc, n (a count, 0 = a single thing), draw(ctx, x, y, w, h), dim }
+    items() {
+      const o = [], H = UIK.col;
+      FRAGS.forEach(f => { if (has(f.n)) o.push({ name: `Обрывок записки ${f.n}`, desc: `Цифры «${f.digits}». ${f.where}.`, n: 0, draw: (ctx, x, y, w, h) => { ctx.drawImage(paperCanvas(f.digits), x, y + 4, w, h - 8); } }); });
+      Wings.START.forEach(b => { if (Wings.have(b.id)) { const pl = Wings.placed(b.id); o.push({ name: `Крыло путеводной бабочки: ${Wings.name(b)}`, desc: pl ? 'Лежит в рамке крыльев.' : 'Крыло можно положить в рамку (в кабинете).', n: 0, draw: (ctx, x, y, w, h) => WingsUI.icon(ctx, x + 6, y + 3, w - 12, h - 6, pl ? 0.45 : 1, null) }); } });
+      Object.keys(NetParts.PARTS).forEach(id => { const n = Save.partCount(id), p = NetParts.PARTS[id]; if (n > 0) o.push({ name: p.ru, desc: p.desc, n, draw: (ctx, x, y, w, h) => { const base = Object.assign({}, NetParts.BASIC); base[p.slot] = id; NetParts.draw2D(ctx, base, x, y, w, h); } }); });
+      Save.netList().forEach((nt, i) => o.push({ name: NetParts.name(nt, i), desc: ((Save.data.netEq || 0) === nt.uid ? 'В руках. ' : '') + NetParts.statLines(nt).join(' · '), n: 0, net: nt, draw: (ctx, x, y, w, h) => NetParts.draw2D(ctx, nt, x, y, w, h) }));
+      for (const sz of ['S', 'M', 'L']) { const n = Save.stock(sz); if (n > 0) o.push({ name: `${Boxes.SIZE_NAME[sz]} коробка`, desc: `Пустая коробка на ${Save.CAP[sz]} бабочек. Оформить её можно на верстаке.`, n, draw: (ctx, x, y, w, h) => { const fake = { uid: 1, size: sz, style: 0, items: new Array(Save.CAP[sz]).fill(0), loc: null }, pz = Boxes.pxSize(sz), k = Math.min(w / pz.w, h / pz.h), dw = Math.max(1, Math.round(pz.w * k)), dh = Math.max(1, Math.round(pz.h * k)); ctx.imageSmoothingEnabled = k < 1; ctx.drawImage(Boxes.canvas(fake), Math.round(x + (w - dw) / 2), Math.round(y + (h - dh) / 2), dw, dh); ctx.imageSmoothingEnabled = false; } }); }
+      Traps.KINDS.fl.list.forEach(f => { const n = Traps.count('fl', f.id); if (n > 0) o.push({ name: f.ru, desc: 'Цветы для приманки в ловушке.', n, draw: (ctx, x, y, w, h) => Traps.drawFlower(ctx, x + 1, y + 2, f, 2) }); });
+      Traps.KINDS.hn.list.forEach(f => { const n = Traps.count('hn', f.id); if (n > 0) o.push({ name: f.ru, desc: f.desc, n, draw: (ctx, x, y, w, h) => Traps.drawJar(ctx, x + 1, y, f, 2) }); });
+      Traps.KINDS.tr.list.forEach(f => { const n = Traps.count('tr', f.id); if (n > 0) o.push({ name: f.ru, desc: 'Ставится на локации клавишей G.', n, draw: (ctx, x, y, w, h) => { const cv = this.trapPic(f.id); if (cv) { const k = Math.min(w / cv.width, h / cv.height), dw = Math.max(1, Math.round(cv.width * k)), dh = Math.max(1, Math.round(cv.height * k)); ctx.drawImage(cv, x + Math.round((w - dw) / 2), y + Math.round((h - dh) / 2), dw, dh); } } }); });
+      return o;
     },
-    click(x, y) { this.layout(); const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+    // a still picture of a trap (rendered once)
+    trapPic(id) { if (this.tcache[id] !== undefined) return this.tcache[id]; let cv = null; try { const g = Traps.model(id, {}), r = Traps.UI; cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; r.preview(cv.getContext('2d'), { group: g }, 0.7, 0, 0, 100, 150); const d = cv.getContext('2d').getImageData(0, 0, 100, 150).data; let x0 = 100, x1 = -1, y0 = 150, y1 = -1; for (let j = 0; j < 150; j++) for (let i = 0; i < 100; i++) if (d[(j * 100 + i) * 4 + 3] > 20) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; } if (x1 >= 0) { const o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1; o.getContext('2d').drawImage(cv, -x0, -y0); cv = o; } } catch (e) { cv = null; } return (this.tcache[id] = cv); },
+    cells() { return this.COLS * this.ROWS; },
+    slotRect(i) { const r = Math.floor(i / this.COLS), k = i % this.COLS; return { x: this.X + k * (this.S + this.G), y: this.Y + r * (this.S + this.G), w: this.S, h: this.S }; },
+    layout() {
+      const n = this.items().length, rows = Math.max(this.ROWS, Math.ceil(n / this.COLS)), maxS = Math.max(0, rows - this.ROWS); this.scroll = clamp(this.scroll, 0, maxS); this.maxS = maxS;
+      this.btns = [{ id: 'close', label: 'Закрыть', x: SW / 2 - 50, y: 239, w: 100, h: 15, size: 8 }, { id: 'up', label: '^', x: 412, y: 36, w: 14, h: 14, disabled: this.scroll === 0 }, { id: 'dn', label: 'v', x: 412, y: 36 + (this.S + this.G) * this.ROWS - this.G - 14, w: 14, h: 14, disabled: this.scroll >= maxS }];
+    },
+    draw(ctx, t, m) {
+      const c = UIK.col; this.mx = m.x; this.my = m.y; this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.8)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 40, 12, 400, 246, { fill: 'rgba(16,32,28,0.98)', border: c.gold });
+      const its = this.items(); T.draw(ctx, 'Склад', SW / 2, 17, { size: 14, align: 'c', color: c.gold }); T.draw(ctx, `предметов: ${its.length}`, 436, 22, { size: 8, align: 'r', color: c.dim });
+      let hov = null; ctx.imageSmoothingEnabled = false;
+      for (let i = 0; i < this.cells(); i++) {
+        const r = this.slotRect(i), it = its[this.scroll * this.COLS + i], on = it && UIK.hit(r, m.x, m.y);
+        ctx.fillStyle = on ? '#2a4a3c' : '#0e1a16'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.fillStyle = on ? c.gold : '#2e4a3e'; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, 1); ctx.fillRect(r.x + 1, r.y + 1, 1, r.h - 2);
+        if (!it) continue; if (on) hov = it;
+        ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); ctx.clip(); it.draw(ctx, r.x + 2, r.y + 2, r.w - 4, r.h - 4); ctx.restore();
+        if (it.n > 1) T.draw(ctx, String(it.n), r.x + r.w - 3, r.y + r.h - 10, { size: 8, align: 'r', color: '#fff', shadow: '#000' });
+      }
+      this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
+      if (this.maxS > 0) T.draw(ctx, `${this.scroll + 1}/${this.maxS + 1}`, 419, 36 + (this.S + this.G) * this.ROWS / 2 - 4, { size: 8, align: 'c', color: c.dim });
+      UIK.panel(ctx, 52, 210, 376, 25, { fill: '#10201c', border: c.line, shadow: false });
+      if (hov) { T.draw(ctx, hov.name + (hov.n > 1 ? ` ×${hov.n}` : ''), 58, 213, { size: 8, color: c.gold }); T.draw(ctx, fitStr(hov.desc || '', 360), 58, 224, { size: 8, color: c.text }); }
+      else T.draw(ctx, its.length ? 'Наведите курсор на предмет' : 'Склад пуст. Сюда попадают обрывки записки, детали сачков, коробки, цветы, мёд, ловушки…', 58, 219, { size: 8, color: c.dim });
+    },
+    click(x, y) { this.layout(); const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); if (!b) return null; if (b.id === 'up') this.scroll--; else if (b.id === 'dn') this.scroll++; if (b.id !== 'close') Snd.sfx.click(); return b.id === 'close' ? 'close' : null; },
+    wheel(dy) { this.scroll += dy > 0 ? 1 : -1; this.layout(); },
   };
 
   // ------------------------------------------------------------ the code lock: eight digit drums

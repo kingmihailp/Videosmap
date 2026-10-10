@@ -38,7 +38,7 @@ const HTML = path.resolve(__dirname, '../../Flora0world_Butterflies.html');
   // rest: auto-spread the others quickly by writing results (fast), then boxes
   await page.evaluate(() => { Save.rawList().slice(0, 14).forEach((s, i) => { s.q = 60 + (i * 7) % 40; s.pose = JSON.parse(JSON.stringify(Art.IDEAL)); }); Save.write(); });
   await page.evaluate(() => { F0W.cab.close(); }); await page.waitForTimeout(300);
-  await page.evaluate(() => { F0W.cab.open('bench'); }); await page.waitForTimeout(300);
+  await page.evaluate(() => { Save.data.boxStock = { S: 5, M: 5, L: 5 }; F0W.cab.open('bench'); }); await page.waitForTimeout(300);
   const clickBtn = async id => { await page.evaluate(id => { const b = Boxes.bench.btns.find(b => b.id === id); F0W.cab.click(b.x + 3, b.y + 3); }, id); await page.waitForTimeout(200); };
   await clickBtn('L'); await clickBtn('auto'); await shot('15_bench_L');
   await clickBtn('style'); await clickBtn('M'); await clickBtn('auto'); await clickBtn('style'); await clickBtn('M'); await clickBtn('auto'); await clickBtn('style'); await clickBtn('S'); await clickBtn('auto'); await shot('16_bench_more');

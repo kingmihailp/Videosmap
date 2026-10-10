@@ -703,16 +703,22 @@ const Market = (() => {
       if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, `+${S.last}`, SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffe070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
     // ------------------------------------------------------------ the collector: buys framed collections that are not hung up (and the frame of the guiding butterfly's wings)
-    collOpen() { Wings.announce(Wings.check(), (s, d) => this.toast(s, d)); this.col = { sel: 0, scroll: 0, msg: 'Принесли рамку? Покажите, что в ней. Стройная коллекция стоит дороже набора случайных бабочек.', msgT: 6, flash: 0, last: 0, confirm: 0, clickT: 0, clickIdx: -1 }; this.collRefresh(); }
+    collOpen() { Wings.announce(Wings.check(), (s, d) => this.toast(s, d)); this.col = { tab: 'sell', bsel: 0, sel: 0, scroll: 0, msg: 'Принесли рамку? Покажите, что в ней. Стройная коллекция стоит дороже набора случайных бабочек.', msgT: 6, flash: 0, last: 0, confirm: 0, clickT: 0, clickIdx: -1 }; this.collRefresh(); }
     collRefresh() {
       const S = this.col; if (!S) return; const items = [];
       if (Wings.built()) items.push({ wing: true, total: Collection.FRAME.L });
       for (const b of Save.data.boxes) if (!b.loc && b.items.some(Boolean)) { const inf = Collection.info(b); if (inf.n) items.push({ box: b, inf, total: inf.total }); }
       S.items = items.sort((a, b) => (b.wing ? 1e9 : b.total) - (a.wing ? 1e9 : a.total)); S.sel = clamp(S.sel, 0, Math.max(0, items.length - 1)); const vis = 6; S.scroll = clamp(S.scroll, 0, Math.max(0, items.length - vis)); if (S.sel < S.scroll) S.scroll = S.sel; if (S.sel >= S.scroll + vis) S.scroll = S.sel - vis + 1;
     }
-    collMove(d) { const S = this.col; if (!S || !S.items.length) return; S.confirm = 0; S.sel = clamp(S.sel + d, 0, S.items.length - 1); this.collRefresh(); Snd.sfx.page(); }
+    collMove(d) { const S = this.col; if (S && S.tab === 'buy') { S.bsel = clamp(S.bsel + d, 0, 2); Snd.sfx.page(); return; } if (!S || !S.items.length) return; S.confirm = 0; S.sel = clamp(S.sel + d, 0, S.items.length - 1); this.collRefresh(); Snd.sfx.page(); }
+    collBuy() {
+      const S = this.col, sz = ['S', 'M', 'L'][S.bsel], pr = Boxes.PRICE[sz], nm = Boxes.SIZE_NAME[sz].toLowerCase();
+      if (Save.data.boxes.length + Save.stockTotal() >= 100) { S.msg = 'Столько коробок вам уже не унести. Развесьте или продайте те, что есть.'; S.msgT = 5; Snd.sfx.deny(); return; }
+      if (!Save.buyBox(sz)) { S.msg = `Не хватает монет: ${nm} коробка стоит ${pr}.`; S.msgT = 4; Snd.sfx.deny(); return; }
+      S.msg = `Держите: ${nm} коробка. Собрать и оформить её можно на верстаке в кабинете.`; S.msgT = 5; S.flash = 0.8; S.last = -pr; Snd.sfx.coin();
+    }
     collSell() {
-      const S = this.col, e = S.items[S.sel]; if (!e) return;
+      const S = this.col; if (S.tab === 'buy') return this.collBuy(); const e = S.items[S.sel]; if (!e) return;
       if (e.wing) { const r = Wings.sell(); if (!r) return; S.msg = 'Крылья путеводной бабочки... со всех концов света! Вот ваша карта океана — и ' + r.coins + ' монет за рамку. Берегите себя там, за горизонтом.'; S.msgT = 9; S.flash = 0.8; S.last = r.coins; Snd.sfx.reward(); this.toast('Получена карта океана! Она открыта на карте мира.', 6); this.collRefresh(); return; }
       if (e.inf.n >= 3 && e.inf.rows.some(r => r.ab || r.rare) && S.confirm !== e.box.uid) { S.confirm = e.box.uid; S.confirmT = 4; S.msg = 'В рамке аберранты или редчайшие находки! Уверены? Нажмите «Продать» ещё раз.'; S.msgT = 4; Snd.sfx.deny(); return; }
       S.confirm = 0; const p = Save.sellBox(e.box.uid); if (!p) return;
@@ -721,18 +727,45 @@ const Market = (() => {
     collLayout() {
       const S = this.col, rows = []; for (let k = 0; k < 6; k++) { const idx = S.scroll + k; if (idx >= S.items.length) break; rows.push({ id: 'row', idx, x: 8, y: 44 + k * 35, w: 226, h: 33 }); }
       const e = S.items[S.sel];
-      return { rows, sellBtn: { id: 'sell', label: (e && !e.wing && S.confirm === e.box.uid) ? 'Точно продать?' : e && e.wing ? 'Отдать рамку' : 'Продать рамку', x: 244, y: 232, w: 120, h: 18, size: 8, disabled: !e }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 }, up: { id: 'up', label: '^', x: 176, y: 252, w: 26, h: 12 }, dn: { id: 'dn', label: 'v', x: 206, y: 252, w: 26, h: 12 } };
+      return { rows, sellBtn: { id: 'sell', label: S.tab === 'buy' ? 'Купить' : (e && !e.wing && S.confirm === e.box.uid) ? 'Точно продать?' : e && e.wing ? 'Отдать рамку' : 'Продать рамку', x: 244, y: 232, w: 120, h: 18, size: 8, disabled: S.tab === 'buy' ? false : !e }, closeBtn: { id: 'close', label: 'Уйти ✕', x: SW - 82, y: 4, w: 74, h: 15 }, up: { id: 'up', label: '^', x: 176, y: 252, w: 26, h: 12 }, dn: { id: 'dn', label: 'v', x: 206, y: 252, w: 26, h: 12 },
+        tabs: [{ id: 'sell', label: 'Продать', x: 140, y: 5, w: 56, h: 14 }, { id: 'buy', label: 'Коробки', x: 198, y: 5, w: 56, h: 14 }], brows: [0, 1, 2].map(i => ({ id: 'brow', i, x: 8, y: 44 + i * 35, w: 226, h: 33 })) };
     }
     collClick(x, y) {
       const S = this.col, L = this.collLayout(); if (UIK.hit(L.closeBtn, x, y)) { Snd.sfx.page(); this.close(); return; }
+      const tb = L.tabs.find(b => UIK.hit(b, x, y)); if (tb) { if (S.tab !== tb.id) { S.tab = tb.id; S.confirm = 0; Snd.sfx.page(); } return; }
+      if (S.tab === 'buy') { const br = L.brows.find(r => UIK.hit(r, x, y)); if (br) { const now = performance.now(); if (S.bsel === br.i && S.clickIdx === br.i && now - S.clickT < 450) { this.collBuy(); S.clickIdx = -1; } else { S.bsel = br.i; S.clickIdx = br.i; S.clickT = now; Snd.sfx.click(); } return; } if (UIK.hit(L.sellBtn, x, y)) this.collBuy(); return; }
       const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { const now = performance.now(); if (S.sel === r.idx && S.clickIdx === r.idx && now - S.clickT < 450) { this.collSell(); S.clickIdx = -1; } else { S.sel = r.idx; S.clickIdx = r.idx; S.clickT = now; S.confirm = 0; this.collRefresh(); Snd.sfx.click(); } return; }
       if (!L.sellBtn.disabled && UIK.hit(L.sellBtn, x, y)) this.collSell(); else if (UIK.hit(L.up, x, y)) this.collMove(-1); else if (UIK.hit(L.dn, x, y)) this.collMove(1);
     }
     drawBoxThumb(ctx, box, x, y, w, h) { const sz = Boxes.pxSize(box.size), k = Math.min(w / sz.w, h / sz.h), dw = Math.round(sz.w * k), dh = Math.round(sz.h * k); ctx.imageSmoothingEnabled = k < 1; ctx.drawImage(Boxes.canvas(box), Math.round(x + (w - dw) / 2), Math.round(y + (h - dh) / 2), dw, dh); ctx.imageSmoothingEnabled = false; }
+    drawBuyBoxes(ctx, t, m, L) {
+      const S = this.col, pick = ['S', 'M', 'L'][S.bsel];
+      T.draw(ctx, 'Пустые коробки для коллекций. Выберите размер и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim });
+      T.draw(ctx, 'Коробки', 8, 32, { size: 8, color: c.dim }); this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
+      UIK.panel(ctx, 6, 42, 230, 212, { fill: '#1e2c24', border: '#46604f', shadow: false });
+      L.brows.forEach(r => { const sz = ['S', 'M', 'L'][r.i], on = r.i === S.bsel, hv = UIK.hit(r, m.x, m.y), fake = { uid: 1, size: sz, style: 0, items: new Array(Save.CAP[sz]).fill(0), loc: null };
+        ctx.fillStyle = on ? 'rgba(240,200,90,0.26)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        ctx.fillStyle = '#0c1612'; ctx.fillRect(r.x + 2, r.y + 2, 54, 29); this.drawBoxThumb(ctx, fake, r.x + 3, r.y + 3, 52, 27);
+        T.draw(ctx, `${Boxes.SIZE_NAME[sz]} коробка`, r.x + 60, r.y + 5, { size: 8, color: '#f0e8d0' }); T.draw(ctx, `вмещает ${Save.CAP[sz]} · у вас: ${Save.stock(sz)}`, r.x + 60, r.y + 17, { size: 8, color: c.dim });
+        const pr = Boxes.PRICE[sz]; this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(pr), 8), r.y + 5); T.draw(ctx, String(pr), r.x + r.w - 6, r.y + 5, { size: 8, align: 'r', color: (Save.data.coins || 0) >= pr ? c.gold : c.red }); });
+      UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, 'collector', 247, 43, t, S.msgT > 0);
+      T.para(ctx, S.msg, 294, 44, 176, { size: 8, color: '#2a1a0c', lh: 9 });
+      UIK.panel(ctx, 240, 98, 234, 130, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
+      const fake = { uid: 1, size: pick, style: 0, items: new Array(Save.CAP[pick]).fill(0), loc: null }, pr = Boxes.PRICE[pick];
+      ctx.fillStyle = '#10201c'; ctx.fillRect(244, 102, 90, 60); this.drawBoxThumb(ctx, fake, 246, 104, 86, 56);
+      T.draw(ctx, `${Boxes.SIZE_NAME[pick]} коробка`, 340, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, `вмещает бабочек: ${Save.CAP[pick]}`, 340, 114, { size: 8, color: '#6a5030' }); T.draw(ctx, `в запасе: ${Save.stock(pick)}`, 340, 125, { size: 8, color: '#2a6a1a' });
+      T.para(ctx, 'Пустая коробка. Вид — орех, дуб или чёрный лак — выбирается на верстаке в кабинете, там же в неё кладут расправленных бабочек. Разобранная коробка возвращается в запас.', 248, 168, 218, { size: 8, color: '#4a3a20', lh: 9 });
+      ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 214, 222, 1); T.draw(ctx, 'Цена', 248, 217, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 218); T.draw(ctx, String(pr), 466, 217, { size: 8, align: 'r', color: '#8a5a10' });
+      UIK.btn(ctx, L.sellBtn, UIK.hit(L.sellBtn, m.x, m.y));
+      T.draw(ctx, `Всего в запасе: ${Save.stockTotal()}`, 372, 238, { size: 8, color: c.dim });
+      if (S.flash > 0) { ctx.globalAlpha = Math.min(1, S.flash * 2); T.draw(ctx, String(S.last), SW - 8, 40 - (0.8 - S.flash) * 8, { size: 10, align: 'r', color: '#ffb0a0', shadow: '#000' }); ctx.globalAlpha = 1; }
+    }
     drawColl(ctx, t, m, dt) {
       const S = this.col; S.msgT = Math.max(0, S.msgT - dt); if (S.confirm) { S.confirmT -= dt; if (S.confirmT <= 0) S.confirm = 0; } S.flash = Math.max(0, S.flash - dt); const L = this.collLayout();
       ctx.fillStyle = '#14201a'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#1a2a22' : '#16241c'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Торговец коллекциями', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Покупает готовые рамки, не повешенные на стену. Выберите рамку и нажмите «Продать»', 8, 20, { size: 8, color: c.dim });
+      T.draw(ctx, 'Торговец коллекциями', 8, 6, { size: 10, color: c.gold }); L.tabs.forEach(b => { const on = b.id === S.tab; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : UIK.hit(b, m.x, m.y) ? '#244a3c' : '#1a3228', border: on ? c.gold : c.line, shadow: false }); T.draw(ctx, b.label, b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: on ? '#fff' : c.dim }); });
+      if (S.tab === 'buy') return this.drawBuyBoxes(ctx, t, m, L);
+      T.draw(ctx, 'Покупает готовые рамки, не повешенные на стену. Выберите рамку и нажмите «Продать»', 8, 20, { size: 8, color: c.dim });
       T.draw(ctx, 'Рамки (не на стене)', 8, 32, { size: 8, color: c.dim }); this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
       UIK.panel(ctx, 6, 42, 230, 212, { fill: '#1e2c24', border: '#46604f', shadow: false });
       if (!S.items.length) T.para(ctx, 'Здесь пусто. Соберите в кабинете рамку с бабочками (верстак → коробка) и не вешайте её на стену — или снимите со стены.', 16, 90, 210, { size: 8, color: c.dim, lh: 10 });

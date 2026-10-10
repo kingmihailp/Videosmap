@@ -220,7 +220,7 @@
   });
   addEventListener('mouseup', () => { S.cardpos.release(); if (App.sliderDrag) { App.sliderDrag = null; Save.write(); Snd.sfx.click(); } });
   ui.addEventListener('contextmenu', e => e.preventDefault());
-  ui.addEventListener('wheel', e => { if (App.screen === 'play' && App.overlay === 'cardpos') { S.cardpos.step(App.play, e.deltaY < 0 ? 1 : -1); return; } if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
+  ui.addEventListener('wheel', e => { if (App.modal === 'stash') { Secret.stash.wheel(e.deltaY); return; } if (App.screen === 'play' && App.overlay === 'cardpos') { S.cardpos.step(App.play, e.deltaY < 0 ? 1 : -1); return; } if (App.screen === 'cabinet' && App.cab) { App.cab.wheel(e.deltaY); return; } if (App.screen === 'journal' || App.overlay === 'journal') S.journal.turn(e.deltaY > 0 ? 1 : -1); });
 
   // ---------------- loop
   let last = performance.now();
