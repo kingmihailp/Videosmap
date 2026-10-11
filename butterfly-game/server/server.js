@@ -26,6 +26,7 @@ function save() { if (!dirty) return; dirty = false; try { fs.writeFileSync(STAT
 setInterval(save, 4000); process.on('SIGINT', () => { save(); process.exit(0); }); process.on('SIGTERM', () => { save(); process.exit(0); });
 
 // ------------------------------------------------------------------ cabinet rules (mirror of the client rules)
+const LABS = ['full', 'basic', 'none'];
 const CAP = { S: 1, M: 4, L: 9 }, UNITS = { S: 1, M: 2, L: 4 }, RANK = { S: 1, M: 2, L: 3 };
 const MUS = { mt: 24, ml: 4, mr: 36, mw: 24 }, MWCLS = i => ['L', 'M', 'S', 'S', 'M', 'L'][i % 6];      // the museum: tables, large tables, racks, wall frames
 const WALL = ['L', 'M', 'S', 'S', 'M', 'L'], TOPN = 2, DRAWERS = 3, DRAWER_UNITS = 4;
@@ -44,12 +45,13 @@ function applyOp(op) {
     case 'addSpec': { const s = op.spec; if (!s || spec(s.uid) || !s.sp || String(s.sp).length > 64) return false; state.specimens.push({ uid: s.uid, sp: s.sp, biome: s.biome, date: s.date, q: null, pose: null, box: null, by: String(s.by || '').slice(0, MAX_NAME) }); if (state.specimens.length > 600) { const i = state.specimens.findIndex(x => x.q === null && !x.box); if (i >= 0) state.specimens.splice(i, 1); } return true; }
     case 'delSpec': { const s = spec(op.uid); if (!s || s.box) return false; state.specimens = state.specimens.filter(x => x.uid !== op.uid); return true; }
     case 'spread': { const s = spec(op.uid); if (!s || s.q !== null || !(op.q >= 1 && op.q <= 100) || !op.pose) return false; s.q = op.q; s.pose = op.pose; return true; }
-    case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 120) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
+    case 'addBox': { const b = op.box; if (!b || box(b.uid) || !CAP[b.size] || state.boxes.length >= 120) return false; state.boxes.push({ uid: b.uid, size: b.size, style: b.style | 0, lab: LABS.includes(b.lab) ? b.lab : 'basic', items: new Array(CAP[b.size]).fill(0), loc: null }); return true; }
     case 'sellBox': { const b = box(op.uid); if (!b || b.loc || !b.items.some(Boolean)) return false; state.specimens = state.specimens.filter(s => !b.items.includes(s.uid)); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }      // a frame sold to the collector: the box and its butterflies are gone
     case 'delBox': { const b = box(op.uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = spec(u); if (s) s.box = null; }); state.boxes = state.boxes.filter(x => x.uid !== b.uid); return true; }
     case 'putIn': { const b = box(op.box), s = spec(op.spec); if (!b || !s || s.q === null || s.box || op.slot < 0 || op.slot >= b.items.length || b.items[op.slot]) return false; b.items[op.slot] = s.uid; s.box = b.uid; return true; }
     case 'takeOut': { const b = box(op.box); if (!b || op.slot < 0 || op.slot >= b.items.length || !b.items[op.slot]) return false; const s = spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; return true; }
     case 'boxLoc': { const b = box(op.uid); if (!b) return false; if (!op.loc) { b.loc = null; return true; } if (!fits(b, op.loc.t, op.loc.i)) return false; b.loc = { t: op.loc.t, i: op.loc.i }; return true; }
+    case 'boxLab': { const b = box(op.uid); if (!b || b.loc || !LABS.includes(op.lab)) return false; b.lab = op.lab; return true; }
     case 'boxStyle': { const b = box(op.uid); if (!b || b.loc) return false; b.style = op.style | 0; return true; }
   }
   return false;

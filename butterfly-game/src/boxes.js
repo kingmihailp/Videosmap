@@ -14,9 +14,11 @@ const Boxes = (() => {
   const cache = new Map();
 
   function pxSize(size) { const d = DIM[size]; return { w: d.c * CW + FR * 2, h: d.r * CH + FR * 2 }; }
-  function sig(box) { return box.size + box.style + '|' + box.items.map(u => { const s = Save.spec(u); return s ? u + ':' + s.q : 0; }).join(','); }
+  // the labels of a frame: 'basic' (one line, as it used to be; frames made before have it), 'none', 'full' (the whole label)
+  const LABS = [['full', 'Детальные'], ['basic', 'Обычные'], ['none', 'Нет']], labOf = b => b.lab || 'basic';
+  function sig(box) { return box.size + box.style + labOf(box) + '|' + box.items.map(u => { const s = Save.spec(u); return s ? u + ':' + s.q : 0; }).join(','); }
 
-  const SPY = 27, LABY = 45, LABLINES = 4;       // the centre of the pinned butterfly and the top of its label inside a cell (the cell is CH = 80 high)
+  const SPY = 27, LABY = 45, LABLINES = 4, spyOf = lb => lb === 'full' ? SPY : lb === 'none' ? 38 : 32;       // the centre of the pinned butterfly and the top of its label inside a cell (the cell is CH = 80 high)
   function labelLines(sp, s, W) {
     const out = T.wrap(sp.ru, W, 8).map(t => ({ t }));                                                         // the name: always whole
     out.push({ t: `${s.q}% · ${fmtDate(s.date)}` });                                                            // the quality and the date of the catch
@@ -42,10 +44,13 @@ const Boxes = (() => {
       const cx0 = FR + (i % d.c) * CW, cy0 = FR + Math.floor(i / d.c) * CH; const s = Save.spec(u);
       if (!s) { x.strokeStyle = 'rgba(0,0,0,0.12)'; x.setLineDash([2, 3]); x.strokeRect(cx0 + 10.5, cy0 + 8.5, CW - 21, CH - 21); x.setLineDash([]); return; }
       const sp = SPECIES_BY_ID[s.sp];
-      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + SPY, 1);
-        x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + SPY - 6, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + SPY - 4, 2, 1); }
+      const LB = labOf(box), spy = spyOf(LB);
+      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + spy, 1);
+        x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + spy - 6, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + spy - 4, 2, 1); }
       // label
       // the label: the full name (wrapped, never cut), the quality and the date, then the Latin name and the place while there is room (4 lines of the smallest font)
+      if (LB === 'none') return;
+      if (LB === 'basic') { x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1); let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(x, nm + tail, cx0 + CW / 2, cy0 + 62, { size: 8, align: 'c', color: st.ink }); return; }
       const LW = CW - 12, lines = labelLines(sp, s, LW); x.fillStyle = st.lab; x.fillRect(cx0 + 6, cy0 + LABY, LW, CH - LABY - 2); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 6, cy0 + CH - 2, LW, 1);
       lines.forEach((ln, k) => T.draw(x, ln.t, cx0 + CW / 2, cy0 + LABY + 1 + k * 8, { size: 8, align: 'c', color: ln.dim ? st.ink + 'bb' : st.ink }));
     });
@@ -103,7 +108,7 @@ const Boxes = (() => {
   const mountGroup = e => { const g = new THREE.Group(); const a = new THREE.Mesh(e.wg, e.wm), b = new THREE.Mesh(e.bg, e.bm); a.userData.noFloat = b.userData.noFloat = true; g.add(a, b); return g; };
   function mount3D(box, ppm) {
     const key = sig(box) + '|' + ppm; let e = m3cache.get(key);
-    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + SPY, sc: 1 }); });
+    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + spyOf(labOf(box)), sc: 1 }); });
       e = buildMount(items, w, h, ppm); m3cache.set(key, e); if (m3cache.size > 160) m3cache.delete(m3cache.keys().next().value); }
     return mountGroup(e);
   }
@@ -207,13 +212,13 @@ const Boxes = (() => {
   };
 
   const bench = {
-    sel: 0, style: 0, scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '', f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
+    sel: 0, style: 0, lab: 'full', scroll: 0, sscroll: 0, btns: [], rows: [], srows: [], slots: [], info: '', f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
     open() { this.sel = Math.min(this.sel, Save.data.boxes.length - 1); this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; },
     cur() { return Save.data.boxes[this.sel] || null; },
     layout() {
       const B = Save.data.boxes; this.rows = []; const vis = 7;
       this.scroll = clamp(this.scroll, 0, Math.max(0, B.length - vis));
-      B.slice(this.scroll, this.scroll + vis).forEach((b, i) => this.rows.push({ b, idx: this.scroll + i, x: 8, y: 84 + i * 21, w: 138, h: 19 }));
+      B.slice(this.scroll, this.scroll + vis).forEach((b, i) => this.rows.push({ b, idx: this.scroll + i, x: 8, y: 96 + i * 21, w: 138, h: 19 }));
       this.allFree = Save.freeSpread(); const FL = Spread.pick.filtersFor(this.allFree); FL.forEach(fl => { this.f[fl.id] = Math.min(this.f[fl.id] || 0, fl.opts.length - 1); });
       const free = this.allFree.filter(sp => FL.every(fl => fl.opts[this.f[fl.id]].t(sp))); const vis2 = 9; this.sscroll = clamp(this.sscroll, 0, Math.max(0, free.length - vis2)); this.free = free;
       const SHORT = { rar: 'Ред', loc: 'Лок', ab: 'Абер', date: 'Дата', fam: 'Сем' };
@@ -222,12 +227,12 @@ const Boxes = (() => {
       const cb = this.cur();
       this.btns = [
         { id: 'S', label: 'Мал. ' + Save.stock('S'), x: 8, y: 32, w: 48, h: 16, disabled: !Save.stock('S') }, { id: 'M', label: 'Сред. ' + Save.stock('M'), x: 58, y: 32, w: 50, h: 16, disabled: !Save.stock('M') }, { id: 'L', label: 'Бол. ' + Save.stock('L'), x: 110, y: 32, w: 50, h: 16, disabled: !Save.stock('L') },
-        { id: 'style', label: 'Стиль: ' + STYLES[this.style].name, x: 8, y: 50, w: 152, h: 14 },
+        { id: 'style', label: 'Стиль: ' + STYLES[this.style].name, x: 8, y: 50, w: 152, h: 13 }, { id: 'lab', label: 'Этикетки: ' + LABS.find(l => l[0] === this.lab)[1], x: 8, y: 64, w: 152, h: 13 },
         { id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 },
         { id: 'auto', label: 'Авто', x: 168, y: 248, w: 52, h: 16, disabled: !cb || !this.nfree },
         { id: 'clear', label: 'Вынуть всё', x: 224, y: 248, w: 72, h: 16, disabled: !cb || !fillOf(cb) },
         { id: 'del', label: cb && cb.loc ? 'Снимите со стены/стола' : 'Разобрать (в запас)', x: 300, y: 248, w: 100, h: 16, disabled: !cb || !!cb.loc },
-        { id: 'lup', label: '↑', x: 114, y: 67, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 67, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
+        { id: 'lup', label: '↑', x: 114, y: 80, w: 16, h: 13, disabled: this.scroll === 0 }, { id: 'ldown', label: '↓', x: 132, y: 80, w: 16, h: 13, disabled: this.scroll >= Math.max(0, B.length - vis) },
         { id: 'up', label: '↑', x: 448, y: 34, w: 24, h: 14, disabled: this.sscroll === 0 }, { id: 'down', label: '↓', x: 448, y: 236, w: 24, h: 14, disabled: this.sscroll >= Math.max(0, this.nfree - 9) },
       ];
       this.slots = [];
@@ -243,7 +248,7 @@ const Boxes = (() => {
       T.draw(ctx, 'Новая коробка (из запаса):', 8, 21, { size: 8, color: c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       // list
-      T.draw(ctx, `Ваши коробки (${Save.data.boxes.length})`, 8, 70, { size: 8, color: c.dim });
+      T.draw(ctx, `Ваши коробки (${Save.data.boxes.length})`, 8, 83, { size: 8, color: c.dim });
       if (!Save.data.boxes.length) T.para(ctx, Save.stockTotal() ? 'Пока пусто. Выберите размер (число — сколько коробок в запасе) и стиль — и создайте первую коробку.' : 'Пока пусто. Коробки продаёт торговец коллекциями на рынке насекомых: малая — 200, средняя — 300, большая — 400 монет. Стиль можно менять здесь.', 10, 86, 134, { size: 8, color: '#6a8a78', lh: 10 });
       this.rows.forEach(r => { const hv = UIK.hit(r, m.x, m.y), sl = r.idx === this.sel; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false }); T.draw(ctx, `${r.b.size} ${STYLES[r.b.style].name} ${fillOf(r.b)}/${r.b.items.length}`, r.x + 4, r.y + 2, { size: 8, color: c.text }); T.draw(ctx, r.b.loc ? '▪' : '', r.x + r.w - 8, r.y + 2, { size: 8, color: c.gold }); });
       // centre: box view
@@ -272,8 +277,9 @@ const Boxes = (() => {
       if (b) {
         Snd.sfx.click();
         if (b.id === 'close') return 'close';
-        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 100 || !Save.useStock(b.id)) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
+        if (b.id === 'S' || b.id === 'M' || b.id === 'L') { if (Save.data.boxes.length >= 100 || !Save.useStock(b.id)) { Snd.sfx.deny(); return null; } Save.addBox(b.id, this.style, this.lab); this.sel = Save.data.boxes.length - 1; this.scroll = Math.max(0, Save.data.boxes.length - 7); Snd.sfx.thud(); return 'changed'; }
         if (b.id === 'style') { this.style = (this.style + 1) % STYLES.length; const cb = this.cur(); if (cb && !cb.loc) { cb.style = this.style; Save.syncBoxStyle(cb); } return 'changed'; }
+        if (b.id === 'lab') { const i = LABS.findIndex(l => l[0] === this.lab); this.lab = LABS[(i + 1) % LABS.length][0]; const cb0 = this.cur(); if (cb0 && !cb0.loc) { cb0.lab = this.lab; Save.syncBoxLab(cb0); } return 'changed'; }
         if (b.id === 'up') this.sscroll--; else if (b.id === 'down') this.sscroll++; else if (b.id === 'lup') this.scroll--; else if (b.id === 'ldown') this.scroll++;
         const cb = this.cur();
         if (b.id === 'auto' && cb) { const free = this.free.slice(); cb.items.forEach((u, i) => { if (!u && free.length) Save.putIn(cb, i, free.shift().uid); }); Snd.sfx.pin(); return 'changed'; }
@@ -281,7 +287,7 @@ const Boxes = (() => {
         if (b.id === 'del' && cb) { const sz = cb.size; if (Save.removeBox(cb.uid)) Save.addStock(sz, 1); this.sel = Math.max(0, this.sel - 1); Snd.sfx.deny(); return 'changed'; }
         return null;
       }
-      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.idx; this.style = r.b.style; Snd.sfx.click(); return null; }
+      const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.idx; this.style = r.b.style; this.lab = r.b.lab || 'basic'; Snd.sfx.click(); return null; }
       const cb = this.cur();
       if (cb) { const s = this.slots.find(s => UIK.hit(s, x, y)); if (s && cb.items[s.i]) { Save.takeOut(cb, s.i); Snd.sfx.page(); return 'changed'; } }
       const sr = this.srows.find(r => UIK.hit(r, x, y));
@@ -427,7 +433,7 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { labelLines, slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { LABS, labOf, labelLines, slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
 
 // the empty boxes in stock (personal, like coins): bought from the collection trader, used up at the workbench, returned when a box is taken apart

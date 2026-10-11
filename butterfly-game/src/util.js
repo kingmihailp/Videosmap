@@ -127,12 +127,13 @@ const Save = {
     this.data.coins = (this.data.coins || 0) + inf.total; this.soldBox[uid] = inf.total; setTimeout(() => { delete this.soldBox[uid]; }, 30000); this._op({ k: 'sellBox', uid }); this.write(); return inf.total;
   },
   sellBoxRejected(uid) { const p = this.soldBox[uid]; if (p) { this.data.coins = Math.max(0, (this.data.coins || 0) - p); delete this.soldBox[uid]; this.write(); } },
-  addBox(size, style) { const b = { uid: this.nextUid(), size, style, items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style } }); this.write(); return b; },
+  addBox(size, style, lab) { const b = { uid: this.nextUid(), size, style, lab: lab || 'basic', items: new Array(this.CAP[size]).fill(0), loc: null }; this.data.boxes.push(b); this._op({ k: 'addBox', box: { uid: b.uid, size, style, lab: b.lab } }); this.write(); return b; },
   removeBox(uid) { const b = this.box(uid); if (!b || b.loc) return false; b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); this.data.boxes = this.data.boxes.filter(x => x.uid !== uid); this._op({ k: 'delBox', uid }); this.write(); return true; },
   putIn(box, slot, specUid) { const s = this.spec(specUid); if (!s || s.box || box.items[slot]) return false; box.items[slot] = specUid; s.box = box.uid; this._op({ k: 'putIn', box: box.uid, slot, spec: specUid }); this.write(); return true; },
   takeOut(box, slot) { const u = box.items[slot]; const s = this.spec(u); if (s) s.box = null; box.items[slot] = 0; this._op({ k: 'takeOut', box: box.uid, slot }); this.write(); },
   syncSpread(spec) { this._op({ k: 'spread', uid: spec.uid, q: spec.q, pose: spec.pose }); this.write(); },
   syncBoxLoc(box) { this._op({ k: 'boxLoc', uid: box.uid, loc: box.loc }); this.write(); },
+  syncBoxLab(box) { this._op({ k: 'boxLab', uid: box.uid, lab: box.lab }); this.write(); },
   syncBoxStyle(box) { this._op({ k: 'boxStyle', uid: box.uid, style: box.style }); this.write(); },
   // an operation from another player (already validated by the server)
   applyOp(op) {
@@ -141,13 +142,14 @@ const Save = {
       case 'addSpec': if (!this.spec(op.spec.uid) && SPECIES_BY_ID[op.spec.sp]) D.specimens.push(Object.assign({ q: null, pose: null, box: null }, op.spec, { q: null, pose: null, box: null })); break;
       case 'spread': { const s = this.spec(op.uid); if (s) { s.q = op.q; s.pose = op.pose; } break; }
       case 'delSpec': D.specimens = D.specimens.filter(x => x.uid !== op.uid); break;
-      case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
+      case 'addBox': if (!this.box(op.box.uid)) D.boxes.push({ uid: op.box.uid, size: op.box.size, style: op.box.style, lab: op.box.lab || 'basic', items: new Array(this.CAP[op.box.size]).fill(0), loc: null }); break;
       case 'sellBox': { const b = this.box(op.uid); if (b) { D.specimens = D.specimens.filter(s => !b.items.includes(s.uid)); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
       case 'delBox': { const b = this.box(op.uid); if (b) { b.items.forEach(u => { const s = this.spec(u); if (s) s.box = null; }); D.boxes = D.boxes.filter(x => x.uid !== op.uid); } break; }
       case 'putIn': { const b = this.box(op.box), s = this.spec(op.spec); if (b && s) { b.items[op.slot] = s.uid; s.box = b.uid; } break; }
       case 'takeOut': { const b = this.box(op.box); if (b) { const s = this.spec(b.items[op.slot]); if (s) s.box = null; b.items[op.slot] = 0; } break; }
       case 'boxLoc': { const b = this.box(op.uid); if (b) b.loc = op.loc; break; }
       case 'boxStyle': { const b = this.box(op.uid); if (b) b.style = op.style; break; }
+      case 'boxLab': { const b = this.box(op.uid); if (b) b.lab = op.lab; break; }
     }
   },
 };
