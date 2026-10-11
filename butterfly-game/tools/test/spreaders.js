@@ -15,8 +15,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   for (let i = 0; i < 80; i++) { if (await pg.evaluate(() => !!(F0W.cab && F0W.cab.walkers)).catch(() => false)) break; await pg.waitForTimeout(500); }
   await pg.evaluate(() => { const m = F0W.cab; m.ov = null; m.open('collect'); m.col.tab = 'spr'; m.col.ssel = 1; }); await pg.waitForTimeout(400);
   const buy = (i, coins) => pg.evaluate(([i, coins]) => { Save.data.coins = coins; const m = F0W.cab; m.col.ssel = i; m.collBuySpr(); return { coins: Save.data.coins, own: Spreaders.owned(Spreaders.TYPES[i].id), eq: Spreaders.equippedId() }; }, [i, coins]);
-  let r = await buy(1, 2999); T('2999 coins: the 3-board is not sold', !r.own && r.coins === 2999, r);
-  r = await buy(1, 3000); T('3000 coins: bought (3000) and put on the desk', r.own && r.coins === 0 && r.eq === 's3', r);
+  let r = await buy(1, 4199); T('4199 coins: the 3-board is not sold', !r.own && r.coins === 4199, r);
+  r = await buy(1, 4200); T('4200 coins: bought (4200) and put on the desk', r.own && r.coins === 0 && r.eq === 's3', r);
   r = await buy(1, 5000); T('buying it again does nothing (no dupes, no charge)', r.coins === 5000, r);
   await pg.evaluate(() => { const m = F0W.cab; m.col.ssel = 0; m.collBuySpr(); }); const e0 = await pg.evaluate(() => Spreaders.equippedId()); T('the basic board can be put back for free', e0 === 'basic', e0);
   await pg.evaluate(() => { Save.data.coins = 1e6; const m = F0W.cab; m.col.ssel = 8; m.collBuySpr(); m.col.ssel = 5; m.collBuySpr(); Spreaders.equip('basic'); }); await pg.waitForTimeout(300);
