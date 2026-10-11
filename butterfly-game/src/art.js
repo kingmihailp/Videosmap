@@ -344,20 +344,24 @@ const Art = (() => {
   }
   // a picture of the resting model for the 2D windows (rendered once per species by a small renderer of its own, 3/4 view)
   let rpR = null, rpTried = false; const rpCache = {};
-  function restingPic(sp, w = 152, h = 96) {
-    const key = sp.id + w; if (rpCache[key] !== undefined) return rpCache[key];
+  // a snapshot of any model (fitted to its bounding box) from the 3/4 view, rendered by the shared small renderer; null if WebGL is not available
+  function snapshot(m, w, h, az = 0.5, el = 0.18) {
     if (!rpR && !rpTried) { rpTried = true; try { const ren = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true }); ren.setPixelRatio(1); ren.setClearColor(0x000000, 0); const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#ffffff', '#7a6a50', 0.9)); const dl = new THREE.DirectionalLight('#fff2d8', 0.95); dl.position.set(2, 4, 3); sc.add(dl); rpR = { ren, sc, cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 50) }; } catch (e) { rpR = null; } }
-    if (!rpR) return (rpCache[key] = null);
+    if (!rpR) return null;
     try {
-      const m = makeResting(sp, { u: 1 }), { ren, sc, cam } = rpR; ren.setSize(w, h, false); sc.add(m); m.updateMatrixWorld(true);
-      const az = 0.5, el = 0.18, dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)); const bb = new THREE.Box3().setFromObject(m), ctr = bb.getCenter(new THREE.Vector3());
-      cam.position.copy(ctr).addScaledVector(dir, 8); cam.up.set(0, 1, 0); cam.lookAt(ctr); cam.updateMatrixWorld(true);
+      const { ren, sc, cam } = rpR; ren.setSize(w, h, false); sc.add(m); m.updateMatrixWorld(true);
+      const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)); const bb = new THREE.Box3().setFromObject(m), ctr = bb.getCenter(new THREE.Vector3()), size = bb.getSize(new THREE.Vector3()).length();
+      cam.position.copy(ctr).addScaledVector(dir, size * 2 + 2); cam.near = 0.01; cam.far = size * 6 + 10; cam.up.set(0, 1, 0); cam.lookAt(ctr); cam.updateMatrixWorld(true);
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const inv = cam.matrixWorldInverse; for (const xx of [bb.min.x, bb.max.x]) for (const yy of [bb.min.y, bb.max.y]) for (const zz of [bb.min.z, bb.max.z]) { const v = new THREE.Vector3(xx, yy, zz).applyMatrix4(inv); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); }
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hw = Math.max((x1 - x0) / 2, (y1 - y0) / 2 * w / h) * 1.06, hh = hw * h / w; cam.left = cx - hw; cam.right = cx + hw; cam.top = cy + hh; cam.bottom = cy - hh; cam.updateProjectionMatrix();
       ren.render(sc, cam); const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(ren.domElement, 0, 0);
-      sc.remove(m); m.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); return (rpCache[key] = cv);
-    } catch (e) { return (rpCache[key] = null); }
+      sc.remove(m); m.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && !o.material.userData.keep) o.material.dispose(); }); return cv;
+    } catch (e) { return null; }
+  }
+  function restingPic(sp, w = 152, h = 96) {
+    const key = sp.id + w; if (rpCache[key] !== undefined) return rpCache[key];
+    return (rpCache[key] = snapshot(makeResting(sp, { u: 1 }), w, h));
   }
 
-  return { makeResting, restingPic, wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
+  return { snapshot, makeResting, restingPic, wingCanvas, specimen, makeButterfly, setFlap, SF, N, wingParts, drawPose, drawBody, tipPos, RAW, IDEAL, PIV };
 })();

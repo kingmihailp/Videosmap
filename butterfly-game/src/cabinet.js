@@ -145,22 +145,20 @@ const Cabinet = (() => {
       cube(sd, 1.0, 0.07, 2.3, dx0, 0.8, 0, wood); for (const [lx, lz] of [[-0.42, -1.05], [0.42, -1.05], [-0.42, 1.05], [0.42, 1.05]]) cube(sd, 0.08, 0.77, 0.08, dx0 + lx, 0.385, lz, darkWood);
       cube(sd, 0.9, 0.2, 2.1, dx0, 0.66, 0, darkWood); for (const zz of [-0.55, 0.55]) { cube(sd, 0.02, 0.14, 0.7, dx0 + 0.46, 0.66, zz, wood); cube(sd, 0.03, 0.04, 0.16, dx0 + 0.47, 0.66, zz, brass); }
       this.addCol(dx0 - 0.55, dx0 + 0.55, -1.2, 1.2);
-      // spreading board: base plate, two slats with a groove between them, specimen lying across the groove
-      const bd = new THREE.Group(); bd.position.set(dx0 + 0.02, 0.835, 0.2); sd.add(bd);
-      cube(bd, 0.46, 0.02, 0.62, 0, 0.01, 0, lam('#6a4a28')); cube(bd, 0.19, 0.03, 0.6, -0.135, 0.035, 0, lam('#c29a5c')); cube(bd, 0.19, 0.03, 0.6, 0.135, 0.035, 0, lam('#c29a5c'));
+      // the spreading board is the player's own (Spreaders): it is built in refresh(), here only its place on the desk
+      this.sprPos = { x: dx0 + 0.02, y: 0.835, z: 0.15 };
       // a butterfly as a real 3D model (wings raised a little, a body with antennae), scaled to a wing span
       const model3 = (sp, span, flap) => { const m = Art.makeButterfly(sp); Art.setFlap(m, flap); m.scale.setScalar(span / m.userData.span); m.traverse(o => { if (o.material && o.material.map) o.material = new THREE.MeshLambertMaterial({ map: o.material.map, alphaTest: 0.5, side: THREE.DoubleSide, color: '#b8ac98' }); }); return m; };
-      const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)]; const sm = model3(sample, 0.4, 0.08); sm.position.set(0, 0.0545, 0); bd.add(sm);
-      for (const zz of [-0.17, -0.06, 0.07, 0.18]) { cube(bd, 0.004, 0.03, 0.004, 0.05, 0.065, zz, metalM, { cast: false }); cube(bd, 0.12, 0.002, 0.012, 0.0, 0.0535, zz * 1.0, lam('#efe6c8'), { cast: false }); }
+      this.model3 = model3;
       // jar with a lid, standing on the desk
       cyl(sd, 0.05, 0.05, 0.12, dx0 + 0.25, 0.895, -0.75, lam('#a8d0d8', { transparent: true, opacity: 0.55 }), 10); cyl(sd, 0.053, 0.053, 0.02, dx0 + 0.25, 0.965, -0.75, metalM, 10);
       // open field journal lying flat: leather cover, two page blocks, spine, ruled lines, a pen
-      const jx = dx0 + 0.18, jz = 0.88;
+      const jx = dx0 + 0.18, jz = 0.95;
       cube(sd, 0.3, 0.01, 0.22, jx, 0.84, jz, lam('#5a2a1c')); cube(sd, 0.135, 0.014, 0.195, jx - 0.075, 0.852, jz, lam('#efe6c8')); cube(sd, 0.135, 0.014, 0.195, jx + 0.075, 0.852, jz, lam('#efe6c8')); cube(sd, 0.006, 0.016, 0.2, jx, 0.853, jz, lam('#3a2a1a'));
       for (let i = 0; i < 5; i++) { cube(sd, 0.1, 0.002, 0.003, jx - 0.075, 0.8605, jz - 0.07 + i * 0.035, lam('#6a5a4a'), { cast: false }); if (i < 3) cube(sd, 0.1, 0.002, 0.003, jx + 0.075, 0.8605, jz - 0.07 + i * 0.035, lam('#6a5a4a'), { cast: false }); }
       const pen = cyl(sd, 0.006, 0.006, 0.16, jx + 0.2, 0.845, jz - 0.02, lam('#1a1a24'), 6); pen.rotation.z = Math.PI / 2; pen.rotation.y = 0.5;
       // magnifier lying flat: ring, glass and a handle along one line
-      const mgx = dx0 + 0.3, mgz = 0.5, mg = new THREE.Group(); mg.position.set(mgx, 0.847, mgz); sd.add(mg);
+      const mgx = dx0 + 0.3, mgz = 0.72, mg = new THREE.Group(); mg.position.set(mgx, 0.847, mgz); sd.add(mg);
       const lensRing = mesh(new THREE.TorusGeometry(0.07, 0.009, 6, 18), lam('#caa040'), 0, 0, 0, { cast: false }); lensRing.rotation.x = Math.PI / 2; mg.add(lensRing);
       const lens = mesh(new THREE.CircleGeometry(0.066, 18), bas('#cfe8ff', { transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }), 0, 0.001, 0, { cast: false, recv: false }); lens.rotation.x = -Math.PI / 2; mg.add(lens);
       const hd2 = cyl(mg, 0.008, 0.011, 0.15, 0, 0, 0.145, darkWood, 6, { cast: false }); hd2.rotation.x = Math.PI / 2;
@@ -330,10 +328,14 @@ const Cabinet = (() => {
       // the frame of the guiding butterfly's wings on the easel (it fills up as the wings are laid into it)
       if (this.easelPos) { const E = this.easelPos, tx = WingsUI.tex(); this.wingMap = tx; const pic = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.77), new THREE.MeshLambertMaterial({ map: tx })); pic.rotation.y = Math.PI; pic.position.set(E.x, E.y, E.z - 0.02); D.add(pic);
         const fm = lam(Wings.built() ? '#d8b048' : '#4a2c18'); for (const [w, h, x, y] of [[1.5, 0.05, 0, 0.41], [1.5, 0.05, 0, -0.41], [0.05, 0.87, 0.725, 0], [0.05, 0.87, -0.725, 0]]) cube(D, w, h, 0.05, E.x + x, E.y + y, E.z - 0.01, fm); }
+      // the player's spreading board on the desk (its own model for each kind) with a sample butterfly in the first slot
+      { const id = Spreaders.equippedId(), bm = Spreaders.model(id), S0 = bm.userData.size, P = this.sprPos, k = Math.min(1, 0.62 / (S0.w + (Spreaders.BY[id].mech ? 0.12 : 0)), 0.92 / (S0.l + (Spreaders.BY[id].mech ? 0.1 : 0)));
+        const hold = new THREE.Group(); hold.position.set(P.x, P.y, P.z); hold.scale.setScalar(k); hold.add(bm); D.add(hold);
+        const sample = SPECIES[Math.floor((new Date().getDate() * 7) % SPECIES.length)], sl = Spreaders.slotAt(id, 0), sm = this.model3(sample, Math.min(0.4, sl.uw * 0.96), 0.08); sm.position.set(sl.x, 0.053, sl.z); bm.add(sm); this.sprBoard = bm; }
       // the raw (not yet spread) specimens waiting on a cork tray at the spreading desk: little 3D models of resting butterflies (folded wings, bent legs, antennae)
-      { const raw = Save.rawList().slice(0, 4), tr = new THREE.Group(); tr.position.set(-3.88, 0.835, -0.38); D.add(tr);
-        cube(tr, 0.4, 0.022, 0.46, 0, 0.011, 0, lam('#5a3a20'), { cast: false }); cube(tr, 0.36, 0.01, 0.42, 0, 0.027, 0, lam('#c8a870'), { cast: false });
-        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = clamp(((sp.mm[0] + sp.mm[1]) / 2 / 1000 * 5 / 2 / 0.9) * 0.6, 0.1, 0.17), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.08, 0.032, (i < 2 ? -1 : 1) * 0.105); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
+      { const raw = Save.rawList().slice(0, 4), tr = new THREE.Group(); tr.position.set(-3.88, 0.835, -0.58); D.add(tr);
+        cube(tr, 0.38, 0.022, 0.38, 0, 0.011, 0, lam('#5a3a20'), { cast: false }); cube(tr, 0.34, 0.01, 0.34, 0, 0.027, 0, lam('#c8a870'), { cast: false });
+        raw.forEach((rs, i) => { const sp = SPECIES_BY_ID[rs.sp]; if (!sp) return; const u = clamp(((sp.mm[0] + sp.mm[1]) / 2 / 1000 * 5 / 2 / 0.9) * 0.6, 0.1, 0.17), m = Art.makeResting(sp, { u }); m.position.set((i % 2 ? 1 : -1) * 0.075, 0.032, (i < 2 ? -1 : 1) * 0.085); m.rotation.y = [0.5, -0.7, 2.6, 3.6][i]; tr.add(m); }); }
       // drawers indicator: count of boxes inside on the desk label
     }
 
@@ -407,6 +409,7 @@ const Cabinet = (() => {
       this.animate(dt);
     }
     animate(dt) {
+      if (this.sprBoard && this.sprBoard.userData.cogs) for (const c of this.sprBoard.userData.cogs) c.spin.rotation.y += dt * 0.7 * c.dir;
       if (Math.abs(this.realHour() - this.hour) > 1 / 120) this.applyTime(this.realHour());
       this.sitStep(dt);
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; const P = this.player; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: Math.round(this.sit * 100) / 100 , nt: NetParts.code(Save.curNet()) }); } }
@@ -457,7 +460,7 @@ const Cabinet = (() => {
     }
     click(x, y) {
       const ov = this.ov;
-      if (ov === 'pick') { const r = Spread.pick.click(x, y); if (r && r.act === 'close') this.close(); else if (r && r.act === 'begin') { Snd.sfx.click(); Spread.G.begin(r.spec); this.ov = 'spread'; } }
+      if (ov === 'pick') { const r = Spread.pick.click(x, y); if (r && r.act === 'close') this.close(); else if (r && r.act === 'begin') { Snd.sfx.click(); Spread.G.begin(r.spec, r.extra); this.ov = 'spread'; } }
       else if (ov === 'spread') { if (Spread.G.click(x, y) === 'done') { this.ov = Save.rawList().length ? 'pick' : null; if (!this.ov) this.close(); else Spread.pick.open(); } else if (Spread.G.phase === 'work') { /* mouse is used for the needle; clicks do nothing */ } }
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'bench') { const r = Boxes.bench.click(x, y); if (r === 'close') this.close(); }

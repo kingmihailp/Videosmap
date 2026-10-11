@@ -41,8 +41,11 @@ const Spread = (() => {
 
   // ------------------------------------------------------------------ specimen picker
   const pick = {
-    page: 0, hover: -1, cards: [], btns: [], list: [], all: [], f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [],
-    open() { this.page = 0; this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; },
+    page: 0, hover: -1, cards: [], btns: [], list: [], all: [], f: { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }, fbtns: [], sel: [],
+    open() { this.page = 0; this.f = { rar: 0, loc: 0, ab: 0, date: 0, fam: 0 }; this.sel = []; },
+    cap() { return Spreaders.equipped().cap; },
+    // the chosen butterflies in the order of choosing (the first one is spread by hand, the others get its result): only raw ones that are still there
+    chosen() { const seen = new Set(); return this.sel.map(u => Save.spec(u)).filter(s => s && s.q === null && !s.box && !seen.has(s.uid) && seen.add(s.uid)).slice(0, this.cap()); },
     // the filters: every one cycles through «все» and the values that occur among the waiting butterflies
     filters() { return this.filtersFor(this.all); },
     filtersFor(all) {
@@ -58,31 +61,48 @@ const Spread = (() => {
       ];
     },
     layout() {
-      this.all = Save.rawList(); const per = 12, FL = this.filters(); FL.forEach(fl => { this.f[fl.id] = Math.min(this.f[fl.id] || 0, fl.opts.length - 1); });
+      this.all = Save.rawList(); this.sel = this.chosen().map(s => s.uid); const per = 12, FL = this.filters(); FL.forEach(fl => { this.f[fl.id] = Math.min(this.f[fl.id] || 0, fl.opts.length - 1); });
       this.list = this.all.filter(sp => FL.every(fl => fl.opts[this.f[fl.id]].t(sp)));
       this.fbtns = FL.map((fl, i) => ({ id: 'f_' + fl.id, fid: fl.id, n: fl.opts.length, label: fl.name + ': ' + fl.opts[this.f[fl.id]].n, on: this.f[fl.id] > 0, x: 12 + i * 94, y: 36, w: 90, h: 13 }));
-      const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0 }; by.set(sp.sp, g); groups.push(g); } g.n++; }   // same species stack; aberrants have their own ids, so they stay apart
+      const groups = [], by = new Map(); for (const sp of this.list) { let g = by.get(sp.sp); if (!g) { g = { s: sp, n: 0, list: [] }; by.set(sp.sp, g); groups.push(g); } g.n++; g.list.push(sp); }   // same species stack; aberrants have their own ids, so they stay apart
       const ord = new Map(); for (const g of groups) { const b = SPECIES_BY_ID[g.s.sp].base || g.s.sp; if (!ord.has(b)) ord.set(b, ord.size); }
       groups.sort((a, b) => { const sa = SPECIES_BY_ID[a.s.sp], sb = SPECIES_BY_ID[b.s.sp]; return (ord.get(sa.base || sa.id) - ord.get(sb.base || sb.id)) || ((sa.ab ? 1 : 0) - (sb.ab ? 1 : 0)) || (sa.id < sb.id ? -1 : 1); });   // every aberration stands right after its normal form
       const pages = Math.max(1, Math.ceil(groups.length / per)); this.page = Math.min(this.page, pages - 1);
-      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n }, i) => ({ s, n, x: 23 + (i % 4) * 110, y: 54 + Math.floor(i / 4) * 64, w: 104, h: 62 }));
-      this.btns = [{ id: 'close', label: '← В кабинет', x: 12, y: 246, w: 90, h: 16 }, { id: 'prev', label: '←', x: 190, y: 246, w: 24, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 266, y: 246, w: 24, h: 16, disabled: this.page >= pages - 1 }];
+      this.cards = groups.slice(this.page * per, this.page * per + per).map(({ s, n, list }, i) => ({ s, n, list, x: 23 + (i % 4) * 110, y: 54 + Math.floor(i / 4) * 64, w: 104, h: 62 }));
+      const cap = this.cap(), k = this.sel.length; this.btns = [{ id: 'close', label: '← В кабинет', x: 8, y: 246, w: 78, h: 16 }, { id: 'swap', label: 'Расправилка…', x: 90, y: 246, w: 78, h: 16, disabled: Spreaders.ownedList().length < 2 }, { id: 'prev', label: '←', x: 172, y: 246, w: 20, h: 16, disabled: this.page === 0 }, { id: 'next', label: '›', x: 218, y: 246, w: 20, h: 16, disabled: this.page >= pages - 1 }];
+      if (cap > 1) this.btns.push({ id: 'fill', label: `Выбрать до ${cap}`, x: 244, y: 246, w: 84, h: 16, disabled: !this.list.length }, { id: 'clear', label: 'Сброс', x: 332, y: 246, w: 40, h: 16, disabled: !k }, { id: 'go', label: `Расправить (${k})`, x: 376, y: 246, w: 96, h: 16, disabled: !k });
       this.pages = pages;
     },
     draw(ctx, t, m) {
       this.layout(); Cab2.backdrop(ctx);
       T.draw(ctx, 'Что расправим?', SW / 2, 10, { size: 14, align: 'c', color: c.gold, shadow: '#000' });
-      T.draw(ctx, this.list.length ? 'выберите пойманную бабочку — ей потребуются точные движения' : this.all.length ? 'под фильтры ничего не подходит — щёлкните фильтр, чтобы сменить значение' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 26, { size: 8, align: 'c', color: c.dim });
+      { const SP = Spreaders.equipped(); T.draw(ctx, SP.cap === 1 ? 'выберите пойманную бабочку — ей потребуются точные движения' : this.list.length ? `${SP.ru}: выберите до ${SP.cap} бабочек, расправьте первую — остальные получат тот же результат` : this.all.length ? 'под фильтры ничего не подходит — щёлкните фильтр, чтобы сменить значение' : 'нет неразобранных бабочек: наловите новых в экспедициях!', SW / 2, 26, { size: 8, align: 'c', color: c.dim }); }
       this.fbtns.forEach(b => { const hv = UIK.hit(b, m.x, m.y); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: b.on ? '#4a3a1c' : hv ? '#244a3c' : '#1a3228', border: b.on ? c.gold : c.line, shadow: false }); T.draw(ctx, fitStr(b.label, b.w - 6), b.x + b.w / 2, b.y + 3, { size: 8, align: 'c', color: b.on ? '#fff' : c.text }); });
-      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, false, cd.n); });
+      this.hover = -1; this.cards.forEach((cd, i) => { const h = UIK.hit(cd, m.x, m.y); if (h) this.hover = i; const chosen = cd.list.filter(sp => this.sel.includes(sp.uid)).length; specCard(ctx, cd.x, cd.y, cd.w, cd.h, cd.s, h, chosen > 0, cd.n);
+        if (chosen > 0) { const first = cd.list.some(sp => sp.uid === this.sel[0]); const lb = (first ? '★ ' : '') + 'выбрано ' + chosen, lw = T.width(lb, 8) + 8; UIK.panel(ctx, cd.x + cd.w - lw - 3, cd.y + 31, lw, 12, { fill: 'rgba(60,44,8,0.95)', border: c.gold, shadow: false }); T.draw(ctx, lb, cd.x + cd.w - lw / 2 - 3, cd.y + 33, { size: 8, align: 'c', color: '#ffe27a' }); } });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
-      T.draw(ctx, `${this.page + 1} / ${this.pages}`, 240, 250, { size: 8, align: 'c', color: c.text });
-      T.draw(ctx, this.list.length === this.all.length ? `всего необработанных: ${this.all.length}` : `показано ${this.list.length} из ${this.all.length}`, SW - 12, 250, { size: 8, align: 'r', color: c.dim });
+      T.draw(ctx, `${this.page + 1}/${this.pages}`, 205, 250, { size: 8, align: 'c', color: c.text });
+      { const cap = this.cap(); T.draw(ctx, cap > 1 ? `выбрано ${this.sel.length} из ${cap}` : '', SW - 12, 236, { size: 8, align: 'r', color: this.sel.length ? c.gold : c.dim }); T.draw(ctx, this.list.length === this.all.length ? `необработанных: ${this.all.length}` : `показано ${this.list.length} из ${this.all.length}`, 8, 236, { size: 8, color: c.dim }); }
     },
     click(x, y) {
       const fb = this.fbtns.find(b => UIK.hit(b, x, y)); if (fb) { this.f[fb.fid] = (this.f[fb.fid] + 1) % fb.n; this.page = 0; Snd.sfx.click(); return null; }
-      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y)); if (b) { if (b.id === 'prev') this.page--; else if (b.id === 'next') this.page++; Snd.sfx.click(); return b.id === 'close' ? { act: 'close' } : null; }
-      const cd = this.cards.find(cd => UIK.hit(cd, x, y)); if (cd) return { act: 'begin', spec: cd.s };
+      const b = this.btns.find(b => !b.disabled && UIK.hit(b, x, y));
+      if (b) {
+        Snd.sfx.click(); if (b.id === 'prev') this.page--; else if (b.id === 'next') this.page++;
+        else if (b.id === 'swap') { Spreaders.cycle(1); this.sel = this.chosen().map(s => s.uid); Snd.sfx.page(); }
+        else if (b.id === 'clear') this.sel = [];
+        else if (b.id === 'fill') { const cap = this.cap(); for (const sp of this.list) { if (this.sel.length >= cap) break; if (!this.sel.includes(sp.uid)) this.sel.push(sp.uid); } }
+        else if (b.id === 'go') { const ch = this.chosen(); if (ch.length) return { act: 'begin', spec: ch[0], extra: ch.slice(1) }; }
+        return b.id === 'close' ? { act: 'close' } : null;
+      }
+      const cd = this.cards.find(cd => UIK.hit(cd, x, y));
+      if (cd) {
+        const cap = this.cap(); if (cap === 1) return { act: 'begin', spec: cd.s, extra: [] };
+        // a click puts one more butterfly of this kind on the board; once there are no more (or the board is full) a click takes one off
+        const mine = cd.list.filter(sp => this.sel.includes(sp.uid)), free = cd.list.find(sp => !this.sel.includes(sp.uid));
+        if (free && this.sel.length < cap) { this.sel.push(free.uid); Snd.sfx.pin(); } else if (mine.length) { this.sel = this.sel.filter(u => u !== mine[mine.length - 1].uid); Snd.sfx.click(); } else Snd.sfx.deny();
+        return null;
+      }
       return null;
     },
   };
@@ -90,8 +110,8 @@ const Spread = (() => {
   // ------------------------------------------------------------------ the mini-game
   const G = {
     phase: 'none', spec: null, sp: null, pose: null, wi: 0, grabbed: false, pins: [], tear: 0, ring: 0, speed: 0, last: { x: 0, y: 0 }, doneT: 0, res: null, flash: 0, cur: { x: 0, y: 0 }, t: 0, tearSfx: 0, intro: 0,
-    begin(spec) {
-      this.spec = spec; this.sp = SPECIES_BY_ID[spec.sp]; this.pose = copy(Art.RAW); this.wi = 0; this.grabbed = false; this.pins = []; this.tear = 0; this.ring = 0; this.speed = 0; this.phase = 'work'; this.res = null; this.flash = 0; this.t = 0; this.intro = 4;
+    begin(spec, extra) {
+      this.extra = extra || []; this.spec = spec; this.sp = SPECIES_BY_ID[spec.sp]; this.pose = copy(Art.RAW); this.wi = 0; this.grabbed = false; this.pins = []; this.tear = 0; this.ring = 0; this.speed = 0; this.phase = 'work'; this.res = null; this.flash = 0; this.t = 0; this.intro = 4;
       this.last = { x: -100, y: -100 }; this.cur = { x: -100, y: -100 };
     },
     key() { return ORDER[this.wi]; },
@@ -135,9 +155,12 @@ const Spread = (() => {
       const dR = (kR, kL) => { const a = Art.tipPos(this.sp, kR, this.pose[kR]), b = Art.tipPos(this.sp, kL, this.pose[kL]); return Math.hypot(a[0] - b[0], a[1] - b[1]); };
       const sym = 100 * Math.exp(-Math.pow((dR('rf', 'lf') + dR('rh', 'lh')) / 2 / 5, 2));
       const mean = pn.reduce((a, b) => a + b.score, 0) / pn.length;
-      const q = Math.round(clamp(0.85 * mean + 0.15 * sym, 1, 100));
-      this.res = { acc: avg(p => p.acc), tim: avg(p => p.tim), gen: avg(p => p.gen), sym, q };
+      let q = Math.round(clamp(0.85 * mean + 0.15 * sym, 1, 100)), bonus = 0; const M = Spreaders.equipped().mech;
+      if (M && q < 100 && Math.random() < M.chance) { bonus = Math.min(M.bonus, 100 - q); q += bonus; }          // the mechanical board: a lucky batch comes out better by 5 %
+      this.res = { acc: avg(p => p.acc), tim: avg(p => p.tim), gen: avg(p => p.gen), sym, q, bonus, n: 1 };
       this.spec.q = q; this.spec.pose = copy(this.pose); Save.syncSpread(this.spec);
+      // the rest of the batch: the same result, the same pose (only the raw ones that are still there and not in a box, each once)
+      const done = new Set([this.spec.uid]); for (const e of this.extra || []) { const s2 = e && Save.spec(e.uid); if (!s2 || done.has(s2.uid) || s2.q !== null || s2.box) continue; done.add(s2.uid); s2.q = q; s2.pose = copy(this.pose); Save.syncSpread(s2); this.res.n++; }
       this.phase = 'result'; this.resT = 0; Snd.sfx.grade(q);
     },
     tick(dt) { if (this.phase === 'finish') { this.doneT -= dt; if (this.doneT <= 0) this.finish(); } if (this.phase === 'result') this.resT += dt; },
@@ -226,7 +249,7 @@ const Spread = (() => {
       const tips = r.q >= 95 ? 'Ювелирная работа — такую можно в музей!' : r.q >= 70 ? 'Крылья лежат ровно. Можно в коробку.' : r.q >= 50 ? 'Рука дрогнула. В коробку можно, но на стену лучше получше.' : 'Лучше расправить следующую аккуратнее.';
       T.para(ctx, tips, 256, 200, 205, { size: 8, color: c.dim, lh: 10 });
       this.btn = { id: 'ok', label: 'Готово', x: 360, y: 240, w: 110, h: 20, size: 10 }; UIK.btn(ctx, this.btn, UIK.hit(this.btn, m.x, m.y));
-      T.draw(ctx, 'бабочка перенесена в «расправленные»', 12, 246, { size: 8, color: '#6a8a78' });
+      T.draw(ctx, this.res.n > 1 ? `${this.res.n} бабочек расправлены одинаково и перенесены в «расправленные»${this.res.bonus ? ' · механизм: +' + this.res.bonus + '%!' : ''}` : this.res.bonus ? 'механизм добавил +' + this.res.bonus + '% · бабочка перенесена в «расправленные»' : 'бабочка перенесена в «расправленные»', 12, 246, { size: 8, color: this.res.bonus ? '#ffe27a' : '#6a8a78' });
     },
     click(x, y) { if (this.phase === 'result' && this.btn && UIK.hit(this.btn, x, y)) { Snd.sfx.click(); return 'done'; } return null; },
   };
