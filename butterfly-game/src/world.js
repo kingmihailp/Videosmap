@@ -276,10 +276,25 @@ const World = (() => {
       for (let i = 0; i < 9; i++) { const t = out[(i * 3) % out.length]; const len = r.range(4, 9); parts.push({ g: cylG(0.035, 0.035, len, 4), m: M(t.x * 0.7, t.y - 1.0 - len, t.z * 0.7), c: '#3a5a2a', j: 0.05 }); }
       return { g: merge(parts, r), rad: 1.0, h: H + 3 };
     },
-    dipt(r) {
-      const parts = []; const H = r.range(19, 26);
-      const top = trunk(parts, r, H * 0.92, 0.5, 0.3, 0.03, ['#a0907a', '#8a7a64', 0, H], 6);
-      for (let i = 0; i < 4; i++) { const a = i / 4 * 6.28 + 0.4; parts.push({ g: new THREE.BoxGeometry(0.12, 2.6, 1.2), m: M(Math.cos(a) * 0.55, 1.1, Math.sin(a) * 0.55, 0, -a, 0.15), c: '#8a7a64', j: 0.06 }); }
+    dipt(r) {        // a dipterocarp: a tall straight trunk with a flared, ridged foot, thin curved buttress fins, surface roots, bark ridges, moss and lichen
+      const parts = []; const H = r.range(19, 26), R0 = 0.52;
+      const top = trunk(parts, r, H * 0.92, R0, 0.3, 0.03, ['#a0907a', '#8a7a64', 0, H], 6, 9);
+      const rr = y => lerp(R0, 0.3, Math.min(1, y / (H * 0.92))) * 0.96;
+      parts.push({ g: cylG(R0 * 0.98, 1.0, 1.7, 11), c: ['#46563a', '#a0907a', 0, 1.9], j: 0.08 });                                  // the flared foot: mossy and damp at the ground, bark higher up
+      for (let i = 0; i < 16; i++) {          // bark ridges: thin tapering strands that follow the trunk and wander a little
+        const a = i / 16 * 6.28 + r.range(-0.2, 0.2), y0 = r.range(0.8, H * 0.3), y1 = Math.min(H * 0.9, y0 + r.range(H * 0.2, H * 0.5)), w = r.range(-0.3, 0.3);
+        const A = new V3(Math.cos(a) * rr(y0), y0, Math.sin(a) * rr(y0)), B = new V3(Math.cos(a + w) * rr(y1), y1, Math.sin(a + w) * rr(y1)); const L = limb(A, B, 0.04, 0.01, 3); parts.push({ g: L.g, m: L.m, c: r.pick(['#7a6c58', '#6a5c48', '#8c7c66', '#5e5242']), j: 0.1 });
+      }
+      const nb = r.int(5, 7);
+      for (let i = 0; i < nb; i++) {          // buttresses: thin curved fins that flare out of the trunk, sway, taper and sink into the ground
+        const a = i / nb * 6.28 + r.range(-0.25, 0.25), hb = r.range(2.2, 4.0), Lb = r.range(1.5, 2.8);
+        parts.push({ g: buttressG(Lb, hb, r.range(0.07, 0.13), r.range(-0.35, 0.35), r), m: M(Math.cos(a) * 0.38, -0.08, Math.sin(a) * 0.38, 0, -a, 0), c: ['#44503a', '#a0907a', 0, hb * 0.9], j: 0.1 });
+      }
+      for (let i = 0; i < nb; i++) {           // surface roots snaking away over the ground between the buttresses
+        let a = (i + 0.5) / nb * 6.28 + r.range(-0.25, 0.25), p = new V3(Math.cos(a) * 0.9, 0.3, Math.sin(a) * 0.9); const n = r.int(5, 7), rad0 = r.range(0.2, 0.3);
+        for (let k = 0; k < n; k++) { a += r.range(-0.25, 0.25); const q = new V3(p.x + Math.cos(a) * r.range(0.5, 0.9), Math.max(0.03, p.y - r.range(0.03, 0.09)) + r.range(-0.02, 0.04), p.z + Math.sin(a) * r.range(0.5, 0.9)); const L = limb(p, q, lerp(rad0, 0.03, k / n), lerp(rad0, 0.03, (k + 1) / n), 5); parts.push({ g: L.g, m: L.m, c: ['#5a5a3a', '#6a5a44', 0, 0.4], j: 0.08 }); p = q; }
+      }
+      for (let i = 0; i < 0; i++) { const a = r.range(0, 6.28), y = r.range(0.2, 3.2), q = rr(y); parts.push({ g: blobG(0.2, r, 0.3, 0), m: M(Math.cos(a) * q, y, Math.sin(a) * q, 0, 0, 0, 1.3, 0.5, 1.3), c: r.pick(['#3a6a30', '#4a7a38', '#2e5a2c']), j: 0.1 }); }       // moss patches low on the trunk
       const cols = ['#2e8236', '#3a923c', '#28702e', '#4aa244'];
       const out = crown(parts, r, top.x, H * 0.95, top.z, 3.8, 2.0, 3.8, 11, 1.6, 2.6, cols, 0.7);
       for (let i = 0; i < 4; i++) { const t = out[i]; const a = new V3(top.x * 0.9, H * r.range(0.72, 0.84), top.z * 0.9); const L = limb(a, new V3(t.x * 0.8, t.y - 0.5, t.z * 0.8), 0.22, 0.1, 6); parts.push({ g: L.g, m: L.m, c: '#8a7a64', j: 0.06 }); }
