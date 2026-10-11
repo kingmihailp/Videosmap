@@ -11,7 +11,7 @@ const Spreaders = (() => {
     { id: 's26', ru: 'Гигантская расправилка', cap: 26, price: 11000, cols: 3, pal: { base: '#241812', slat: '#e8dcc0', groove: '#14100c', trim: '#d8b048' }, desc: 'Эбеновая рама, планки из слоновой кости, двадцать шесть бабочек.' },
     { id: 's33', ru: 'Невероятно огромная расправилка', cap: 33, price: 14500, cols: 3, pal: { base: '#4a1c24', slat: '#c88a6a', groove: '#240a10', trim: '#e8c050' }, desc: 'Палисандр с золотой отделкой на тридцать три бабочки.' },
     { id: 's40', ru: 'Невероятно гигантская расправилка', cap: 40, price: 18500, cols: 4, pal: { base: '#e4dccb', slat: '#f4eedc', groove: '#9a9078', trim: '#e0b840', gem: '#3a78d8' }, desc: 'Ослепительная белая доска с золотом и сапфирами, сорок бабочек.' },
-    { id: 's50', ru: 'Механическая расправилка', cap: 50, price: 24000, cols: 5, mech: { chance: 0.1, bonus: 5 }, pal: { base: '#7a8696', slat: '#c8ccd2', groove: '#3a4250', trim: '#c88a40', gem: '#d83a2a' }, desc: 'Латунные шестерни и пружины: пятьдесят бабочек, и с шансом 10 % результат всей партии растёт на 5 %.' },
+    { id: 's50', ru: 'Механическая расправилка', cap: 50, price: 80000, cols: 5, mech: { chance: 0.1, bonus: 5 }, pal: { base: '#7a8696', slat: '#c8ccd2', groove: '#3a4250', trim: '#c88a40', gem: '#d83a2a' }, desc: 'Латунные шестерни и пружины: пятьдесят бабочек, и с шансом 10 % результат всей партии растёт на 5 %.' },
   ];
   const BY = Object.fromEntries(TYPES.map(t => [t.id, t]));
   const st = () => Save.data.spr || (Save.data.spr = { own: {}, eq: 'basic' });
