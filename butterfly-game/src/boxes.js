@@ -16,6 +16,14 @@ const Boxes = (() => {
   function pxSize(size) { const d = DIM[size]; return { w: d.c * CW + FR * 2, h: d.r * CH + FR * 2 }; }
   function sig(box) { return box.size + box.style + '|' + box.items.map(u => { const s = Save.spec(u); return s ? u + ':' + s.q : 0; }).join(','); }
 
+  const SPY = 27, LABY = 45, LABLINES = 4;       // the centre of the pinned butterfly and the top of its label inside a cell (the cell is CH = 80 high)
+  function labelLines(sp, s, W) {
+    const out = T.wrap(sp.ru, W, 8).map(t => ({ t }));                                                         // the name: always whole
+    out.push({ t: `${s.q}% · ${fmtDate(s.date)}` });                                                            // the quality and the date of the catch
+    const la = sp.la; if (la && out.length < LABLINES && T.width(la, 8) <= W) out.push({ t: la, dim: true });          // the Latin name
+    const b = BIOME_BY_ID[s.biome], pl = b ? (b.short || b.place) : ''; if (pl) { const L = T.wrap(pl, W, 8); if (out.length + L.length <= LABLINES) L.forEach(t => out.push({ t, dim: true })); }
+    return out;
+  }
   function canvas(box, bare) {
     const key = sig(box) + (bare ? '|bare' : ''); if (cache.has(key)) return cache.get(key);
     const d = DIM[box.size], st = STYLES[box.style] || STYLES[0], { w, h } = pxSize(box.size);
@@ -34,12 +42,12 @@ const Boxes = (() => {
       const cx0 = FR + (i % d.c) * CW, cy0 = FR + Math.floor(i / d.c) * CH; const s = Save.spec(u);
       if (!s) { x.strokeStyle = 'rgba(0,0,0,0.12)'; x.setLineDash([2, 3]); x.strokeRect(cx0 + 10.5, cy0 + 8.5, CW - 21, CH - 21); x.setLineDash([]); return; }
       const sp = SPECIES_BY_ID[s.sp];
-      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + 32, 1);
-        x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 26, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + 28, 2, 1); }
+      if (!bare) { Art.drawPose(x, sp, s.pose, cx0 + CW / 2, cy0 + SPY, 1);
+        x.fillStyle = '#d0d4dc'; x.fillRect(cx0 + CW / 2 - 1, cy0 + SPY - 6, 2, 2); x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(cx0 + CW / 2 - 1, cy0 + SPY - 4, 2, 1); }
       // label
-      x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1);
-      let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…';
-      T.draw(x, nm + tail, cx0 + CW / 2, cy0 + 62, { size: 8, align: 'c', color: st.ink });
+      // the label: the full name (wrapped, never cut), the quality and the date, then the Latin name and the place while there is room (4 lines of the smallest font)
+      const LW = CW - 12, lines = labelLines(sp, s, LW); x.fillStyle = st.lab; x.fillRect(cx0 + 6, cy0 + LABY, LW, CH - LABY - 2); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 6, cy0 + CH - 2, LW, 1);
+      lines.forEach((ln, k) => T.draw(x, ln.t, cx0 + CW / 2, cy0 + LABY + 1 + k * 8, { size: 8, align: 'c', color: ln.dim ? st.ink + 'bb' : st.ink }));
     });
     // brass corners
     if (st.brass) { x.fillStyle = '#d4a840'; for (const [a, b] of [[0, 0], [w - 8, 0], [0, h - 8], [w - 8, h - 8]]) { x.fillRect(a, b, 8, 8); } x.fillStyle = '#f0d070'; for (const [a, b] of [[1, 1], [w - 7, 1], [1, h - 7], [w - 7, h - 7]]) x.fillRect(a, b, 3, 1); x.fillStyle = '#6a4a10'; for (const [a, b] of [[3, 3], [w - 5, 3], [3, h - 5], [w - 5, h - 5]]) x.fillRect(a, b, 2, 2); }
@@ -95,7 +103,7 @@ const Boxes = (() => {
   const mountGroup = e => { const g = new THREE.Group(); const a = new THREE.Mesh(e.wg, e.wm), b = new THREE.Mesh(e.bg, e.bm); a.userData.noFloat = b.userData.noFloat = true; g.add(a, b); return g; };
   function mount3D(box, ppm) {
     const key = sig(box) + '|' + ppm; let e = m3cache.get(key);
-    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + 32, sc: 1 }); });
+    if (!e) { const d = DIM[box.size], { w, h } = pxSize(box.size), items = []; box.items.forEach((u, i) => { const sp = u ? Save.spec(u) : null; if (sp && SPECIES_BY_ID[sp.sp]) items.push({ sp: SPECIES_BY_ID[sp.sp], pose: sp.pose, cx: FR + (i % d.c) * CW + CW / 2, cy: FR + Math.floor(i / d.c) * CH + SPY, sc: 1 }); });
       e = buildMount(items, w, h, ppm); m3cache.set(key, e); if (m3cache.size > 160) m3cache.delete(m3cache.keys().next().value); }
     return mountGroup(e);
   }
@@ -419,7 +427,7 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { labelLines, slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
 
 // the empty boxes in stock (personal, like coins): bought from the collection trader, used up at the workbench, returned when a box is taken apart
