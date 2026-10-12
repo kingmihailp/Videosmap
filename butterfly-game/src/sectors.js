@@ -132,8 +132,9 @@ const Sectors = (() => {
       const m = this.MAP; ctx.imageSmoothingEnabled = false; UIK.panel(ctx, m.x - 4, m.y - 4, m.s + 8, m.s + 8, { fill: '#4a3820', border: '#e4cf94', shadow: false, inner: 'rgba(0,0,0,0)' }); ctx.fillStyle = '#7a5a30'; ctx.fillRect(m.x - 2, m.y - 2, m.s + 4, m.s + 4);
       ctx.drawImage(mapImage(S, m.s, this.hover, this.play.world), m.x, m.y);
       for (const q of S.rects) {          // a banner for every zone: its number and name on a dark plaque with the zone's colour
-        const [cx, cy] = this.mapPos((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2), hot0 = this.hover === q.i, w = hot0 ? Math.min(m.s - 4, T.width(q.name, 8) + 22) : 12, bx = Math.round(cx - w / 2), by = Math.round(cy - 6), hot = this.hover === q.i;
-        ctx.fillStyle = 'rgba(30,20,10,0.82)'; ctx.fillRect(bx, by, w, 12); ctx.fillStyle = q.col; ctx.fillRect(bx, by, 12, 12); ctx.fillStyle = hot ? '#fff' : '#e8d8b0'; ctx.fillRect(bx + 12, by, w - 12, 1); ctx.fillRect(bx + 12, by + 11, w - 12, 1); ctx.fillRect(bx + w - 1, by, 1, 12);
+        const [cx, cy] = this.mapPos((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2), hot0 = this.hover === q.i, w = hot0 ? Math.min(m.s - 4, T.width(q.name, 8) + 22) : 14, bx = Math.round(cx - w / 2), by = Math.round(cy - 6), hot = this.hover === q.i;
+        if (hot) { ctx.fillStyle = 'rgba(30,20,10,0.88)'; ctx.fillRect(bx + 6, by + 1, w - 6, 10); ctx.fillStyle = '#fff'; ctx.fillRect(bx + 6, by + 1, w - 6, 1); ctx.fillRect(bx + 6, by + 10, w - 6, 1); ctx.fillRect(bx + w - 1, by + 1, 1, 10); }
+        { const cx = bx + 6, cy = by + 6; for (let dy = -7; dy <= 7; dy++) for (let dx = -7; dx <= 7; dx++) { const d = dx * dx + dy * dy; if (d <= 56) { ctx.fillStyle = d > 42 ? (hot ? '#fff' : '#1a1008') : q.col; ctx.fillRect(cx + dx, cy + dy, 1, 1); } } }       // a round badge (a pixel disc with a dark rim)
         T.draw(ctx, String(q.i + 1), bx + 6, by + 2, { size: 8, align: 'c', color: '#1a1008' }); if (hot) T.draw(ctx, q.name, bx + 16, by + 2, { size: 8, color: '#fff' });
       }
       { const cx = m.x + m.s - 15, cy = m.y + 17, ink = '#3a2812'; ctx.fillStyle = ink;          // the compass rose
