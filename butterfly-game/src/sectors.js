@@ -141,10 +141,15 @@ const Sectors = (() => {
         ctx.fillStyle = '#a02818'; ctx.fillRect(cx - 1, cy - 6, 3, 1); ctx.fillRect(cx - 2, cy - 5, 5, 1); ctx.fillRect(cx, cy - 4, 1, 2); T.draw(ctx, 'С', cx, cy - 16, { size: 8, align: 'c', color: ink }); T.draw(ctx, 'Ю', cx, cy + 9, { size: 8, align: 'c', color: ink }); }
       { const mpp = 2 * S.R / m.s, len = Math.round(50 / mpp), bx = m.x + 8, by = m.y + m.s - 14, ink = '#3a2812';          // the scale bar: 50 m
         ctx.fillStyle = ink; ctx.fillRect(bx, by, len, 3); ctx.fillStyle = '#f0e4c0'; ctx.fillRect(bx + 1, by + 1, len / 2 - 1, 1); ctx.fillRect(bx + len / 2, by + 1, len / 2 - 1, 1); T.draw(ctx, '50 м', bx + len / 2, by + 5, { size: 8, align: 'c', color: ink }); }
-      // the players
-      if (p.mp) for (const r of p.others()) { const [x, y] = this.mapPos(r.pos.x, r.pos.z); ctx.fillStyle = '#9ae0b0'; ctx.fillRect(x - 1, y - 1, 3, 3); }
-      { const [x, y] = this.mapPos(p.player.pos.x, p.player.pos.z), blink = Math.floor(t * 3) % 2; ctx.fillStyle = '#000'; ctx.fillRect(x - 3, y - 3, 7, 7); ctx.fillStyle = blink ? '#fff' : c.gold; ctx.fillRect(x - 2, y - 2, 5, 5);
-        const a = -p.player.yaw; ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(x + Math.sin(a) * 6) - 1, Math.round(y - Math.cos(a) * 6) - 1, 2, 2); }
+      // the players: an arrow made of whole pixels that points where the player looks; every other player has one of his own colour with his nick
+      const arrow = (x, y, yaw, col) => { x = Math.round(x); y = Math.round(y); const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+        for (const [pad, fill] of [[1.0, '#120a04'], [0, col]]) { ctx.fillStyle = fill;
+          for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) { const u = dx * fx + dy * fz, v = -dx * fz + dy * fx;
+            const head = u >= -0.5 - pad && u <= 6.5 + pad && Math.abs(v) <= (6.5 - u) * 0.62 + pad, tail = u >= -4.5 - pad && u < 0.5 && Math.abs(v) <= 0.9 + pad; if (head || tail) ctx.fillRect(x + dx, y + dy, 1, 1); } } };
+      const tag = (x, y, name, col) => { const w = T.width(name, 8) + 6, tx = clamp(Math.round(x - w / 2), m.x + 1, m.x + m.s - w - 1), ty = clamp(Math.round(y - 19), m.y + 1, m.y + m.s - 11); ctx.fillStyle = 'rgba(18,10,4,0.85)'; ctx.fillRect(tx, ty, w, 10); ctx.fillStyle = col; ctx.fillRect(tx, ty, 2, 10); T.draw(ctx, name, tx + 4, ty + 1, { size: 8, color: '#fff' }); };
+      const hue = n => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return `hsl(${h % 360},75%,58%)`; };
+      if (p.mp) for (const r of p.others()) { const [x, y] = this.mapPos(r.pos.x, r.pos.z), col = hue(r.name); arrow(x, y, r.yaw || 0, col); tag(x, y, r.name, col); }
+      { const [x, y] = this.mapPos(p.player.pos.x, p.player.pos.z), blink = Math.floor(t * 2.5) % 2; arrow(x, y, p.player.yaw, blink ? '#ffffff' : c.gold); if (p.mp) tag(x, y, Net.name + ' (вы)', c.gold); }
       // all the species
       let found = 0; for (const cl of this.cells) {
         const sp = cl.sp, has = G(sp.id), dim = this.hover >= 0 && cl.sec !== this.hover, q = S.rects[cl.sec]; if (has) found++;
