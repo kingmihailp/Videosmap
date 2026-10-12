@@ -157,6 +157,8 @@ const Screens = (() => {
   }
   const MAPX = 40, MAPY = 30, MS = 2;
   const pinPos = b => ({ x: Math.round(MAPX + (b.lon + 180) / 360 * MAP_W * MS), y: Math.round(MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS) });      // whole pixels: the pin and its frame stay crisp and centred
+  // a location's description in the info panel of the world map: at most 4 lines (the panel ends there); a longer text is cut with an ellipsis
+  const descFit = (ctx, str, x, y, w, maxLines) => { let L = T.wrap(str, w, 8); if (L.length > maxLines) { L = L.slice(0, maxLines); let t = L[maxLines - 1]; while (t.length > 1 && T.width(t + '…', 8) > w) t = t.slice(0, -1); L[maxLines - 1] = t.replace(/[\s,.;:—-]+$/, '') + '…'; } L.forEach((l, i) => T.draw(ctx, l, x, y + i * 10, { size: 8, color: c.text })); };
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
     layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 62, h: 16 }, { id: 'market', label: 'Рынок', x: 142, y: 8, w: 52, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
@@ -214,9 +216,9 @@ const Screens = (() => {
       if (!show) { T.draw(ctx, 'Наведи на булавку и выбери биом. Цифры 1–9 — быстрый выбор.', SW / 2, iy + 22, { size: 8, align: 'c', color: c.dim }); }
       else {
         T.draw(ctx, b.name, 14, iy, { size: 10, color: biomeCol[b.id] });
-        if (b.secret) { T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°S ${Math.abs(b.lon).toFixed(1)}°W`, 14, iy + 13, { size: 8, color: c.dim }); T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 }); for (let k = 0; k < 18; k++) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); T.draw(ctx, '?', 286 + (k % 9) * 22, iy + Math.floor(k / 9) * 11 + 1, { size: 8, align: 'c', color: Math.random() < 0.02 ? c.red : '#4a6a60' }); } T.draw(ctx, `поймано ${Save.biomeCount(b)} из ???`, 276, iy + 45, { size: 8, color: c.text }); T.draw(ctx, fit(b.climate, 116), 276, iy + 56, { size: 8, color: c.red }); } else {
+        if (b.secret) { T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°S ${Math.abs(b.lon).toFixed(1)}°W`, 14, iy + 13, { size: 8, color: c.dim }); descFit(ctx, b.desc, 14, iy + 25, 250, 4); for (let k = 0; k < 18; k++) { ctx.fillStyle = '#1a2a2a'; ctx.fillRect(276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); T.draw(ctx, '?', 286 + (k % 9) * 22, iy + Math.floor(k / 9) * 11 + 1, { size: 8, align: 'c', color: Math.random() < 0.02 ? c.red : '#4a6a60' }); } T.draw(ctx, `поймано ${Save.biomeCount(b)} из ???`, 276, iy + 45, { size: 8, color: c.text }); T.draw(ctx, fit(b.climate, 116), 276, iy + 56, { size: 8, color: c.red }); } else {
         T.draw(ctx, `${b.place} · ${Math.abs(b.lat).toFixed(1)}°${b.lat >= 0 ? 'N' : 'S'} ${Math.abs(b.lon).toFixed(1)}°${b.lon >= 0 ? 'E' : 'W'}`, 14, iy + 13, { size: 8, color: c.dim });
-        T.para(ctx, b.desc, 14, iy + 25, 250, { size: 8, color: c.text, lh: 10 });
+        descFit(ctx, b.desc, 14, iy + 25, 250, 4);
         b.species.forEach((sp, k) => { const has = Save.has(sp.id); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(sp, !has, '#587868'), 276 + (k % 9) * 22, iy + Math.floor(k / 9) * 11, 20, 10); });
         T.draw(ctx, `поймано ${Save.biomeCount(b)} из ${b.species.length}`, 276, iy + 45, { size: 8, color: c.text });
         T.draw(ctx, fit(`${b.alt} · ${b.climate}`, 116), 276, iy + 56, { size: 8, color: c.dim });
