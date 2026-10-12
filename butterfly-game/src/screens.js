@@ -127,18 +127,21 @@ const Screens = (() => {
   function buildMapCanvas() {
     const cv = document.createElement('canvas'); cv.width = MAP_W; cv.height = MAP_H; const x = cv.getContext('2d'); const d = x.createImageData(MAP_W, MAP_H); const nz = new Noise2(5);
     const land = (i, j) => (i >= 0 && j >= 0 && i < MAP_W && j < MAP_H) ? MAP_ROWS[j][i] === '1' : false;
+    const mixRGB = (p, q, t) => p.map((v, k) => v + (q[k] - v) * t);
     for (let j = 0; j < MAP_H; j++) for (let i = 0; i < MAP_W; i++) {
       const lon = i / MAP_W * 360 - 180, lat = MAP_LAT_TOP - j / MAP_H * (MAP_LAT_TOP - MAP_LAT_BOT); const o = (j * MAP_W + i) * 4; let col;
       const n = nz.fbm(i * 0.18, j * 0.18, 3), n2 = nz.at(i * 0.9, j * 0.9);
       if (land(i, j)) {
-        const al = Math.abs(lat); let base;
-        if (al > 66) base = '#dce8ec'; else if (al > 55) base = '#4e7058'; else if (al > 40) base = '#5a8a42'; else if (al > 25) base = '#7a9a4a'; else if (al > 12) base = '#a0a050'; else base = '#3c7e3a';
-        if (lat > 14 && lat < 33 && lon > -16 && lon < 58) base = '#d8bc7c';
-        if (lat < -19 && lat > -33 && lon > 118 && lon < 146) base = '#d4b070';
-        if (lat > 36 && lat < 48 && lon > 85 && lon < 118) base = '#b8a878';
-        if (lat > 30 && lat < 38 && lon > -118 && lon < -105) base = '#c8b070';
-        if (lat < -20 && lat > -34 && lon > 12 && lon < 24) base = '#c8b078';
-        col = hex2rgb(base); const k = 0.9 + n * 0.22 + (n2 - 0.5) * 0.08; col = col.map(v => v * k);
+        // climate belts blended smoothly (latitude warped by noise), deserts as soft noisy ellipses, a little relief and an ordered dither: no hard rectangles
+        const al = Math.abs(lat) + (nz.fbm(i * 0.07 + 40, j * 0.07, 3) - 0.5) * 16;
+        const stops = [[0, '#2f7a36'], [11, '#3e8a38'], [20, '#86984a'], [30, '#7a9a4a'], [43, '#5a8a42'], [56, '#4a7254'], [66, '#8aa092'], [74, '#dce8ec']];
+        let k0 = 0; while (k0 < stops.length - 2 && al > stops[k0 + 1][0]) k0++; const A = stops[k0], B = stops[k0 + 1], tt = clamp((al - A[0]) / (B[0] - A[0])); col = mixRGB(hex2rgb(A[1]), hex2rgb(B[1]), tt * tt * (3 - 2 * tt));
+        const sand = hex2rgb('#d8bc7c'), steppe = hex2rgb('#b8a878');
+        const blob = (cla, clo, rx, ry) => { const dx = (lon - clo) / rx, dy = (lat - cla) / ry, d = Math.hypot(dx, dy) + (nz.fbm(i * 0.11 + 7, j * 0.11 + 3, 3) - 0.5) * 0.55; return clamp((1.05 - d) * 3.2); };
+        const desert = Math.max(blob(24, 10, 44, 9), blob(24, 46, 14, 9), blob(-25, 132, 16, 9), blob(-24, 18, 8, 7), blob(33, -112, 8, 5), blob(-35, -68, 6, 12) * 0.6);
+        col = mixRGB(col, sand, desert); col = mixRGB(col, steppe, Math.max(blob(43, 102, 18, 6), blob(46, 62, 18, 5)) * (1 - desert));
+        const n3 = nz.fbm(i * 0.33 + 90, j * 0.33, 3), bay = [0, 1, 0.25, 0.75, 0.5, 0.5, 0.75, 0.25, 0.125, 0.875, 0.375, 0.625, 0.625, 0.375, 0.875, 0.125][(i & 3) + (j & 3) * 4];
+        const kk = 0.9 + n * 0.16 + (n3 - 0.5) * 0.32 + (bay - 0.5) * 0.07; col = col.map(v => v * kk);
         if (!land(i, j - 1) || !land(i - 1, j) || !land(i + 1, j) || !land(i, j + 1)) col = col.map(v => v * 0.62);
         else if (!land(i - 1, j - 1) || !land(i + 1, j + 1)) col = col.map(v => v * 0.85);
       } else {
@@ -153,7 +156,7 @@ const Screens = (() => {
     return cv;
   }
   const MAPX = 40, MAPY = 30, MS = 2;
-  const pinPos = b => ({ x: MAPX + (b.lon + 180) / 360 * MAP_W * MS, y: MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS });
+  const pinPos = b => ({ x: Math.round(MAPX + (b.lon + 180) / 360 * MAP_W * MS), y: Math.round(MAPY + (MAP_LAT_TOP - b.lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS) });      // whole pixels: the pin and its frame stay crisp and centred
   const wmap = {
     sel: -1, hover: -1, btns: [], t0: 0,
     layout() { this.btns = [{ id: 'back', label: '← Назад', x: 8, y: 8, w: 62, h: 16 }, { id: 'cabinet', label: 'Кабинет', x: 76, y: 8, w: 62, h: 16 }, { id: 'market', label: 'Рынок', x: 142, y: 8, w: 52, h: 16 }, { id: 'journal', label: `Коллекция ${collText()}`, x: SW - 128, y: 8, w: 120, h: 16 }]; this.go = { id: 'go', label: 'В ПУТЬ ›', x: SW - 76, y: SH - 28, w: 68, h: 20, size: 10, disabled: this.sel < 0 }; },
@@ -171,7 +174,10 @@ const Screens = (() => {
       ctx.fillStyle = 'rgba(40,24,8,0.35)'; for (let lon = -150; lon <= 150; lon += 30) { const px = MAPX + (lon + 180) / 360 * MAP_W * MS; for (let y = MAPY; y < MAPY + MAP_H * MS; y += 4) ctx.fillRect(Math.round(px), y, 1, 1); }
       for (let lat = -30; lat <= 60; lat += 30) { const py = MAPY + (MAP_LAT_TOP - lat) / (MAP_LAT_TOP - MAP_LAT_BOT) * MAP_H * MS; for (let x = MAPX; x < MAPX + MAP_W * MS; x += 4) ctx.fillRect(x, Math.round(py), 1, 1); T.draw(ctx, (lat > 0 ? lat + '°N' : lat < 0 ? -lat + '°S' : '0°'), MAPX + 2, py - 9, { size: 8, color: 'rgba(40,24,8,0.7)' }); }
       // compass
-      const cx = MAPX + 22, cy = MAPY + MAP_H * MS - 22; ctx.fillStyle = '#4a2a10'; ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 3, cy); ctx.lineTo(cx, cy + 12); ctx.lineTo(cx - 3, cy); ctx.fill(); ctx.fillStyle = '#b02a1c'; ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx + 3, cy); ctx.lineTo(cx - 3, cy); ctx.fill(); ctx.fillStyle = '#4a2a10'; ctx.fillRect(cx - 12, cy, 24, 1); T.draw(ctx, 'N', cx, cy - 22, { size: 8, align: 'c', color: '#3a2008' });
+      { const cx = MAPX + 22, cy = MAPY + MAP_H * MS - 22;          // a compass built of whole pixels: a needle (red north, brown south), a cross bar and ticks
+        for (let dy = -12; dy <= 12; dy++) { const hw = Math.round(3 * (1 - Math.abs(dy) / 12.5)); ctx.fillStyle = dy < 0 ? '#b02a1c' : '#4a2a10'; ctx.fillRect(cx - hw, cy + dy, 2 * hw + 1, 1); }
+        ctx.fillStyle = '#4a2a10'; ctx.fillRect(cx - 12, cy, 25, 1); ctx.fillRect(cx - 12, cy - 1, 1, 3); ctx.fillRect(cx + 12, cy - 1, 1, 3); ctx.fillStyle = '#e8d8a8'; ctx.fillRect(cx, cy, 1, 1);
+        T.draw(ctx, 'N', cx, cy - 22, { size: 8, align: 'c', color: '#3a2008' }); }
       // pins
       Wings.check();                                                      // wings / the ocean map owed to a player who had already caught everything before this rule
       this.hover = -1;
@@ -182,7 +188,7 @@ const Screens = (() => {
         ctx.fillStyle = '#1a0e06'; ctx.fillRect(p.x - 4, p.y - 13 + bob, 9, 9); ctx.fillRect(p.x - 2, p.y - 5 + bob, 5, 4); ctx.fillRect(p.x - 1, p.y - 2 + bob, 3, 2);
         ctx.fillStyle = col; ctx.fillRect(p.x - 3, p.y - 12 + bob, 7, 7); ctx.fillRect(p.x - 1, p.y - 5 + bob, 3, 3); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(p.x - 2, p.y - 11 + bob, 2, 2);
         if (done) { ctx.fillStyle = c.gold; ctx.fillRect(p.x - 1, p.y - 17 + bob, 3, 3); ctx.fillRect(p.x - 2, p.y - 16 + bob, 5, 1); }
-        if (sel) { ctx.strokeStyle = c.gold; ctx.strokeRect(p.x - 7.5, p.y - 16.5 + bob, 15, 17); }
+        if (sel) { ctx.fillStyle = c.gold; const fx = p.x - 7, fy = p.y - 16 + bob; ctx.fillRect(fx, fy, 15, 1); ctx.fillRect(fx, fy + 18, 15, 1); ctx.fillRect(fx, fy, 1, 19); ctx.fillRect(fx + 14, fy, 1, 19); }       // 15 x 19 px, the pin (9 px wide, from y-13 to y) sits in its middle
         { const n = String(i + 1); if (n.length === 1) T.draw(ctx, n, p.x + 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); else { T.draw(ctx, n[0], p.x - 1, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); T.draw(ctx, n[1], p.x + 3, p.y - 13 + bob, { size: 8, align: 'c', color: '#10201c' }); } }      // the 3x5 glyph sits in the middle of the 7x7 marker; pins past the ninth have two digits
         if (hov || sel) T.draw(ctx, short[b.id], p.x, p.y + 2, { size: 8, align: 'c', color: '#2a1608', outline: '#f4e8c0' });
       });
