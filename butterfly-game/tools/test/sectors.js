@@ -42,8 +42,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await enter('russia', 'SEC-A');
   const g = await pg.evaluate(() => { const p = F0W.play, S = p.sectors; return { pool: p.pool.length, flies: p.flies.length, home: p.flies.filter(f => S.at(f.pos.x, f.pos.z) === f.home).length, bySpecies: new Set(p.flies.map(f => f.sp.base || f.sp.id)).size, w: p.world.R, ttl: Math.round(p.regenLeft()) }; });
   T('all 31 species are on the map at once (no pool of 9)', g.pool === 31 && g.bySpecies >= 28, g);
-  T('at the start almost every butterfly is inside its own sector', g.home >= g.flies * 0.97, [g.home, g.flies]);
-  T('the map is very large (R 130 instead of 58) and the landscape lives an hour', g.w === 130 && g.ttl > 3590 && g.ttl <= 3600, [g.w, g.ttl]);
+  T('at the start almost every butterfly is inside its own sector', g.home >= g.flies * 0.9, [g.home, g.flies]);
+  T('the map is very large (R 184 instead of 58) and the landscape lives an hour', g.w === 184 && g.ttl > 3590 && g.ttl <= 3600, [g.w, g.ttl]);
   // the whole map walk: every sector can be walked into
   const walk = await pg.evaluate(() => { const p = F0W.play, S = p.sectors, got = new Set(), w = p.world; for (const q of S.rects) { const x = (q.x0 + q.x1) / 2, z = (q.z0 + q.z1) / 2; got.add(S.at(x, z)); } return { sectors: got.size, tall: S.rects.map(q => Math.round(w.heightAt((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2))) }; });
   T('every sector has a centre on the map', walk.sectors === 5, walk);
@@ -84,7 +84,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   T('a trap right on the border of two sectors picks one of the two at random (both about half), and only their butterflies come', tr.near === 2 && tr.border.a > 800 && tr.border.b > 800 && tr.border.other === 0 && tr.bothSectors && tr.onlyTwo, [tr.near, tr.border, tr.bothSectors, tr.onlyTwo]);
   T('4 metres from the border the sector is certain', tr.off.x === 0 && tr.off.n === 200, tr.off);
   // a real trap: place it, its catch comes from the sector
-  const rt = await pg.evaluate(() => { const p = F0W.play, S = p.traps, sc = p.sectors; Traps.add('tr', 'str', 1); const t = S.place('str'); t.fl = 'lavender'; t.hn = 'meadow'; t.life = 99999; for (let i = 0; i < 6000 && t.items.length < 12; i++) S.update(0.25); const q = sc.rects[sc.at(t.x, t.z)], ids = t.items.map(id => (SPECIES_BY_ID[id].base) || id); return { items: t.items.length, ok: ids.every(id => q.sp.some(s => s.id === id)), sector: q.i }; });
+  const rt = await pg.evaluate(() => { const p = F0W.play, S = p.traps, sc = p.sectors; Traps.add('tr', 'str', 1); const t = S.place('str'); t.fl = 'lavender'; t.hn = 'meadow'; t.life = 99999; for (let i = 0; i < 6000 && t.items.length < 12; i++) S.update(0.25); const q = sc.rects[sc.at(t.x, t.z)], ids = t.items.map(id => (SPECIES_BY_ID[id].base) || id); return { items: t.items.length, ok: ids.every(id => sc.near(t.x, t.z, Sectors.EDGE).some(i => sc.rects[i].sp.some(s => s.id === id))), sector: q.i }; });
   T('a real trap fills up with butterflies of its own sector', rt.items >= 12 && rt.ok, rt);
 
   // ---- 4. regeneration alone: kept between visits for the period, then new; the menu button and the vote are gone

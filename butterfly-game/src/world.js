@@ -269,7 +269,20 @@ const World = (() => {
     giant(r) {
       const parts = []; const H = r.range(15, 22);
       const top = trunk(parts, r, H * 0.9, 0.85, 0.5, 0.04, ['#6a5a48', '#5a4a3a', 0, H], 6);
-      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; parts.push({ g: new THREE.BoxGeometry(0.16, 3.4, 1.7), m: M(Math.cos(a) * 0.75, 1.5, Math.sin(a) * 0.75, 0, -a, 0.22), c: '#5a4a3a', j: 0.06 }); }
+      parts.push({ g: cylG(0.8, 1.35, 1.9, 11), c: ['#4a4a34', '#6a5a48', 0, 2.0], j: 0.08 });                                          // the flared, mossy foot
+      for (let i = 0; i < 14; i++) {            // bark ridges that follow the trunk
+        const a = i / 14 * 6.28 + r.range(-0.2, 0.2), y0 = r.range(0.8, H * 0.25), y1 = Math.min(H * 0.85, y0 + r.range(H * 0.2, H * 0.5)), w = r.range(-0.3, 0.3), rr0 = 0.8 - 0.15 * y0 / H, rr1 = 0.8 - 0.35 * y1 / H;
+        const L = limb(new V3(Math.cos(a) * rr0, y0, Math.sin(a) * rr0), new V3(Math.cos(a + w) * rr1, y1, Math.sin(a + w) * rr1), 0.05, 0.015, 3); parts.push({ g: L.g, m: L.m, c: r.pick(['#6a5a48', '#54463a', '#7a6a56']), j: 0.1 });
+      }
+      const nb = r.int(6, 8);
+      for (let i = 0; i < nb; i++) {            // buttresses: tall thin fins that flare out of the trunk, sway, taper and sink into the ground
+        const a = i / nb * 6.28 + r.range(-0.25, 0.25), hb = r.range(3.2, 5.6), Lb = r.range(2.4, 4.2);
+        parts.push({ g: buttressG(Lb, hb, r.range(0.12, 0.2), r.range(-0.5, 0.5), r), m: M(Math.cos(a) * 0.62, -0.1, Math.sin(a) * 0.62, 0, -a, 0), c: ['#4a4a34', '#6a5a48', 0, hb], j: 0.1 });
+      }
+      for (let i = 0; i < nb; i++) {            // surface roots snaking away over the ground between the buttresses
+        let a = (i + 0.5) / nb * 6.28 + r.range(-0.25, 0.25), p = new V3(Math.cos(a) * 1.3, 0.35, Math.sin(a) * 1.3); const n = r.int(5, 8), rad0 = r.range(0.2, 0.32);
+        for (let k = 0; k < n; k++) { a += r.range(-0.25, 0.25); const q = new V3(p.x + Math.cos(a) * r.range(0.6, 1.1), Math.max(0.03, p.y - r.range(0.03, 0.1)) + r.range(-0.02, 0.04), p.z + Math.sin(a) * r.range(0.6, 1.1)); const L = limb(p, q, lerp(rad0, 0.03, k / n), lerp(rad0, 0.03, (k + 1) / n), 5); parts.push({ g: L.g, m: L.m, c: ['#4a4a34', '#6a5a44', 0, 0.4], j: 0.08 }); p = q; }
+      }
       const cols = ['#2e7a34', '#3a8a3a', '#26682c', '#4a9a40']; const cy = H * 0.93;
       const out = crown(parts, r, top.x, cy, top.z, 5.2, 1.6, 5.2, 13, 1.9, 3.0, cols, 0.65);
       for (let i = 0; i < 5; i++) { const t = out[i * 2]; const a = new V3(top.x * 0.8, H * r.range(0.6, 0.75), top.z * 0.8); const L = limb(a, new V3(t.x * 0.8, t.y - 0.6, t.z * 0.8), 0.3, 0.14, 6); parts.push({ g: L.g, m: L.m, c: '#5a4a3a', j: 0.06 }); }
@@ -698,7 +711,7 @@ const World = (() => {
     const env = Object.assign({}, ENV[biome.id]);
     const BIGMAP = !!env.highland;         // the archipelago has its own plan; every other location is one huge map (five times the old area) split into sectors (see sectors.js)
     const LITE = !BIGMAP && /[#&]lite\b/.test(location.hash);       // debug / very weak machines (#lite in the address): the old small map, for tests with several browsers
-    const SIZE = BIGMAP ? 360 : LITE ? 180 : 320, SEG = LITE ? 180 : 300, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : LITE ? 58 : 130, CELL = SIZE / SEG;
+    const SIZE = BIGMAP ? 360 : LITE ? 180 : 440, SEG = BIGMAP ? 300 : LITE ? 180 : 400, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : LITE ? 58 : 184, CELL = SIZE / SEG;
     const SC = BIGMAP ? 1 : PLAY_R / 58;     // distances that the recipes give for the old small map grow with the map
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
@@ -803,7 +816,7 @@ const World = (() => {
       if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
       return { isl, sites, edges, sdOf, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + o.area, 0) };
     })() : null;
-    const K = hl ? clamp(hl.area / 5200, 1, 4) : LITE ? 1 : 4;          // how much more there is to grow and to catch on a big map
+    const K = hl ? clamp(hl.area / 5200, 1, 4) : LITE ? 1 : 7;          // how much more there is to grow and to catch on a big map
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
     const isTop = (o, x, z, sdv) => {
       const sd = sdv === undefined ? hl.sdOf(o, x, z) : sdv; let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
@@ -829,7 +842,7 @@ const World = (() => {
       let h = (noise.fbm(x * FREQ + 11, z * FREQ + 5, 4) - 0.5) * 2 * AMP;
       const r = Math.hypot(x, z);
       h *= smooth(5, 16, r);
-      h += Math.pow(clamp((r - 56) / 30), 2) * (AMP * 2.6 + 5) * (0.75 + 0.5 * noise.at(x * 0.05 + 40, z * 0.05 + 7));
+      h += Math.pow(clamp((r - (PLAY_R - 2)) / 30), 2) * (AMP * 2.6 + 5) * (0.75 + 0.5 * noise.at(x * 0.05 + 40, z * 0.05 + 7));
       if (lava) { const [dc, al, ww] = lavaNear(x, z); if (dc < ww * 1.9) h += smooth(ww * 1.9, ww * 0.7, dc) * (0.55 + Math.sin(al * 2.4 + noise.at(x * 0.15, z * 0.15) * 5) * 0.14 + (noise.at(x * 0.8, z * 0.8) - 0.5) * 0.4); }       // the crust of the lava flow: raised, with ropy ridges across the flow
       if (env.bog) { const hm = noise.at(x * 0.55 + 7, z * 0.55 + 3), rg = Math.sin((x * 0.8 + z * 0.6) * 0.16 + noise.at(x * 0.03, z * 0.03) * 6); h += (Math.max(0, hm - 0.5) * 1.1 + rg * 0.16) * smooth(5, 12, r); }   // sphagnum lawn: low hummocks and long ridge/hollow stripes
       return h;
@@ -850,13 +863,14 @@ const World = (() => {
       for (let tries = 0; tries < 60; tries++) {
         const a = rng.range(0, 6.28), d = rng.range(24, 44) * SC, r = rng.range(3.8, 6.2); const x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (waters.some(w => w.kind === 'pond' && Math.hypot(w.x - x, w.z - z) < 30)) continue;
+        if (waters.some(w => w.pts && w.pts.some((q, i) => i % 3 === 0 && Math.hypot(q.x - x, q.z - z) < r * 3.6 + 14 + q.w * 5))) continue;       // never on top of a river
         let lvl = 1e9; for (let k = 0; k < 16; k++) { const aa = k / 16 * 6.283; lvl = Math.min(lvl, baseH(x + Math.cos(aa) * r * 2.6, z + Math.sin(aa) * r * 2.6)); }
         lvl = Math.min(lvl, baseH(x, z)) + 0.02; waters.push({ kind: 'pond', x, z, r, level: lvl }); return;
       }
     }
     function makeRiver(kind) {
       const wBase = kind === 'river' ? rng.range(3.2, 4.6) : rng.range(1.7, 2.6);
-      const a0 = rng.range(0, 6.283); const a1 = a0 + Math.PI + rng.range(-0.7, 0.7); const Rr = 86 * SC;
+      const a0 = rng.range(0, 6.283); const a1 = a0 + Math.PI + rng.range(-0.7, 0.7); const Rr = BIGMAP ? 86 : PLAY_R * 1.45;
       const S = new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr), E = new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr);
       const NP = Math.round(130 * SC); const pts = []; const amp = rng.range(14, 26) * SC, no = rng.range(0, 99);
       const dir = E.clone().sub(S); const len = dir.length(); dir.normalize(); const nrm = new V3(-dir.z, 0, dir.x);
@@ -872,10 +886,12 @@ const World = (() => {
       for (let it = 0; it < 3; it++) { const src = lv; lv = src.map((v, i) => { let s = 0, c = 0; for (let k = -6 * SC | 0; k <= 6 * SC; k++) { s += src[clamp(i + k, 0, NP - 1) | 0]; c++; } return s / c; }); }
       for (let i = 1; i < NP; i++) lv[i] = Math.min(lv[i], lv[i - 1] - 0.004);
       pts.forEach((p, i) => { p.level = lv[i]; });
-      waters.push({ kind: 'river', pts, w: wBase });
+      // a river never crosses another river and never runs over a pond (they would be two water surfaces one above the other)
+      for (const w of waters) { if (w.pts) { for (let i = 0; i < NP; i += 3) for (let j = 0; j < w.pts.length; j += 3) if (Math.hypot(pts[i].x - w.pts[j].x, pts[i].z - w.pts[j].z) < 34 + (wBase + w.w) * 4) return false; } else if (pts.some((q, i) => i % 3 === 0 && Math.hypot(q.x - w.x, q.z - w.z) < w.r * 3.6 + 14 + q.w * 5)) return false; }
+      waters.push({ kind: 'river', pts, w: wBase }); return true;
     }
     function makePools() {      // the open pools (mochazhiny) of a bog: many small round ponds
-      const n = Math.round(rng.int(7, 10) * K);
+      const n = Math.round(rng.int(7, 10) * K * 0.6);
       for (let i = 0, tries = 0; i < n && tries < 300 * K; tries++) {
         const a = rng.range(0, 6.28), d = rng.range(9, 52 * SC), r = rng.range(2.0, 5.4), x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (waters.some(w => Math.hypot(w.x - x, w.z - z) < w.r + r + 7)) continue;
@@ -883,7 +899,7 @@ const World = (() => {
         lvl = Math.min(lvl, baseH(x, z)) + 0.02; waters.push({ kind: 'pond', x, z, r, level: lvl }); i++;
       }
     }
-    for (const k of env.water) { if (k === 'pond') { for (let q = 0, nP = BIGMAP ? 1 : Math.round(K * 1.5); q < nP; q++) makePond(); } else if (k === 'pool') makePools(); else for (let q = 0, nR = BIGMAP ? 1 : 2; q < nR; q++) makeRiver(k); }
+    for (const k of env.water) { if (k === 'pond') { for (let q = 0, nP = BIGMAP ? 1 : Math.round(K * 1.1); q < nP; q++) makePond(); } else if (k === 'pool') makePools(); else for (let q = 0, nR = BIGMAP ? 1 : LITE ? 1 : 3; q < nR; q++) for (let tries = 0; tries < 16 && !makeRiver(k) && !BIGMAP; tries++); }
 
     // carve the beds & banks into the relief
     for (let iz = 0; iz < N1; iz++) for (let ix = 0; ix < N1; ix++) {
@@ -1139,7 +1155,7 @@ const World = (() => {
     // ---- far mountains
     const [mc0, mc1, snow, hMin, hMax] = env.mount; const mparts = []; const mrng = new Rng(seed ^ 0x77);
     for (let i = 0; i < (env.highland ? 0 : 46); i++) {
-      const a = i / 46 * 6.283 + mrng.range(-0.05, 0.05), d = mrng.range(235, 300), h = mrng.range(hMin, hMax) * (snow ? 2.0 : 1.8), w = Math.min(h * mrng.range(0.6, 0.95), 62);
+      const a = i / 46 * 6.283 + mrng.range(-0.05, 0.05), d = mrng.range(235, 300) + (hl || LITE ? 0 : PLAY_R - 130), h = mrng.range(hMin, hMax) * (snow ? 2.0 : 1.8), w = Math.min(h * mrng.range(0.6, 0.95), 62);
       const g = new THREE.ConeGeometry(w, h, 5 + mrng.int(0, 2), 3); g.translate(0, h / 2, 0); jitterGeo(g, w * 0.14, mrng);
       mparts.push({ g, m: M(Math.cos(a) * d, -6, Math.sin(a) * d, 0, mrng.range(0, 6)), c: [mc0, snow ? '#f2f6fa' : mc1, 0, h * (snow ? 0.95 : 1.0)], j: 0.07 });
     }
@@ -1339,7 +1355,7 @@ const World = (() => {
         let x, z, f;
         if (rng.chance(0.82)) { const p = rng.pick(patches); const a = rng.range(0, 6.28), d = Math.abs(rng.next() + rng.next() - 1) * p.r * 1.3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; f = rng.chance(0.75) ? p.f : rng.pick(env.flowers); }
         else { const a = rng.range(0, 6.28), d = Math.sqrt(rng.range(4, PLAY_R * PLAY_R)); x = Math.cos(a) * d; z = Math.sin(a) * d; f = rng.pick(env.flowers); }
-        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8) || (LDG && ld(x, z) < 0.5) || (hl && gorgeAt(x, z) > 0.04)) continue;
+        if (Math.hypot(x, z) > PLAY_R || inWater(x, z, 0.8) || (LDG && ld(x, z) < 0.5) || (hl && gorgeAt(x, z) > 0.04) || (biome.id === 'alps' && slopeAt(x, z) > 0.4)) continue;       // (the Alps: no flowers on the steep slopes)
         const sz = rng.range(0.5, 0.85) * (f[1] === 'spike' ? 1.5 : 1) * (biome.id === 'kenya' || biome.id === 'prairie' ? 1.4 : biome.id === 'bog' ? 0.72 : biome.id === 'papua' ? 0.8 : 1); const y = heightAt(x, z) - 0.04;
         im.setMatrixAt(cnt, M(x, y, z, 0, rng.range(0, 3.14), 0, sz, sz, sz)); c.set(f[0]).multiplyScalar(rng.range(0.9, 1.1)); im.setColorAt(cnt, c); kind[cnt] = KINDS.indexOf(f[1]);
         if (rng.chance(0.4)) world.flowers.push({ x, y: y + sz * 0.78, z, kind: f[1], size: sz, taken: false });
@@ -1348,6 +1364,25 @@ const World = (() => {
       im.count = cnt; im.geometry = withKind(grassGeo, kind); im.frustumCulled = false; scene.add(im);
       let best = null, bd = 1e9; patches.forEach(p => { const d = Math.hypot(p.x, p.z); if (d < bd && d > 4) { bd = d; best = p; } });
       world.spawnYaw = best ? Math.atan2(-best.x, -best.z) : rng.range(0, 6.28);   // first view: a flower meadow
+    }
+
+    // ---- the banks of rivers and ponds: reeds, sedge and cattails along the water's edge, more bushes and ferns behind them
+    if (waters.length && !waters.every(w => w.kind === 'pond' && biome.id === 'bog')) {
+      const brng = new Rng(seed ^ 0x5b1c), cells = [], step = BIGMAP ? 1 : 2;
+      for (let iz = 0; iz < N1; iz += step) for (let ix = 0; ix < N1; ix += step) { const d = SD[iz * N1 + ix]; if (d > -0.5 && d < 4.2) { const x = -HALF + ix * CELL, z = -HALF + iz * CELL; if (Math.hypot(x, z) < PLAY_R - 1) cells.push([x, z, d]); } }
+      const want = Math.min(Math.round(cells.length * 1.6), Math.round(9000 * K / 4)), imR = new THREE.InstancedMesh(grassGeo, foliageMat(gAtlas, false, 1), Math.max(1, want)); let nr = 0; const cR = new THREE.Color();
+      const reedCols = ['#5a8a3a', '#7aa04a', '#8a9a4a', '#a8a050', '#4a7a3a'];
+      for (let i = 0; i < want && cells.length; i++) {
+        const q = cells[brng.int(0, cells.length - 1)], x = q[0] + brng.range(-CELL, CELL) * step, z = q[1] + brng.range(-CELL, CELL) * step, d = sdf(x, z); if (d < -0.4 || d > 4.2 || (hl && gorgeAt(x, z) > 0.04) || (LDG && ld(x, z) < 0.5)) continue;
+        const near = clamp(1 - d / 3.2), hgt = brng.range(0.5, 1.0) + near * brng.range(0.5, 1.1), wd = brng.range(0.35, 0.7);
+        imR.setMatrixAt(nr, M(x, heightAt(x, z) - 0.05, z, 0, brng.range(0, 3.14), 0, wd, hgt, wd));
+        if (brng.chance(0.1)) cR.set('#6a4a2a'); else cR.set(brng.pick(reedCols)).lerp(new THREE.Color(brng.pick(reedCols)), brng.next()); imR.setColorAt(nr, cR); nr++;
+      }
+      imR.count = nr; imR.frustumCulled = false; scene.add(imR);
+      if (nr) { const _mm = new THREE.Matrix4(), catG = new THREE.CylinderGeometry(0.035, 0.035, 0.32, 5), imC = new THREE.InstancedMesh(catG, new THREE.MeshLambertMaterial({ color: '#5a3a22' }), Math.round(nr / 12) + 1); let nc = 0;       // cattail heads on tall stalks
+        for (let i = 0; i < nr && nc < imC.count; i += 12) { imR.getMatrixAt(i, _mm); const x = _mm.elements[12], y = _mm.elements[13], z = _mm.elements[14], hh = _mm.elements[5]; imC.setMatrixAt(nc++, M(x, y + hh * 0.92, z, 0, 0, 0, 1, 1, 1)); }
+        imC.count = nc; imC.frustumCulled = false; imC.castShadow = false; imC.userData.noFloat = true; scene.add(imC); }
+      addTrees('bush', Math.round(34 * K), { field: 'riparian', minR: 4, anySlope: true, noShadow: true, noCollide: true });
     }
 
     // ---- water meshes (ponds as discs, rivers as ribbons) — every surface follows its own carved level

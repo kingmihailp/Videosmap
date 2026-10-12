@@ -52,7 +52,7 @@ class Fly {
   }
   place(near) {
     const p = this.play, R = p.world.R * 0.85;
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < (p.sectors ? 400 : 40); i++) {
       let x, z;
       if (near) { const a = p.player.yaw + (Math.random() - 0.5) * 1.6; const d = 7 + Math.random() * 9; x = p.player.pos.x - Math.sin(a) * d; z = p.player.pos.z - Math.cos(a) * d; }
       else if (p.sectors && this.home !== null) { const q = p.sectors.rects[this.home]; x = lerp(q.x0, q.x1, Math.random()); z = lerp(q.z0, q.z1, Math.random()); }      // a big map: every species starts in its own sector
@@ -61,6 +61,7 @@ class Fly {
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
       this.pos.set(x, p.world.flyH(x, z) + lerp(this.beh.h[0], this.beh.h[1], Math.random()), z); return;
     }
+    if (p.sectors && this.home !== null) { const q = p.sectors.rects[this.home], x = clamp((q.x0 + q.x1) / 2, -R, R), z = clamp((q.z0 + q.z1) / 2, -R, R); this.pos.set(x, p.world.flyH(x, z) + 1.5, z); return; }
     this.pos.set(5, p.world.flyH(5, 5) + 1.2, 5);
   }
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
@@ -243,7 +244,7 @@ class Play {
     // spawn the herd
     // the whole fauna of the location lives on the map at once, each species in its own sector (the ocean keeps its small pool)
     this.sectors = biome.id === 'ocean' ? null : Sectors.make(biome, this.seed, this.world.R);
-    this.pool = this.sectors ? biome.species.slice() : Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
+    this.pool = biome.species.slice();       // every species of the location is in the pool (the ocean: all 15)
     // when this landscape is generated anew (every hour of real time): in a shared place the server counts it, alone it is counted from the moment the landscape was born
     this.regenAt = this.sectors ? (mp && mp.t0 ? mp.t0 : performance.now()) + (mp ? (mp.ttl !== undefined ? mp.ttl : Sectors.PERIOD) : Math.max(0, (born || Date.now()) + Sectors.PERIOD - Date.now())) : Infinity; this.regenWarn = 0;
     this.helperT = 40;
