@@ -42,6 +42,7 @@ class Fly {
     this.speedK = 0.85 + Math.random() * 0.3; this.sway = Math.random() * 6.28;
     this.kind = this.beh.special || null; this.gt = 1 + Math.random() * 2; this.gs = Math.random() * 2; this.gf = 0; this.cool = 0; this.rs = { ph: 'hide', t: 2 + Math.random() * 6 };
     if (this.beh.light) { this.light = new THREE.PointLight(this.beh.light, 1.4, 13, 1.5); this.mesh.add(this.light); }
+    this.home = play.sectors ? play.sectors.homeOf(sp) : null;         // the sector this species lives in
     this.id = opts.id || play.nextFid++; this.puppet = !!opts.puppet; this.netPos = new THREE.Vector3(); this.netYaw = 0; this.hid = false; this.seen = performance.now(); this.baseScale = this.kind === 'timothy' ? 0.55 : 1;
     if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
     if (!this.puppet) this.place(nearPlayer);
@@ -51,10 +52,10 @@ class Fly {
   }
   place(near) {
     const p = this.play, R = p.world.R * 0.85;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 90; i++) {
       let x, z;
       if (near) { const a = p.player.yaw + (Math.random() - 0.5) * 1.6; const d = 7 + Math.random() * 9; x = p.player.pos.x - Math.sin(a) * d; z = p.player.pos.z - Math.cos(a) * d; }
-      else if (p.world.R > 80) { const a = Math.random() * 6.28, d = 12 + Math.sqrt(Math.random()) * 50; x = p.player.pos.x + Math.cos(a) * d; z = p.player.pos.z + Math.sin(a) * d; }      // a big map: the butterflies live around the player, not over the whole map
+      else if (p.sectors && this.home !== null) { const q = p.sectors.rects[this.home]; x = lerp(q.x0, q.x1, Math.random()); z = lerp(q.z0, q.z1, Math.random()); }      // a big map: every species starts in its own sector
       else { const a = Math.random() * 6.28, d = 10 + Math.sqrt(Math.random()) * (R - 10); x = Math.cos(a) * d; z = Math.sin(a) * d; }
       if (Math.hypot(x, z) > R || p.world.inWater(x, z) || (p.world.noFly && p.world.noFly(x, z))) continue;
       if (!near && Math.hypot(x - p.player.pos.x, z - p.player.pos.z) < 16) continue;
@@ -64,7 +65,7 @@ class Fly {
   }
   releaseFlower() { if (this.flower) { this.flower.taken = false; this.flower = null; } }
   pickTarget(awayFrom) {
-    const w = this.play.world, b = this.beh; this.releaseFlower(); this.perchTarget = false;
+    const w = this.play.world, b = this.beh, S = this.play.sectors; this.releaseFlower(); this.perchTarget = false;
     if (this.kind === 'screech') { const pl = this.play.nearestPlayer(this.pos), a = Math.random() * 6.28, d = 1.8 + Math.random() * 2.6; this.tgt.set(pl.pos.x + Math.cos(a) * d, pl.pos.y - 0.6 + Math.random() * 1.2, pl.pos.z + Math.sin(a) * d); return; }
     const wantsBait = (this.sp.beh === 'owl' || this.sp.beh === 'bird' || this.sp.beh === 'emperor' || this.sp.beh === 'morph') && w.baits.length && Math.random() < 0.55;
     if (wantsBait) { const bt = w.baits[(Math.random() * w.baits.length) | 0]; this.tgt.set(bt.x + (Math.random() - 0.5) * 0.7, bt.y + 0.05, bt.z + (Math.random() - 0.5) * 0.7); this.perchTarget = true; return; }
@@ -80,8 +81,10 @@ class Fly {
       const a = Math.random() * 6.28, d = 6 + Math.random() * 14; const x = this.pos.x + Math.cos(a) * d, z = this.pos.z + Math.sin(a) * d;
       if (Math.hypot(x, z) > w.R * 0.9 || w.inWater(x, z) || (w.noFly && w.noFly(x, z))) continue;
       if (awayFrom && Math.hypot(x - awayFrom.x, z - awayFrom.z) < 10) continue;
+      if (S && this.home !== null && S.at(x, z) !== this.home && Math.random() > (S.at(this.pos.x, this.pos.z) === this.home ? 0.3 : 0.12)) continue;      // it may cross a border now and then, but mostly stays in (or returns to) its own sector
       this.tgt.set(x, w.flyH(x, z) + lerp(b.h[0], b.h[1], Math.random()), z); return;
     }
+    if (S && this.home !== null) { const q = S.rects[this.home], x = clamp((q.x0 + q.x1) / 2, -w.R * 0.8, w.R * 0.8), z = clamp((q.z0 + q.z1) / 2, -w.R * 0.8, w.R * 0.8); this.tgt.set(x, w.flyH(x, z) + 1.5, z); return; }
     this.tgt.set(0, w.flyH(0, 0) + 1.5, 0);
   }
   startFlee(dir) {
@@ -226,7 +229,7 @@ class Fly {
 
 // ---------------------------------------------------------------- the play session
 class Play {
-  constructor(biome, seed, mp, at) {
+  constructor(biome, seed, mp, at, born) {
     this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); if (!this.world.flyH) this.world.flyH = this.world.heightAt; if (!this.world.groundAt) this.world.groundAt = this.world.heightAt; this.seed = this.world.seedStr; this.scene = this.world.scene;
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
@@ -238,7 +241,11 @@ class Play {
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
-    this.pool = Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
+    // the whole fauna of the location lives on the map at once, each species in its own sector (the ocean keeps its small pool)
+    this.sectors = biome.id === 'ocean' ? null : Sectors.make(biome, this.seed, this.world.R);
+    this.pool = this.sectors ? biome.species.slice() : Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
+    // when this landscape is generated anew (every 30 minutes of real time): in a shared place the server counts it, alone it is counted from the moment the landscape was born
+    this.regenAt = this.sectors ? (mp && mp.t0 ? mp.t0 : performance.now()) + (mp ? (mp.ttl !== undefined ? mp.ttl : Sectors.PERIOD) : Math.max(0, (born || Date.now()) + Sectors.PERIOD - Date.now())) : Infinity; this.regenWarn = 0;
     this.helperT = 40;
     this.traps = new Traps.Sys(this); if (mp && mp.traps) for (const t of mp.traps) if (t.owner !== Net.id) this.traps.mk(t, false);
     if (mp && Net.on) { const w = this.world; let h = 0; for (let x = -60; x <= 60; x += 4) for (let z = -60; z <= 60; z += 4) h = (h * 31 + Math.round(w.heightAt(x, z) * 100)) | 0; setTimeout(() => { if (this.traps) Net.send('sig', { seed: String(this.seed), h }); }, 800); }       // the others compare it: the same seed must give the same ground
@@ -249,6 +256,7 @@ class Play {
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
+  regenLeft() { return (this.regenAt - performance.now()) / 1000; }
   applyQuality() { const low = Save.data.settings.quality === 'low'; const g = this.world.grassMesh; if (!this.grassFull) this.grassFull = g.count; g.count = Math.floor(this.grassFull * (low ? 0.55 : 1)); this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
   lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > 34) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > 0.93; }
@@ -279,10 +287,11 @@ class Play {
     return y;
   }
   spawnInitial() {
-    // on the secret maps (a big pool, very rare species) the pool does not appear all at once: a handful of species are in sight at the start, the rest turn up over the first minute or two, the scarcest later still
-    const stage = !!this.biome.map, list = this.pool.slice(); if (stage) for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; }
-    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 * (sp.thin || 1) ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = stage && (sp.scarce || k >= 4);
-      for (let i = 0; i < n; i++) { if (later) this.respawns.push({ sp, t: sp.scarce ? 240 + Math.random() * 360 : 10 + Math.random() * 90 + i * 25 }); else this.flies.push(new Fly(this, Aberr.roll(sp), i === 0)); } });
+    // the scarcest species (the secret maps have one each) turn up only some minutes after the start; the pool of a map without sectors (the ocean) does not appear all at once either
+    const stage = !!this.biome.map && !this.sectors, list = this.pool.slice(); if (stage) for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; }
+    const ps = this.sectors ? this.sectors.at(this.player.pos.x, this.player.pos.z) : -1;
+    list.forEach((sp, k) => { const n = BEH[sp.beh].light ? (Math.random() < 0.34 * (sp.thin || 1) ? 1 : 0) : sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1, later = sp.scarce || (stage && k >= 4);
+      for (let i = 0; i < n; i++) { if (later) this.respawns.push({ sp, t: sp.scarce ? 240 + Math.random() * 360 : 10 + Math.random() * 90 + i * 25 }); else this.flies.push(new Fly(this, Aberr.roll(sp), i === 0 && (!this.sectors || this.sectors.homeOf(sp) === ps))); } });
   }
   rollMod() { const good = Math.random() < 0.2, list = Object.keys(PLAY_MODS).filter(k => PLAY_MODS[k].good === good); return list[(Math.random() * list.length) | 0]; }
 
@@ -293,12 +302,12 @@ class Play {
     H.mod = m => { const d = me.applyMod(m.id); me.toast(`${m.by}: ${PLAY_MODS[m.id].good ? 'хороший' : 'плохой'} модификатор — ${PLAY_MODS[m.id].name}`, 5, true); Snd.sfx.modifier(); };
     H.host = m => { if (m.id === Net.id) { if (!me.isHost) me.becomeHost(m.flies); } else if (me.isHost) me.becomePuppet(m.flies); };
     H.pjoin = m => me.toast(`${m.name} присоединился`, 2.5); H.pleave = (m, r) => me.toast(`${r ? r.name : 'Игрок'} ушёл`, 2.5);
-    H.regenNo = m => me.toast((m && m.msg) || 'Здесь сейчас нельзя сменить местность', 3); H.voteNew = () => { me.toast('Голосование: Y — за, N — против', 4); Snd.sfx.click(); };
+    
     H.bridge = m => { if (me.world.setBridge) me.world.setBridge(m.i, m.k, false); };
     H.trap = m => me.traps.net(m);
     H.desync = m => me.toast(`Рассинхрон местности с игроком ${m.with}: у вас разные версии игры или произошёл сбой. Обновите страницу (Ctrl+F5) и зайдите снова`, 12, true);
   }
-  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.regenNo = H.voteNew = H.bridge = H.trap = H.desync = null; }
+  unhookNet() { const H = Net.hooks; H.flies = H.caught = H.catchOk = H.catchNo = H.mod = H.host = H.pjoin = H.pleave = H.bridge = H.trap = H.desync = null; }
   others() { const now = performance.now(); return Object.values(Net.remote).filter(r => now - r.t < 3500); }
   nearestPlayer(pos) {
     let best = this.player, bd = pos.distanceToSquared(this.player.pos); if (!this.mp) return best;
@@ -485,9 +494,19 @@ class Play {
     // butterflies
     if (this.mp) { this.sendNet(dt); this.remotes.update(dt); }
     this.helperT -= dt;
+    if (this.mp && Net.on && Net.loc === this.biome.id && this.isHost !== Net.host) { const hm = Net.hostMsg; Net.hostMsg = null; if (Net.host) this.becomeHost(hm && hm.flies); else this.becomePuppet(hm && hm.flies); }       // the leader changed while this world was still being built (a slow machine): follow the server
+    if (this.sectors) {       // the landscape is generated anew every 30 minutes (alone: this client counts, online: the server sends the new seed)
+      const left = this.regenLeft();
+      if (left < 60 && this.regenWarn < 1) { this.regenWarn = 1; this.toast('Через минуту местность создастся заново — заберите ловушки', 6, true); }
+      else if (left < 10 && this.regenWarn < 2) { this.regenWarn = 2; this.toast('Местность создаётся заново через несколько секунд', 5, true); }
+      if (left <= 0 && !this.mp && !this.regenDone) { this.regenDone = true; F0W.autoRegen(this); }
+    }
     if (this.helperT <= 0 && (!this.mp || this.isHost)) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34 * (sp.thin || 1)) this.flies.push(new Fly(this, sp, false)); }
-    const ghosts = this.hasMod('ghosts');
-    for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; } f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
+    let dt2 = 0; const ghosts = this.hasMod('ghosts');
+    for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; }
+      if (this.sectors && !f.kind && !f.puppet && f.state !== CAUGHT && f.pos.distanceToSquared(P.pos) > 9000 && !(this.mp && this.others().length)) { f._acc = (f._acc || 0) + dt; f._skip = (f._skip || 0) + 1; if (f._skip % 3) continue; dt2 = f._acc; f._acc = 0; f.update(dt2, this.t); f._far = true; f.mesh.visible = f.pos.distanceToSquared(P.pos) < 16900; continue; }       // (and a butterfly lost in the fog is not drawn at all)
+      if (f._far) { f._far = false; f.mesh.visible = true; }       // far away on the big map: a butterfly nobody sees is simulated every third frame
+      f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
     for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, Aberr.roll(r.sp), false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?
@@ -519,6 +538,13 @@ class Play {
     T.draw(ctx, fitStr(b.name, pw - 12), 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, line2, 12, 19, { size: 8, color: c.dim });
     if (this.mp) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', ') + '   [T — чат]', 8, 33, { size: 8, color: '#9ae0b0', shadow: '#000' });
     // species checklist
+    // the sector you stand in and the key of the map / species menu
+    if (this.sectors) {
+      const S = this.sectors, here = S.at(P.pos.x, P.pos.z), q = S.rects[here], got = q.sp.filter(sp => Save.has(sp.id)).length, left = this.regenLeft();
+      const l1 = `Сектор ${here + 1} · ${q.name}`, l2 = b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `В локации: ${Save.biomeCount(b)} из ${b.species.length} · здесь ${got}/${q.sp.length}`, l3 = `M — карта и виды${left < 300 ? ' · обновление ' + Traps.mmss(left) : ''}`;
+      const w3 = clamp(Math.max(T.width(l1, 8) + 12, T.width(l2, 8), T.width(l3, 8)) + 14, 150, 230); UIK.panel(ctx, SW - 6 - w3, 6, w3, 36, { fill: 'rgba(16,32,28,0.82)' });
+      ctx.fillStyle = q.col; ctx.fillRect(SW - w3, 11, 5, 5); T.draw(ctx, l1, SW - w3 + 9, 9, { size: 8, color: q.col }); T.draw(ctx, l2, SW - w3 + 3, 19, { size: 8, color: c.text }); T.draw(ctx, l3, SW - w3 + 3, 29, { size: 8, color: left < 300 ? c.red : c.dim });
+    } else {
     const n = this.pool.length, cmp = n > 9, tw = cmp ? 21 : 32, th = cmp ? 10 : 15; const px = SW - 6 - n * tw; UIK.panel(ctx, px - 4, 6, n * tw + 2, cmp ? 32 : 44, { fill: 'rgba(16,32,28,0.82)' });
     ctx.imageSmoothingEnabled = false;
     this.pool.forEach((sp, i) => {
@@ -528,6 +554,7 @@ class Play {
       if (here) { ctx.fillStyle = c.gold; ctx.fillRect(x + 1, 8, tw - 3, 1); }
     });
     T.draw(ctx, b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `Здесь ${n} видов · в биоме: ${Save.biomeCount(b)} из ${b.species.length}`, SW - 10, cmp ? 28 : 40, { size: 8, align: 'r', color: c.text });
+    }
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });

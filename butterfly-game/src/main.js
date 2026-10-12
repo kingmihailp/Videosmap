@@ -91,16 +91,20 @@
     if (!Maps.allowed(biomeId)) { App.toMap(); return; }          // a secret location can only be entered with its map
     if (App.play && App.play.biome.id === biomeId && App.play.traps && App.play.traps.own().length) { App.trapsLost = App.play.traps.lose(); }       // a new landscape of the same place: the traps vanish with their catch
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
-    const make = (sd, mp) => {
+    const make = (sd, mp, born) => {
       if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
-      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0; if (App.trapsLost) { App.play.toast(`Местность создана заново: ваши ловушки (${App.trapsLost}) пропали вместе с уловом`, 6, true); App.trapsLost = 0; }
+      App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at, born); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0; if (App.trapsLost) { App.play.toast(`Местность создана заново: ваши ловушки (${App.trapsLost}) пропали вместе с уловом`, 6, true); App.trapsLost = 0; }
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
     };
-    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges, traps: info.traps }), 40)).catch(netFail);
-    else setTimeout(() => make(seed || params.get('seed') || undefined), 60);
+    if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges, traps: info.traps, ttl: info.ttl, t0: info.t0 }), 40)).catch(netFail);
+    else { const want = seed || params.get('seed') || undefined, W = biomeId === 'ocean' ? { seed: want, born: Date.now() } : Save.world(biomeId, want); setTimeout(() => make(W.seed, null, W.born), 60); }
   };
-  Net.hooks.reseed = m => go(() => App.start(m.loc));
+  Net.hooks.reseed = m => go(() => { if (App.play && App.play.traps && App.play.traps.own().length) App.play.traps.collectAll(); App.start(m.loc); });     // the place is generated anew (the server counts the 30 minutes): the traps are emptied into the stash first
+  App.autoRegen = play => {          // alone: the 30 minutes of this landscape are over
+    const bid = play.biome.id; if (play.traps && play.traps.own().length) play.traps.collectAll(); delete (Save.data.worlds || {})[bid]; Save.write();
+    play.toast('Местность создаётся заново…', 3, true); go(() => App.start(bid));
+  };
   Net.hooks.closed = () => { if (App.screen === 'play' || App.screen === 'cabinet' || App.screen === 'loading') { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } Snd.stopAmbient(); App.overlay = null; App.screen = 'title'; } Screens.mp.msg = 'Соединение с сервером потеряно'; };
   function mpConnect() {
     const M = Screens.mp, addr = M.fields[0].val.trim(), name = M.fields[1].val.trim() || 'Гость'; if (!addr) { M.msg = 'Введите адрес сервера'; return; }
@@ -159,7 +163,6 @@
     if (Chat.open) { e.preventDefault(); Snd.init(); Chat.key(e); return; }
     Snd.init(); Snd.resume(); if (['Tab', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyI' && !e.repeat && !App.modal && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { e.preventDefault(); App.modal = 'stash'; Snd.sfx.page(); return; }
-    if ((e.code === 'KeyY' || e.code === 'KeyN') && !e.repeat && !App.modal && App.screen === 'play' && Net.vote && !Net.vote.mine) { e.preventDefault(); Net.voteReply(e.code === 'KeyY'); Snd.sfx.click(); return; }
     if (e.code === 'KeyT' && !e.repeat && !App.modal) { if (Chat.canOpen()) { e.preventDefault(); Chat.show(); return; } if (!Net.on && ((App.screen === 'play' && !App.overlay) || (App.screen === 'cabinet' && App.cab && !App.cab.ov))) { const w = App.play || App.cab; if (w && w.toast) w.toast('Чат доступен только в мультиплеере', 2.5); return; } }
     inp.keys.add(e.code);
     if (e.code === 'Escape' && !App.modal && ((App.screen === 'play' && App.overlay === 'pause') || (App.screen === 'cabinet' && App.cab && App.cab.ov === 'pause'))) { if (e.repeat || performance.now() - (App.pauseT || 0) < 350) return; App.escT = performance.now(); }
@@ -176,9 +179,10 @@
       }
       if (App.overlay === 'cardpos') { if (e.code === 'Escape') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'trap') { if (e.code === 'Escape' || e.code === 'KeyE' || e.code === 'KeyG') { Snd.sfx.page(); resume(); } return; }
+      if (App.overlay === 'sectors') { if (e.code === 'Escape' || e.code === 'KeyM' || e.code === 'Tab') { Snd.sfx.page(); resume(); } return; }
       if (App.overlay === 'pause') { if (e.code === 'Escape') resume(); return; }
       if (e.repeat) return;
-      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyE' && App.play.traps && App.play.traps.near) { Snd.sfx.page(); Traps.UI.openTrap(App.play, App.play.traps.near); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyG' && App.play.traps) { Snd.sfx.page(); Traps.UI.openPlace(App.play); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
+      if (e.code === 'Tab') openJournal('play'); else if (e.code === 'Space') inp.fire = true; else if (e.code === 'KeyE' && (App.play.doorNear || App.play.pickNear)) { if (App.play.doorNear) App.play.enterDoor(); else App.play.takePick(); } else if (e.code === 'KeyE' && App.play.traps && App.play.traps.near) { Snd.sfx.page(); Traps.UI.openTrap(App.play, App.play.traps.near); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyG' && App.play.traps) { Snd.sfx.page(); Traps.UI.openPlace(App.play); App.overlay = 'trap'; unlock(); } else if (e.code === 'KeyM' && App.play.sectors) { Snd.sfx.page(); Sectors.UI.open(App.play); App.overlay = 'sectors'; unlock(); } else if (e.code === 'KeyH') { App.play.sense = !App.play.sense; Snd.sfx.click(); } else if (e.code === 'KeyP') { unlock(); App.overlay = 'pause'; }
     } else if (sc === 'title') { if (e.code === 'Enter') { Snd.sfx.click(); go(() => { App.screen = 'map'; }); } else if (e.code === 'KeyK') go(() => App.toCabinet()); }
     else if (sc === 'map') {
       if (e.code === 'Escape') go(() => { App.screen = 'title'; });
@@ -195,15 +199,15 @@
   ui.addEventListener('mousedown', e => {
     Snd.init(); Snd.resume(); toNative(e); if (e.button !== 0) return; const { x, y } = mouse; const sc = App.screen;
     if (App.modal) { modalClick(x, y); return; }
-    if (sc === 'play' && Net.vote && !Net.vote.mine && !App.locked && Chat.voteClick(x, y)) return;
     if (sc === 'cabinet' && App.cab) { if (App.cab.ov) App.cab.click(x, y); else if (!App.locked) lock(); return; }
     if (sc === 'play') {
       if (App.overlay === 'help') { App.overlay = 'pause'; resume(); return; }
+      if (App.overlay === 'sectors') { if (Sectors.UI.click(x, y)) { Snd.sfx.page(); resume(); } return; }
       if (App.overlay === 'trap') { const r = Traps.UI.click(x, y); if (r === 'close') { Snd.sfx.page(); resume(); } return; }
       if (App.overlay === 'cardpos') { const id = S.cardpos.press(x, y, App.play); if (id) Snd.sfx.click(); if (id === 'done') { S.cardpos.release(); App.overlay = 'pause'; } return; }
       if (App.overlay === 'pause') {
         const id = S.pause.click(x, y); if (!id) return; Snd.sfx.click();
-        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'stash') App.modal = 'stash'; else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'regen') { if (Net.on) Net.send('regen'); else { const bid = App.play.biome.id; go(() => App.start(bid)); } } else if (id === 'map') go(() => App.toMap());
+        if (id === 'resume') resume(); else if (id === 'journal') openJournal('play'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'help') App.overlay = 'help'; else if (id === 'settings') openSettings(); else if (id === 'stash') App.modal = 'stash'; else if (id === 'title') go(() => App.toTitle()); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music'); else if (id === 'quality') { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); Snd.sfx.click(); } else if (id === 'sectors') { Sectors.UI.open(App.play); App.overlay = 'sectors'; } else if (id === 'map') go(() => App.toMap());
         return;
       }
       if (App.overlay === 'journal') { const id = S.journal.click(x, y); if (id === 'close') closeJournal(); return; }
@@ -240,7 +244,7 @@
       if (running) p.update(dt, inp); else { inp.dx = inp.dy = 0; inp.fire = false; if (p.mp) p.update(dt, IDLE_INP); }   // online the world goes on under a menu (the host must keep leading the butterflies)
       postMat.uniforms.edgeD.value = p.world && p.world.env && p.world.env.highland ? 90 : 380; renderer.setRenderTarget(rt); renderer.render(p.scene, p.camera); renderer.setRenderTarget(null); renderer.render(postScene, postCam);
       gl.style.visibility = 'visible'; ctx.clearRect(0, 0, SW, SH);
-      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'trap') { p.draw(ctx); Traps.UI.draw(ctx, t, mouse, dt); } else p.draw(ctx);
+      if (App.overlay === 'pause') S.pause.draw(ctx, t, mouse, p); else if (App.overlay === 'journal') S.journal.draw(ctx, t, mouse); else if (App.overlay === 'help') { p.draw(ctx); S.help.draw(ctx, t, mouse); } else if (App.overlay === 'cardpos') { p.draw(ctx); S.cardpos.draw(ctx, t, mouse, p); } else if (App.overlay === 'trap') { p.draw(ctx); Traps.UI.draw(ctx, t, mouse, dt); } else if (App.overlay === 'sectors') { p.draw(ctx); Sectors.UI.draw(ctx, t, mouse); } else p.draw(ctx);
     } else if (sc === 'cabinet' && App.cab) {
       const cb = App.cab; const full = ['pick', 'spread', 'bench', 'place', 'slot', 'journal', 'sell', 'shop', 'collect', 'wings', 'goods'].includes(cb.ov);
       if (!cb.ov && (App.locked || App.noLock || App.lockWant)) cb.update(dt, inp); else { inp.dx = inp.dy = 0; cb.animate(dt); }
@@ -257,7 +261,7 @@
       else if (sc === 'loading') S.loading.draw(ctx, t, App.loadText);
     }
     if (App.helpFromTitle && sc === 'title' && (inp.keys.size || false)) { /* dismissed by key handler below */ }
-    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) { Chat.draw(ctx, t); if (App.screen === 'play') Chat.drawVote(ctx, t, mouse); } else if (Chat.open) Chat.close();
+    if (Net.on && (App.screen === 'play' || App.screen === 'cabinet')) { Chat.draw(ctx, t); } else if (Chat.open) Chat.close();
     Con.draw(ctx, t);
     if (App.modal === 'settings') S.settings.draw(ctx, t, mouse); else if (App.modal === 'keys') S.keys.draw(ctx, t, mouse); else if (App.modal === 'stash') Secret.stash.draw(ctx, t, mouse);
     if (App.needClick && App.screen === 'play' && !App.overlay && !App.locked && !App.lockWant) { const s2 = 'Нажмите, чтобы продолжить', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH / 2 + 30, w2, 18, { fill: 'rgba(16,28,24,0.92)', border: UIK.col.gold }); T.draw(ctx, s2, SW / 2, SH / 2 + 35, { size: 8, align: 'c', color: '#fff' }); }

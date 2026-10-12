@@ -54,7 +54,7 @@ const Traps = (() => {
   const rarK = (hn, rar) => 1 + 0.9 * quality(hn) * (rar - 1);                                           // multiplier of the weight of a species of rarity rar
   // the species a trap can lure: daytime butterflies of the location (no glowing or night ones)
   const lure = biome => biome.species.filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
-  // the visitor: only species of the current landscape (the 9-10 butterflies that live here, Play.pool); src is that list (or a biome: its daytime species, for tests)
+  // the visitor: only species of the sector the trap stands in (Sys.visitors; the ocean: its small pool); src is that list (or a biome: its daytime species, for tests)
   function pick(src, hn, type) {
     const list = type === 'scr' ? (Array.isArray(src) ? src : src.species) : (Array.isArray(src) ? src : lure(src)).filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
     const pool = list.map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
@@ -363,8 +363,10 @@ const Traps = (() => {
       const s = this.spot(); if (!s) { P.toast('Здесь ловушку не поставить: нужна ровная свободная земля', 3); Snd.sfx.deny(); return false; }
       add('tr', type, -1); const tid = (Net.on && P.mp ? Net.id : 'L') + '-' + Date.now().toString(36) + (++this.seq);
       const t = this.mk({ tid, owner: Net.on ? Net.id : 0, name: Net.name || 'Вы', type, x: s.x, y: s.y, z: s.z, yaw: s.yaw, age: 0 }, true); this.send({ k: 'put', tid, type, x: +s.x.toFixed(2), y: +s.y.toFixed(2), z: +s.z.toFixed(2), yaw: +s.yaw.toFixed(2) });
-      P.toast(`${TYPES[type].ru} поставлена: положите приманку (E)`, 4, true); Snd.sfx.coin(); return t;
+      { const S = P.sectors, c = S ? S.near(t.x, t.z, Sectors.EDGE) : [], sn = !S || type === 'scr' ? '' : c.length > 1 ? ` · на границе секторов ${c.map(i => i + 1).join(' и ')}: ловится один из них` : ` · сектор ${S.at(t.x, t.z) + 1}: «${S.rects[S.at(t.x, t.z)].name}»`; P.toast(`${TYPES[type].ru} поставлена: положите приманку (E)${sn}`, 5, true); } Snd.sfx.coin(); return t;
     }
+    // who may come to a trap: the butterflies of the sector it stands in (on a border of two sectors one of them is drawn at random for every visitor)
+    visitors(t) { const S = this.play.sectors; if (!S || t.type === 'scr') return this.play.pool; return S.rects[S.trapSector(t.x, t.z)].sp; }
     nearest() { const P = this.play.player, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); let best = null, bd = 1e9; for (const t of this.list) { const dx = t.x - P.pos.x, dz = t.z - P.pos.z, d = Math.hypot(dx, dz); if (d < 2.6 && (d < 1.5 || (dx * fx + dz * fz) / (d || 1) > 0.2) && d < bd) { best = t; bd = d; } } return best; }
     label(t) { return t.mine ? `E — ловушка: ${TYPES[t.type].ru.toLowerCase()} (${t.broken ? 'сломана' : mmss(t.life - t.t)}, бабочек: ${t.items.length})` : `Ловушка игрока ${t.name} · бабочек внутри: ${t.n}`; }
     update(dt) {
@@ -373,7 +375,7 @@ const Traps = (() => {
         t.t += dt; if (t.label) { const left = Math.max(0, t.life - t.t); t.label.userData.set(t.mine ? TYPES[t.type].ru : t.name, 'сломается в ' + mmss(left), t.mine ? '#f0e8c0' : '#9ae0b0', left < 20); }
         if (t.t >= t.life) { this.expire(t); continue; }
         if (t.mine && !t.broken && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
-          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.play.pool, t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
+          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.visitors(t), t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
         }
         if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); }
         const U = t.group && t.group.userData;

@@ -696,8 +696,9 @@ const World = (() => {
   function build(biome, seedStr) {
     seedStr = seedStr || randomSeed();
     const env = Object.assign({}, ENV[biome.id]);
-    const BIGMAP = !!env.highland;         // the archipelago is a much bigger place than the other locations
-    const SIZE = BIGMAP ? 360 : 180, SEG = BIGMAP ? 300 : 180, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : 58, CELL = SIZE / SEG;
+    const BIGMAP = !!env.highland;         // the archipelago has its own plan; every other location is one huge map (five times the old area) split into sectors (see sectors.js)
+    const SIZE = BIGMAP ? 360 : 320, SEG = 300, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : 130, CELL = SIZE / SEG;
+    const SC = BIGMAP ? 1 : PLAY_R / 58;     // distances that the recipes give for the old small map grow with the map
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
     env._bush = ({ papua: ['#2a6a30', '#3a7a34'], vietnam: ['#2e6a34', '#3a7a3a'], russia: ['#5a9a38', '#6aaa40'], alps: ['#5a8a3a', '#7aa04a'], med: ['#8a9a5a', '#a89a58', '#9a7ac8'], amazon: ['#2e7a34', '#3e8a3c'], borneo: ['#2e7a34', '#4a9a40'], kenya: ['#9a9a4a', '#b8a850'], prairie: ['#7a9a40', '#8aa84a'], japan: ['#3a7a38', '#e060a0'] }[biome.id]);
@@ -720,8 +721,8 @@ const World = (() => {
     let lava = null;
     const lSeg = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz, t = L > 0 ? clamp(((px - ax) * dx + (pz - az) * dz) / L) : 0; return [Math.hypot(px - (ax + dx * t), pz - (az + dz * t)), t]; };
     if (env.lava) {
-      const a0 = rng.range(0, 6.283), a1 = a0 + Math.PI + rng.range(-0.9, 0.9), Rr = 88, S = new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr), E = new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr);
-      const NP = 70, pts = [], amp = rng.range(10, 22), no = rng.range(0, 99), dir = E.clone().sub(S), len = dir.length(); dir.normalize(); const nrm = new V3(-dir.z, 0, dir.x), wL = rng.range(4.2, 6.0);
+      const a0 = rng.range(0, 6.283), a1 = a0 + Math.PI + rng.range(-0.9, 0.9), Rr = 88 * SC, S = new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr), E = new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr);
+      const NP = Math.round(70 * SC), pts = [], amp = rng.range(10, 22) * SC, no = rng.range(0, 99), dir = E.clone().sub(S), len = dir.length(); dir.normalize(); const nrm = new V3(-dir.z, 0, dir.x), wL = rng.range(4.2, 6.0);
       for (let i = 0; i < NP; i++) { const t = i / (NP - 1), off = (tnoise.fbm(t * 2.4 + no, 5.1, 3) - 0.5) * 2 * amp * Math.sin(Math.PI * t) + Math.sin(t * 7 + no) * 2.5; const p = S.clone().addScaledVector(dir, len * t).addScaledVector(nrm, off); const dd = Math.hypot(p.x, p.z); if (dd < 24) { const k = 24 - dd; p.x += p.x / (dd || 1) * k; p.z += p.z / (dd || 1) * k; } pts.push({ x: p.x, z: p.z, w: wL * (0.8 + 0.4 * tnoise.at(t * 6 + no, 2.2)) }); }
       lava = { pts };
     }
@@ -801,7 +802,7 @@ const World = (() => {
       if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
       return { isl, sites, edges, sdOf, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + o.area, 0) };
     })() : null;
-    const K = hl ? clamp(hl.area / 5200, 1, 4) : 1;          // how much more there is to grow and to catch on a big map
+    const K = hl ? clamp(hl.area / 5200, 1, 4) : 4;          // how much more there is to grow and to catch on a big map
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
     const isTop = (o, x, z, sdv) => {
       const sd = sdv === undefined ? hl.sdOf(o, x, z) : sdv; let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
@@ -845,8 +846,8 @@ const World = (() => {
     const waters = world.waters;
     const segDist = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az; const L = dx * dx + dz * dz; const t = L > 0 ? clamp(((px - ax) * dx + (pz - az) * dz) / L) : 0; const qx = ax + dx * t, qz = az + dz * t; return [Math.hypot(px - qx, pz - qz), t]; };
     function makePond() {
-      for (let tries = 0; tries < 30; tries++) {
-        const a = rng.range(0, 6.28), d = rng.range(24, 44), r = rng.range(3.8, 6.2); const x = Math.cos(a) * d, z = Math.sin(a) * d;
+      for (let tries = 0; tries < 60; tries++) {
+        const a = rng.range(0, 6.28), d = rng.range(24, 44) * SC, r = rng.range(3.8, 6.2); const x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (waters.some(w => w.kind === 'pond' && Math.hypot(w.x - x, w.z - z) < 30)) continue;
         let lvl = 1e9; for (let k = 0; k < 16; k++) { const aa = k / 16 * 6.283; lvl = Math.min(lvl, baseH(x + Math.cos(aa) * r * 2.6, z + Math.sin(aa) * r * 2.6)); }
         lvl = Math.min(lvl, baseH(x, z)) + 0.02; waters.push({ kind: 'pond', x, z, r, level: lvl }); return;
@@ -854,34 +855,34 @@ const World = (() => {
     }
     function makeRiver(kind) {
       const wBase = kind === 'river' ? rng.range(3.2, 4.6) : rng.range(1.7, 2.6);
-      const a0 = rng.range(0, 6.283); const a1 = a0 + Math.PI + rng.range(-0.7, 0.7); const Rr = 86;
+      const a0 = rng.range(0, 6.283); const a1 = a0 + Math.PI + rng.range(-0.7, 0.7); const Rr = 86 * SC;
       const S = new V3(Math.cos(a0) * Rr, 0, Math.sin(a0) * Rr), E = new V3(Math.cos(a1) * Rr, 0, Math.sin(a1) * Rr);
-      const NP = 130; const pts = []; const amp = rng.range(14, 26), no = rng.range(0, 99);
+      const NP = Math.round(130 * SC); const pts = []; const amp = rng.range(14, 26) * SC, no = rng.range(0, 99);
       const dir = E.clone().sub(S); const len = dir.length(); dir.normalize(); const nrm = new V3(-dir.z, 0, dir.x);
       for (let i = 0; i < NP; i++) {
         const t = i / (NP - 1);
-        const off = (tnoise.fbm(t * 2.6 + no, 3.3, 3) - 0.5) * 2 * amp * Math.sin(Math.PI * t) + Math.sin(t * 9 + no) * 3;
+        const off = (tnoise.fbm(t * 2.6 * SC + no, 3.3, 3) - 0.5) * 2 * amp * Math.sin(Math.PI * t) + Math.sin(t * 9 * SC + no) * 3;
         const p = S.clone().addScaledVector(dir, len * t).addScaledVector(nrm, off);
         const dd = Math.hypot(p.x, p.z); if (dd < 22) { const k = (22 - dd); p.x += p.x / (dd || 1) * k; p.z += p.z / (dd || 1) * k; }
         pts.push({ x: p.x, z: p.z, w: wBase * (0.85 + 0.35 * tnoise.at(t * 8 + no, 1.7)) });
       }
       if (baseH(pts[0].x, pts[0].z) < baseH(pts[NP - 1].x, pts[NP - 1].z)) pts.reverse();   // flow downhill
       let lv = pts.map(p => baseH(p.x, p.z) - 0.45);
-      for (let it = 0; it < 3; it++) { const src = lv; lv = src.map((v, i) => { let s = 0, c = 0; for (let k = -6; k <= 6; k++) { s += src[clamp(i + k, 0, NP - 1) | 0]; c++; } return s / c; }); }
+      for (let it = 0; it < 3; it++) { const src = lv; lv = src.map((v, i) => { let s = 0, c = 0; for (let k = -6 * SC | 0; k <= 6 * SC; k++) { s += src[clamp(i + k, 0, NP - 1) | 0]; c++; } return s / c; }); }
       for (let i = 1; i < NP; i++) lv[i] = Math.min(lv[i], lv[i - 1] - 0.004);
       pts.forEach((p, i) => { p.level = lv[i]; });
       waters.push({ kind: 'river', pts, w: wBase });
     }
     function makePools() {      // the open pools (mochazhiny) of a bog: many small round ponds
-      const n = rng.int(7, 10);
-      for (let i = 0, tries = 0; i < n && tries < 300; tries++) {
-        const a = rng.range(0, 6.28), d = rng.range(9, 52), r = rng.range(2.0, 5.4), x = Math.cos(a) * d, z = Math.sin(a) * d;
+      const n = Math.round(rng.int(7, 10) * K);
+      for (let i = 0, tries = 0; i < n && tries < 300 * K; tries++) {
+        const a = rng.range(0, 6.28), d = rng.range(9, 52 * SC), r = rng.range(2.0, 5.4), x = Math.cos(a) * d, z = Math.sin(a) * d;
         if (waters.some(w => Math.hypot(w.x - x, w.z - z) < w.r + r + 7)) continue;
         let lvl = 1e9; for (let k = 0; k < 12; k++) { const aa = k / 12 * 6.283; lvl = Math.min(lvl, baseH(x + Math.cos(aa) * r * 1.8, z + Math.sin(aa) * r * 1.8)); }
         lvl = Math.min(lvl, baseH(x, z)) + 0.02; waters.push({ kind: 'pond', x, z, r, level: lvl }); i++;
       }
     }
-    for (const k of env.water) { if (k === 'pond') makePond(); else if (k === 'pool') makePools(); else makeRiver(k); }
+    for (const k of env.water) { if (k === 'pond') { for (let q = 0, nP = BIGMAP ? 1 : Math.round(K * 1.5); q < nP; q++) makePond(); } else if (k === 'pool') makePools(); else for (let q = 0, nR = BIGMAP ? 1 : 2; q < nR; q++) makeRiver(k); }
 
     // carve the beds & banks into the relief
     for (let iz = 0; iz < N1; iz++) for (let ix = 0; ix < N1; ix++) {
@@ -893,7 +894,7 @@ const World = (() => {
           else { const tgt = lerp(w.level + 0.16, h, smooth(r * 1.0, r * 3.4, d)); h = Math.max(tgt, w.level + 0.1 + 0.02 * (d - r)); }
         } else {
           let bd = 1e9, bi = 0, bt = 0;
-          for (let i = 0; i < w.pts.length - 1; i++) { const A = w.pts[i], B = w.pts[i + 1]; const sd = segDist(x, z, A.x, A.z, B.x, B.z); if (sd[0] < bd) { bd = sd[0]; bi = i; bt = sd[1]; } }
+          for (let i = 0; i < w.pts.length - 1; i++) { const A = w.pts[i], B = w.pts[i + 1]; if (x < Math.min(A.x, B.x) - 32 || x > Math.max(A.x, B.x) + 32 || z < Math.min(A.z, B.z) - 32 || z > Math.max(A.z, B.z) + 32) continue; const sd = segDist(x, z, A.x, A.z, B.x, B.z); if (sd[0] < bd) { bd = sd[0]; bi = i; bt = sd[1]; } }
           const A = w.pts[bi], B = w.pts[bi + 1]; const lvl = lerp(A.level, B.level, bt), ww = lerp(A.w, B.w, bt);
           if (bd > ww * 5.5) continue;
           h = lerp(h, lvl + 0.6, 0.85 * smooth(ww * 5.5, ww * 1.6, bd));          // flatten the valley floor
@@ -1132,7 +1133,7 @@ const World = (() => {
     // ---- shafts of light that fall through the gaps of the canopy
     if (env.canopy) {
       const sTex = canvasTex(8, 64, (x, w, h) => { const d = x.createImageData(w, h); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const u = 1 - Math.abs(xx / (w - 1) * 2 - 1), v = yy / (h - 1), a = Math.pow(u, 1.4) * (0.25 + 0.75 * Math.sin(v * Math.PI)) * 255; const i = (yy * w + xx) * 4; d.data[i] = 255; d.data[i + 1] = 250; d.data[i + 2] = 200; d.data[i + 3] = a; } x.putImageData(d, 0, 0); });
-      for (let i = 0; i < 8; i++) { const a = rng.range(0, 6.28), d = rng.range(8, 44), m = new THREE.Mesh(new THREE.PlaneGeometry(rng.range(2.4, 4.4), 34), new THREE.MeshBasicMaterial({ map: sTex, transparent: true, opacity: rng.range(0.1, 0.2), blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); m.position.set(Math.cos(a) * d, 15, Math.sin(a) * d); m.rotation.set(0.0, rng.range(0, 3.14), 0.22 * (rng.chance(0.5) ? 1 : -1)); scene.add(m); }
+      for (let i = 0; i < Math.round(8 * K); i++) { const a = rng.range(0, 6.28), d = rng.range(8, 44 * SC), m = new THREE.Mesh(new THREE.PlaneGeometry(rng.range(2.4, 4.4), 34), new THREE.MeshBasicMaterial({ map: sTex, transparent: true, opacity: rng.range(0.1, 0.2), blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); m.position.set(Math.cos(a) * d, 15, Math.sin(a) * d); m.rotation.set(0.0, rng.range(0, 3.14), 0.22 * (rng.chance(0.5) ? 1 : -1)); scene.add(m); }
     }
     // ---- far mountains
     const [mc0, mc1, snow, hMin, hMax] = env.mount; const mparts = []; const mrng = new Rng(seed ^ 0x77);
@@ -1186,8 +1187,8 @@ const World = (() => {
     const plan = {};
     if (env.bog) {          // plan the boardwalk (a winding duckboard path) and the peat cutting first, so that no vegetation grows through them
       for (let tries = 0; tries < 40 && !plan.walk; tries++) {
-        const a0 = rng.range(0, 6.28), d0 = rng.range(10, 30); let x = Math.cos(a0) * d0, z = Math.sin(a0) * d0, ang = rng.range(0, 6.28); const pts = [[x, z, ang]], n = rng.int(18, 26);
-        for (let i = 0; i < n; i++) { ang += rng.range(-0.07, 0.07); const nx = x + Math.cos(ang), nz = z + Math.sin(ang); if (inWater(nx, nz, 1.2) || Math.hypot(nx, nz) > 50) break; x = nx; z = nz; pts.push([x, z, ang]); }
+        const a0 = rng.range(0, 6.28), d0 = rng.range(10, 30) * SC; let x = Math.cos(a0) * d0, z = Math.sin(a0) * d0, ang = rng.range(0, 6.28); const pts = [[x, z, ang]], n = rng.int(18, 26);
+        for (let i = 0; i < n; i++) { ang += rng.range(-0.07, 0.07); const nx = x + Math.cos(ang), nz = z + Math.sin(ang); if (inWater(nx, nz, 1.2) || Math.hypot(nx, nz) > PLAY_R - 8) break; x = nx; z = nz; pts.push([x, z, ang]); }
         if (pts.length >= 14) plan.walk = pts;
       }
       if (plan.walk) plan.walk.forEach((q, i) => { if (i % 2 === 0) reserve.push({ x: q[0], z: q[1], r: 1.6 }); });
@@ -1215,49 +1216,51 @@ const World = (() => {
     const lowOpts = { noShadow: true, noCollide: true }; const LOW_BOG = { lavashard: 1, groundfern: 1, hummock: 1, tussock: 1, ledum: 1, cassandra: 1, dbirch: 1, alocasia: 1 };
     for (const [type, n, field, vo] of env.veg) {
       if (field === 'orchard') { // rows of trees on terraces
-        const nPatch = rng.int(2, 3);
+        const nPatch = rng.int(2, 3) * (hl ? 1 : Math.round(K * 0.75));
         for (let pI = 0; pI < nPatch; pI++) {
-          const a = rng.range(0, 6.28), d = rng.range(18, 40), cx = Math.cos(a) * d, cz = Math.sin(a) * d, rot = rng.range(0, 3.14), sp = rng.range(5.2, 7), pts = [];
-          for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const lx = i * sp + rng.range(-0.7, 0.7), lz = j * sp + rng.range(-0.7, 0.7); const x = cx + lx * Math.cos(rot) - lz * Math.sin(rot), z = cz + lx * Math.sin(rot) + lz * Math.cos(rot); if (Math.hypot(x, z) < 8 || Math.hypot(x, z) > 56 || inWater(x, z, 2) || slopeAt(x, z) > 0.6) continue; pts.push({ x, z, y: heightAt(x, z) }); placed.push({ x, z, r: 2 }); }
+          const a = rng.range(0, 6.28), d = rng.range(18, 40) * SC, cx = Math.cos(a) * d, cz = Math.sin(a) * d, rot = rng.range(0, 3.14), sp = rng.range(5.2, 7), pts = [];
+          for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const lx = i * sp + rng.range(-0.7, 0.7), lz = j * sp + rng.range(-0.7, 0.7); const x = cx + lx * Math.cos(rot) - lz * Math.sin(rot), z = cz + lx * Math.sin(rot) + lz * Math.cos(rot); if (Math.hypot(x, z) < 8 || Math.hypot(x, z) > PLAY_R - 2 || inWater(x, z, 2) || slopeAt(x, z) > 0.6) continue; pts.push({ x, z, y: heightAt(x, z) }); placed.push({ x, z, r: 2 }); }
           instanceAt(type, pts, {});
         }
       } else if (field === 'avenue') { // a line of cypresses
-        const a = rng.range(0, 6.28); let x = Math.cos(a) * rng.range(14, 24), z = Math.sin(a) * rng.range(14, 24), dir = rng.range(0, 6.28); const pts = [];
-        for (let i = 0; i < n; i++) { dir += rng.range(-0.12, 0.12); x += Math.cos(dir) * 5.4; z += Math.sin(dir) * 5.4; if (Math.hypot(x, z) > 54 || Math.hypot(x, z) < 7 || inWater(x, z, 2)) break; for (const s of [-1, 1]) { const px = x + Math.cos(dir + 1.5708) * 2.1 * s, pz = z + Math.sin(dir + 1.5708) * 2.1 * s; pts.push({ x: px, z: pz, y: heightAt(px, pz) }); placed.push({ x: px, z: pz, r: 1.2 }); } }
+        const pts = [];
+        for (let av = 0; av < (hl ? 1 : Math.round(K * 0.75)); av++) { const a = rng.range(0, 6.28); let x = Math.cos(a) * rng.range(14, 24) * SC, z = Math.sin(a) * rng.range(14, 24) * SC, dir = rng.range(0, 6.28);
+        for (let i = 0; i < n; i++) { dir += rng.range(-0.12, 0.12); x += Math.cos(dir) * 5.4; z += Math.sin(dir) * 5.4; if (Math.hypot(x, z) > PLAY_R - 4 || Math.hypot(x, z) < 7 || inWater(x, z, 2)) break; for (const s of [-1, 1]) { const px = x + Math.cos(dir + 1.5708) * 2.1 * s, pz = z + Math.sin(dir + 1.5708) * 2.1 * s; pts.push({ x: px, z: pz, y: heightAt(px, pz) }); placed.push({ x: px, z: pz, r: 1.2 }); } } }
         instanceAt(type, pts, {});
-      } else addTrees(type, hl ? Math.round(n * 1.6 * K) : n, Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
+      } else addTrees(type, hl ? Math.round(n * 1.6 * K) : Math.round(n * K), Object.assign({ field }, vo || {}, (type === 'bush' || LOW_BOG[type]) ? Object.assign({ minR: 4, anySlope: true }, lowOpts) : {}));
     }
     // rocks (+ big outcrops in the Alps, kopje in Kenya)
     instanceAt('rock', scatter(Math.round(env.rocks * K), 1.2, 6, PLAY_R - 2, { anySlope: true, field: env.slopeRock ? 'upland' : 'sparse' }), {});
-    if (biome.id === 'alps') instanceAt('rock', scatter(10, 2.4, 20, 56, { anySlope: true }), { scale: 2.2, variants: 2 });
+    if (biome.id === 'alps') instanceAt('rock', scatter(Math.round(10 * K), 2.4, 20 * SC, PLAY_R - 2, { anySlope: true }), { scale: 2.2, variants: 2 });
     if (env.lm.includes('kopje')) {
-      const nK = rng.int(1, 2);
-      for (let k = 0; k < nK; k++) { const c = scatter(1, 8, 24, 48, { waterGap: 4 })[0]; if (!c) continue; const pts = []; for (let i = 0; i < 9; i++) { const aa = rng.range(0, 6.28), dd = rng.range(0, 4.2); const px = c.x + Math.cos(aa) * dd, pz = c.z + Math.sin(aa) * dd; pts.push({ x: px, z: pz, y: heightAt(px, pz) + rng.range(0, 1.2) }); } instanceAt('rock', pts, { scale: rng.range(2.3, 3.6), variants: 3 }); }
+      const nK = rng.int(1, 2) * Math.round(K * 0.75);
+      for (let k = 0; k < nK; k++) { const c = scatter(1, 8, 24 * SC, PLAY_R - 8, { waterGap: 4 })[0]; if (!c) continue; const pts = []; for (let i = 0; i < 9; i++) { const aa = rng.range(0, 6.28), dd = rng.range(0, 4.2); const px = c.x + Math.cos(aa) * dd, pz = c.z + Math.sin(aa) * dd; pts.push({ x: px, z: pz, y: heightAt(px, pz) + rng.range(0, 1.2) }); } instanceAt('rock', pts, { scale: rng.range(2.3, 3.6), variants: 3 }); }
     }
 
     // ---- landmarks (two picked at random per visit)
     const mat = c => new THREE.MeshLambertMaterial({ color: c }); const mWood = mat('#8a6a42'), mDark = mat('#5a4430'), mStone = mat('#9a9a92'), mRed = mat('#c83a22'), mBlk = mat('#22201e'), mMoss = mat('#5a7a3a'), mWhite = mat('#e8e0d0'), mRoof = mat('#8a3a2a');
     const addMesh = (m, x, y, z, ry = 0, shadow = true) => { m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); return m; };
+    const scatterS = (c, r, a, b, o) => scatter(c, r, a * SC, b * SC, o);      // landmarks keep their place on the scale of the map
     const LM = {
-      logs() { const c = scatter(1, 3, 12, 50, { waterGap: 3 })[0]; if (!c) return; const n = rng.int(1, 3); for (let i = 0; i < n; i++) { const x = c.x + rng.range(-2, 2), z = c.z + rng.range(-2, 2), y = heightAt(x, z), len = rng.range(2.6, 4.4), ry = rng.range(0, 3.14); const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, len, 7), mWood); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.35, len * 0.55, 6), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.06; g.add(m, mo); g.position.set(x, y + 0.28, z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x, z, r: 0.5 }); } },
-      biglog() { const c = scatter(1, 4, 12, 46, { waterGap: 3 })[0]; if (!c) return; const len = rng.range(7, 11), ry = rng.range(0, 3.14), g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, len, 8), mDark); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.87, len * 0.6, 8), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.08; g.add(m, mo); g.position.set(c.x, heightAt(c.x, c.z) + 0.6, c.z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); for (let i = -2; i <= 2; i++) world.colliders.push({ x: c.x + Math.cos(ry) * i * 1.6, z: c.z - Math.sin(ry) * i * 1.6, r: 0.8 }); },
-      stumps() { scatter(5, 1, 8, 50, { waterGap: 3 }).forEach(c => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.5, 7), mWood); addMesh(m, c.x, c.y + 0.22, c.z); world.colliders.push({ x: c.x, z: c.z, r: 0.4 }); }); },
-      fence() { const c = scatter(1, 4, 14, 48, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(7, 12); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 2.2, z = c.z - Math.sin(ry) * i * 2.2; if (inWater(x, z, 1) || Math.hypot(x, z) > 56) continue; const y = heightAt(x, z); addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.2, 0.16), mWood), x, y + 0.55, z); if (i < n - 1) { const x2 = x + Math.cos(ry) * 1.1, z2 = z - Math.sin(ry) * 1.1, y2 = heightAt(x2, z2); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.95, z2, ry); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.55, z2, ry); } } },
+      logs() { const c = scatterS(1, 3, 12, 50, { waterGap: 3 })[0]; if (!c) return; const n = rng.int(1, 3); for (let i = 0; i < n; i++) { const x = c.x + rng.range(-2, 2), z = c.z + rng.range(-2, 2), y = heightAt(x, z), len = rng.range(2.6, 4.4), ry = rng.range(0, 3.14); const g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, len, 7), mWood); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.35, len * 0.55, 6), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.06; g.add(m, mo); g.position.set(x, y + 0.28, z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x, z, r: 0.5 }); } },
+      biglog() { const c = scatterS(1, 4, 12, 46, { waterGap: 3 })[0]; if (!c) return; const len = rng.range(7, 11), ry = rng.range(0, 3.14), g = new THREE.Group(); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, len, 8), mDark); m.rotation.z = Math.PI / 2; const mo = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.87, len * 0.6, 8), mMoss); mo.rotation.z = Math.PI / 2; mo.position.y = 0.08; g.add(m, mo); g.position.set(c.x, heightAt(c.x, c.z) + 0.6, c.z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); for (let i = -2; i <= 2; i++) world.colliders.push({ x: c.x + Math.cos(ry) * i * 1.6, z: c.z - Math.sin(ry) * i * 1.6, r: 0.8 }); },
+      stumps() { scatterS(5, 1, 8, 50, { waterGap: 3 }).forEach(c => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.5, 7), mWood); addMesh(m, c.x, c.y + 0.22, c.z); world.colliders.push({ x: c.x, z: c.z, r: 0.4 }); }); },
+      fence() { const c = scatterS(1, 4, 14, 48, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(7, 12); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 2.2, z = c.z - Math.sin(ry) * i * 2.2; if (inWater(x, z, 1) || Math.hypot(x, z) > 56) continue; const y = heightAt(x, z); addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.2, 0.16), mWood), x, y + 0.55, z); if (i < n - 1) { const x2 = x + Math.cos(ry) * 1.1, z2 = z - Math.sin(ry) * 1.1, y2 = heightAt(x2, z2); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.95, z2, ry); addMesh(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.08), mWood), x2, y2 + 0.55, z2, ry); } } },
       chalet() {      // the old abandoned chalet (always present in the Alps): door towards the spawn point, a door spot the player can enter
-        let c = scatter(1, 5, 20, 40, { waterGap: 4, maxSlope: 0.2 })[0] || scatter(1, 5, 20, 44, { waterGap: 4, maxSlope: 0.4 })[0]; if (!c) return;
+        let c = scatterS(1, 5, 20, 40, { waterGap: 4, maxSlope: 0.2 })[0] || scatterS(1, 5, 20, 44, { waterGap: 4, maxSlope: 0.4 })[0]; if (!c) return;
         const ry = Math.atan2(-c.x, -c.z), built = Chalet.build(rng, { heightAt, cx: c.x, cy: c.y, cz: c.z, ry });
         built.mesh.position.set(c.x, c.y, c.z); built.mesh.rotation.y = ry; scene.add(built.mesh); const co = Math.cos(ry), si = Math.sin(ry);
         for (const lx of [-2.7, -0.9, 0.9, 2.7]) for (const lz of [-1.8, 0, 1.8]) world.colliders.push({ x: c.x + lx * co + lz * si, z: c.z - lx * si + lz * co, r: 1.3 });
         for (const lx of [-1.8, 1.8]) world.colliders.push({ x: c.x + lx * co + (built.D / 2 + 1.7) * si, z: c.z - lx * si + (built.D / 2 + 1.7) * co, r: 0.3 });
         const dl = built.door; world.door = { x: c.x + dl.lx * co + dl.lz * si, z: c.z - dl.lx * si + dl.lz * co, yaw: ry };
       },
-      cairn() { const c = scatter(1, 2, 14, 50, { waterGap: 3 })[0]; if (!c) return; for (let i = 0; i < 5; i++) addMesh(new THREE.Mesh(new THREE.DodecahedronGeometry(0.6 - i * 0.09, 0), mStone), c.x + rng.range(-0.1, 0.1), c.y + 0.35 + i * 0.5, c.z + rng.range(-0.1, 0.1), rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.7 }); },
-      boulders() { scatter(rng.int(3, 5), 2, 10, 50, { anySlope: true }).forEach(c => { const m = new THREE.Mesh(blobG(rng.range(1.0, 1.9), rng, 0.4, 1), mat(shadeHex(env.rock, rng.range(0.85, 1.1)))); addMesh(m, c.x, c.y + 0.5, c.z, rng.range(0, 6)); m.scale.y = 0.7; world.colliders.push({ x: c.x, z: c.z, r: 1.4 }); }); },
-      ruin() { const c = scatter(1, 5, 16, 48, { waterGap: 4, maxSlope: 0.5 })[0]; if (!c) return; const nC = rng.int(4, 6); for (let i = 0; i < nC; i++) { const x = c.x + (i - nC / 2) * 1.9, z = c.z + rng.range(-0.3, 0.3), y = heightAt(x, z), h = rng.range(1.2, 3.4); addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, h, 10), mWhite), x, y + h / 2, z); addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.9), mWhite), x, y + h + 0.1, z); world.colliders.push({ x, z, r: 0.5 }); } for (let i = 0; i < 4; i++) { const bx = c.x + rng.range(-4, 4), bz = c.z + rng.range(-2, 2); addMesh(new THREE.Mesh(new THREE.BoxGeometry(rng.range(0.8, 1.6), 0.5, 0.7), mWhite), bx, heightAt(bx, bz) + 0.25, bz, rng.range(0, 6)); } },
-      wall() { const c = scatter(1, 4, 14, 48, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(6, 10); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 1.4, z = c.z - Math.sin(ry) * i * 1.4; if (inWater(x, z, 1) || Math.hypot(x, z) > 56) continue; addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.7 + rng.range(0, 0.2), 0.6), mat(shadeHex('#b8b0a0', rng.range(0.9, 1.1)))), x, heightAt(x, z) + 0.35, z, ry); world.colliders.push({ x, z, r: 0.6 }); } },
-      windmill() { const c = scatter(1, 5, 20, 46, { waterGap: 4, maxSlope: 0.4 })[0]; if (!c) return; const g = new THREE.Group(); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const leg = limb(new V3(sx * 1.4, 0, sz * 1.4), new V3(sx * 0.5, 9, sz * 0.5), 0.14, 0.09, 5); const m = new THREE.Mesh(leg.g, mWood); m.applyMatrix4(leg.m); g.add(m); } const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.1, 1.8), mDark); head.position.y = 9.4; g.add(head); const hub = new THREE.Group(); hub.position.set(0, 9.4, 1.0); for (let i = 0; i < 8; i++) { const bl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.8, 0.05), mWhite); bl.position.y = 1.7; const arm = new THREE.Group(); arm.rotation.z = i * Math.PI / 4; arm.add(bl); hub.add(arm); } g.add(hub); const tail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.3, 1.6), mWhite); tail.position.set(0, 9.4, -1.7); g.add(tail); g.position.set(c.x, c.y, c.z); g.rotation.y = rng.range(0, 6.28); g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x: c.x, z: c.z, r: 1.7 }); world.updaters.push(dt => { hub.rotation.z += dt * 0.7; }); },
-      torii() { const c = scatter(1, 4, 14, 44, { waterGap: 4, maxSlope: 0.45 })[0]; if (!c) return; const g = new THREE.Group(); for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 5.4, 8), mRed); p.position.set(s * 2.1, 2.7, 0); g.add(p); } const top = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.42, 0.5), mBlk); top.position.y = 5.5; const top2 = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.3, 0.4), mRed); top2.position.y = 4.7; g.add(top, top2); const ry = rng.range(0, 6.28); g.position.set(c.x, c.y, c.z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); for (const s of [-1, 1]) world.colliders.push({ x: c.x + Math.cos(ry) * 2.1 * s, z: c.z - Math.sin(ry) * 2.1 * s, r: 0.4 }); },
-      lanterns() { const c = scatter(1, 4, 12, 46, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(3, 5); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 4.5, z = c.z - Math.sin(ry) * i * 4.5; if (inWater(x, z, 1.5) || Math.hypot(x, z) > 56) continue; const y = heightAt(x, z); const g = new THREE.Group(); const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.9, 6), mStone); base.position.y = 0.45; const box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), mStone); box.position.y = 1.15; const roof = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.4, 4), mStone); roof.position.y = 1.6; roof.rotation.y = Math.PI / 4; const glow = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.62), new THREE.MeshBasicMaterial({ color: '#ffd890' })); glow.position.y = 1.15; g.add(base, box, roof, glow); g.position.set(x, y, z); g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x, z, r: 0.5 }); } },
+      cairn() { const c = scatterS(1, 2, 14, 50, { waterGap: 3 })[0]; if (!c) return; for (let i = 0; i < 5; i++) addMesh(new THREE.Mesh(new THREE.DodecahedronGeometry(0.6 - i * 0.09, 0), mStone), c.x + rng.range(-0.1, 0.1), c.y + 0.35 + i * 0.5, c.z + rng.range(-0.1, 0.1), rng.range(0, 6)); world.colliders.push({ x: c.x, z: c.z, r: 0.7 }); },
+      boulders() { scatterS(rng.int(3, 5), 2, 10, 50, { anySlope: true }).forEach(c => { const m = new THREE.Mesh(blobG(rng.range(1.0, 1.9), rng, 0.4, 1), mat(shadeHex(env.rock, rng.range(0.85, 1.1)))); addMesh(m, c.x, c.y + 0.5, c.z, rng.range(0, 6)); m.scale.y = 0.7; world.colliders.push({ x: c.x, z: c.z, r: 1.4 }); }); },
+      ruin() { const c = scatterS(1, 5, 16, 48, { waterGap: 4, maxSlope: 0.5 })[0]; if (!c) return; const nC = rng.int(4, 6); for (let i = 0; i < nC; i++) { const x = c.x + (i - nC / 2) * 1.9, z = c.z + rng.range(-0.3, 0.3), y = heightAt(x, z), h = rng.range(1.2, 3.4); addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, h, 10), mWhite), x, y + h / 2, z); addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.9), mWhite), x, y + h + 0.1, z); world.colliders.push({ x, z, r: 0.5 }); } for (let i = 0; i < 4; i++) { const bx = c.x + rng.range(-4, 4), bz = c.z + rng.range(-2, 2); addMesh(new THREE.Mesh(new THREE.BoxGeometry(rng.range(0.8, 1.6), 0.5, 0.7), mWhite), bx, heightAt(bx, bz) + 0.25, bz, rng.range(0, 6)); } },
+      wall() { const c = scatterS(1, 4, 14, 48, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(6, 10); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 1.4, z = c.z - Math.sin(ry) * i * 1.4; if (inWater(x, z, 1) || Math.hypot(x, z) > 56) continue; addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.7 + rng.range(0, 0.2), 0.6), mat(shadeHex('#b8b0a0', rng.range(0.9, 1.1)))), x, heightAt(x, z) + 0.35, z, ry); world.colliders.push({ x, z, r: 0.6 }); } },
+      windmill() { const c = scatterS(1, 5, 20, 46, { waterGap: 4, maxSlope: 0.4 })[0]; if (!c) return; const g = new THREE.Group(); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const leg = limb(new V3(sx * 1.4, 0, sz * 1.4), new V3(sx * 0.5, 9, sz * 0.5), 0.14, 0.09, 5); const m = new THREE.Mesh(leg.g, mWood); m.applyMatrix4(leg.m); g.add(m); } const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.1, 1.8), mDark); head.position.y = 9.4; g.add(head); const hub = new THREE.Group(); hub.position.set(0, 9.4, 1.0); for (let i = 0; i < 8; i++) { const bl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.8, 0.05), mWhite); bl.position.y = 1.7; const arm = new THREE.Group(); arm.rotation.z = i * Math.PI / 4; arm.add(bl); hub.add(arm); } g.add(hub); const tail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.3, 1.6), mWhite); tail.position.set(0, 9.4, -1.7); g.add(tail); g.position.set(c.x, c.y, c.z); g.rotation.y = rng.range(0, 6.28); g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x: c.x, z: c.z, r: 1.7 }); world.updaters.push(dt => { hub.rotation.z += dt * 0.7; }); },
+      torii() { const c = scatterS(1, 4, 14, 44, { waterGap: 4, maxSlope: 0.45 })[0]; if (!c) return; const g = new THREE.Group(); for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 5.4, 8), mRed); p.position.set(s * 2.1, 2.7, 0); g.add(p); } const top = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.42, 0.5), mBlk); top.position.y = 5.5; const top2 = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.3, 0.4), mRed); top2.position.y = 4.7; g.add(top, top2); const ry = rng.range(0, 6.28); g.position.set(c.x, c.y, c.z); g.rotation.y = ry; g.traverse(o => { o.castShadow = true; }); scene.add(g); for (const s of [-1, 1]) world.colliders.push({ x: c.x + Math.cos(ry) * 2.1 * s, z: c.z - Math.sin(ry) * 2.1 * s, r: 0.4 }); },
+      lanterns() { const c = scatterS(1, 4, 12, 46, { waterGap: 3 })[0]; if (!c) return; const ry = rng.range(0, 3.14), n = rng.int(3, 5); for (let i = 0; i < n; i++) { const x = c.x + Math.cos(ry) * i * 4.5, z = c.z - Math.sin(ry) * i * 4.5; if (inWater(x, z, 1.5) || Math.hypot(x, z) > 56) continue; const y = heightAt(x, z); const g = new THREE.Group(); const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.9, 6), mStone); base.position.y = 0.45; const box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), mStone); box.position.y = 1.15; const roof = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.4, 4), mStone); roof.position.y = 1.6; roof.rotation.y = Math.PI / 4; const glow = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.26, 0.62), new THREE.MeshBasicMaterial({ color: '#ffd890' })); glow.position.y = 1.15; g.add(base, box, roof, glow); g.position.set(x, y, z); g.traverse(o => { o.castShadow = true; }); scene.add(g); world.colliders.push({ x, z, r: 0.5 }); } },
       boardwalk() {       // a duckboard path laid on log sleepers across the moss (the path of a nature reserve)
         if (!plan.walk) return; const parts = []; const pts = plan.walk; world.lmPos = Object.assign(world.lmPos || {}, { boardwalk: [pts[0][0], pts[0][1], pts[0][2]] });
         for (let i = 1; i < pts.length; i++) {
@@ -1286,7 +1289,7 @@ const World = (() => {
     };
     const pool = (env.lm || []).filter(k => LM[k]); const picks = []; if (biome.id === 'alps' && pool.includes('chalet')) picks.push(pool.splice(pool.indexOf('chalet'), 1)[0]);
     if (biome.id === 'papua' && pool.includes('lavaflow')) picks.push(pool.splice(pool.indexOf('lavaflow'), 1)[0]);
-    while (picks.length < 2 && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+    while (picks.length < (hl ? 2 : 4) && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
     picks.forEach(k => { try { LM[k](); } catch (e) { console.warn('landmark failed', k, e); } });
     world.landmarks = picks;
 
