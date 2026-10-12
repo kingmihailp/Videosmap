@@ -697,7 +697,8 @@ const World = (() => {
     seedStr = seedStr || randomSeed();
     const env = Object.assign({}, ENV[biome.id]);
     const BIGMAP = !!env.highland;         // the archipelago has its own plan; every other location is one huge map (five times the old area) split into sectors (see sectors.js)
-    const SIZE = BIGMAP ? 360 : 320, SEG = 300, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : 130, CELL = SIZE / SEG;
+    const LITE = !BIGMAP && /[#&]lite\b/.test(location.hash);       // debug / very weak machines (#lite in the address): the old small map, for tests with several browsers
+    const SIZE = BIGMAP ? 360 : LITE ? 180 : 320, SEG = LITE ? 180 : 300, HALF = SIZE / 2, PLAY_R = BIGMAP ? 120 : LITE ? 58 : 130, CELL = SIZE / SEG;
     const SC = BIGMAP ? 1 : PLAY_R / 58;     // distances that the recipes give for the old small map grow with the map
     const seed = strSeed(biome.id + ':' + seedStr);
     const rng = new Rng(seed), noise = new Noise2(seed ^ 0x9e37), tnoise = new Noise2(seed ^ 0x51a3);
@@ -802,7 +803,7 @@ const World = (() => {
       if (!sites.some(b => b.weak)) { const pool = sites.filter(b => b.loop || b.leaf); (pool.length ? pool : sites)[rng.int(0, (pool.length ? pool : sites).length - 1)].weak = true; }
       return { isl, sites, edges, sdOf, flyLevel: isl.reduce((a, o) => a + o.Hr, 0) / isl.length + 3, area: isl.reduce((a, o) => a + o.area, 0) };
     })() : null;
-    const K = hl ? clamp(hl.area / 5200, 1, 4) : 4;          // how much more there is to grow and to catch on a big map
+    const K = hl ? clamp(hl.area / 5200, 1, 4) : LITE ? 1 : 4;          // how much more there is to grow and to catch on a big map
     const siteUV = (s, x, z) => [(x - s.cx) * s.nx + (z - s.cz) * s.nz, (x - s.cx) * s.tx + (z - s.cz) * s.tz];
     const isTop = (o, x, z, sdv) => {
       const sd = sdv === undefined ? hl.sdOf(o, x, z) : sdv; let hills = 0; for (const q of o.hills) hills += q.h * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.hypot(x - q.x, z - q.z) / q.r)));
@@ -1289,7 +1290,7 @@ const World = (() => {
     };
     const pool = (env.lm || []).filter(k => LM[k]); const picks = []; if (biome.id === 'alps' && pool.includes('chalet')) picks.push(pool.splice(pool.indexOf('chalet'), 1)[0]);
     if (biome.id === 'papua' && pool.includes('lavaflow')) picks.push(pool.splice(pool.indexOf('lavaflow'), 1)[0]);
-    while (picks.length < (hl ? 2 : 4) && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+    while (picks.length < (hl || LITE ? 2 : 4) && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
     picks.forEach(k => { try { LM[k](); } catch (e) { console.warn('landmark failed', k, e); } });
     world.landmarks = picks;
 
@@ -1407,6 +1408,39 @@ const World = (() => {
       pg.attributes.position.needsUpdate = true;
     });
 
+    // ---- the big instanced groups (trees, bushes, rocks, grass, flowers) are cut into square cells: a cell that is out of the view, or lost in the fog, is not drawn at all
+    // (the map is five times bigger than it was, so without this every frame would draw all of it)
+    const cellList = [];
+    {
+      const CW = 44, src = scene.children.filter(o => o.isInstancedMesh && o.count > 150 && !o.userData.noChunk && !o.userData.noFloat), byCell = new Map();
+      for (const im of src) {
+        const n = im.count, Mx = im.instanceMatrix.array, Cc = im.instanceColor ? im.instanceColor.array : null, extra = Object.entries(im.geometry.attributes).filter(([k, at]) => at.isInstancedBufferAttribute);
+        const groups = new Map();
+        for (let i = 0; i < n; i++) { const key = Math.floor((Mx[i * 16 + 12] + HALF) / CW) * 1000 + Math.floor((Mx[i * 16 + 14] + HALF) / CW); let g = groups.get(key); if (!g) groups.set(key, g = []); g.push(i); }
+        const made = [];
+        for (const [key, ids] of groups) {
+          const m = new THREE.InstancedMesh(extra.length ? im.geometry.clone() : im.geometry, im.material, ids.length);
+          ids.forEach((id, j) => { m.instanceMatrix.array.set(Mx.subarray(id * 16, id * 16 + 16), j * 16); });
+          if (Cc) { m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(ids.length * 3), 3); ids.forEach((id, j) => { m.instanceColor.array.set(Cc.subarray(id * 3, id * 3 + 3), j * 3); }); }
+          for (const [k, at] of extra) { const sz = at.itemSize, arr = new Float32Array(ids.length * sz); ids.forEach((id, j) => { for (let q = 0; q < sz; q++) arr[j * sz + q] = at.array[id * sz + q]; }); m.geometry.setAttribute(k, new THREE.InstancedBufferAttribute(arr, sz)); }
+          m.castShadow = im.castShadow; m.receiveShadow = im.receiveShadow; m.frustumCulled = false; m.userData = Object.assign({}, im.userData, { cast: im.castShadow }); m.renderOrder = im.renderOrder; scene.add(m); made.push(m);
+          let c = byCell.get(key); if (!c) { const cx = Math.floor(key / 1000), cz = key % 1000; c = { x: (cx + 0.5) * CW - HALF, z: (cz + 0.5) * CW - HALF, meshes: [] }; byCell.set(key, c); cellList.push(c); } c.meshes.push(m);
+        }
+        scene.remove(im); if (im === world.grassMesh) world.grassMeshes = made; else if (extra.length) im.geometry.dispose();
+      }
+      if (!world.grassMeshes) world.grassMeshes = [world.grassMesh];
+    }
+    const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), farD = clamp(1.9 / fogDen, 90, 420);
+    world.cull = camera => {
+      if (!cellList.length) return; pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); const cp = camera.position;
+      for (const c of cellList) {
+        const d = Math.hypot(c.x - cp.x, c.z - cp.z); let vis = d < CW_R + 30;                   // close cells are always drawn (their shadows fall into the view)
+        if (!vis && d < farD + CW_R) { sph.center.set(c.x, cp.y * 0 + 8, c.z); sph.radius = CW_R + 26; vis = frustum.intersectsSphere(sph); }
+        const sh = vis && d < 95;                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
+        for (const m of c.meshes) { m.visible = vis; m.castShadow = sh && m.userData.cast; }
+      }
+    };
+    const CW_R = 44 * 0.71 + 30;
     // ---- per-frame update
     world.update = (dt, t, focus) => {
       shared.uTime.value = t; waterMat.uniforms.uTime.value = t;

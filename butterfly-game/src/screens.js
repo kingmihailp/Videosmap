@@ -377,19 +377,19 @@ const Screens = (() => {
   const keysScr = {
     wait: -1, btns: [], rows: [], msg: '',
     layout() {
-      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 34 + i * 13, w: 260, h: 11 }));
-      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 235, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 235, w: 170, h: 16, size: 10 }];
+      const x0 = SW / 2 - 130; this.rows = Keys.ACTIONS.map((a, i) => ({ id: 'row' + i, i, x: x0, y: 29 + i * 12, w: 260, h: 11 }));
+      this.btns = [{ id: 'reset', label: 'Сбросить', x: SW / 2 - 130, y: 238, w: 80, h: 16 }, { id: 'back', label: 'Готово', x: SW / 2 - 40, y: 238, w: 170, h: 16, size: 10 }];
     },
     draw(ctx, t, m) {
       this.layout(); ctx.fillStyle = 'rgba(4,12,10,0.88)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, SW / 2 - 150, 10, 300, 252, { fill: 'rgba(16,32,28,0.97)', border: c.gold });
-      T.draw(ctx, 'Клавиши управления', SW / 2, 16, { size: 14, align: 'c', color: c.gold });
+      T.draw(ctx, 'Клавиши управления', SW / 2, 12, { size: 14, align: 'c', color: c.gold });
       this.rows.forEach(r => {
         const a = Keys.ACTIONS[r.i], hot = UIK.hit(r, m.x, m.y) || this.wait === r.i;
         UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: hot ? 'rgba(40,70,58,0.95)' : 'rgba(10,22,18,0.9)', border: this.wait === r.i ? c.gold : c.line, shadow: false });
         T.draw(ctx, a.ru, r.x + 6, r.y + 1, { size: 8, color: c.text });
         T.draw(ctx, this.wait === r.i ? 'нажмите клавишу…' : Keys.name(Keys.bound(a.id)), r.x + r.w - 6, r.y + 1, { size: 8, align: 'r', color: this.wait === r.i ? c.gold : c.green });
       });
-      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 222, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
+      T.draw(ctx, this.msg || 'Нажмите на действие, затем на новую клавишу (Esc — отмена)', SW / 2, 225, { size: 8, align: 'c', color: this.msg ? c.red : c.dim });
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
     },
     click(x, y) {                                   // returns true when the screen should close
