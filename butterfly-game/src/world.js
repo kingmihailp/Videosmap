@@ -1460,6 +1460,11 @@ const World = (() => {
     // ---- the big instanced groups (trees, bushes, rocks, grass, flowers) are cut into square cells: a cell that is out of the view, or lost in the fog, is not drawn at all
     // (the map is five times bigger than it was, so without this every frame would draw all of it)
     const cellList = [], proxies = new Map();
+    // the hand-over between a heavy tree and its coarse copy is a dissolve: both are drawn in a band of distances and every pixel belongs to one of them (the same screen-space noise decides for both), so nothing pops
+    const fadeMat = hi => { const m = treeMat.clone(); m.customProgramCacheKey = () => hi ? 'fadeHi' : 'fadeLo';
+      m.onBeforeCompile = sh => { sh.vertexShader = 'varying float vFadeD;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vFadeD = -mvPosition.z;');
+        sh.fragmentShader = 'varying float vFadeD;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n float fd = smoothstep(' + FADE0.toFixed(1) + ', ' + FADE1.toFixed(1) + ', vFadeD); float nz = fract(52.9829189 * fract(dot(floor(gl_FragCoord.xy), vec2(0.06711056, 0.00583715))));\n ' + (hi ? 'if (nz < fd) discard;' : 'if (nz >= fd) discard;')); }; return m; };
+    const FADE0 = 62, FADE1 = 94, matHi = fadeMat(true), matLo = fadeMat(false);
     {
       const CW = 44, src = scene.children.filter(o => o.isInstancedMesh && o.count > 12 && !o.userData.noChunk && !o.userData.noFloat), byCell = new Map();
       for (const im of src) {
@@ -1473,7 +1478,7 @@ const World = (() => {
           if (Cc) { m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(ids.length * 3), 3); ids.forEach((id, j) => { m.instanceColor.array.set(Cc.subarray(id * 3, id * 3 + 3), j * 3); }); }
           for (const [k, at] of extra) { const sz = at.itemSize, arr = new Float32Array(ids.length * sz); ids.forEach((id, j) => { for (let q = 0; q < sz; q++) arr[j * sz + q] = at.array[id * sz + q]; }); m.geometry.setAttribute(k, new THREE.InstancedBufferAttribute(arr, sz)); }
           m.castShadow = im.castShadow; m.receiveShadow = im.receiveShadow; m.frustumCulled = false; m.userData = Object.assign({}, im.userData, { cast: im.castShadow, full: ids.length }); m.renderOrder = im.renderOrder; scene.add(m); made.push(m);
-          if (!extra.length) { let px = proxies.get(im.geometry); if (px === undefined) { px = proxyOf(im.geometry); proxies.set(im.geometry, px); } if (px) { const lo = new THREE.InstancedMesh(px, im.material, ids.length); lo.instanceMatrix = m.instanceMatrix; if (m.instanceColor) lo.instanceColor = m.instanceColor; lo.receiveShadow = im.receiveShadow; lo.castShadow = false; lo.frustumCulled = false; lo.visible = false; scene.add(lo); m.userData.lo = lo; } }
+          if (!extra.length) { let px = proxies.get(im.geometry); if (px === undefined) { px = proxyOf(im.geometry); proxies.set(im.geometry, px); } if (px) { const lo = new THREE.InstancedMesh(px, matLo, ids.length); m.material = matHi; lo.instanceMatrix = m.instanceMatrix; if (m.instanceColor) lo.instanceColor = m.instanceColor; lo.receiveShadow = im.receiveShadow; lo.castShadow = false; lo.frustumCulled = false; lo.visible = false; scene.add(lo); m.userData.lo = lo; } }
           let c = byCell.get(key); if (!c) { const cx = Math.floor(key / 1000), cz = key % 1000; c = { x: (cx + 0.5) * CW - HALF, z: (cz + 0.5) * CW - HALF, meshes: [] }; byCell.set(key, c); cellList.push(c); } c.meshes.push(m);
         }
         scene.remove(im); if (im === world.grassMesh) { world.grassMeshes = made; made.forEach(m => { m.userData.grass = true; }); } else if (extra.length) im.geometry.dispose();
@@ -1487,8 +1492,8 @@ const World = (() => {
         const d = Math.hypot(c.x - cp.x, c.z - cp.z); const cs = world.cullScale || 1; let vis = d < (CW_R + 30) * Math.max(0.7, cs);                   // close cells are always drawn (their shadows fall into the view)
         if (!vis && d < (farD + CW_R) * cs) { sph.center.set(c.x, cp.y * 0 + 8, c.z); sph.radius = CW_R + 26; vis = frustum.intersectsSphere(sph); }
         const sh = vis && d < 70 * Math.max(0.7, cs);                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
-        const near = d < 75 * Math.max(0.7, cs);                                                                   // far away a heavy tree is drawn as its coarse copy (same colours and silhouette, a tenth of the triangles); nothing is removed, so the forest keeps its density
-        for (const m of c.meshes) { const lo = m.userData.lo, useLo = lo && !near; m.visible = vis && !useLo; m.castShadow = sh && m.userData.cast && (!lo || d < 48); m.count = Math.floor(m.userData.full * (m.userData.grass ? (world.grassK || 1) : 1)); if (lo) lo.visible = vis && useLo; }
+        const nearHi = d - 31 < FADE1, farLo = d + 31 > FADE0;                                                                   // far away a heavy tree is drawn as its coarse copy (same colours and silhouette, a tenth of the triangles); nothing is removed, so the forest keeps its density
+        for (const m of c.meshes) { const lo = m.userData.lo; m.visible = vis && (!lo || nearHi); m.castShadow = sh && m.userData.cast && (!lo || d < 48); m.count = Math.floor(m.userData.full * (m.userData.grass ? (world.grassK || 1) : 1)); if (lo) lo.visible = vis && farLo; }
       }
     };
     const CW_R = 44 * 0.71 + 30;
