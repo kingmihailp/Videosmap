@@ -100,9 +100,9 @@
     if (Net.on) Net.join(biomeId).then(info => setTimeout(() => make(info.seed, { host: info.host === Net.id, flies: info.flies, mod: info.mod, bridges: info.bridges, traps: info.traps, ttl: info.ttl, t0: info.t0 }), 40)).catch(netFail);
     else { const want = seed || params.get('seed') || undefined, W = biomeId === 'ocean' ? { seed: want, born: Date.now() } : Save.world(biomeId, want); setTimeout(() => make(W.seed, null, W.born), 60); }
   };
-  Net.hooks.reseed = m => go(() => { if (App.play && App.play.traps && App.play.traps.own().length) App.play.traps.collectAll(); App.start(m.loc); });     // the place is generated anew (the server counts the 30 minutes): the traps are emptied into the stash first
-  App.autoRegen = play => {          // alone: the 30 minutes of this landscape are over
-    const bid = play.biome.id; if (play.traps && play.traps.own().length) play.traps.collectAll(); delete (Save.data.worlds || {})[bid]; Save.write();
+  Net.hooks.reseed = m => go(() => { if (App.play && App.play.traps && App.play.traps.own().length) { /* the traps vanish with their catch (App.start) */ } App.start(m.loc); });     // the place is generated anew (the server counts the 30 minutes): the traps are emptied into the stash first
+  App.autoRegen = play => {          // alone: the hour of this landscape are over
+    const bid = play.biome.id; delete (Save.data.worlds || {})[bid]; Save.write();
     play.toast('Местность создаётся заново…', 3, true); go(() => App.start(bid));
   };
   Net.hooks.closed = () => { if (App.screen === 'play' || App.screen === 'cabinet' || App.screen === 'loading') { if (App.play) { App.play.dispose(); App.play = null; } if (App.cab) { App.cab.dispose(); App.cab = null; } Snd.stopAmbient(); App.overlay = null; App.screen = 'title'; } Screens.mp.msg = 'Соединение с сервером потеряно'; };

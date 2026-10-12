@@ -12,7 +12,7 @@ const wsClient = name => new Promise(res => { const ws = new WebSocket(`ws://loc
   const a = await wsClient('A'), b = await wsClient('B'), c = await wsClient('C');
   a.send({ t: 'join', loc: 'alps' }); const j1 = await a.wait('joined'); a.send({ t: 'join', loc: null }); await new Promise(r => setTimeout(r, 200));
   b.send({ t: 'join', loc: 'alps' }); const j2 = await b.wait('joined'); c.send({ t: 'join', loc: 'alps' }); const j3 = await c.wait('joined');
-  ok(j1.seed && j2.seed && j1.seed === j2.seed && j1.ttl > 1700000, `an empty biome entered again keeps its landscape for the 30 minutes (${j1.seed} -> ${j2.seed}, ${Math.round(j1.ttl / 1000)} s left)`); ok(j3.seed === j2.seed, 'a second player joining gets the same seed');
+  ok(j1.seed && j2.seed && j1.seed === j2.seed && j1.ttl > 3500000, `an empty biome entered again keeps its landscape for the hour (${j1.seed} -> ${j2.seed}, ${Math.round(j1.ttl / 1000)} s left)`); ok(j3.seed === j2.seed, 'a second player joining gets the same seed');
   b.send({ t: 'join', loc: null }); c.send({ t: 'join', loc: null }); await new Promise(r => setTimeout(r, 200));
   a.send({ t: 'join', loc: 'cabinet' }); const jc1 = await a.wait('joined'); a.send({ t: 'join', loc: null }); await new Promise(r => setTimeout(r, 100)); a.send({ t: 'join', loc: 'cabinet' }); const jc2 = await a.wait('joined'); ok(jc1.seed === jc2.seed, 'the cabinet keeps its seed');
   // (3) watchdog: A hosts, B joins, A stays silent

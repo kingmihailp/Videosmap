@@ -2,7 +2,7 @@
 // A location is one very large map split into five sectors that adjoin tightly (a random guillotine cut of the square, so they never lie inside each other).
 // Every species of the location lives in one sector (31 species = 6+6+6+6+7); a butterfly may fly over a border now and then.
 // The layout and the species per sector come from the location's seed only, so every player of a shared place sees the same.
-// The whole place is generated anew every 30 minutes of real time (Sectors.PERIOD).
+// The whole place is generated anew every hour of real time (Sectors.PERIOD).
 const Sectors = (() => {
   const N = 5, EDGE = 0.75;      // EDGE: a trap this close (metres) to a border counts as standing on it
   const COLS = ['#ff6a5c', '#4ec9ff', '#ffd23c', '#7be86a', '#d890ff'], COLS_D = ['#8a2a22', '#1c5878', '#8a7014', '#2e7a26', '#6a3a8a'];
@@ -126,10 +126,10 @@ const Sectors = (() => {
     },
     click(x, y) { return this.btn && UIK.hit(this.btn, x, y) ? 'close' : null; },
   };
-  return { N, PERIOD: 30 * 60 * 1000, EDGE, make, mapImage, UI, label };
+  return { N, PERIOD: 60 * 60 * 1000, EDGE, make, mapImage, UI, label };
 })();
 
-// the landscape of a place when playing alone: kept for 30 minutes of real time (also between visits), then a new one is generated
+// the landscape of a place when playing alone: kept for an hour of real time (also between visits), then a new one is generated
 Save.world = (id, want) => {
   const W = (Save.data.worlds = Save.data.worlds || {}), now = Date.now(); let w = W[id];
   if (!w || now - w.born >= Sectors.PERIOD || w.born > now + 60000 || (want && w.seed !== want)) w = W[id] = { seed: want || World.randomSeed(), born: now };

@@ -244,7 +244,7 @@ class Play {
     // the whole fauna of the location lives on the map at once, each species in its own sector (the ocean keeps its small pool)
     this.sectors = biome.id === 'ocean' ? null : Sectors.make(biome, this.seed, this.world.R);
     this.pool = this.sectors ? biome.species.slice() : Play.pickPool(biome, new Rng(this.seed + '-fauna'), biome.poolSize || 9, !!mp);
-    // when this landscape is generated anew (every 30 minutes of real time): in a shared place the server counts it, alone it is counted from the moment the landscape was born
+    // when this landscape is generated anew (every hour of real time): in a shared place the server counts it, alone it is counted from the moment the landscape was born
     this.regenAt = this.sectors ? (mp && mp.t0 ? mp.t0 : performance.now()) + (mp ? (mp.ttl !== undefined ? mp.ttl : Sectors.PERIOD) : Math.max(0, (born || Date.now()) + Sectors.PERIOD - Date.now())) : Infinity; this.regenWarn = 0;
     this.helperT = 40;
     this.traps = new Traps.Sys(this); if (mp && mp.traps) for (const t of mp.traps) if (t.owner !== Net.id) this.traps.mk(t, false);
@@ -495,7 +495,7 @@ class Play {
     if (this.mp) { this.sendNet(dt); this.remotes.update(dt); }
     this.helperT -= dt;
     if (this.mp && Net.on && Net.loc === this.biome.id && this.isHost !== Net.host) { const hm = Net.hostMsg; Net.hostMsg = null; if (Net.host) this.becomeHost(hm && hm.flies); else this.becomePuppet(hm && hm.flies); }       // the leader changed while this world was still being built (a slow machine): follow the server
-    if (this.sectors) {       // the landscape is generated anew every 30 minutes (alone: this client counts, online: the server sends the new seed)
+    if (this.sectors) {       // the landscape is generated anew every hour (alone: this client counts, online: the server sends the new seed)
       const left = this.regenLeft();
       if (left < 60 && this.regenWarn < 1) { this.regenWarn = 1; this.toast('Через минуту местность создастся заново — заберите ловушки', 6, true); }
       else if (left < 10 && this.regenWarn < 2) { this.regenWarn = 2; this.toast('Местность создаётся заново через несколько секунд', 5, true); }

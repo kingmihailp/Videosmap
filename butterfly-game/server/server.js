@@ -72,14 +72,14 @@ const toLoc = (name, o, except) => { const l = locs.get(name); if (!l) return; c
 const plist = () => [...players.values()].map(p => ({ id: p.id, name: p.name, loc: p.loc }));
 const sendPlist = () => broadcast({ t: 'plist', list: plist() });
 
-// every landscape (the ocean excepted) is generated anew every 30 minutes of real time; nobody can ask for a new one. REGEN_MS only shortens it for tests
-const REGEN_MS = Number(process.env.REGEN_MS) || 30 * 60 * 1000;
+// every landscape (the ocean excepted) is generated anew every hour of real time; nobody can ask for a new one. REGEN_MS only shortens it for tests
+const REGEN_MS = Number(process.env.REGEN_MS) || 60 * 60 * 1000;
 const timed = name => name !== 'ocean';
 function renew(name, why) {
   const l = locs.get(name); state.seeds[name] = rnd(); state.born[name] = Date.now(); dirty = true; console.log('new landscape:', name, state.seeds[name], '(' + why + ')');
   if (l) { l.flies = []; l.caught.clear(); l.mod = null; l.bridges = {}; l.traps = new Map(); l.sigs = new Map(); l.lastFlies = Date.now() + 40000; toLoc(name, { t: 'reseed', loc: name, seed: state.seeds[name] }); }
 }
-setInterval(() => { const now = Date.now(); for (const b of BIOMES) if (timed(b) && now - state.born[b] >= REGEN_MS) renew(b, '30 minutes'); }, 500);
+setInterval(() => { const now = Date.now(); for (const b of BIOMES) if (timed(b) && now - state.born[b] >= REGEN_MS) renew(b, '1 hour'); }, 500);
 
 // butterfly traps stand in a location while their owner is there (nothing of their contents is known to the server: only the count, so nobody else can take it)
 const TRAP_LIFE = { std: 120, str: 360, imp: 240, scr: 426 };
@@ -108,7 +108,7 @@ function joinLoc(p, name) {
   if (SECRET_MAP[name] && !(p.maps || []).includes(SECRET_MAP[name])) { send(p, { t: 'denied', loc: name }); return; }
   leaveLoc(p); if (!name || (name !== 'cabinet' && name !== 'market' && name !== 'museum' && !BIOMES.includes(name))) { sendPlist(); return; }
   const l = getLoc(name);
-  // the ocean (and only it) gets a brand-new landscape whenever a player walks into an empty place; the others live their 30 minutes
+  // the ocean (and only it) gets a brand-new landscape whenever a player walks into an empty place; the others live their hour
   if (!l.ids.size && name === 'ocean') { state.seeds[name] = rnd(); console.log('new landscape:', name, state.seeds[name], '(' + p.name + ' came to an empty place)'); dirty = true; l.flies = []; l.caught.clear(); l.mod = null; l.host = 0; l.bridges = {}; l.traps = new Map(); }
   p.loc = name; l.ids.add(p.id); if (!l.host) { l.host = p.id; l.lastFlies = Date.now() + 40000; }      // grace while its client builds the (big) world
   send(p, { t: 'joined', loc: name, seed: state.seeds[name] || '', ttl: timed(name) && state.born[name] ? Math.max(0, state.born[name] + REGEN_MS - Date.now()) : undefined, host: l.host, flies: l.host === p.id ? l.flies : l.flies, mod: l.mod, bridges: l.bridges || {}, traps: [...(l.traps || new Map()).values()].map(t => trapView(t, Date.now())), players: [...l.ids].filter(i => i !== p.id).map(i => ({ id: i, name: players.get(i).name })) });
