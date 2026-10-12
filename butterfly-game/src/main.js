@@ -93,6 +93,7 @@
     leave(); App.screen = 'loading'; App.loadText = 'Отправляемся: ' + (BIOME_BY_ID[biomeId].secret ? '???' : BIOME_BY_ID[biomeId].place); App.overlay = null;
     const make = (sd, mp, born) => {
       if (at && seed && sd !== seed) at = undefined;                    // the landscape was regenerated meanwhile: the old spot (e.g. the chalet door) no longer exists
+      inp.keys.clear(); inp.dx = inp.dy = 0; inp.fire = false; App.inputGrace = performance.now() + 700;       // keys that were held while the world was built are not carried into it
       App.play = new Play(BIOME_BY_ID[biomeId], sd, mp, at, born); App.screen = 'play'; App.fade = 1; App.fadeTarget = 0; if (App.trapsLost) { App.play.toast(`Местность создана заново: ваши ловушки (${App.trapsLost}) пропали вместе с уловом`, 6, true); App.trapsLost = 0; }
       if (!Save.data.seenHelp) { App.overlay = 'help'; Save.data.seenHelp = true; Save.write(); } else { App.overlay = null; lock(); }
       journalIndex();
@@ -139,7 +140,7 @@
     else if (id === 'back') App.modal = null;
   }
   // ---------------- input
-  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += e.movementX; inp.dy += e.movementY; } toNative(e); if (App.sliderDrag) { S.settings.set(App.sliderDrag, mouse.x); Snd.applySettings(); } if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
+  document.addEventListener('mousemove', e => { if (App.locked && !App.noLock) { inp.dx += clamp(e.movementX, -160, 160); inp.dy += clamp(e.movementY, -160, 160); } toNative(e); if (App.sliderDrag) { S.settings.set(App.sliderDrag, mouse.x); Snd.applySettings(); } if (App.noLock && App.screen === 'play' && !App.overlay) { /* no-lock mode: mouse-look disabled */ } });
   // The Esc that closes the pause menu is also the key that makes the browser drop a pointer lock it has just granted again: that lost lock must
   // not reopen the menu. App.escT marks such an Esc; App.pauseT marks a menu opened by a lost lock (the same Esc may still arrive as a key event).
   const escGuard = () => performance.now() - (App.escT || 0) < 1000;
@@ -230,7 +231,9 @@
   let last = performance.now();
   function frame(ts) {
     requestAnimationFrame(frame);
-    const dt = clamp((ts - last) / 1000, 0, 0.05); last = ts; App.time += dt; const t = App.time;
+    const raw = (ts - last) / 1000, dt = clamp(raw, 0, 0.1); last = ts;       // a slow machine on a big map: the game clock may run at most 10x slower than the real one
+    if (raw > 0.25 || ts < (App.inputGrace || 0)) { inp.dx = inp.dy = 0; inp.fire = false; }     // after a stall (a big world is being built) the browser delivers the mouse moves that piled up at once: they are dropped, not turned into a whip of the camera
+    if (App.play) App.play.realDt = raw; App.time += dt; const t = App.time;
     ctx.setTransform(uiK, 0, 0, uiK, 0, 0);
     if (!App.ready) { ctx.fillStyle = '#04080a'; ctx.fillRect(0, 0, SW, SH); return; }
     ctx.imageSmoothingEnabled = false;

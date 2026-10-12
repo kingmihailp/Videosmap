@@ -253,7 +253,7 @@ class Play {
     if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
-    this.applyQuality(); this.frameAcc = 0; this.frameN = 0; this.autoChecked = false;
+    this.applyQuality(); this.perfT = 0; this.perfN = 0; this.tier = 0;
     Snd.startAmbient(this.world.env.amb);
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
@@ -525,7 +525,9 @@ class Play {
     for (const s of this.toasts) s.t -= dt; this.toasts = this.toasts.filter(s => s.t > 0);
     this.player.speedNow = speedNow;
     // auto-detect slow machines: after 5 s of play, if average fps is poor, drop to low quality once
-    if (!this.autoChecked) { this.frameAcc += dt; this.frameN++; if (this.t > 6) { this.autoChecked = true; const fps = this.frameN / this.frameAcc; if (fps < 26 && Save.data.settings.quality !== 'low') { Save.data.settings.quality = 'low'; Save.write(); this.applyQuality(); this.toast('Включено низкое качество (быстрее). Вернуть — в паузе.', 5); } } }
+    // slow machines: measured on the real clock; first the low quality, then a shorter view distance (fewer cells are drawn)
+    this.perfT += this.realDt || dt; this.perfN++; if (this.perfT > 5 && this.t > 6) { const fps = this.perfN / this.perfT; this.perfT = this.perfN = 0;
+      if (fps < 24 && this.tier < 2) { this.tier++; if (this.tier === 1 && Save.data.settings.quality !== 'low') { Save.data.settings.quality = 'low'; Save.write(); this.applyQuality(); this.toast('Включено низкое качество (быстрее). Вернуть — в паузе.', 5); } else { this.tier = 2; this.world.cullScale = 0.55; this.toast('Включена экономная дальность прорисовки (быстрее)', 5); } } }
   }
 
   // ---------------------------------------------------------------- HUD (2D layer)

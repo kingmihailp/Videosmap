@@ -1471,9 +1471,9 @@ const World = (() => {
     world.cull = camera => {
       if (!cellList.length) return; pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); const cp = camera.position;
       for (const c of cellList) {
-        const d = Math.hypot(c.x - cp.x, c.z - cp.z); let vis = d < CW_R + 30;                   // close cells are always drawn (their shadows fall into the view)
-        if (!vis && d < farD + CW_R) { sph.center.set(c.x, cp.y * 0 + 8, c.z); sph.radius = CW_R + 26; vis = frustum.intersectsSphere(sph); }
-        const sh = vis && d < 95;                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
+        const d = Math.hypot(c.x - cp.x, c.z - cp.z); const cs = world.cullScale || 1; let vis = d < (CW_R + 30) * Math.max(0.7, cs);                   // close cells are always drawn (their shadows fall into the view)
+        if (!vis && d < (farD + CW_R) * cs) { sph.center.set(c.x, cp.y * 0 + 8, c.z); sph.radius = CW_R + 26; vis = frustum.intersectsSphere(sph); }
+        const sh = vis && d < 95 * Math.max(0.7, cs);                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
         for (const m of c.meshes) { m.visible = vis; m.castShadow = sh && m.userData.cast; }
       }
     };
