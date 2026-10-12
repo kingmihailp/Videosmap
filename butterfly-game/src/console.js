@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------- the hidden console: the backslash key opens a line, Enter runs it, Esc or the backslash closes it
-// commands:  give gold <amount>   - gives that much gold to the player who typed it (an optional leading ":" is accepted)
+// commands:  force generate  - only inside a location: generates it anew at once
+//            give gold <amount>   - gives that much gold to the player who typed it (an optional leading ":" is accepted)
 const Con = (() => {
   const MAX = 80, W = 300, HIST_MAX = 30; let text = '', log = [], hist = [], hi = -1, shownAt = 0;
   const A = () => window.F0W;
@@ -12,6 +13,13 @@ const Con = (() => {
       const n = Number(parts[2]); if (!/^\d+$/.test(parts[2]) || !Number.isSafeInteger(n) || n < 1) { say('Количество должно быть целым числом от 1', true); return; }
       const give = Math.min(n, 1e9); Save.data.coins = Math.min(1e12, (Save.data.coins || 0) + give); Save.write(); Snd.sfx.coin();
       say(`Выдано золота: ${give}. Теперь у вас: ${Save.data.coins}`); return;
+    }
+    if (parts[0] === 'force' && parts[1] === 'generate') {
+      const a = A(); if (parts.length !== 2) { say('Использование: force generate', true); return; }
+      if (a.screen !== 'play' || !a.play) { say('Команда работает только в локации', true); return; }
+      say('Местность создаётся заново…'); o.close();
+      if (Net.on && a.play.mp) Net.send('force'); else a.autoRegen(a.play);          // alone: a new seed at once; online: the server renews the place for everybody in it
+      return;
     }
     say('Неизвестная команда: ' + (parts[0] || raw), true);
   };
