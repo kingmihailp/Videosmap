@@ -1449,7 +1449,7 @@ const World = (() => {
     // (the map is five times bigger than it was, so without this every frame would draw all of it)
     const cellList = [];
     {
-      const CW = 44, src = scene.children.filter(o => o.isInstancedMesh && o.count > 150 && !o.userData.noChunk && !o.userData.noFloat), byCell = new Map();
+      const CW = 44, src = scene.children.filter(o => o.isInstancedMesh && o.count > 12 && !o.userData.noChunk && !o.userData.noFloat), byCell = new Map();
       for (const im of src) {
         const n = im.count, Mx = im.instanceMatrix.array, Cc = im.instanceColor ? im.instanceColor.array : null, extra = Object.entries(im.geometry.attributes).filter(([k, at]) => at.isInstancedBufferAttribute);
         const groups = new Map();
@@ -1460,10 +1460,10 @@ const World = (() => {
           ids.forEach((id, j) => { m.instanceMatrix.array.set(Mx.subarray(id * 16, id * 16 + 16), j * 16); });
           if (Cc) { m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(ids.length * 3), 3); ids.forEach((id, j) => { m.instanceColor.array.set(Cc.subarray(id * 3, id * 3 + 3), j * 3); }); }
           for (const [k, at] of extra) { const sz = at.itemSize, arr = new Float32Array(ids.length * sz); ids.forEach((id, j) => { for (let q = 0; q < sz; q++) arr[j * sz + q] = at.array[id * sz + q]; }); m.geometry.setAttribute(k, new THREE.InstancedBufferAttribute(arr, sz)); }
-          m.castShadow = im.castShadow; m.receiveShadow = im.receiveShadow; m.frustumCulled = false; m.userData = Object.assign({}, im.userData, { cast: im.castShadow }); m.renderOrder = im.renderOrder; scene.add(m); made.push(m);
+          m.castShadow = im.castShadow; m.receiveShadow = im.receiveShadow; m.frustumCulled = false; m.userData = Object.assign({}, im.userData, { cast: im.castShadow, full: ids.length, tris: (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3 }); m.renderOrder = im.renderOrder; scene.add(m); made.push(m);
           let c = byCell.get(key); if (!c) { const cx = Math.floor(key / 1000), cz = key % 1000; c = { x: (cx + 0.5) * CW - HALF, z: (cz + 0.5) * CW - HALF, meshes: [] }; byCell.set(key, c); cellList.push(c); } c.meshes.push(m);
         }
-        scene.remove(im); if (im === world.grassMesh) world.grassMeshes = made; else if (extra.length) im.geometry.dispose();
+        scene.remove(im); if (im === world.grassMesh) { world.grassMeshes = made; made.forEach(m => { m.userData.grass = true; }); } else if (extra.length) im.geometry.dispose();
       }
       if (!world.grassMeshes) world.grassMeshes = [world.grassMesh];
     }
@@ -1473,8 +1473,9 @@ const World = (() => {
       for (const c of cellList) {
         const d = Math.hypot(c.x - cp.x, c.z - cp.z); const cs = world.cullScale || 1; let vis = d < (CW_R + 30) * Math.max(0.7, cs);                   // close cells are always drawn (their shadows fall into the view)
         if (!vis && d < (farD + CW_R) * cs) { sph.center.set(c.x, cp.y * 0 + 8, c.z); sph.radius = CW_R + 26; vis = frustum.intersectsSphere(sph); }
-        const sh = vis && d < 95 * Math.max(0.7, cs);                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
-        for (const m of c.meshes) { m.visible = vis; m.castShadow = sh && m.userData.cast; }
+        const sh = vis && d < 70 * Math.max(0.7, cs);                                                                 // only the cells that can throw a shadow into the small shadow box go through the shadow pass
+        const fr = (d < 55 ? 1 : d < 95 ? 0.55 : d < 140 ? 0.3 : 0.15) * (cs < 1 ? 0.7 : 1);                       // far cells are thinned out (the instances are in random order; the fog hides the pop): the map is huge, the triangles per frame must not be
+        for (const m of c.meshes) { const hv = m.userData.tris > 3000 ? Math.max(0.12, 3000 / m.userData.tris) : 1, heavyFar = hv < 1 && d >= 45; m.visible = vis; m.castShadow = sh && m.userData.cast && !(heavyFar && d >= 60); m.count = Math.floor(m.userData.full * fr * (heavyFar ? hv * 2.5 : 1) * (m.userData.grass ? (world.grassK || 1) : 1)); }       // very detailed trees (20k triangles each) only close up in full numbers
       }
     };
     const CW_R = 44 * 0.71 + 30;

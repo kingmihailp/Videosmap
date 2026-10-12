@@ -258,7 +258,7 @@ class Play {
     this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
   regenLeft() { return (this.regenAt - performance.now()) / 1000; }
-  applyQuality() { const low = Save.data.settings.quality === 'low'; for (const g of this.world.grassMeshes || [this.world.grassMesh]) { if (g._full === undefined) g._full = g.count; g.count = Math.floor(g._full * (low ? 0.55 : 1)); } this.world.sun.castShadow = !low; }
+  applyQuality() { const low = Save.data.settings.quality === 'low'; this.world.grassK = low ? 0.55 : 1; this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
   lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > 34) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > 0.93; }
   looked(pos, cos) { _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); return d < 45 && d > 0.2 && _v2.normalize().dot(this.fwd) > cos; }
