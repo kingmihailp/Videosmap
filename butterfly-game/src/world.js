@@ -1379,7 +1379,9 @@ const World = (() => {
         if (brng.chance(0.1)) cR.set('#6a4a2a'); else cR.set(brng.pick(reedCols)).lerp(new THREE.Color(brng.pick(reedCols)), brng.next()); imR.setColorAt(nr, cR); nr++;
       }
       imR.count = nr; imR.frustumCulled = false; scene.add(imR);
-      if (nr) { const _mm = new THREE.Matrix4(), catG = new THREE.CylinderGeometry(0.035, 0.035, 0.32, 5), imC = new THREE.InstancedMesh(catG, new THREE.MeshLambertMaterial({ color: '#5a3a22' }), Math.round(nr / 12) + 1); let nc = 0;       // cattail heads on tall stalks
+      if (nr) { const _mm = new THREE.Matrix4(), catG = new THREE.CylinderGeometry(0.035, 0.035, 0.32, 5), catM = new THREE.MeshLambertMaterial({ color: '#5a3a22' }); catM.onBeforeCompile = sh => {        // the heads sway with the stalks: the same wind as in the foliage shader, taken at the tip
+          sh.uniforms.uTime = shared.uTime; sh.uniforms.uWind = shared.uWind; sh.vertexShader = 'uniform float uTime; uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vec4 iw = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0); float sw = sin(uTime*1.7 + iw.x*0.33 + iw.z*0.27) * 0.135 + sin(uTime*3.3 + iw.x*1.3 + iw.z*0.9) * 0.037; transformed.x += sw * uWind; transformed.z += sw * 0.6 * uWind;'); };
+        const imC = new THREE.InstancedMesh(catG, catM, Math.round(nr / 12) + 1); let nc = 0;       // cattail heads on tall stalks
         for (let i = 0; i < nr && nc < imC.count; i += 12) { imR.getMatrixAt(i, _mm); const x = _mm.elements[12], y = _mm.elements[13], z = _mm.elements[14], hh = _mm.elements[5]; imC.setMatrixAt(nc++, M(x, y + hh * 0.92, z, 0, 0, 0, 1, 1, 1)); }
         imC.count = nc; imC.frustumCulled = false; imC.castShadow = false; imC.userData.noFloat = true; scene.add(imC); }
       addTrees('bush', Math.round(34 * K), { field: 'riparian', minR: 4, anySlope: true, noShadow: true, noCollide: true });

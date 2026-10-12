@@ -543,7 +543,7 @@ class Play {
     // the sector you stand in and the key of the map / species menu
     if (this.sectors) {
       const S = this.sectors, here = S.at(P.pos.x, P.pos.z), q = S.rects[here], got = q.sp.filter(sp => Save.has(sp.id)).length, left = this.regenLeft();
-      const l1 = `Сектор ${here + 1} · ${q.name}`, l2 = b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `В локации: ${Save.biomeCount(b)} из ${b.species.length} · здесь ${got}/${q.sp.length}`, l3 = `M — карта и виды${left < 300 ? ' · обновление ' + Traps.mmss(left) : ''}`;
+      const l1 = `Природная зона ${here + 1} · ${q.name}`, l2 = b.secret ? `Поймано: ${Save.biomeCount(b)} из ???` : `В локации: ${Save.biomeCount(b)} из ${b.species.length} · здесь ${got}/${q.sp.length}`, l3 = `M — карта и виды${left < 300 ? ' · обновление ' + Traps.mmss(left) : ''}`;
       const w3 = clamp(Math.max(T.width(l1, 8) + 12, T.width(l2, 8), T.width(l3, 8)) + 14, 150, 230); UIK.panel(ctx, SW - 6 - w3, 6, w3, 36, { fill: 'rgba(16,32,28,0.82)' });
       ctx.fillStyle = q.col; ctx.fillRect(SW - w3, 11, 5, 5); T.draw(ctx, l1, SW - w3 + 9, 9, { size: 8, color: q.col }); T.draw(ctx, l2, SW - w3 + 3, 19, { size: 8, color: c.text }); T.draw(ctx, l3, SW - w3 + 3, 29, { size: 8, color: left < 300 ? c.red : c.dim });
     } else {

@@ -363,7 +363,7 @@ const Traps = (() => {
       const s = this.spot(); if (!s) { P.toast('Здесь ловушку не поставить: нужна ровная свободная земля', 3); Snd.sfx.deny(); return false; }
       add('tr', type, -1); const tid = (Net.on && P.mp ? Net.id : 'L') + '-' + Date.now().toString(36) + (++this.seq);
       const t = this.mk({ tid, owner: Net.on ? Net.id : 0, name: Net.name || 'Вы', type, x: s.x, y: s.y, z: s.z, yaw: s.yaw, age: 0 }, true); this.send({ k: 'put', tid, type, x: +s.x.toFixed(2), y: +s.y.toFixed(2), z: +s.z.toFixed(2), yaw: +s.yaw.toFixed(2) });
-      { const S = P.sectors, c = S ? S.near(t.x, t.z, Sectors.EDGE) : [], sn = !S || type === 'scr' ? '' : c.length > 1 ? ` · на границе секторов ${c.map(i => i + 1).join(' и ')}: ловится один из них` : ` · сектор ${S.at(t.x, t.z) + 1}: «${S.rects[S.at(t.x, t.z)].name}»`; P.toast(`${TYPES[type].ru} поставлена: положите приманку (E)${sn}`, 5, true); } Snd.sfx.coin(); return t;
+      { const S = P.sectors, c = S ? S.near(t.x, t.z, Sectors.EDGE) : [], sn = !S || type === 'scr' ? '' : c.length > 1 ? ` · на границе природных зон ${c.map(i => i + 1).join(' и ')}: ловится один из них` : ` · природная зона ${S.at(t.x, t.z) + 1}: «${S.rects[S.at(t.x, t.z)].name}»`; P.toast(`${TYPES[type].ru} поставлена: положите приманку (E)${sn}`, 5, true); } Snd.sfx.coin(); return t;
     }
     // who may come to a trap: the butterflies of the sector it stands in (on a border of two sectors one of them is drawn at random for every visitor)
     visitors(t) { const S = this.play.sectors; if (!S || t.type === 'scr') return this.play.pool; return S.rects[S.trapSector(t.x, t.z)].sp; }
