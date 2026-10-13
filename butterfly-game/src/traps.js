@@ -298,7 +298,9 @@ const Traps = (() => {
       g.add(box(0.2, 0.08, 0.012, orange, -0.22, 0.74, -0.752)); g.add(box(0.2, 0.08, 0.012, ledMat, 0.22, 0.74, -0.752)); U0.led = ledMat;                 // a warning plate and the status LED
       g.add(box(0.74, 0.03, 0.44, steel, 0, 0.815, -0.54));
       g.add(cyl(0.03, 0.04, 0.55, dsteel, 0.24, 1.1, -0.54, 8)); g.add(cyl(0.05, 0.05, 0.06, steel, 0.24, 0.85, -0.54, 8));
-      const dish = new THREE.Group(); dish.position.set(0.24, 1.42, -0.54); const bowl = mesh(new THREE.SphereGeometry(0.17, 14, 6, 0, 6.2832, 0, 1.0), steel, 0, 0.0, 0.0, -Math.PI / 2 + 0.2); bowl.material = M('#c8d0d8', { side: THREE.DoubleSide }); dish.add(bowl); dish.add(rod([0, 0, 0], [0, 0.0, -0.17], 0.01, dsteel)); dish.add(box(0.04, 0.04, 0.05, orange, 0, 0, -0.2)); dish.add(cyl(0.025, 0.025, 0.06, dsteel, 0, -0.04, 0, 6)); g.add(dish); U0.dish = dish;
+      const dish = new THREE.Group(); dish.position.set(0.24, 1.42, -0.54); const th = Math.PI / 2 + 0.2, bowl = mesh(new THREE.SphereGeometry(0.17, 14, 6, 0, 6.2832, 0, 1.0), steel, 0, -0.17 * Math.cos(th), -0.17 * Math.sin(th), th);
+      // a cap of a sphere: its pole (the back of the dish) sits on the mast, the open side looks forward and a little up
+       bowl.material = M('#c8d0d8', { side: THREE.DoubleSide }); dish.add(bowl); dish.add(rod([0, 0, 0], [0, 0.0, -0.17], 0.01, dsteel)); dish.add(box(0.04, 0.04, 0.05, orange, 0, 0, -0.2)); dish.add(cyl(0.025, 0.025, 0.06, dsteel, 0, -0.04, 0, 6)); g.add(dish); U0.dish = dish;
       g.add(cyl(0.035, 0.035, 0.1, dsteel, -0.22, 0.87, -0.5, 8)); g.add(mesh(new THREE.SphereGeometry(0.06, 8, 5, 0, 6.2832, 0, 1.57), M('#e8ecf0'), -0.22, 0.92, -0.5)); g.add(box(0.12, 0.04, 0.12, steel, -0.22, 0.9, -0.5, 0, 0.5, 0));       // the GPS puck on its stand
       // the net cab on the deck: four posts, frames, mesh walls (the rear wall has an open slot at the height of the bait), a solar roof
       const cz = 0.08;
