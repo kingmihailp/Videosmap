@@ -148,6 +148,8 @@ const Boxes = (() => {
     list() { return [NetParts.BASIC].concat(Save.netList()); },
     isNew() { return this.sel >= this.list().length; },
     cfg() { return this.isNew() ? this.draft : this.list()[this.sel]; },
+    // the cannon is shown as its real 3D model (a picture from the shared small renderer, one per set of attachments)
+    pic3d(cfg, w, h) { const k = NetParts.code(cfg) + w; this.pc = this.pc || {}; if (this.pc[k] === undefined) { let cv = null; try { cv = Art.snapshot(makeNetModel(cfg).g, w, h, 2.2, 0.25); } catch (e) { cv = null; } this.pc[k] = cv; } return this.pc[k]; },
     say(t) { this.msg = t; this.msgT = 5; },
     options(slot) { return Object.keys(NetParts.PARTS).filter(id => NetParts.PARTS[id].slot === slot && (NetParts.isBasic(id) || Save.partCount(id) > 0)).sort((a, b) => NetParts.PARTS[a].price - NetParts.PARTS[b].price); },
     cycle(slot, d) { const o = this.options(slot), k = o.indexOf(this.draft[slot]), n = o.length; this.draft[slot] = o[(k + d + n * 4) % n] || o[0]; Snd.sfx.page(); },
@@ -179,7 +181,7 @@ const Boxes = (() => {
       });
       // centre: the picture and the numbers
       UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
-      NetParts.draw2D(ctx, cur, 166, 42, 148, 96);
+      { const cv = cur.cannon ? this.pic3d(cur, 296, 192) : null; if (cv) { ctx.imageSmoothingEnabled = false; ctx.drawImage(cv, 166, 42, 148, 96); } else NetParts.draw2D(ctx, cur, 166, 42, 148, 96); }
       T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
       if (this.gbtns.length) {
         T.draw(ctx, 'Приспособления', 164, 142, { size: 8, color: c.dim }); const SH2 = { g_map: 'Карта', g_ir: 'ИК-скан', g_auto: 'Авто' };
