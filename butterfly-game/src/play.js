@@ -99,7 +99,7 @@ class Fly {
     const p = this.play, b = this.beh, w = p.world, pl = p.nearestPlayer(this.pos);
     if (this.state === CAUGHT && this.remote) { this.t -= dt; this.mesh.scale.setScalar(Math.max(0.01, this.t / 0.4) * this.baseScale); if (this.t <= 0) this.alive = false; return; }
     if (this.state === CAUGHT) { // glued to the net hoop
-      if (!this.cannon) this.t -= dt; p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.flyH(this.pos.x, this.pos.z));
+      if (!this.cannon) this.t -= dt; if (this.glueTo) _v.copy(this.glueTo()); else p.hoopWorld(_v); this.pos.lerp(_v, Math.min(1, dt * 14)); this.ph += dt * b.flap * 9; Art.setFlap(this.mesh, Math.sin(this.ph) * 0.9 + 0.35); this.mesh.position.copy(this.pos); this.updateShadow(w.flyH(this.pos.x, this.pos.z));
       if (this.t <= 0) this.alive = false; return;
     }
     if (this.puppet) { // another client simulates this butterfly: follow its last reported state

@@ -58,47 +58,111 @@ const Gear = (() => {
       if (this.t > IR_SWEEP + 0.25) { this.t = -1; this.g.visible = this.ring.visible = this.ring2.visible = false; }
     }
     // an outline: red copies of the wings, a little bigger and pushed back, so that a glowing rim shows round the butterfly
+    // the contour: for every wing a slightly larger copy whose shader looks at the wing's own alpha and lights only the outline — a bright red rim just inside the edge and a soft glow outside it;
+    // drawn over everything (depth test off), so the butterfly shows through leaves; the body gets a red glow too
     halo(f) {
-      if (f.irHalo) return; const mat = new THREE.MeshBasicMaterial({ color: '#ff3a1e', side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 3, polygonOffsetUnits: 3, depthWrite: false, transparent: true, opacity: 0.95 }), list = [];
-      f.mesh.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'PlaneGeometry') list.push(o); });
-      f.irHalo = list.map(o => { const h = new THREE.Mesh(o.geometry, mat); h.position.copy(o.position); h.scale.copy(o.scale).multiplyScalar(1.3); h.rotation.copy(o.rotation); h.renderOrder = -5; o.parent.add(h); return h; }); f.irMat = mat;
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ color: '#ff5a30', transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending })); glow.scale.set(f.span * 1.5, f.span * 1.5, 1); f.mesh.add(glow); f.irHalo.push(glow);
+      if (f.irHalo) return; const list = [], mats = [], bodies = [];
+      f.mesh.traverse(o => { if (!o.isMesh || !o.geometry) return; if (o.geometry.type === 'PlaneGeometry' && o.material && o.material.map) list.push(o); else if (o.geometry.type === 'BoxGeometry') bodies.push(o); });
+      const K = 1.9; f.irHalo = [];
+      for (const o of list) { const map = o.material.map, img = map.image || {}, mat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, uniforms: { map: { value: map }, uK: { value: K }, uPx: { value: new THREE.Vector2(1 / (img.width || 32), 1 / (img.height || 32)) }, uP: { value: 1 } },
+          vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+          fragmentShader: `uniform sampler2D map; uniform float uK; uniform vec2 uPx; uniform float uP; varying vec2 vUv;
+            float A(vec2 u){ if (u.x < 0.0 || u.x > 1.0 || u.y < 0.0 || u.y > 1.0) return 0.0; return texture2D(map, u).a > 0.5 ? 1.0 : 0.0; }
+            void main(){ vec2 u = (vUv - 0.5) * uK + 0.5; float a0 = A(u), m1 = 0.0, m2 = 0.0, m3 = 0.0, n1 = 1.0;
+              for (int i = 0; i < 12; i++) { float an = float(i) * 0.5236; vec2 d = vec2(cos(an), sin(an)) * uPx; m1 = max(m1, A(u + d * 2.0)); m2 = max(m2, A(u + d * 3.8)); m3 = max(m3, A(u + d * 6.5)); n1 = min(n1, A(u - d * 1.6)); }
+              float rim = a0 * (1.0 - n1), outer = (1.0 - a0) * m1, glow = (1.0 - a0) * (1.0 - m1) * (m2 * 0.7 + m3 * 0.35);
+              float a = clamp(rim + outer + glow * 0.9, 0.0, 1.0) * uP; float hot = clamp(rim + outer * 0.6, 0.0, 1.0); gl_FragColor = vec4(1.0, 0.03 + 0.28 * hot, 0.02 + 0.12 * hot, a); }` });
+        const h = new THREE.Mesh(o.geometry, mat), cx = (o.geometry.boundingBox || (o.geometry.computeBoundingBox(), o.geometry.boundingBox)).getCenter(new THREE.Vector3());
+        h.scale.set(o.scale.x * K, o.scale.y * K, o.scale.z * K); h.position.set(o.position.x + cx.x * o.scale.x * (1 - K), o.position.y, o.position.z + cx.z * o.scale.z * (1 - K)); h.rotation.copy(o.rotation); h.renderOrder = 999; h.frustumCulled = false; o.parent.add(h); f.irHalo.push(h); mats.push(mat); }
+      for (const o of bodies) { const mat = new THREE.MeshBasicMaterial({ color: '#ff2210', transparent: true, opacity: 0.9, depthTest: false, depthWrite: false }); const h = new THREE.Mesh(o.geometry, mat); h.position.copy(o.position); h.scale.copy(o.scale).multiplyScalar(1.5); h.rotation.copy(o.rotation); h.renderOrder = 998; o.parent.add(h); f.irHalo.push(h); mats.push(mat); }
+      f.irMats = mats;
     }
-    unhalo(f) { if (!f.irHalo) return; for (const h of f.irHalo) { if (h.parent) h.parent.remove(h); if (h.material && h.material.map === undefined && h.material.dispose) { /* shared */ } } if (f.irMat) f.irMat.dispose(); f.irHalo = null; f.irMat = null; }
-    tick(dt) { for (const f of this.play.flies) if (f.irT > 0) { f.irT -= dt; if (f.irHalo && f.irMat) f.irMat.opacity = 0.55 + 0.4 * Math.sin(this.play.t * 9); if (f.irT <= 0) { this.unhalo(f); f.irT = 0; } } }
+    unhalo(f) { if (!f.irHalo) return; for (const h of f.irHalo) { if (h.parent) h.parent.remove(h); if (h.material) h.material.dispose(); } f.irHalo = null; f.irMats = null; }
+    tick(dt) { for (const f of this.play.flies) if (f.irT > 0) { f.irT -= dt; if (f.irMats) { const k = f.irT < 1 ? Math.max(0, f.irT) : 0.75 + 0.25 * Math.sin(this.play.t * 9); for (const m of f.irMats) { if (m.uniforms) m.uniforms.uP.value = k; else m.opacity = 0.9 * k; } } if (f.irT <= 0) { this.unhalo(f); f.irT = 0; } } }
     dispose() { for (const f of this.play.flies) this.unhalo(f); this.play.scene.remove(this.g, this.ring, this.ring2); }
   }
 
   // ================================================================== the net cannon: a huge net flies out, catches butterflies and is winched back with its catch
   const CANNON_CD = 2.2, CANNON_RANGE = 30;
+  // The net is a real piece of cloth: a 9 x 9 grid of nodes joined by strands that cannot stretch beyond their length (but crumple freely), integrated with Verlet steps
+  // under gravity and air drag. It leaves the muzzle folded in a tight bundle at 38 m/s; the heavy rim weights fly outwards and pull it open, then it falls on a parabola,
+  // lands, drags over the ground and trees; after the flight a winch pulls its centre back to the muzzle and the rest follows. Butterflies touching the cloth are caught.
+  const NG = 9, NN = NG * NG, SEG = 0.5, G_ = 9.8, V0 = 38, SUB = 1 / 120, CORNERS = [0, NG - 1, NN - NG, NN - 1];
+  const _p = new THREE.Vector3(), _q = new THREE.Vector3(), _r = new THREE.Vector3(), _o = new THREE.Vector3(), _e1 = new THREE.Vector3(), _e2 = new THREE.Vector3(), _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3(), _t3 = new THREE.Vector3();
+  function distTri(p, a, b, c) {       // the distance from p to a triangle (Ericson, Real-Time Collision Detection)
+    _e1.subVectors(b, a); _e2.subVectors(c, a); const ap = _t1.subVectors(p, a), d1 = _e1.dot(ap), d2 = _e2.dot(ap); if (d1 <= 0 && d2 <= 0) return a.distanceTo(p);
+    const bp = _t2.subVectors(p, b), d3 = _e1.dot(bp), d4 = _e2.dot(bp); if (d3 >= 0 && d4 <= d3) return b.distanceTo(p);
+    const vc = d1 * d4 - d3 * d2; if (vc <= 0 && d1 >= 0 && d3 <= 0) return _o.copy(a).addScaledVector(_e1, d1 / (d1 - d3)).distanceTo(p);
+    const cp = _t3.subVectors(p, c), d5 = _e1.dot(cp), d6 = _e2.dot(cp); if (d6 >= 0 && d5 <= d6) return c.distanceTo(p);
+    const vb = d5 * d2 - d1 * d6; if (vb <= 0 && d2 >= 0 && d6 <= 0) return _o.copy(a).addScaledVector(_e2, d2 / (d2 - d6)).distanceTo(p);
+    const va = d3 * d6 - d5 * d4; if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) { const w = (d4 - d3) / ((d4 - d3) + (d5 - d6)); return _o.copy(b).addScaledVector(_t1.subVectors(c, b), w).distanceTo(p); }
+    const den = 1 / (va + vb + vc); return _o.copy(a).addScaledVector(_e1, vb * den).addScaledVector(_e2, vc * den).distanceTo(p);
+  }
   class Shot {
     constructor(play) {
-      this.play = play; this.phase = 'out'; this.t = 0; this.R = 0.4; this.caught = []; play.hoop.updateWorldMatrix(true, false); this.pos = new THREE.Vector3().setFromMatrixPosition(play.hoop.matrixWorld); this.origin = this.pos.clone();
-      this.dir = fwdOf(play.camera).clone().normalize(); this.g = new THREE.Group(); const H = 2.6;
-      this.ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 6, 28), new THREE.MeshBasicMaterial({ color: '#e8eef2' })); this.g.add(this.ring);
-      const cone = new THREE.ConeGeometry(1, H, 24, 8, true); cone.rotateX(-Math.PI / 2); cone.translate(0, 0, -H / 2); this.bag = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })); this.g.add(this.bag);
-      this.wire = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })); this.g.add(this.wire);
-      for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), new THREE.MeshBasicMaterial({ color: '#c8a040' })); const a = i * 1.5708; w.position.set(Math.cos(a), Math.sin(a), 0); this.g.add(w); }       // weights on the rim
-      this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), new THREE.MeshBasicMaterial({ color: '#8a6a3a' })); this.ropeG = new THREE.Group(); this.ropeG.add(this.rope);
-      this.g.frustumCulled = false; this.g.traverse(o => { o.frustumCulled = false; }); play.scene.add(this.g, this.ropeG); this.place();
+      this.play = play; this.phase = 'fly'; this.t = 0; this.caught = []; play.hoop.updateWorldMatrix(true, false); const o = new THREE.Vector3().setFromMatrixPosition(play.hoop.matrixWorld); this.origin = o.clone(); this.pos = o.clone(); this.dead = false;
+      const dir = fwdOf(play.camera).clone().normalize(); this.dir = dir; const u = new THREE.Vector3().crossVectors(dir, UP).normalize(), w = new THREE.Vector3().crossVectors(u, dir).normalize();
+      this.P = new Float32Array(NN * 3); this.Q = new Float32Array(NN * 3); this.iw = new Float32Array(NN); this.pairs = [];
+      for (let i = 0; i < NG; i++) for (let j = 0; j < NG; j++) { const k = i * NG + j, a = i - 4, b = j - 4;
+        const x = o.x + (u.x * a + w.x * b) * 0.045 + dir.x * 0.1, y = o.y + (u.y * a + w.y * b) * 0.045 + dir.y * 0.1, z = o.z + (u.z * a + w.z * b) * 0.045 + dir.z * 0.1;       // folded: a bundle the size of the muzzle
+        const vx = dir.x * V0 + (u.x * a + w.x * b) * 1.9, vy = dir.y * V0 + (u.y * a + w.y * b) * 1.9 + 1.2, vz = dir.z * V0 + (u.z * a + w.z * b) * 1.9;       // the weights on the rim fly outwards
+        this.P[k * 3] = x; this.P[k * 3 + 1] = y; this.P[k * 3 + 2] = z; this.Q[k * 3] = x - vx * SUB; this.Q[k * 3 + 1] = y - vy * SUB; this.Q[k * 3 + 2] = z - vz * SUB;
+        this.iw[k] = (i === 0 || j === 0 || i === NG - 1 || j === NG - 1) ? ((i % (NG - 1) === 0 && j % (NG - 1) === 0) ? 0.22 : 0.7) : 1;      // the corners carry heavy weights
+        if (i + 1 < NG) this.pairs.push([k, k + NG]); if (j + 1 < NG) this.pairs.push([k, k + 1]); }
+      this.cen = (NG >> 1) * NG + (NG >> 1); this.near = []; this.reelT = 0;
+      // the picture: a translucent sheet, net strands (lines), brass weights on the corners, the rope to the muzzle
+      this.g = new THREE.Group(); this.g.frustumCulled = false;
+      const idx = []; for (let i = 0; i < NG - 1; i++) for (let j = 0; j < NG - 1; j++) { const a = i * NG + j; idx.push(a, a + NG, a + 1, a + 1, a + NG, a + NG + 1); }
+      this.geo = new THREE.BufferGeometry(); this.geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NN * 3), 3)); this.geo.setIndex(idx);
+      this.sheet = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false })); this.sheet.frustumCulled = false; this.g.add(this.sheet);
+      const lp = []; for (const [a, b] of this.pairs) lp.push(a, b); this.lgeo = new THREE.BufferGeometry(); this.lgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.pairs.length * 6), 3)); this.lines = new THREE.LineSegments(this.lgeo, new THREE.LineBasicMaterial({ color: '#f2f6ee' })); this.lines.frustumCulled = false; this.g.add(this.lines);
+      this.wts = CORNERS.map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: '#c8a040' })); m.frustumCulled = false; this.g.add(m); return m; });
+      this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), new THREE.MeshBasicMaterial({ color: '#8a6a3a' })); this.ropeG = new THREE.Group(); this.ropeG.add(this.rope); this.rope.frustumCulled = false;
+      play.scene.add(this.g, this.ropeG); this.sync();
     }
-    anchor(out) { const h = this.play.hoop; h.updateWorldMatrix(true, false); return out.setFromMatrixPosition(h.matrixWorld); }       // the rope is tied to the muzzle of the cannon
-    place() { this.g.position.copy(this.pos); this.g.scale.set(this.R, this.R, 1); this.g.lookAt(_b.copy(this.pos).add(this.phase === 'out' ? this.dir : _c.copy(this.anchor(_c)).sub(this.pos).normalize().multiplyScalar(-1))); this.g.scale.set(this.R, this.R, 1);
-      this.anchor(_b); const d = _c.copy(this.pos).sub(_b); const L = d.length(); this.ropeG.position.copy(_b).addScaledVector(d, 0.5); this.rope.scale.set(1, L, 1); this.ropeG.quaternion.setFromUnitVectors(UP, d.normalize()); }
-    update(dt) {
-      const p = this.play, w = p.world; this.t += dt;
-      if (this.phase === 'out') {
-        this.pos.addScaledVector(this.dir, 38 * dt); this.R = Math.min(3.6, this.R + dt * 7.5); const gy = w.groundAt(this.pos.x, this.pos.z), far = this.pos.distanceTo(this.origin) > CANNON_RANGE;
-        if (this.pos.y < gy + 0.35) this.pos.y = gy + 0.35; if (far || this.t > 1.1 || Math.hypot(this.pos.x, this.pos.z) > w.R) { this.phase = 'pause'; this.t = 0; }
-      } else if (this.phase === 'pause') { this.R = Math.min(3.6, this.R + dt); if (this.t > 0.18) { this.phase = 'back'; this.t = 0; try { Snd.sfx.winch(); } catch (e) {} } }
-      else { this.anchor(_b); const d = _c.copy(_b).sub(this.pos); const L = d.length(), sp = Math.max(20, L * 1.4) * dt; if (L <= sp + 0.4) { this.finish(); return false; } this.pos.addScaledVector(d.normalize(), sp); this.R = Math.max(1.3, this.R - dt * 3.2); }
-      // the butterflies in the net mouth are caught
+    anchor(out) { const h = this.play.hoop; h.updateWorldMatrix(true, false); return out.setFromMatrixPosition(h.matrixWorld); }
+    node(k, out) { return out.set(this.P[k * 3], this.P[k * 3 + 1], this.P[k * 3 + 2]); }
+    nodePos(k) { return this.node(k, this._np || (this._np = new THREE.Vector3())); }
+    sync() {
+      const pa = this.geo.attributes.position, la = this.lgeo.attributes.position; pa.array.set(this.P); pa.needsUpdate = true; this.geo.computeBoundingSphere();
+      let q = 0; for (const [a, b] of this.pairs) { for (let c = 0; c < 3; c++) la.array[q++] = this.P[a * 3 + c]; for (let c = 0; c < 3; c++) la.array[q++] = this.P[b * 3 + c]; } la.needsUpdate = true;
+      CORNERS.forEach((k, i) => this.wts[i].position.set(this.P[k * 3], this.P[k * 3 + 1], this.P[k * 3 + 2]));
+      this.node(this.cen, this.pos); this.anchor(_p); const d = _q.copy(this.pos).sub(_p), L = d.length(); this.ropeG.position.copy(_p).addScaledVector(d, 0.5); this.rope.scale.set(1, Math.max(0.01, L), 1); this.ropeG.quaternion.setFromUnitVectors(UP, d.normalize());
+    }
+    // one physics step of h seconds
+    step(h) {
+      const P = this.P, Q = this.Q, w = this.play.world, drag = Math.exp(-0.35 * h);
+      for (let k = 0; k < NN; k++) { const o = k * 3; if (this.phase === 'reel' && k === this.cen) continue;
+        for (let c = 0; c < 3; c++) { const v = (P[o + c] - Q[o + c]) * drag; Q[o + c] = P[o + c]; P[o + c] += v; } P[o + 1] -= G_ * h * h; }
+      if (this.phase === 'reel') { this.anchor(_p); const o = this.cen * 3; _q.set(P[o] - _p.x, P[o + 1] - _p.y, P[o + 2] - _p.z); const L = _q.length(), sp = Math.min(L, (8 + 14 * clamp(this.reelT / 1.5)) * h); if (L > 0.01) { P[o] -= _q.x / L * sp; P[o + 1] -= _q.y / L * sp; P[o + 2] -= _q.z / L * sp; Q[o] = P[o]; Q[o + 1] = P[o + 1]; Q[o + 2] = P[o + 2]; } }
+      for (let it = 0; it < 5; it++) for (const [a, b] of this.pairs) {
+        const ia = this.iw[a] * (this.phase === 'reel' && a === this.cen ? 0 : 1), ib = this.iw[b] * (this.phase === 'reel' && b === this.cen ? 0 : 1), s = ia + ib; if (!s) continue; const A = a * 3, B = b * 3;
+        const dx = P[B] - P[A], dy = P[B + 1] - P[A + 1], dz = P[B + 2] - P[A + 2], d = Math.hypot(dx, dy, dz); if (d <= SEG) continue; const f = (d - SEG) / d;
+        P[A] += dx * f * ia / s; P[A + 1] += dy * f * ia / s; P[A + 2] += dz * f * ia / s; P[B] -= dx * f * ib / s; P[B + 1] -= dy * f * ib / s; P[B + 2] -= dz * f * ib / s; }
+      for (let k = 0; k < NN; k++) { const o = k * 3, gy = w.groundAt(P[o], P[o + 2]) + 0.05;
+        if (P[o + 1] < gy) { P[o + 1] = gy; Q[o] += (P[o] - Q[o]) * 0.3; Q[o + 2] += (P[o + 2] - Q[o + 2]) * 0.3; Q[o + 1] = P[o + 1]; this.landed = true; }       // the ground: it drags and loses speed
+        for (const c of this.near) { const dx = P[o] - c.x, dz = P[o + 2] - c.z, d = Math.hypot(dx, dz), r = c.r + 0.06; if (d < r && P[o + 1] < gy + 7) { const f = d > 1e-4 ? r / d : 0; P[o] = c.x + (d > 1e-4 ? dx * f : r); P[o + 2] = c.z + (d > 1e-4 ? dz * f : 0); Q[o] = P[o]; Q[o + 2] = P[o + 2]; } } }       // trunks and rocks stop it
+    }
+    catchFlies() {
+      const p = this.play, cx = this.P[this.cen * 3], cy = this.P[this.cen * 3 + 1], cz = this.P[this.cen * 3 + 2];
       for (const f of p.flies) {
-        if (f.state === CAUGHT || !f.mesh.visible || f.cannon) continue; if (f.pos.distanceTo(this.pos) < this.R + f.span * 0.4) { if (f.kind === 'screech' && p.flashOn) continue; if (p.mp) { if (f.pendingCatch) continue; p.netCatch(f); } else p.onCatch(f); f.cannon = true; f.t = 9; this.caught.push(f); p.net.caughtThisSwing = true; }
+        if (f.state === CAUGHT || !f.mesh.visible || f.cannon) continue; if (Math.hypot(f.pos.x - cx, f.pos.y - cy, f.pos.z - cz) > 4.2) continue; if (f.kind === 'screech' && p.flashOn) continue; const rr = 0.2 + f.span * 0.4; let hit = -1;
+        for (let i = 0; i < NG - 1 && hit < 0; i++) for (let j = 0; j < NG - 1; j++) { const a = i * NG + j, b = a + NG, c = a + 1, d = a + NG + 1;
+          if (distTri(f.pos, this.node(a, _p), this.node(b, _q), this.node(c, _r)) < rr) { hit = a; break; }
+          if (distTri(f.pos, this.node(c, _p), this.node(b, _q), this.node(d, _r)) < rr) { hit = d; break; } }
+        if (hit >= 0) { if (p.mp) { if (f.pendingCatch) continue; p.netCatch(f); } else p.onCatch(f); f.cannon = true; f.t = 9; const k = hit; f.glueTo = () => this.nodePos(k); this.caught.push(f); p.net.caughtThisSwing = true; }
       }
-      this.place(); return true;
     }
-    finish() { for (const f of this.caught) { f.cannon = false; f.t = Math.min(f.t, 0.25); } this.play.scene.remove(this.g, this.ropeG); this.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); this.dead = true; }
+    update(dt) {
+      const p = this.play, w = p.world; this.t += dt; if (this.phase === 'reel') this.reelT = (this.reelT || 0) + dt;
+      if (this.t - (this.nt || -1) > 0.25) { this.nt = this.t; this.node(this.cen, _p); this.near = w.colliders.filter(c => Math.hypot(c.x - _p.x, c.z - _p.z) < c.r + 7 && !c.trap); }
+      let left = Math.min(dt, 0.05); while (left > 1e-6) { const h = Math.min(SUB, left); this.step(h); left -= h; if (this.phase !== 'reel' || true) this.catchFlies(); }
+      this.node(this.cen, _p); const trav = _p.distanceTo(this.origin), vel = _q.set(this.P[this.cen * 3] - this.Q[this.cen * 3], this.P[this.cen * 3 + 1] - this.Q[this.cen * 3 + 1], this.P[this.cen * 3 + 2] - this.Q[this.cen * 3 + 2]).length() / SUB;
+      if (this.phase === 'fly' && (trav > CANNON_RANGE || this.t > 2.2 || (this.landed && this.t > 0.5 && vel < 5))) { this.phase = 'reel'; this.reelT = 0; try { Snd.sfx.winch(); } catch (e) {} }
+      if (this.phase === 'reel') { this.anchor(_r); if (_p.distanceTo(_r) < 1.1 || this.reelT > 14) { this.sync(); this.finish(); return false; } }
+      this.sync(); return true;
+    }
+    finish() { for (const f of this.caught) { f.cannon = false; f.glueTo = null; f.t = Math.min(f.t, 0.25); } this.play.scene.remove(this.g, this.ropeG); this.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); this.dead = true; }
   }
 
   // ================================================================== the shocker: blue arcs jump from the hoop to the butterflies nearby, who are caught as well
@@ -178,9 +242,9 @@ const Gear = (() => {
     if (S.ir) bar('ИК-скан', rt.ir.t >= 0 ? 1 : clamp(1 - rt.ir.cd / IR_CD), '#ff5a38', rt.ir.t >= 0);
     if (S.cannon) bar('Заряд', 1 - clamp(rt.cd / rt.cdMax), '#58d8ff', rt.cd <= 0);
     if (S.auto) { UIK.panel(ctx, SW - 98, by - 16, 92, 15, { fill: 'rgba(16,28,24,0.88)', shadow: false, border: rt.auto ? '#4aff6a' : c.line }); T.draw(ctx, 'Авто [X]', SW - 94, by - 13, { size: 8, color: c.text }); ctx.fillStyle = rt.auto ? '#1a5a2a' : '#3a2220'; ctx.fillRect(SW - 36, by - 12, 24, 7); ctx.fillStyle = rt.auto ? '#4aff6a' : '#c83a2a'; ctx.fillRect(rt.auto ? SW - 24 : SW - 36, by - 12, 12, 7); by -= 17; }
-    // the infrared marks: red brackets round every butterfly lit by the beam, with the distance (they are seen through trees)
+    // the infrared marks: the distance under every butterfly lit by the beam (the outline itself glows in the 3D scene, see Ir.halo)
     if (S.ir) { let n = 0; for (const f of play.flies) { if (!(f.irT > 0) || f.state === CAUGHT) continue; _a.copy(f.pos).project(play.camera); if (_a.z > 1 || Math.abs(_a.x) > 1 || Math.abs(_a.y) > 1) continue; const x = Math.round((_a.x * 0.5 + 0.5) * SW), y = Math.round((-_a.y * 0.5 + 0.5) * SH), d = f.pos.distanceTo(play.camera.position), s = clamp(34 / (d * 0.5 + 3), 3, 9) + 3; ctx.fillStyle = f.irT < 1 && Math.floor(t * 10) % 2 ? 'rgba(255,90,60,0.4)' : '#ff4a2a';
-      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { ctx.fillRect(x + sx * s - (sx > 0 ? 3 : 0), y + sy * s, 4, 1); ctx.fillRect(x + sx * s, y + sy * s - (sy > 0 ? 3 : 0), 1, 4); } if (n++ < 14) T.draw(ctx, Math.round(d) + ' м', x, y + s + 3, { size: 8, align: 'c', color: '#ff9a80', shadow: '#000' }); } }
+      if (n++ < 14) T.draw(ctx, Math.round(d) + ' м', x, y + Math.min(s, 8) + 2, { size: 8, align: 'c', color: '#ff9a80', shadow: '#000' }); } }
   }
   const toggleAuto = play => { const rt = play.gear; if (!rt || !play.netStats.auto) return false; rt.auto = !rt.auto; try { Snd.sfx.click(); } catch (e) {} play.toast(rt.auto ? 'Автономность включена: сачок сам замахивается' : 'Автономность выключена', 2.2); return true; };
 
