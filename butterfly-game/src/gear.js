@@ -79,10 +79,10 @@ const Gear = (() => {
       const cone = new THREE.ConeGeometry(1, H, 24, 8, true); cone.rotateX(-Math.PI / 2); cone.translate(0, 0, -H / 2); this.bag = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })); this.g.add(this.bag);
       this.wire = new THREE.Mesh(cone, new THREE.MeshBasicMaterial({ color: '#6f9088', wireframe: true, transparent: true, opacity: 0.85 })); this.g.add(this.wire);
       for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), new THREE.MeshBasicMaterial({ color: '#c8a040' })); const a = i * 1.5708; w.position.set(Math.cos(a), Math.sin(a), 0); this.g.add(w); }       // weights on the rim
-      this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1, 5), new THREE.MeshBasicMaterial({ color: '#c8b078' })); this.ropeG = new THREE.Group(); this.ropeG.add(this.rope);
+      this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), new THREE.MeshBasicMaterial({ color: '#8a6a3a' })); this.ropeG = new THREE.Group(); this.ropeG.add(this.rope);
       this.g.frustumCulled = false; this.g.traverse(o => { o.frustumCulled = false; }); play.scene.add(this.g, this.ropeG); this.place();
     }
-    anchor(out) { const cam = this.play.camera; return out.copy(cam.position).addScaledVector(fwdOf(cam), 0.6).addScaledVector(UP, -0.25); }
+    anchor(out) { const h = this.play.hoop; h.updateWorldMatrix(true, false); return out.setFromMatrixPosition(h.matrixWorld); }       // the rope is tied to the muzzle of the cannon
     place() { this.g.position.copy(this.pos); this.g.scale.set(this.R, this.R, 1); this.g.lookAt(_b.copy(this.pos).add(this.phase === 'out' ? this.dir : _c.copy(this.anchor(_c)).sub(this.pos).normalize().multiplyScalar(-1))); this.g.scale.set(this.R, this.R, 1);
       this.anchor(_b); const d = _c.copy(this.pos).sub(_b); const L = d.length(); this.ropeG.position.copy(_b).addScaledVector(d, 0.5); this.rope.scale.set(1, L, 1); this.ropeG.quaternion.setFromUnitVectors(UP, d.normalize()); }
     update(dt) {

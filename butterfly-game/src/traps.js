@@ -393,7 +393,7 @@ const Traps = (() => {
   function animRover(U, v, dt, mode, tt) {
     const R = U && U.rover; if (!R) return; R.phase += v * dt;
     if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) w.m.rotation.x = -R.phase / w.r; }
-    R.dish.rotation.y += dt * (mode === 'drive' ? 3.2 : 0.7);
+    R.dish.rotation.y = damp(R.dish.rotation.y, mode === 'drive' ? Math.sin(tt * 1.6) * 1.0 : Math.sin(tt * 0.35) * 0.35, 6, dt);       // the dish always looks forward and up, sweeping to the sides
     const blink = Math.sin(tt * (mode === 'drive' ? 12 : 3)) > 0 ? 1 : 0.18; R.beacon.color.setRGB(1 * blink, 0.69 * blink, 0.12 * blink);
     if (mode === 'drive') R.led.color.set('#ffb020'); else if (mode === 'stop') R.led.color.set('#6af08a'); else R.led.color.set('#4a9aff');
   }
