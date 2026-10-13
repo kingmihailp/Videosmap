@@ -389,7 +389,7 @@ const Traps = (() => {
   }
 
   // ================================================================== the drive trap: tracks, wheels, the dish and the lights follow its speed
-  const DRIVE = { speed: 3.2, near: 2.4, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
+  const DRIVE = { speed: 3.2, near: 3.0, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
   function animRover(U, v, dt, mode, tt) {
     const R = U && U.rover; if (!R) return; R.phase += v * dt;
     if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) w.m.rotation.x = -R.phase / w.r; }
@@ -428,17 +428,45 @@ const Traps = (() => {
     remoteMove(t, m) { if (![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return; t.tx = m.x; t.ty = m.y; t.tz = m.z; t.tyaw = m.yaw; const r = m.run ? 1 : 0; if (r && !t.run) this.clearFliers(t); t.run = r; if (Math.hypot(t.tx - t.x, t.tz - t.z) > 25) this.place2(t, t.tx, t.ty, t.tz, t.tyaw); }
     place2(t, x, y, z, yaw) { t.x = x; t.y = y; t.z = z; t.yaw = yaw; if (t.col) { t.col.x = x; t.col.z = z; } if (t.group) { t.group.position.set(x, y, z); t.group.rotation.set(t.tp, yaw, t.tr, 'YXZ'); } if (t.label) t.label.position.set(x, y + 2.7, z); }
     // can the rover stand / drive here
-    okAt(t, x, z) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.inWater && w.inWater(x, z, 0.9)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + 0.95) return false; return true; }
+    okAt(t, x, z, clear = 0.95) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; return true; }
     // a point in a zone the rover can reach (the middle of it, or the nearest free spot to it)
-    zoneSpot(t, i) { const S = this.play.sectors, q = S.rects[i], cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2; for (let r = 0; r < 40; r += 1.5) for (let k = 0; k < Math.max(1, Math.round(r * 1.2)); k++) { const a = k / Math.max(1, Math.round(r * 1.2)) * 6.2832, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (S.at(x, z) === i && this.okAt(t, x, z)) return { x, z }; } return { x: cx, z: cz }; }
+    zoneSpot(t, i) { const S = this.play.sectors, q = S.rects[i], cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2; for (let r = 0; r < 40; r += 1.5) for (let k = 0; k < Math.max(1, Math.round(r * 1.2)); k++) { const a = k / Math.max(1, Math.round(r * 1.2)) * 6.2832, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (S.at(x, z) === i && this.okAt(t, x, z) && !(this.world.inWater && this.world.inWater(x, z, 1.2))) return { x, z }; } return { x: cx, z: cz }; }
     nextZone(t) { const S = this.play.sectors, D = t.dr; let best = -1, bd = 1e9; S.rects.forEach((q, i) => { if (D.visited.includes(i)) return; const d = Math.hypot((q.x0 + q.x1) / 2 - t.x, (q.z0 + q.z1) / 2 - t.z); if (d < bd) { bd = d; best = i; } }); return best; }
     // how long it stands in a zone: 4 minutes at most, less when the rest of its life has to cover the remaining zones too
     stopFor(t) { const S = this.play.sectors, D = t.dr, rem = S.rects.length - D.visited.length, left = t.life - t.t; return clamp((left - rem * (DRIVE.leg / DRIVE.speed + 8)) / (rem + 1), DRIVE.stopMin, DRIVE.stopMax); }
+    // ---- path finding: A* over a 1 m grid of the location (water, steep ground, trees and rocks with the rover's clearance are walls), then the path is pulled straight
+    planPath(t, gx, gz, clear = 1.4) {
+      const w = this.world, R = w.R, CS = 1, N = Math.ceil(2 * R / CS) + 2, H = new Map(), key = (a, b) => (a + 400) * 1000 + (b + 400);
+      for (const c of w.colliders) { if (c === t.col) continue; const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4)); let l = H.get(k); if (!l) H.set(k, l = []); l.push(c); }
+      const freeAt = (x, z) => { if (Math.hypot(x, z) > R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false;
+        const a = Math.floor(x / 4), b = Math.floor(z / 4); for (let i = a - 1; i <= a + 1; i++) for (let j = b - 1; j <= b + 1; j++) { const l = H.get(key(i, j)); if (l) for (const c of l) if (Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; } return true; };
+      const memo = new Int8Array(N * N), cx = i => i * CS - R, idx = (x, z) => [Math.round((x + R) / CS), Math.round((z + R) / CS)];
+      const free = (i, j) => { if (i < 0 || j < 0 || i >= N || j >= N) return false; const k = i * N + j; if (!memo[k]) memo[k] = freeAt(cx(i), cx(j)) ? (w.inWater && w.inWater(cx(i), cx(j), 0) ? 3 : 1) : 2; return memo[k] !== 2; }, wet = (i, j) => memo[i * N + j] === 3 ? 3.5 : 1;       // the rover is amphibious: water is passable, only slow, so it is avoided when there is a dry way
+      let [si, sj] = idx(t.x, t.z); let [ti, tj] = idx(gx, gz);
+      if (!free(si, sj)) { let f = false; for (let r = 1; r < 8 && !f; r++) for (let a = -r; a <= r && !f; a++) for (let b = -r; b <= r && !f; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && free(si + a, sj + b)) { si += a; sj += b; f = true; } if (!f) return null; }
+      if (!free(ti, tj)) { let f = false; for (let r = 1; r <= 2 && !f; r++) for (let a = -r; a <= r && !f; a++) for (let b = -r; b <= r && !f; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && free(ti + a, tj + b)) { ti += a; tj += b; gx = cx(ti); gz = cx(tj); f = true; } if (!f) return clear > 1 ? this.planPath(t, gx, gz, 0.95) : null; }       // (the goal cell itself is blocked: take a free one next to it)
+      const G = new Float32Array(N * N).fill(1e9), from = new Int32Array(N * N).fill(-1), heap = [], push = (k, f) => { heap.push([f, k]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } }, pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { let l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+      const hh = (i, j) => Math.hypot(i - ti, j - tj), s0 = si * N + sj; G[s0] = 0; push(s0, hh(si, sj)); let found = false, n = 0;
+      const done = new Uint8Array(N * N); while (heap.length && n++ < 200000) { const [, k] = pop(), i = (k / N) | 0, j = k % N; if (done[k]) continue; done[k] = 1; if (i === ti && j === tj) { found = true; break; }
+        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { if (!a && !b) continue; const ni = i + a, nj = j + b; if (!free(ni, nj)) continue; if (a && b && (!free(i + a, j) || !free(i, j + b))) continue; const g = G[k] + (a && b ? 1.414 : 1) * wet(ni, nj), nk = ni * N + nj; if (g < G[nk]) { G[nk] = g; from[nk] = k; push(nk, g + hh(ni, nj)); } } }
+      if (!found) return clear > 1 ? this.planPath(t, gx, gz, 0.95) : null;
+      let pts = [], k = ti * N + tj; while (k >= 0) { pts.push({ x: cx((k / N) | 0), z: cx(k % N) }); k = from[k]; } pts.reverse();
+      const los = (a, b) => { const d = Math.hypot(b.x - a.x, b.z - a.z), m = Math.ceil(d / 0.6); for (let q = 1; q < m; q++) if (!freeAt(a.x + (b.x - a.x) * q / m, a.z + (b.z - a.z) * q / m)) return false; return true; };
+      const out = [pts[0]]; let a = 0; while (a < pts.length - 1) { let b = pts.length - 1; while (b > a + 1 && !los(pts[a], pts[b])) b--; out.push(pts[b]); a = b; }
+      out[out.length - 1] = { x: gx, z: gz }; return out.slice(1);
+    }
+    // choose the spot to drive to in zone i and plan the way; a few other spots are tried when the middle of the zone cannot be reached
+    setTarget(t, i) {
+      const S = this.play.sectors, q = S.rects[i], D = t.dr, tries = [this.zoneSpot(t, i)]; for (let k = 0; k < 9; k++) tries.push({ x: q.x0 + (q.x1 - q.x0) * (0.15 + 0.7 * Math.random()), z: q.z0 + (q.z1 - q.z0) * (0.15 + 0.7 * Math.random()) });
+      for (const sp of tries) { if (S.at(sp.x, sp.z) !== i || !this.okAt(t, sp.x, sp.z) || (this.world.inWater && this.world.inWater(sp.x, sp.z, 1.2))) continue; const path = this.planPath(t, sp.x, sp.z); if (path) { D.tgt = i; D.wp = sp; D.path = path; D.pi = 0; return true; } }
+      return false;
+    }
     launch(t) {
       const P = this.play, S = P.sectors, D = t.dr; if (!t.mine || !D || t.broken) return false; if (!S) { P.toast('Здесь нет природных зон: ловушка с приводом стоит на месте', 3.5); return false; }
       if (D.mode === 'drive') return false; const z0 = S.at(t.x, t.z); if (!D.visited.includes(z0)) D.visited.push(z0);
       const nz = this.nextZone(t); if (nz < 0) { P.toast('Ловушка уже объехала все природные зоны', 3.5); Snd.sfx.deny(); return false; }
-      D.tgt = nz; D.wp = this.zoneSpot(t, nz); D.mode = 'drive'; D.best = 1e9; D.stuck = 0; D.bias = 0; D.biasT = 0; t.run = 1; this.clearFliers(t); this.sendMv(t); Snd.sfx.servo(); P.toast(`Ловушка поехала в природную зону ${nz + 1}: «${S.rects[nz].name}» — пока едет, она не ловит`, 4, true); return true;
+      let nz2 = nz; while (nz2 >= 0 && !this.setTarget(t, nz2)) { P.toast(`Природная зона ${nz2 + 1} недоступна для ловушки — пропускаю`, 3.5); D.visited.push(nz2); nz2 = this.nextZone(t); } if (nz2 < 0) { P.toast('Ловушка не нашла дороги к остальным природным зонам', 3.5); Snd.sfx.deny(); return false; }
+      D.mode = 'drive'; D.best = 1e9; D.stuck = 0; D.bias = 0; D.biasT = 0; D.replans = 0; t.run = 1; this.clearFliers(t); this.sendMv(t); Snd.sfx.servo(); P.toast(`Ловушка поехала в природную зону ${D.tgt + 1}: «${S.rects[D.tgt].name}» — пока едет, она не ловит`, 4, true); return true;
     }
     halt(t, hold) { const D = t.dr; if (!D || D.mode !== 'drive') return false; D.mode = hold ? 'hold' : 'stop'; D.tgt = -1; t.run = 0; this.sendMv(t); Snd.sfx.servo(); this.play.toast('Ловушка остановилась и ловит бабочек', 3.5, true); return true; }
     arrive(t, forced) {
@@ -450,15 +478,16 @@ const Traps = (() => {
       const D = t.dr, w = this.world; let dx = D.wp.x - t.x, dz = D.wp.z - t.z; const d = Math.hypot(dx, dz);
       if (d < DRIVE.near) { this.arrive(t, false); return; }
       if (d < D.best - 0.4) { D.best = d; D.stuck = 0; } else D.stuck += dt;
-      if (D.stuck > 30) { this.arrive(t, true); return; }
+      if (D.stuck > 3.5) { D.stuck = 0; D.best = 1e9; D.replans = (D.replans || 0) + 1; const path = D.replans > 6 ? null : this.planPath(t, D.wp.x, D.wp.z, D.replans > 2 ? 0.95 : 1.4); if (path) { D.path = path; D.pi = 0; } else if (D.replans > 6) { this.arrive(t, true); return; } }
+      if (D.path) { while (D.pi < D.path.length - 1 && Math.hypot(D.path[D.pi].x - t.x, D.path[D.pi].z - t.z) < 1.6) D.pi++; const q = D.path[D.pi]; dx = q.x - t.x; dz = q.z - t.z; }
       let want = Math.atan2(-dx, -dz); D.biasT -= dt;
       const fwd = y => [-Math.sin(y), -Math.cos(y)], ahead = (y, L) => { const f = fwd(y); return this.okAt(t, t.x + f[0] * L, t.z + f[1] * L); };
-      if (D.stuck > 7 && D.biasT <= 0) { D.bias = (Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random() * 1.6); D.biasT = 2.5; }
       if (D.biasT > 0) want += D.bias;
-      else if (!ahead(want, 1.6)) { for (const o of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.3, -2.3, 3.14]) if (ahead(want + o, 1.6)) { D.bias = o; D.biasT = 1.0; want += o; break; } }
+      else if (!D.path && !ahead(want, 1.6)) { for (const o of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.3, -2.3, 3.14]) if (ahead(want + o, 1.6)) { D.bias = o; D.biasT = 1.0; want += o; break; } }
       const df = angDiff(want, t.yaw), turn = clamp(df, -DRIVE.turn * dt, DRIVE.turn * dt); t.yaw += turn;
-      const al = Math.abs(angDiff(want, t.yaw)), v = DRIVE.speed * clamp(1 - al / 1.1) * clamp(d / 3.5 + 0.35); let moved = 0;
-      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz)) { moved = v; t.x = nx; t.z = nz; } else D.stuck += dt * 2; }
+      const al = Math.abs(angDiff(want, t.yaw)), v = DRIVE.speed * (w.inWater && w.inWater(t.x, t.z, 0) ? 0.55 : 1) * clamp(1 - al / 1.1) * clamp(d / 3.5 + 0.35); let moved = 0;
+      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz, 0.5) || !this.okAt(t, t.x, t.z, 0.5)) { moved = v;       // (a rover that came to rest hard by a tree may always drive off)
+         t.x = nx; t.z = nz; } else D.stuck += dt * 2; }
       D.sp = moved; t.y = w.groundAt(t.x, t.z); this.tilt(t); this.place2(t, t.x, t.y, t.z, t.yaw);
     }
     tilt(t) { const w = this.world, f = [-Math.sin(t.yaw), -Math.cos(t.yaw)], r = [Math.cos(t.yaw), -Math.sin(t.yaw)], h = (a, b) => w.groundAt(t.x + f[0] * a + r[0] * b, t.z + f[1] * a + r[1] * b); const tp = Math.atan2(h(0.75, 0) - h(-0.75, 0), 1.5), tr = Math.atan2(h(0, 0.6) - h(0, -0.6), 1.2); t.tp = clamp(tp, -0.45, 0.45); t.tr = clamp(tr, -0.45, 0.45); }

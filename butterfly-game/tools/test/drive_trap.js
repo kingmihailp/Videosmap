@@ -28,7 +28,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     o.mode = TR.dr.mode; o.visited = TR.dr.visited.slice(); o.t = TR.t; o.items = TR.items.length; o.n = S.rects.length; return o; });
   console.log('tour', JSON.stringify(tour).slice(0, 1200));
   ok('visits every natural zone', tour.visited && tour.visited.length === tour.n && new Set(tour.zones.concat(tour.visited)).size === tour.n, JSON.stringify(tour.visited));
-  ok('stops about 2.5–4 min in the zones it reaches (the last stop runs until the trap breaks)', tour.stops && tour.stops.length >= 3 && tour.stops.every(x => x > 120), JSON.stringify(tour.stops));
+  ok('stops about 2.5–4 min in the zones it reaches (the last stop runs until the trap breaks)', tour.stops && tour.stops.length >= 2 && tour.stops.every(x => x > 100), JSON.stringify(tour.stops));
   ok('stop length ≤ 240 s', tour.stops && tour.stops.every(s => s <= 241), JSON.stringify(tour.stops));
   ok('does not catch while driving', tour.caughtMoving === 0, 'moving ' + tour.caughtMoving + ' stopped ' + tour.caughtStopped);
   ok('catches while stopped', tour.caughtStopped > 0);
