@@ -63,22 +63,22 @@ const Gear = (() => {
     halo(f) {
       if (f.irHalo) return; const list = [], mats = [], bodies = [];
       f.mesh.traverse(o => { if (!o.isMesh || !o.geometry) return; if (o.geometry.type === 'PlaneGeometry' && o.material && o.material.map) list.push(o); else if (o.geometry.type === 'BoxGeometry') bodies.push(o); });
-      const K = 1.9; f.irHalo = [];
-      for (const o of list) { const map = o.material.map, img = map.image || {}, mat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, uniforms: { map: { value: map }, uK: { value: K }, uPx: { value: new THREE.Vector2(1 / (img.width || 32), 1 / (img.height || 32)) }, uP: { value: 1 } },
+      const K = 2.6; f.irHalo = [];
+      for (const o of list) { const map = o.material.map, img = map.image || {}, mat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, uniforms: { map: { value: map }, uK: { value: K }, uPx: { value: new THREE.Vector2(1 / (img.width || 32), 1 / (img.height || 32)) }, uP: { value: 1 }, uM: { value: 1 } },
           vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-          fragmentShader: `uniform sampler2D map; uniform float uK; uniform vec2 uPx; uniform float uP; varying vec2 vUv;
+          fragmentShader: `uniform sampler2D map; uniform float uK; uniform vec2 uPx; uniform float uP; uniform float uM; varying vec2 vUv;
             float A(vec2 u){ if (u.x < 0.0 || u.x > 1.0 || u.y < 0.0 || u.y > 1.0) return 0.0; return texture2D(map, u).a > 0.5 ? 1.0 : 0.0; }
             void main(){ vec2 u = (vUv - 0.5) * uK + 0.5; float a0 = A(u), m1 = 0.0, m2 = 0.0, m3 = 0.0, n1 = 1.0;
-              for (int i = 0; i < 12; i++) { float an = float(i) * 0.5236; vec2 d = vec2(cos(an), sin(an)) * uPx; m1 = max(m1, A(u + d * 2.0)); m2 = max(m2, A(u + d * 3.8)); m3 = max(m3, A(u + d * 6.5)); n1 = min(n1, A(u - d * 1.6)); }
+              for (int i = 0; i < 12; i++) { float an = float(i) * 0.5236; vec2 d = vec2(cos(an), sin(an)) * uPx; m1 = max(m1, A(u + d * 3.2 * uM)); m2 = max(m2, A(u + d * 5.6 * uM)); m3 = max(m3, A(u + d * 8.5 * uM)); n1 = min(n1, A(u - d * 2.6 * uM)); }
               float rim = a0 * (1.0 - n1), outer = (1.0 - a0) * m1, glow = (1.0 - a0) * (1.0 - m1) * (m2 * 0.7 + m3 * 0.35);
-              float a = clamp(rim + outer + glow * 0.9, 0.0, 1.0) * uP; float hot = clamp(rim + outer * 0.6, 0.0, 1.0); gl_FragColor = vec4(1.0, 0.03 + 0.28 * hot, 0.02 + 0.12 * hot, a); }` });
+              float a = clamp(rim + outer + glow, 0.0, 1.0) * uP; float hot = clamp(rim + outer * 0.5, 0.0, 1.0); gl_FragColor = vec4(1.0, 0.0 + 0.1 * hot, 0.0, a); }` });
         const h = new THREE.Mesh(o.geometry, mat), cx = (o.geometry.boundingBox || (o.geometry.computeBoundingBox(), o.geometry.boundingBox)).getCenter(new THREE.Vector3());
         h.scale.set(o.scale.x * K, o.scale.y * K, o.scale.z * K); h.position.set(o.position.x + cx.x * o.scale.x * (1 - K), o.position.y, o.position.z + cx.z * o.scale.z * (1 - K)); h.rotation.copy(o.rotation); h.renderOrder = 999; h.frustumCulled = false; o.parent.add(h); f.irHalo.push(h); mats.push(mat); }
-      for (const o of bodies) { const mat = new THREE.MeshBasicMaterial({ color: '#ff2210', transparent: true, opacity: 0.9, depthTest: false, depthWrite: false }); const h = new THREE.Mesh(o.geometry, mat); h.position.copy(o.position); h.scale.copy(o.scale).multiplyScalar(1.5); h.rotation.copy(o.rotation); h.renderOrder = 998; o.parent.add(h); f.irHalo.push(h); mats.push(mat); }
+      for (const o of bodies) { const mat = new THREE.MeshBasicMaterial({ color: '#ff0000', transparent: true, opacity: 1, depthTest: false, depthWrite: false }); const h = new THREE.Mesh(o.geometry, mat); h.position.copy(o.position); h.scale.copy(o.scale).multiplyScalar(1.9); h.rotation.copy(o.rotation); h.renderOrder = 998; o.parent.add(h); f.irHalo.push(h); mats.push(mat); }
       f.irMats = mats;
     }
     unhalo(f) { if (!f.irHalo) return; for (const h of f.irHalo) { if (h.parent) h.parent.remove(h); if (h.material) h.material.dispose(); } f.irHalo = null; f.irMats = null; }
-    tick(dt) { for (const f of this.play.flies) if (f.irT > 0) { f.irT -= dt; if (f.irMats) { const k = f.irT < 1 ? Math.max(0, f.irT) : 0.75 + 0.25 * Math.sin(this.play.t * 9); for (const m of f.irMats) { if (m.uniforms) m.uniforms.uP.value = k; else m.opacity = 0.9 * k; } } if (f.irT <= 0) { this.unhalo(f); f.irT = 0; } } }
+    tick(dt) { for (const f of this.play.flies) if (f.irT > 0) { f.irT -= dt; if (f.irMats) { const k = f.irT < 1 ? Math.max(0, f.irT) : 0.75 + 0.25 * Math.sin(this.play.t * 9); const dd = f.pos.distanceTo(this.play.camera.position), mul = clamp(dd / 5, 1, 2.4); for (const m of f.irMats) { if (m.uniforms) { m.uniforms.uP.value = k; m.uniforms.uM.value = mul; } else m.opacity = 0.9 * k; } } if (f.irT <= 0) { this.unhalo(f); f.irT = 0; } } }
     dispose() { for (const f of this.play.flies) this.unhalo(f); this.play.scene.remove(this.g, this.ring, this.ring2); }
   }
 
@@ -117,7 +117,10 @@ const Gear = (() => {
       this.sheet = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({ color: '#d4e8e0', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false })); this.sheet.frustumCulled = false; this.g.add(this.sheet);
       const lp = []; for (const [a, b] of this.pairs) lp.push(a, b); this.lgeo = new THREE.BufferGeometry(); this.lgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.pairs.length * 6), 3)); this.lines = new THREE.LineSegments(this.lgeo, new THREE.LineBasicMaterial({ color: '#f2f6ee' })); this.lines.frustumCulled = false; this.g.add(this.lines);
       this.wts = CORNERS.map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: '#c8a040' })); m.frustumCulled = false; this.g.add(m); return m; });
-      this.rope = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), new THREE.MeshBasicMaterial({ color: '#8a6a3a' })); this.ropeG = new THREE.Group(); this.ropeG.add(this.rope); this.rope.frustumCulled = false;
+      // the rope: 24 particles from the muzzle to the middle of the net, a chain under gravity (the length is paid out and wound in by the drum, a little longer than the distance, so it sags and lies on the ground)
+      this.RN = 24; this.R = new Float32Array((this.RN + 1) * 3); this.RQ = new Float32Array((this.RN + 1) * 3); this.ropeG = new THREE.Group(); this.segs = [];
+      { const o = this.origin; for (let k = 0; k <= this.RN; k++) { for (let c = 0; c < 3; c++) { this.R[k * 3 + c] = this.RQ[k * 3 + c] = [o.x, o.y, o.z][c]; } } }
+      const rm = new THREE.MeshBasicMaterial({ color: '#8a6a3a' }), rg = new THREE.CylinderGeometry(0.022, 0.022, 1, 5); for (let k = 0; k < this.RN; k++) { const m = new THREE.Mesh(rg, rm); m.frustumCulled = false; this.ropeG.add(m); this.segs.push(m); }
       play.scene.add(this.g, this.ropeG); this.sync();
     }
     anchor(out) { const h = this.play.hoop; h.updateWorldMatrix(true, false); return out.setFromMatrixPosition(h.matrixWorld); }
@@ -127,7 +130,8 @@ const Gear = (() => {
       const pa = this.geo.attributes.position, la = this.lgeo.attributes.position; pa.array.set(this.P); pa.needsUpdate = true; this.geo.computeBoundingSphere();
       let q = 0; for (const [a, b] of this.pairs) { for (let c = 0; c < 3; c++) la.array[q++] = this.P[a * 3 + c]; for (let c = 0; c < 3; c++) la.array[q++] = this.P[b * 3 + c]; } la.needsUpdate = true;
       CORNERS.forEach((k, i) => this.wts[i].position.set(this.P[k * 3], this.P[k * 3 + 1], this.P[k * 3 + 2]));
-      this.node(this.cen, this.pos); this.anchor(_p); const d = _q.copy(this.pos).sub(_p), L = d.length(); this.ropeG.position.copy(_p).addScaledVector(d, 0.5); this.rope.scale.set(1, Math.max(0.01, L), 1); this.ropeG.quaternion.setFromUnitVectors(UP, d.normalize());
+      this.node(this.cen, this.pos);
+      for (let k = 0; k < this.RN; k++) { _p.set(this.R[k * 3], this.R[k * 3 + 1], this.R[k * 3 + 2]); _q.set(this.R[k * 3 + 3], this.R[k * 3 + 4], this.R[k * 3 + 5]); const d = _r.copy(_q).sub(_p), L = d.length(), m = this.segs[k]; m.position.copy(_p).addScaledVector(d, 0.5); m.scale.set(1, Math.max(0.005, L), 1); if (L > 1e-5) m.quaternion.setFromUnitVectors(UP, d.multiplyScalar(1 / L)); }
     }
     // one physics step of h seconds
     step(h) {
@@ -142,6 +146,16 @@ const Gear = (() => {
       for (let k = 0; k < NN; k++) { const o = k * 3, gy = w.groundAt(P[o], P[o + 2]) + 0.05;
         if (P[o + 1] < gy) { P[o + 1] = gy; Q[o] += (P[o] - Q[o]) * 0.3; Q[o + 2] += (P[o + 2] - Q[o + 2]) * 0.3; Q[o + 1] = P[o + 1]; this.landed = true; }       // the ground: it drags and loses speed
         for (const c of this.near) { const dx = P[o] - c.x, dz = P[o + 2] - c.z, d = Math.hypot(dx, dz), r = c.r + 0.06; if (d < r && P[o + 1] < gy + 7) { const f = d > 1e-4 ? r / d : 0; P[o] = c.x + (d > 1e-4 ? dx * f : r); P[o + 2] = c.z + (d > 1e-4 ? dz * f : 0); Q[o] = P[o]; Q[o + 2] = P[o + 2]; } } }       // trunks and rocks stop it
+      this.ropeStep(h);
+    }
+    ropeStep(h) {
+      const R = this.R, Q = this.RQ, N = this.RN, w = this.play.world; this.anchor(_p); const c = this.cen * 3, ex = this.P[c], ey = this.P[c + 1], ez = this.P[c + 2];
+      const dist = Math.hypot(ex - _p.x, ey - _p.y, ez - _p.z), seg = (dist * 1.07 + 0.5) / N, drag = Math.exp(-0.8 * h);
+      for (let k = 1; k < N; k++) { const o = k * 3; for (let q = 0; q < 3; q++) { const v = (R[o + q] - Q[o + q]) * drag; Q[o + q] = R[o + q]; R[o + q] += v; } R[o + 1] -= G_ * h * h; }
+      R[0] = _p.x; R[1] = _p.y; R[2] = _p.z; Q[0] = R[0]; Q[1] = R[1]; Q[2] = R[2]; R[N * 3] = ex; R[N * 3 + 1] = ey; R[N * 3 + 2] = ez;
+      for (let it = 0; it < 8; it++) for (let k = 0; k < N; k++) { const a = k * 3, b = a + 3, dx = R[b] - R[a], dy = R[b + 1] - R[a + 1], dz = R[b + 2] - R[a + 2], d = Math.hypot(dx, dy, dz); if (d <= seg || d < 1e-6) continue; const f = (d - seg) / d, wa = k === 0 ? 0 : 1, wb = k + 1 === N ? 0 : 1, s = wa + wb; if (!s) continue;
+        R[a] += dx * f * wa / s; R[a + 1] += dy * f * wa / s; R[a + 2] += dz * f * wa / s; R[b] -= dx * f * wb / s; R[b + 1] -= dy * f * wb / s; R[b + 2] -= dz * f * wb / s; }
+      for (let k = 1; k < N; k++) { const o = k * 3, gy = w.groundAt(R[o], R[o + 2]) + 0.04; if (R[o + 1] < gy) { R[o + 1] = gy; Q[o] += (R[o] - Q[o]) * 0.5; Q[o + 2] += (R[o + 2] - Q[o + 2]) * 0.5; Q[o + 1] = R[o + 1]; } }
     }
     catchFlies() {
       const p = this.play, cx = this.P[this.cen * 3], cy = this.P[this.cen * 3 + 1], cz = this.P[this.cen * 3 + 2];
@@ -244,7 +258,9 @@ const Gear = (() => {
     if (S.auto) { UIK.panel(ctx, SW - 98, by - 16, 92, 15, { fill: 'rgba(16,28,24,0.88)', shadow: false, border: rt.auto ? '#4aff6a' : c.line }); T.draw(ctx, 'Авто [X]', SW - 94, by - 13, { size: 8, color: c.text }); ctx.fillStyle = rt.auto ? '#1a5a2a' : '#3a2220'; ctx.fillRect(SW - 36, by - 12, 24, 7); ctx.fillStyle = rt.auto ? '#4aff6a' : '#c83a2a'; ctx.fillRect(rt.auto ? SW - 24 : SW - 36, by - 12, 12, 7); by -= 17; }
     // the infrared marks: the distance under every butterfly lit by the beam (the outline itself glows in the 3D scene, see Ir.halo)
     if (S.ir) { let n = 0; for (const f of play.flies) { if (!(f.irT > 0) || f.state === CAUGHT) continue; _a.copy(f.pos).project(play.camera); if (_a.z > 1 || Math.abs(_a.x) > 1 || Math.abs(_a.y) > 1) continue; const x = Math.round((_a.x * 0.5 + 0.5) * SW), y = Math.round((-_a.y * 0.5 + 0.5) * SH), d = f.pos.distanceTo(play.camera.position), s = clamp(34 / (d * 0.5 + 3), 3, 9) + 3; ctx.fillStyle = f.irT < 1 && Math.floor(t * 10) % 2 ? 'rgba(255,90,60,0.4)' : '#ff4a2a';
-      if (n++ < 14) T.draw(ctx, Math.round(d) + ' м', x, y + Math.min(s, 8) + 2, { size: 8, align: 'c', color: '#ff9a80', shadow: '#000' }); } }
+      { const hs = s + 2, off = Math.floor(t * 8) % 5; ctx.fillStyle = f.irT < 1 && Math.floor(t * 10) % 2 ? 'rgba(255,40,20,0.45)' : '#ff2a14';       // a square of dashes (the dashes run slowly round it)
+        for (let q = -hs; q <= hs; q++) { if (((q + hs + off) % 5) < 3) { ctx.fillRect(x + q, y - hs, 1, 1); ctx.fillRect(x + q, y + hs, 1, 1); ctx.fillRect(x - hs, y + q, 1, 1); ctx.fillRect(x + hs, y + q, 1, 1); } } }
+      if (n++ < 14) T.draw(ctx, Math.round(d) + ' м', x, y + Math.min(s, 8) + 5, { size: 8, align: 'c', color: '#ff9a80', shadow: '#000' }); } }
   }
   const toggleAuto = play => { const rt = play.gear; if (!rt || !play.netStats.auto) return false; rt.auto = !rt.auto; try { Snd.sfx.click(); } catch (e) {} play.toast(rt.auto ? 'Автономность включена: сачок сам замахивается' : 'Автономность выключена', 2.2); return true; };
 
