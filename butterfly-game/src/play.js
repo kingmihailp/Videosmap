@@ -400,12 +400,12 @@ class Play {
   netBusy() { return this.net.phase >= 0 && this.net.phase < 0.6; }
   swing() {
     if (this.netStats.cannon) { if (this.net.cd > 0) return; if (Gear.fire(this)) { this.net.cd = 0.1; this.stats.swings++; this.hoopWorld(_v); for (const f of this.flies) { if (f.state !== CAUGHT && f.pos.distanceTo(this.camera.position) < 7 && Math.random() < 0.25) f.startFlee(new THREE.Vector3(f.pos.x - this.player.pos.x, 0, f.pos.z - this.player.pos.z)); } } return; }
-    if (this.net.phase >= 0 || this.net.cd > 0) return; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7 * (1 - this.netStats.quiet); Snd.sfx.swing();
+    if (this.net.phase >= 0 || this.net.cd > 0) return; this._hpOn = false; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7 * (1 - this.netStats.quiet); Snd.sfx.swing();
     // the motorised handle: it extends to the butterfly in front of you (up to three times the usual reach); the piston handle throws you forward
-    this.net.extT = 1; if (this.netStats.mech) {       // forward reach of the hoop at the centre of the swing: R1 with the pole closed, S1 more for every pole length added; the limit is «mech» times R1 (300%)
-      const R1 = 1.5, S1 = 1.08, maxReach = R1 * this.netStats.mech, fw = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion); let best = 1e9;
+    this.net.extT = 1; if (this.netStats.mech) {       // forward reach of the hoop at the centre of the swing: R1 with the pole closed, S1 more for every pole length added; the limit is «mech» metres (12)
+      const R1 = 1.5, S1 = 1.08, maxReach = this.netStats.mech, fw = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion); let best = 1e9;
       for (const f of this.flies) { if (f.state === CAUGHT || !f.mesh.visible) continue; _v2.copy(f.pos).sub(this.camera.position); const d = _v2.length(); if (d < maxReach + 0.6 && d > 0.3 && _v2.normalize().dot(fw) > 0.5 && d < best) best = d; }
-      if (best < 1e9) this.net.extT = clamp(1 + (best - R1) / S1, 1, 1 + (maxReach - R1) / S1); try { Snd.sfx.servo(); } catch (e) {} }
+      if (best < 1e9) { const Sb = S1 + 0.11 * clamp((best - 3.6) / 8), Sm = S1 + 0.11; this.net.extT = clamp(1 + (best - R1) / Sb, 1, 1 + (maxReach - R1) / Sm); } try { Snd.sfx.servo(); } catch (e) {} }
     if (this.netStats.lunge) { const P = this.player, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); P.vel.x += fx * 28; P.vel.y += fz * 28; P.swingNoise += 0.35; }
     this.hoopWorld(_v); // butterflies near the target may bolt
     for (const f of this.flies) { if (f.state === CAUGHT) continue; const d = f.pos.distanceTo(_v); if (d < 3.6) { const p = f.state === PERCH ? 0.3 + (f.beh.wary - 3) * 0.04 : 0.18; if (Math.random() < p) f.startFlee(new THREE.Vector3(f.pos.x - this.player.pos.x, 0, f.pos.z - this.player.pos.z)); } }
@@ -419,7 +419,7 @@ class Play {
       const W = { px: 0.66, py: -0.3, pz: -0.3, rx: 0.6, ry: -0.75, rz: -0.35 }, S = { px: 0.0, py: -0.52, pz: -0.34, rx: 0.02, ry: 1.0, rz: 0.35 };
       const mix = (A, B, k) => { const o = {}; for (const key in A) o[key] = lerp(A[key], B[key], k); return o; };
       if (ph < 0.2) c = mix(c, W, smooth(0, 0.2, ph)); else if (ph < 0.55) c = mix(W, S, smooth(0.2, 0.55, ph)); else c = mix(S, c, smooth(0.55, 1, ph));
-      if (this.netStats.mech) { const ek = (n.extT - 1) * (ph < 0.58 ? smooth(0.1, 0.36, ph) : 1 - smooth(0.58, 0.9, ph)); this.netModel.setExt(1 + ek); c.rx -= 0.1 * ek; }       // a long pole is tipped down a little so that the hoop still passes at the height of the butterfly
+      if (this.netStats.mech) { const ek = (n.extT - 1) * (ph < 0.58 ? smooth(0.1, 0.36, ph) : 1 - smooth(0.58, 0.9, ph)); this.netModel.setExt(1 + ek); c.rx -= 0.19 * Math.min(1, ek / 1.9) + 0.011 * Math.max(0, ek - 1.9); }       // a long pole is tipped down a little so that the hoop still passes at the height of the butterfly
       if (this.netStats.lunge) this.netModel.setPiston(ph < 0.55 ? smooth(0.08, 0.3, ph) : 1 - smooth(0.55, 0.95, ph));
       if (ph > 0.24 && ph < 0.58) this.checkCatch();
       if (ph >= 1) { n.phase = -1; if (this.netStats.mech) this.netModel.setExt(1); if (this.netStats.lunge) this.netModel.setPiston(0); n.cd = 0.18 / this.netStats.speed; if (!n.caughtThisSwing) Snd.sfx.miss(); }
@@ -432,12 +432,14 @@ class Play {
     g.position.set(c.px, c.py, c.pz); g.rotation.set(c.rx, c.ry, c.rz);
   }
   checkCatch() {
-    this.hoopWorld(_v);
+    this.hoopWorld(_v); const prev = this._hp && this._hpOn ? this._hp : null, seg = prev ? _v.distanceTo(prev) : 0;       // the hoop of a long pole moves fast: a butterfly is caught if it lies near the whole path of the hoop since the last frame
+    if (!this._hp) this._hp = new THREE.Vector3(); const cur = _v.clone(); const near = f => { if (!prev || seg < 0.05) return f.pos.distanceTo(cur); _w.copy(cur).sub(prev); const k = clamp(_v2.copy(f.pos).sub(prev).dot(_w) / (seg * seg)); return f.pos.distanceTo(_v2.copy(prev).addScaledVector(_w, k)); };
     for (const f of this.flies) {
-      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = f.pos.distanceTo(_v); const r = (0.66 + f.span * 0.3) * this.catchMul() * this.netStats.radius;
+      if (f.state === CAUGHT || !f.mesh.visible) continue; const d = near(f); const r = (0.66 + f.span * 0.3) * this.catchMul() * this.netStats.radius;
       if (d < r && f.kind === 'screech' && this.flashOn) { if (!this.scrT || this.t - this.scrT > 4) { this.toast('Скрич не даётся при свете — выключи фонарь (F)', 3); this.scrT = this.t; } continue; }
       if (d < r) { if (this.mp) { if (f.pendingCatch) continue; this.netCatch(f); } else this.onCatch(f); this.net.caughtThisSwing = true; if (this.netStats.shock && !f.shocked) Gear.shock(this, f); }
     }
+    this._hp.copy(cur); this._hpOn = true;
   }
   onCatch(f) {
     f.catchIt(); const sp = Aberr.roll(f.sp, this.netStats.ab);     // silk mesh / chrome handle: a small chance that the catch is an aberration

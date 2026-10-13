@@ -108,9 +108,10 @@ const Gear = (() => {
     update(dt) { this.t -= dt; this.jitT = (this.jitT || 0) - dt; if (this.jitT <= 0) { this.jitT = 0.04; this.jit(); } this.line.material.opacity = this.line2.material.opacity = clamp(this.t / 0.2); return this.t > 0; }
     dispose() { this.play.scene.remove(this.line, this.line2); this.line.geometry.dispose(); this.line2.geometry.dispose(); }
   }
-  function shock(play, f) {            // called after a butterfly was caught with a shocker hoop: the nearest ones (<= 7, within 6 m of it) are shocked and caught as well
+  const SHOCK_R = 15;
+  function shock(play, f) {            // called after a butterfly was caught with a shocker hoop: the nearest ones (<= 24, within 15 m of it) are shocked and caught as well
     const rt = play.gear, from = new THREE.Vector3(); play.hoop.updateWorldMatrix(true, false); from.setFromMatrixPosition(play.hoop.matrixWorld);
-    const list = play.flies.filter(v => v !== f && v.state !== CAUGHT && v.mesh.visible && !(v.kind === 'screech' && play.flashOn) && v.pos.distanceTo(f.pos) < 6).sort((a, b) => a.pos.distanceTo(f.pos) - b.pos.distanceTo(f.pos)).slice(0, 7);
+    const list = play.flies.filter(v => v !== f && v.state !== CAUGHT && v.mesh.visible && !(v.kind === 'screech' && play.flashOn) && v.pos.distanceTo(f.pos) < SHOCK_R).sort((a, b) => a.pos.distanceTo(f.pos) - b.pos.distanceTo(f.pos)).slice(0, 24);
     let prev = from; for (const v of list) { rt.arcs.push(new Arc(play, prev, v.pos)); prev = v.pos; if (play.mp) { if (v.pendingCatch) continue; play.netCatch(v); } else play.onCatch(v); v.shocked = true; }
     if (list.length) { try { Snd.sfx.zap(); } catch (e) {} play.toast(`Разряд! Пойманы ещё бабочки: ${list.length}`, 2.2); }
   }
@@ -125,7 +126,7 @@ const Gear = (() => {
     // the autonomy servo: with the switch on, the net swings by itself at butterflies within reach
     if (S.auto && rt.auto && !play.overlay) {
       rt.autoT -= dt; if (rt.autoT <= 0 && play.net.phase < 0 && play.net.cd <= 0 && rt.cd <= 0) {
-        rt.autoT = 0.12; const reach = S.cannon ? 22 : S.mech ? 6.5 : 2.9 * Math.min(1.5, S.radius), fw = fwdOf(play.camera);
+        rt.autoT = 0.12; const reach = S.cannon ? 22 : S.mech ? 11 : 2.9 * Math.min(1.5, S.radius), fw = fwdOf(play.camera);
         for (const f of play.flies) { if (f.state === CAUGHT || !f.mesh.visible || (f.kind === 'screech' && play.flashOn)) continue; _c.copy(f.pos).sub(play.camera.position); const d = _c.length(); if (d < reach && d > 0.4 && _c.normalize().dot(fw) > (S.cannon ? 0.93 : 0.62)) { play.swing(); break; } }
       }
     }

@@ -22,8 +22,8 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await ev(() => { equip({ h: 'h_basic', r: 'r_basic', m: 'm_basic' }); reset(); park(p.flies[0], 1.7, -0.1); window.wantFire = true;  }); await gw(1800);
   ok('basic net catches', await caught(0));
   // ---------- 1. the shocker hoop: a catch shocks the neighbours
-  await ev(() => { reset(); equip({ h: 'h_basic', r: 'r_shock', m: 'm_basic' }); park(p.flies[0], 1.7, -0.1); for (let i = 1; i <= 4; i++) { park(p.flies[i], 3 + i, (i % 2 ? 1 : -1) * 1.5, 0); } window.wantFire = true;  }); await gw(1800);
-  const sh = await nCaught(); ok('shocker catches the neighbours', sh >= 4, sh + ' of 5');
+  await ev(() => { reset(); equip({ h: 'h_basic', r: 'r_shock', m: 'm_basic' }); park(p.flies[0], 1.7, -0.1); for (let i = 1; i <= 4; i++) { park(p.flies[i], 3 + i, (i % 2 ? 1 : -1) * 1.5, 0); } park(p.flies[5], 9, 11, 0); park(p.flies[6], 9, -12, 0); for (let i = 8; i < p.flies.length; i++) p.flies[i].mesh.visible = false; park(p.flies[7], 9, 18, 0); window.wantFire = true;  }); await gw(1800);
+  const sh = await nCaught(); ok('shocker reaches butterflies up to 15 m from the caught one (and not 18 m)', sh >= 7 && sh <= 7, sh + ' caught of 8 parked (7 expected)');
   await ev(() => { reset(); equip({ h: 'h_basic', r: 'r_basic', m: 'm_basic' }); park(p.flies[0], 1.7, -0.1); park(p.flies[1], 3.4, 1, 0); window.wantFire = true;  }); await gw(1800);
   { const n = await nCaught(); ok('plain hoop does not shock', n === 1, n + ' caught'); }
   // ---------- 2. the mechanised handle reaches further
@@ -31,7 +31,9 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   ok('basic net does not reach 3.6 m', !(await reach({ h: 'h_basic', r: 'r_basic', m: 'm_basic' }, 3.6)));
   ok('mech handle reaches 3.6 m', await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 3.6));
   ok('mech handle reaches 4.2 m (≈280% of the usual)', await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 4.2));
-  ok('mech handle does not reach 6.5 m', !(await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 6.5)));
+  ok('mech handle reaches 8 m', await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 8));
+  ok('mech handle reaches 11.5 m', await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 11.5));
+  ok('mech handle does not reach 15 m', !(await reach({ h: 'h_mech', r: 'r_basic', m: 'm_basic' }, 15)));
   // ---------- 3. the piston handle lunges
   const lg = await ev(() => { reset(); equip({ h: 'h_piston', r: 'r_basic', m: 'm_basic' }); const P = p.player, x0 = P.pos.x, z0 = P.pos.z; for (let i = 0; i < 8; i++) p.flies[i].mesh.visible = false; F0W.inp.fire = true; step(0.9); return Math.hypot(P.pos.x - x0, P.pos.z - z0); }); ok('piston handle lunges forward', lg > 1.2, lg.toFixed(2) + ' m');
   const nolg = await ev(() => { reset(); equip({ h: 'h_basic', r: 'r_basic', m: 'm_basic' }); const P = p.player, x0 = P.pos.x, z0 = P.pos.z; F0W.inp.fire = true; step(0.9); return Math.hypot(P.pos.x - x0, P.pos.z - z0); }); ok('basic handle does not lunge', nolg < 0.3, nolg.toFixed(2) + ' m');
