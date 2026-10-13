@@ -37,6 +37,7 @@
   mk('E', { right: `calc(var(--s)*1.45 + ${g})`, bottom: `calc(var(--s)*1.45 + ${g})` }, moving, () => key('KeyE', 'e'));
   mk('📖', { right: g, top: `calc(var(--s)*1.3 + ${g})` }, moving, () => key('Tab'));
   mk('🗺', { right: g, top: `calc(var(--s)*3.9 + ${g})` }, () => moving() && App.screen === 'play' && !!App.play && !!App.play.sectors, () => key('KeyM', 'm'));
+  mk('⚙', { left: g, top: `calc(var(--s)*5.9 + ${g})` }, () => moving() && App.screen === 'play' && !!App.play && !!App.play.gear && !!App.play.netStats.auto, () => key('KeyX', 'x'));
   const crouch = mk('⬇', { right: g, top: `calc(var(--s)*2.6 + ${g})` }, () => moving() && App.screen === 'play', () => { if (inp.keys.has('KeyC')) inp.keys.delete('KeyC'); else inp.keys.add('KeyC'); });
   mk('💬', { left: g, top: `calc(var(--s)*4.6 + ${g})` }, () => moving() && Net.on, () => key('KeyT', 't'));
   mk('☰', { right: g, top: g }, moving, () => key('KeyP', 'p'));

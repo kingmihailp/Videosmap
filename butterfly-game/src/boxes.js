@@ -144,7 +144,7 @@ const Boxes = (() => {
 
   // ================================================================== NET WORKSHOP (the «Сачки» tab of the workbench)
   const nbench = {
-    sel: 0, scroll: 0, draft: { h: 'h_basic', r: 'r_basic', m: 'm_basic' }, msg: '', msgT: 0, btns: [], rows: [], slotBtns: [],
+    sel: 0, scroll: 0, draft: { h: 'h_basic', r: 'r_basic', m: 'm_basic' }, msg: '', msgT: 0, btns: [], rows: [], slotBtns: [], gbtns: [],
     list() { return [NetParts.BASIC].concat(Save.netList()); },
     isNew() { return this.sel >= this.list().length; },
     cfg() { return this.isNew() ? this.draft : this.list()[this.sel]; },
@@ -162,13 +162,15 @@ const Boxes = (() => {
         { id: 'close', label: '← В кабинет', x: 8, y: 248, w: 80, h: 16 },
         isNew ? { id: 'make', label: 'Собрать сачок', x: 330, y: 210, w: 142, h: 18, disabled: ['h', 'r', 'm'].every(k => NetParts.isBasic(this.draft[k])) }
           : { id: 'equip', label: eq && cur.uid ? 'Снять (взять обычный)' : eq ? 'В руках' : 'Взять в руки', x: 94, y: 248, w: 112, h: 16, disabled: eq && !cur.uid },
-        { id: 'take', label: 'Разобрать', x: 210, y: 248, w: 72, h: 16, disabled: isNew || !cur.uid },
+        { id: 'take', label: 'Разобрать', x: 210, y: 248, w: 72, h: 16, disabled: isNew || !cur.uid || !!cur.cannon },
       ];
+      // the attachments of the selected net (up to three): a click puts one on from the stash or takes it off
+      this.gbtns = []; if (!isNew && cur.uid) Object.keys(NetParts.GADGETS).forEach((id, k) => this.gbtns.push({ id: 'gad_' + id, gid: id, x: 164 + k * 51, y: 152, w: 48, h: 19 }));
     },
     draw(ctx, t, m, dt) {
       this.layout(); this.msgT = Math.max(0, this.msgT - 1 / 60); const L = this.list(), cur = this.cfg(), isNew = this.isNew(), eqU = Save.data.netEq || 0;
       T.draw(ctx, 'Мастерская сачков', SW / 2, 10, { size: 10, align: 'c', color: c.gold });
-      T.draw(ctx, 'Сачки меняются только в кабинете', SW / 2, 22, { size: 8, align: 'c', color: c.dim });
+      T.draw(ctx, this.msgT > 0 ? this.msg : 'Сачки меняются только в кабинете', SW / 2, 22, { size: 8, align: 'c', color: this.msgT > 0 ? c.gold : c.dim });
       T.draw(ctx, `Ваши сачки (${L.length})`, 8, 40, { size: 8, color: c.dim });
       this.rows.forEach(r => {
         const sl = r.i === this.sel, hv = UIK.hit(r, m.x, m.y), isLast = r.i >= L.length; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false });
@@ -177,9 +179,14 @@ const Boxes = (() => {
       });
       // centre: the picture and the numbers
       UIK.panel(ctx, 158, 32, 164, 208, { fill: '#10201c', border: c.line, shadow: false });
-      NetParts.draw2D(ctx, cur, 166, 42, 148, 126);
+      NetParts.draw2D(ctx, cur, 166, 42, 148, 96);
       T.draw(ctx, isNew ? 'Новый сачок' : NetParts.name(cur, this.sel - 1), 240, 36, { size: 8, align: 'c', color: c.text });
-      NetParts.statLines(cur).forEach((s, k) => T.draw(ctx, fitStr(s, 154), 164, 172 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green }));
+      if (this.gbtns.length) {
+        T.draw(ctx, 'Приспособления', 164, 142, { size: 8, color: c.dim }); const SH2 = { g_map: 'Карта', g_ir: 'ИК-скан', g_auto: 'Авто' };
+        this.gbtns.forEach(b => { const on = (cur.g || []).includes(b.gid), have = Save.gadCount(b.gid), hv = UIK.hit(b, m.x, m.y); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : hv && (have || on) ? '#244a3c' : '#16281f', border: on ? c.gold : have ? c.line : '#2a3a32', shadow: false });
+          T.draw(ctx, SH2[b.gid], b.x + b.w / 2, b.y + 2, { size: 8, align: 'c', color: on ? '#fff' : have ? c.text : '#5a7a68' }); T.draw(ctx, on ? 'надето' : have ? `в запасе ×${have}` : 'нет', b.x + b.w / 2, b.y + 10, { size: 8, align: 'c', color: on ? c.gold : have ? c.green : '#4a6a58' }); });
+      }
+      { const y0 = this.gbtns.length ? 176 : 172; let sl = NetParts.statLines(cur); if (y0 + sl.length * 11 > 238) sl = sl.filter(s => !/обычн/.test(s)); sl.slice(0, Math.floor((238 - y0) / 11)).forEach((s, k) => T.draw(ctx, fitStr(s, 154), 164, y0 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green })); }
       // right: the parts
       UIK.panel(ctx, 326, 32, 150, 208, { fill: '#10201c', border: c.line, shadow: false });
       T.draw(ctx, isNew ? 'Выберите детали' : 'Детали сачка', 401, 36, { size: 8, align: 'c', color: c.text });
@@ -191,7 +198,6 @@ const Boxes = (() => {
       this.slotBtns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       if (isNew) { const free = NetParts.SLOTS.every(sl => this.options(sl.id).length === 1); if (free) T.para(ctx, 'Деталей нет. Купите их у продавца сачков на рынке насекомых.', 330, 196, 140, { size: 8, color: '#6a8a78', lh: 10 }); }
       this.btns.forEach(b => UIK.btn(ctx, b, !b.disabled && UIK.hit(b, m.x, m.y)));
-      if (this.msgT > 0) T.draw(ctx, this.msg, 316, 252, { size: 8, align: 'r', color: c.gold });
       T.draw(ctx, `${Save.data.coins || 0} монет`, SW - 10, 252, { size: 8, align: 'r', color: '#ffe070' });
     },
     click(x, y) {
@@ -204,6 +210,7 @@ const Boxes = (() => {
         else if (b.id === 'take') { if (Save.disassembleNet(cur.uid)) { this.sel = Math.max(0, this.sel - 1); this.say('Сачок разобран: детали вернулись на склад'); Snd.sfx.deny(); } }
         return 'changed';
       }
+      const gb = this.gbtns.find(b => UIK.hit(b, x, y)); if (gb) { const cur = this.cfg(); const on = (cur.g || []).includes(gb.gid); if (on) { Save.detachGadget(cur.uid, gb.gid); this.say('Приспособление снято'); Snd.sfx.click(); } else if (Save.attachGadget(cur.uid, gb.gid)) { this.say('Приспособление надето на сачок'); Snd.sfx.pin(); } else { this.say(Save.gadCount(gb.gid) ? 'На сачок помещается не больше трёх приспособлений' : 'Такого приспособления нет: его продаёт Энтомолог-энтузиаст'); Snd.sfx.deny(); } return 'changed'; }
       const sb = this.slotBtns.find(b => UIK.hit(b, x, y)); if (sb) { this.cycle(sb.slot, sb.d); return null; }
       const r = this.rows.find(r => UIK.hit(r, x, y)); if (r) { this.sel = r.i; Snd.sfx.click(); }
       return null;
@@ -433,7 +440,7 @@ const Boxes = (() => {
     },
     wheel(dy) { this.scroll += dy > 0 ? 1 : -1; },
   };
-  return { LABS, labOf, labelLines, slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
+  return { LABS, labOf, labelLines, slot: slotUI, slotName, PRICE, mount3D, buildMount, mountGroup, boxLabel, canvas, pxSize, bench, nbench, place: place_, WALL, TOPN, DRAWERS, MUS, MWCLS, rank, boxesAt, STYLES, fillOf, SIZE_NAME };
 })();
 
 // the empty boxes in stock (personal, like coins): bought from the collection trader, used up at the workbench, returned when a box is taken apart

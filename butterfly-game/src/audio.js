@@ -53,6 +53,11 @@ const Snd = (() => {
     scream() { if (!ac) return; if (scrBuf) { const src = ac.createBufferSource(), g = ac.createGain(); src.buffer = scrBuf; g.gain.value = 1.0; src.connect(g); g.connect(sfxG); src.start(); return; } loadScr(); const t = now(); for (let k = 0; k < 3; k++) { const o = ac.createOscillator(), g = ac.createGain(), vb = ac.createOscillator(), vg = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(600 + k * 90, t); o.frequency.exponentialRampToValueAtTime(2400 + k * 160, t + 0.25); o.frequency.exponentialRampToValueAtTime(1400 + k * 60, t + 1.3); vb.frequency.value = 36 + k * 5; vg.gain.value = 90; vb.connect(vg); vg.connect(o.frequency); env(g, t, 0.02, 1.4, 0.14); o.connect(g); g.connect(sfxG); o.start(t); vb.start(t); o.stop(t + 1.5); vb.stop(t + 1.5); } noiseBurst(t, 1.3, 3200, 5200, 0.2, 'bandpass', 2); noiseBurst(t, 0.2, 1200, 400, 0.25, 'lowpass', 1); },
     chomp() { if (!ac) return; const t = now(); noiseBurst(t, 0.07, 1400, 300, 0.28, 'lowpass', 1); osc('square', 150, t, 0.1, 0.12, null, 70); osc('triangle', 95, t + 0.04, 0.14, 0.1); },
     swing() { if (!ac) return; const t = now(); noiseBurst(t, 0.28, 500, 2200, 0.32, 'bandpass', 1.2); },
+    scan() { if (!ac) return; const t = now(); osc('sawtooth', 220, t, 1.2, 0.05, null, 1700); osc('sine', 880, t + 0.1, 1.1, 0.04, null, 3200); noiseBurst(t, 1.2, 600, 5000, 0.05, 'bandpass', 4); },
+    zap() { if (!ac) return; const t = now(); noiseBurst(t, 0.28, 6000, 900, 0.3, 'highpass', 1); osc('square', 90, t, 0.25, 0.1, null, 50); for (let i = 0; i < 5; i++) osc('square', 1200 + Math.random() * 2400, t + i * 0.04, 0.05, 0.06); },
+    cannon() { if (!ac) return; const t = now(); osc('sine', 140, t, 0.4, 0.4, null, 40); noiseBurst(t, 0.3, 2400, 180, 0.4, 'lowpass', 1); osc('triangle', 520, t + 0.02, 0.18, 0.1, null, 120); },
+    winch() { if (!ac) return; const t = now(); for (let i = 0; i < 10; i++) osc('square', 260 + (i % 2) * 40, t + i * 0.07, 0.05, 0.045); noiseBurst(t, 0.8, 900, 400, 0.08, 'bandpass', 2); },
+    servo() { if (!ac) return; const t = now(); osc('sawtooth', 300, t, 0.12, 0.04, null, 520); },
     miss() { if (!ac) return; const t = now(); osc('triangle', 220, t, 0.18, 0.08, null, 140); },
     flutter() { if (!ac) return; const t = now(); noiseBurst(t, 0.09, 3000, 5200, 0.05, 'bandpass', 3); },
     catchSp(first, rar) {

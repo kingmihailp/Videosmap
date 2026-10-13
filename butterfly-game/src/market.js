@@ -83,7 +83,53 @@ const Market = (() => {
       const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 8), lam(cl)); tip.position.set(0, 0.2, 0.14); tip.rotation.x = 0.9; head.add(tip);
       const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.12, 10), lam(cl)); col.position.y = 1.43; g.add(col);
     }
-    g.userData = { L, arms, head, torso }; return g;
+    if (o.enthusiast) enthusiastLook(g, head, torso, arms);
+    g.userData = Object.assign(g.userData || {}, { L, arms, head, torso }); return g;
+  }
+  // the entomologist-enthusiast: messy hair, amber goggles and a headlamp, an orange scarf, a vest with pockets and a huge backpack of equipment
+  function enthusiastLook(g, head, torso, arms) {
+    const mb = col => new THREE.MeshBasicMaterial({ color: col }), bx = (w, h, d, col, x, y, z, par, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(BOXG, lam(col)); m.scale.set(w, h, d); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); (par || g).add(m); return m; };
+    const cy = (r0, r1, h, col, x, y, z, par, rx = 0, ry = 0, rz = 0, seg = 8) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, seg), typeof col === 'string' ? lam(col) : col); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); (par || g).add(m); return m; };
+    const anim = [];
+    // head: tousled brown hair (a cap and spikes), goggles pushed up on the forehead, a headlamp, freckles
+    { const hair = new THREE.Mesh(new THREE.SphereGeometry(0.175, 10, 7, 0, 6.3, 0, 1.55), lam('#7a4a28')); hair.position.y = 0.02; head.add(hair); for (let i = 0; i < 9; i++) { const a = i * 0.7, sp = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.1, 5), lam(i % 2 ? '#8a5a34' : '#6a3c1c')); sp.position.set(Math.cos(a) * 0.12, 0.14 + (i % 3) * 0.02, Math.sin(a) * 0.12 + 0.01); sp.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9); head.add(sp); }
+      const bang = bx(0.28, 0.05, 0.06, '#7a4a28', 0, 0.1, -0.13, head, -0.3); void bang;
+      const strap = new THREE.Mesh(new THREE.TorusGeometry(0.168, 0.012, 5, 18), lam('#2a2a30')); strap.position.y = 0.085; strap.rotation.x = Math.PI / 2; head.add(strap);
+      for (const sx of [-1, 1]) { const rim = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.012, 6, 14), lam('#2a2a30')); rim.position.set(sx * 0.07, 0.115, -0.16); rim.rotation.x = -0.45; head.add(rim); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.047, 12), new THREE.MeshLambertMaterial({ color: '#e8a030', emissive: '#6a3a00', transparent: true, opacity: 0.85, side: THREE.DoubleSide })); lens.position.set(sx * 0.07, 0.115, -0.163); lens.rotation.x = -0.45; head.add(lens); }
+      bx(0.05, 0.03, 0.03, '#2a2a30', 0, 0.115, -0.165, head);
+      const lamp = bx(0.07, 0.05, 0.05, '#d8dce0', 0, 0.2, -0.1, head, -0.3); const lens2 = new THREE.Mesh(new THREE.CircleGeometry(0.018, 8), mb('#fff4a0')); lens2.position.set(0, 0.2, -0.128); lens2.rotation.x = -0.3; lens2.rotation.y = Math.PI; head.add(lens2); void lamp;
+      for (const [fx, fy] of [[-0.08, -0.02], [-0.05, -0.04], [-0.1, -0.05], [0.08, -0.02], [0.05, -0.04], [0.1, -0.05]]) { const fr = new THREE.Mesh(BOXG, lam('#b87850')); fr.scale.set(0.012, 0.012, 0.01); fr.position.set(fx, fy, -0.158); head.add(fr); } }
+    // scarf and vest
+    { const sc = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.05, 6, 14), lam('#e87a2a')); sc.position.y = 1.43; sc.rotation.x = Math.PI / 2; g.add(sc); bx(0.07, 0.3, 0.04, '#e87a2a', 0.06, 1.28, -0.225, g, 0.05); bx(0.07, 0.04, 0.045, '#b85a1a', 0.06, 1.15, -0.225, g, 0.05);
+      for (const sx of [-1, 1]) { bx(0.1, 0.1, 0.04, '#4a5a28', sx * 0.1, 1.14, -0.22, g, 0, sx * 0.25); bx(0.1, 0.014, 0.045, '#8a9a58', sx * 0.1, 1.185, -0.222, g, 0, sx * 0.25); bx(0.012, 0.1, 0.04, '#2a2a30', sx * 0.12, 1.34, -0.215, g, 0, sx * 0.4); }
+      bx(0.27, 0.014, 0.04, '#2a2a30', 0, 1.28, -0.225, g); cy(0.03, 0.03, 0.02, '#e8c040', 0.0, 1.28, -0.245, g, Math.PI / 2, 0, 0, 6);          // chest strap + buckle
+      cy(0.028, 0.028, 0.06, '#c8ccd2', -0.1, 1.02, -0.23, g, Math.PI / 2, 0, 0, 8); bx(0.01, 0.2, 0.01, '#2a2a30', -0.1, 1.2, -0.226, g);                  // a lens on a lanyard
+      for (const a of arms) { const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 8), lam('#4a5a28')); cuff.position.y = -0.52; a.add(cuff); } }
+    // the backpack (the back of the figure is +z)
+    { const PK = new THREE.Group(); PK.position.set(0, 0, 0.0); g.add(PK); const canvas = '#b8662c', dark = '#7a3c14', strap = '#2a2a30';
+      bx(0.56, 0.78, 0.3, canvas, 0, 1.22, 0.4, PK); bx(0.58, 0.05, 0.32, dark, 0, 1.0, 0.4, PK); bx(0.58, 0.05, 0.32, dark, 0, 1.45, 0.4, PK); bx(0.04, 0.78, 0.31, dark, -0.2, 1.22, 0.4, PK); bx(0.04, 0.78, 0.31, dark, 0.2, 1.22, 0.4, PK);        // main body, belts, seams
+      bx(0.52, 0.16, 0.32, '#c87634', 0, 1.68, 0.4, PK); bx(0.5, 0.03, 0.3, dark, 0, 1.6, 0.4, PK); bx(0.12, 0.05, 0.02, '#e8c040', 0, 1.62, 0.565, PK);                      // the lid with a buckle
+      bx(0.5, 0.34, 0.12, '#a85a24', 0, 1.1, 0.62, PK); bx(0.44, 0.04, 0.13, dark, 0, 1.26, 0.62, PK); bx(0.08, 0.04, 0.02, '#e8c040', 0, 1.22, 0.69, PK);                       // a big outer pocket
+      cy(0.085, 0.085, 0.62, '#5a7a3a', 0, 1.82, 0.36, PK, 0, 0, Math.PI / 2, 10); for (const sx of [-0.2, 0.2]) cy(0.088, 0.088, 0.03, strap, sx, 1.82, 0.36, PK, 0, 0, Math.PI / 2, 10); // rolled mat on top
+      cy(0.08, 0.08, 0.5, '#d8c890', 0, 0.78, 0.44, PK, 0, 0, Math.PI / 2, 10); for (const sx of [-0.18, 0.18]) cy(0.083, 0.083, 0.025, strap, sx, 0.78, 0.44, PK, 0, 0, Math.PI / 2, 10); // a sleeping roll below
+      // left: net poles with a folded net on top; right: a tripod
+      for (const [x, z, h] of [[-0.34, 0.36, 1.9], [-0.37, 0.44, 1.7]]) cy(0.014, 0.014, h, '#8a5a2a', x, 0.55 + h / 2 - 0.1, z, PK, 0, 0, 0, 6);
+      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.012, 5, 18), lam('#eef2f4')); hoop.position.set(-0.34, 2.4, 0.36); hoop.rotation.set(0.15, 0, 0.1); PK.add(hoop); const bag = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.3, 10, 1, true), new THREE.MeshLambertMaterial({ color: '#dff0e8', transparent: true, opacity: 0.55, side: THREE.DoubleSide })); bag.position.set(-0.34, 2.24, 0.36); bag.rotation.x = Math.PI; PK.add(bag);
+      bx(0.06, 0.05, 0.06, '#2a2a30', -0.35, 1.45, 0.4, PK); bx(0.06, 0.05, 0.06, '#2a2a30', -0.35, 0.95, 0.4, PK);                                                            // straps holding the poles
+      for (let i = 0; i < 3; i++) { const a = i * 2.094; cy(0.012, 0.012, 1.7, '#a8aeb6', 0.34 + Math.cos(a) * 0.05, 1.05, 0.38 + Math.sin(a) * 0.05, PK, Math.sin(a) * 0.04, 0, -Math.cos(a) * 0.04, 6); } cy(0.03, 0.03, 0.06, '#e8782a', 0.34, 1.9, 0.38, PK, 0, 0, 0, 6); bx(0.06, 0.04, 0.06, strap, 0.34, 1.3, 0.38, PK);
+      // hanging gear: a jar with a butterfly, a mug, a lantern, a rolled-up cable, a thermos
+      cy(0.07, 0.07, 0.16, new THREE.MeshLambertMaterial({ color: '#cfe6f0', transparent: true, opacity: 0.6 }), 0.17, 0.98, 0.64, PK, 0, 0, 0, 10); cy(0.075, 0.075, 0.03, '#7a5a30', 0.17, 1.08, 0.64, PK, 0, 0, 0, 10); { const bf = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.05), new THREE.MeshBasicMaterial({ color: '#4a90e0', side: THREE.DoubleSide })); bf.position.set(0.17, 0.99, 0.64); PK.add(bf); }
+      cy(0.045, 0.04, 0.1, '#c8ccd2', -0.15, 0.95, 0.64, PK, 0, 0, 0, 8); const mh = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 4, 8, Math.PI), lam('#c8ccd2')); mh.position.set(-0.11, 0.95, 0.64); mh.rotation.z = -Math.PI / 2; PK.add(mh);
+      const lampM = mb('#ffd070'); cy(0.05, 0.05, 0.1, lampM, 0.0, 0.93, 0.7, PK, 0, 0, 0, 8); cy(0.055, 0.055, 0.02, '#2a2a30', 0, 0.99, 0.7, PK, 0, 0, 0, 8); cy(0.055, 0.055, 0.02, '#2a2a30', 0, 0.87, 0.7, PK, 0, 0, 0, 8); anim.push(t => lampM.color.setRGB(1, 0.78 + Math.sin(t * 9) * 0.08, 0.35 + Math.sin(t * 7) * 0.05));
+      const cab = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 5, 14), lam('#2a2a30')); cab.position.set(-0.2, 1.3, 0.58); PK.add(cab); const cab2 = cab.clone(); cab2.position.set(-0.2, 1.3, 0.6); cab2.scale.setScalar(0.8); PK.add(cab2);
+      // a solar panel on the pack, a satellite-style dish and an antenna with a blinking tip
+      const sol = bx(0.4, 0.3, 0.02, '#1c2c52', 0.0, 1.48, 0.6, PK, -0.1); for (let k = 1; k < 4; k++) { bx(0.4, 0.006, 0.022, '#5a78b0', 0, 1.34 + k * 0.075, 0.6, PK, -0.1); bx(0.006, 0.3, 0.022, '#5a78b0', -0.2 + k * 0.1, 1.48, 0.6, PK, -0.1); } void sol;
+      cy(0.012, 0.012, 0.8, '#4a4a52', 0.24, 2.05, 0.48, PK, 0, 0, 0, 5); const tip = mb('#ff3030'); const ball = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), tip); ball.position.set(0.24, 2.46, 0.48); PK.add(ball); anim.push(t => tip.color.setRGB(Math.sin(t * 5) > 0 ? 1 : 0.2, 0.1, 0.1));
+      { const dish = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 5, 0, 6.3, 0, 1.1), new THREE.MeshLambertMaterial({ color: '#c8d0d8', side: THREE.DoubleSide })); dish.position.set(-0.05, 2.0, 0.44); dish.rotation.x = -1.2; PK.add(dish); cy(0.01, 0.01, 0.2, '#4a4a52', -0.05, 1.9, 0.44, PK, 0, 0, 0, 5); }
+      // the straps over the shoulders and the hip belt
+      for (const sx of [-1, 1]) { bx(0.07, 0.08, 0.52, strap, sx * 0.14, 1.5, 0.12, g, 0.0); bx(0.06, 0.6, 0.04, strap, sx * 0.14, 1.2, -0.215, g); bx(0.06, 0.04, 0.5, strap, sx * 0.27, 0.95, 0.15, g); }
+      bx(0.52, 0.07, 0.04, strap, 0, 0.93, -0.235, g); bx(0.07, 0.07, 0.05, '#e8c040', 0, 0.93, -0.255, g); }
+    g.userData = Object.assign(g.userData || {}, { anim });
   }
   function nameSprite(text, col = '#f0f0dc') {
     const w = Math.max(24, T.width(text, 8) + 8); const cv = document.createElement('canvas'); cv.width = w; cv.height = 12; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = 'rgba(8,16,14,0.72)'; x.fillRect(0, 0, w, 12); T.draw(x, text, w / 2, 2, { size: 8, align: 'c', color: col });
@@ -102,6 +148,7 @@ const Market = (() => {
     pins: { title: 'Булавочник', line: 'Булавки, расправилки, стёкла — всё для вашей коллекции.', o: { hat: 'cap', hatCol: '#3a3a4a', body: '#4a5a6a', apron: '#2a2a30', glasses: true } },
     collector: { title: 'Торговец коллекциями', line: 'Готовые рамки с бабочками? Несите, оценю. Чем стройнее подобрана коллекция — тем больше плачу.', o: { hat: 'top', body: '#2c3a2a', apron: '#7a2a2a', glasses: true } },
     traps: { title: 'Торговец ловушками', line: 'Ловушки для дневных бабочек — как в полевых экспедициях. Нужна приманка: цветы и мёд продаются рядом.', o: { hat: 'cap', hatCol: '#b8a068', body: '#8a7a4a', apron: '#e8e0c0', glasses: false } },
+    enthusiast: { title: 'Энтомолог-энтузиаст', line: 'Пушка-сачок, ИК-сканер, вездеход-ловушка… Всё собрал сам!', o: { enthusiast: true, body: '#6a7a3a', pants: '#3a3a2e', skin: '#f4d2ac' } },
     boxes: { title: 'Торговец коробками', line: sign => `«${sign}»: лучшие экземпляры — на витрине. А свои приносите к скупщику под красным навесом.`, o: { hat: 'scarf', hatCol: '#2f6fb0', body: '#e8e0d0' } },
   };
 
@@ -196,7 +243,7 @@ const Market = (() => {
       const wm = new THREE.Mesh(new THREE.CircleGeometry(2.38, 24).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: ctex(64, 64, (x, w, h) => { x.fillStyle = '#4a8ab8'; x.fillRect(0, 0, w, h); for (let i = 0; i < 90; i++) { x.fillStyle = rng.chance(0.5) ? '#6aa8d0' : '#3a78a8'; x.fillRect(rng.int(0, 61), rng.int(0, 63), rng.int(2, 6), 1); } }, 3, 3), transparent: true, opacity: 0.92 })); wm.position.set(fx, 0.64, fz); S.add(wm); this.water = wm; this.waterTex = wm.material.map;
       this.addCircle(fx, fz, 2.75);
       // benches and trees around the east plaza
-      for (const [bx, bz, ry] of [[24, -6.9, Math.PI], [24, 6.9, 0]]) this.bench(bx, bz, ry);
+      for (const [bx, bz, ry] of [[24, 6.9, 0]]) this.bench(bx, bz, ry);       // (the north bench gave way to the enthusiast's stand)
       for (const [tx, tz] of [[29.7, -4.0], [29.7, 4.0], [18.6, -6.6], [18.6, 6.6]]) tree(tx, tz, 1.1);
       // north plaza (end of the second alley): a stone well, trees, benches
       const wx = 14, wz = -24; B.cyl(1.1, 1.15, 1.0, wx, 0.5, wz, '#8a847a', 12); B.cyl(0.8, 0.8, 0.1, wx, 1.0, wz, '#2a4a6a', 12); B.box(0.18, 2.4, 0.18, wx - 1.0, 2.2, wz, DWOOD); B.box(0.18, 2.4, 0.18, wx + 1.0, 2.2, wz, DWOOD); B.box(2.4, 0.16, 0.2, wx, 3.4, wz, DWOOD); B.cyl(0.1, 0.1, 2.0, wx, 3.1, wz, WOOD, 6, 0, 0, Math.PI / 2);
@@ -310,6 +357,37 @@ const Market = (() => {
         this.vendor(g, 0, -1.0, 'boxes', o.sign || 'Коллекции');
       });
     }
+    // ---- the entomologist-enthusiast: an expedition stand with a teal counter, a canvas awning, pegboard, a net cannon on a tripod, the drive trap parked beside it, a shocker coil
+    stallEnthusiast(x, z, ry) {
+      const w = 4.6, d = 1.5, B = this.B; this.fp(x, z, w, d + 0.2, ry, 0.1); this.gearAnim = this.gearAnim || [];
+      const g = this.at(x, z, ry, g => {
+        const pz = d / 2 + 0.6, cd = 0.8, zc = d / 2 - cd / 2, TEAL = '#2f5a5c', DT = '#1c3a3c', ORG = '#e8782a';
+        B.box(w, 0.88, cd, 0, 0.44, zc, TEAL); B.box(w + 0.12, 0.07, cd + 0.08, 0, 0.92, zc + 0.02, '#26363a'); B.box(w - 0.1, 0.4, 0.04, 0, 0.5, d / 2 + 0.01, DT); for (let k = 0; k < 6; k++) B.box(0.5, 0.06, 0.05, -w / 2 + 0.45 + k * 0.76, 0.28, d / 2 + 0.03, k % 2 ? ORG : '#f2e8d0');   // hazard stripes on the counter front
+        for (const sx of [-1, 1]) { B.cyl(0.05, 0.06, 2.8, sx * (w / 2 - 0.02), 1.4, -d / 2 - 0.08, DWOOD, 6); B.cyl(0.05, 0.06, 2.3, sx * (w / 2 - 0.02), 1.15, pz, DWOOD, 6); }
+        this.awning(w + 0.3, pz + 0.9, 2.8, 2.3, -d / 2 - 0.1, 0, 0.45, ['#5a6e3a', '#e8d8a0']);
+        B.box(w, 1.7, 0.08, 0, 1.75, -d / 2 - 0.1, '#34464a', 0, 0, 0, 0.1);                                                                       // the pegboard
+        for (let i = 0; i < 9; i++) for (let j = 0; j < 4; j++) B.box(0.03, 0.03, 0.01, -w / 2 + 0.35 + i * 0.5, 1.2 + j * 0.4, -d / 2 - 0.055, '#1a2628');
+        const sg = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.5), new THREE.MeshLambertMaterial({ map: signTex('ЭНТОМОЛОГ-ЭНТУЗИАСТ\nОборудование для охоты', 120, 26, '#1c3a3c', '#9ae8ff', '#e8782a') })); sg.position.set(0, 2.0, pz + 0.19); g.add(sg);
+        // pegboard: the shocker hoop net, the pheromone-rope net and the mechanised handle hang on hooks; a map screen and a scanner on the wall
+        const rack = (cfg, px, py, rz) => { const nm = makeNetModel(cfg); nm.g.scale.setScalar(0.55); const h = new THREE.Group(); h.position.set(px, py, -d / 2 + 0.1); h.rotation.set(0, 0, rz); nm.g.rotation.x = Math.PI / 2; nm.roll.rotation.z = Math.PI / 2; nm.g.traverse(o => { o.castShadow = true; o.frustumCulled = false; }); h.add(nm.g); g.add(h); return nm; };
+        rack({ uid: 9, h: 'h_mech', r: 'r_basic', m: 'm_basic', g: ['g_ir'] }, -1.55, 1.7, 0.08); rack({ uid: 9, h: 'h_piston', r: 'r_shock', m: 'm_pher', g: [] }, -0.55, 1.7, 0.08);
+        { const scr = new THREE.Group(); scr.position.set(1.55, 1.95, -d / 2 + 0.02); g.add(scr); const frame = new THREE.Mesh(BOXG, lam('#1a1c20')); frame.scale.set(0.78, 0.6, 0.06); scr.add(frame); const cv = document.createElement('canvas'); cv.width = 52; cv.height = 40; const cx = cv.getContext('2d'); const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; const face = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.52), new THREE.MeshBasicMaterial({ map: tex })); face.position.z = 0.04; scr.add(face);
+          this.gearAnim.push(tt => { cx.fillStyle = '#06180c'; cx.fillRect(0, 0, 52, 40); cx.strokeStyle = 'rgba(80,255,140,0.35)'; cx.lineWidth = 1; for (let i = 0; i < 52; i += 8) { cx.beginPath(); cx.moveTo(i + 0.5, 0); cx.lineTo(i + 0.5, 40); cx.stroke(); } for (let j = 0; j < 40; j += 8) { cx.beginPath(); cx.moveTo(0, j + 0.5); cx.lineTo(52, j + 0.5); cx.stroke(); } for (const [bx, by, c3] of [[10, 12, '#7be86a'], [24, 26, '#ffd23c'], [38, 10, '#4ec9ff'], [40, 30, '#ff6a5c']]) { cx.fillStyle = c3; cx.globalAlpha = 0.45; cx.fillRect(bx - 6, by - 5, 12, 10); cx.globalAlpha = 1; } const a = tt * 1.6; cx.strokeStyle = '#6aff9a'; cx.beginPath(); cx.moveTo(26, 20); cx.lineTo(26 + Math.cos(a) * 24, 20 + Math.sin(a) * 18); cx.stroke(); cx.fillStyle = '#fff'; cx.fillRect(25, 19, 2, 2); if (Math.sin(tt * 2.3) > 0.8) { cx.fillStyle = 'rgba(160,255,190,0.4)'; cx.fillRect(0, (tt * 60) % 40, 52, 2); } tex.needsUpdate = true; }); }
+        for (const sx of [-1, 1]) { B.box(0.3, 0.04, 0.04, sx * (w / 2 + 0.1), 2.33, pz, DWOOD); this.lamp(sx * (w / 2 + 0.22), 2.04, pz, 0.11, '#9ae8ff', 0.1); }
+        // on the counter: the net cannon on a tripod, a shocker coil that crackles, a vase of synthetic flowers, a crate of batteries
+        const cn = makeNetModel({ uid: -1, cannon: true, h: 'h_basic', r: 'r_basic', m: 'm_basic', g: ['g_map'] }); const cg = new THREE.Group(); cg.position.set(1.15, 1.42, 0.3); cg.rotation.set(0.16, 0.5, 0); cg.scale.setScalar(0.85); cn.g.traverse(o => { o.castShadow = true; o.frustumCulled = false; }); cg.add(cn.g); g.add(cg);
+        for (let i = 0; i < 3; i++) { const a = i * 2.094 + 0.5; B.seg([1.15, 1.36, 0.3], [1.15 + Math.cos(a) * 0.32, 0.96, 0.3 + Math.sin(a) * 0.32], 0.03, IRON); } B.cyl(0.07, 0.07, 0.06, 1.15, 1.36, 0.3, BRASS, 8);
+        { const cx0 = -0.4, cz0 = 0.35; B.cyl(0.18, 0.2, 0.08, cx0, 1.0, cz0, IRON, 10); B.cyl(0.08, 0.1, 0.45, cx0, 1.27, cz0, '#8a4a20', 10); for (let k = 0; k < 6; k++) B.cyl(0.115 + (k % 2) * 0.02, 0.115 + (k % 2) * 0.02, 0.025, cx0, 1.1 + k * 0.065, cz0, '#c88040', 10); B.cyl(0.14, 0.04, 0.06, cx0, 1.52, cz0, IRON, 10);
+          const orb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), new THREE.MeshBasicMaterial({ color: '#a8e8ff' })); orb.position.set(cx0, 1.63, cz0); g.add(orb); const arcs = []; for (let k = 0; k < 4; k++) { const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: '#d8f4ff' })); ln.position.set(cx0, 1.63, cz0); g.add(ln); arcs.push(ln); }
+          this.gearAnim.push(tt => { orb.material.color.setRGB(0.55 + Math.sin(tt * 30) * 0.2, 0.85, 1); arcs.forEach((ln, k) => { const on = Math.sin(tt * (11 + k * 3.7) + k * 2) > 0.15; ln.visible = on; if (!on) return; const a = tt * 7 + k * 1.7, pa = ln.geometry.attributes.position, R = 0.28 + 0.1 * Math.sin(tt * 20 + k); pa.setXYZ(0, 0, 0, 0); pa.setXYZ(1, Math.cos(a) * R * 0.6 + Math.sin(tt * 50 + k) * 0.05, Math.sin(a * 1.3) * R * 0.4 - 0.05, Math.sin(a) * R * 0.6); pa.setXYZ(2, Math.cos(a) * R, Math.sin(a * 1.3) * R * 0.5 - 0.1, Math.sin(a) * R); pa.needsUpdate = true; }); }); }
+        { const v = new THREE.Group(); v.position.set(-1.45, 0.96, 0.32); const gl = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.1, 0.3, 12, 1, true), new THREE.MeshLambertMaterial({ color: '#cfe6f0', transparent: true, opacity: 0.45, side: THREE.DoubleSide })); gl.position.y = 0.15; v.add(gl); const fb = Traps.bunch('synth', 0.1); fb.scale.setScalar(1.55); fb.position.y = 0.01; v.add(fb); g.add(v); }
+        this.crates(g, w / 2 + 0.55, -0.1, 3);
+        // the drive trap parked beside the stand, its beacon blinking
+        { const rv = Traps.model('drv', {}); rv.position.set(-w / 2 - 1.5, 0, -0.1); rv.rotation.y = 0.55; rv.traverse(o => { o.castShadow = true; }); g.add(rv); this.gearAnim.push(tt => { if (rv.userData.rover) Traps.animRover(rv.userData, 0, 0.016, 'stop', tt); }); }
+        this.vendor(g, 0, -0.45, 'enthusiast', 'Оборудование');
+      });
+      this.circAt(x, z, ry, -w / 2 - 1.5, -0.1, 1.0);
+    }
     stallShelves(x, z, ry, o = {}) {   // a free-standing two-sided shelf unit with many boxes
       const w = 3.2; this.fp(x, z, w, 0.8, ry);
       this.at(x, z, ry, g => {
@@ -343,6 +421,7 @@ const Market = (() => {
       const pr = PROF[key] || PROF.boxes, p = person(Object.assign({ skin: this.rng.pick(['#e8c8a0', '#d8a878', '#c8946a']) }, pr.o)); p.position.set(x, 0, z); p.rotation.y = Math.PI; p.userData.ph = this.rng.range(0, 6); g.add(p); this.vendors.push(p);
       const line = typeof pr.line === 'function' ? pr.line(sign || 'Коллекции') : pr.line; const wp = new THREE.Vector3(); g.updateMatrixWorld(true); p.getWorldPosition(wp);
       if (key === 'collector') { const ns = nameSprite('Торговец коллекциями', '#a8e8b0'); ns.position.set(x, 2.3, z); g.add(ns); }
+      if (key === 'enthusiast') { const ns = nameSprite('Энтомолог-энтузиаст', '#9ae8ff'); ns.position.set(x, 2.75, z); g.add(ns); this.stations.push({ id: 'gear', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 2.1, line: [pr.title, line], label: () => 'E — Энтомолог-энтузиаст: оборудование' }); return; }
       if (shop) { this.stations.push({ id: 'goods', kind: shop, x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, label: () => `E — ${pr.title.toLowerCase()}: купить` }); return; }
       this.stations.push({ id: key === 'nets' ? 'netshop' : key === 'collector' ? 'collect' : 'chat', x: wp.x + Math.sin(g.rotation.y) * 1.3, z: wp.z + Math.cos(g.rotation.y) * 1.3, r: 1.9, line: [pr.title, line], label: () => key === 'nets' ? 'E — купить детали для сачков' : key === 'collector' ? 'E — продать рамку торговцу коллекциями' : `E — поговорить: ${pr.title}` });
     }
@@ -361,6 +440,7 @@ const Market = (() => {
       // main street, south side
       W('table', 'S', 4, -18, { goods: 'nets', ci: 1, sign: 'Сачки' }); W('kiosk', 'S', 4, -12.5, { ci: 1, pal: 2, sign: 'Тропики' }); W('table', 'S', 4, -6, { goods: 'books', ci: 4, sign: 'Книги' }); W('table', 'S', 4, -2.2, { goods: 'tea', ci: 6, sign: 'Чай' });
       W('table', 'S', 4, 6.4, { goods: 'jars', ci: 0, sign: 'Мёд', shop: 'hn' }); W('table', 'S', 4, 10.6, { goods: 'traps', ci: 2, sign: 'Ловушки', shop: 'tr' }); W('table', 'S', 4, 14.2, { ci: 3, sign: 'Африка' });
+      this.stallEnthusiast(24, -6.8, 0);
       // the alleys are 4 m wide: stalls alternate between the two walls (never opposite each other) so a zig-zag path stays open all the way to the plaza
       // first alley (north, x -16..-12)
       W('table', 'W', -16, -6.8, { ci: 1, sign: 'Альпы' }); W('table', 'E', -12, -11.6, { goods: 'pins', ci: 3, sign: 'Булавки' }); W('kiosk', 'W', -16, -16.2, { ci: 5, pal: 4, sign: 'Ночные' }); W('table', 'E', -12, -20.6, { goods: 'flowers', ci: 5, sign: 'Букеты' }); this.stallShelves(-15.45, -21.6, Math.PI / 2, { sign: 'Мотыльки' });
@@ -588,13 +668,14 @@ const Market = (() => {
       if (this.codeCloseT > 0) { this.codeCloseT -= dt; if (this.codeCloseT <= 0 && this.ov === 'code') this.close(); }
       if (this.secretDoor) { const sd = this.secretDoor, open = Secret.unlocked(); if (open !== sd.open) this.setDoorState(open); const target = open ? -1.75 : 0; sd.pivot.rotation.y += (target - sd.pivot.rotation.y) * Math.min(1, dt * 3); }
       if (this.strange) { const p = this.strange; p.position.y = -0.28 + Math.sin(t * 1.1) * 0.006; p.userData.head.rotation.y = Math.sin(t * 0.35) * 0.25; p.userData.head.rotation.x = 0.1 + Math.sin(t * 0.5) * 0.03; p.userData.arms[0].rotation.x = 1.35 + Math.sin(t * 0.8) * 0.03; p.userData.arms[1].rotation.x = 1.35 + Math.sin(t * 0.8 + 1) * 0.03; if (this.strangeLight) this.strangeLight.intensity = 0.8 + Math.sin(t * 3.1) * 0.12; }
-      for (const v of this.vendors) { v.position.y = Math.sin(t * 1.4 + v.userData.ph) * 0.01; v.userData.head.rotation.y = Math.sin(t * 0.6 + v.userData.ph) * 0.35; v.userData.arms[1].rotation.x = Math.sin(t * 1.1 + v.userData.ph) * 0.06; }
+      for (const v of this.vendors) { v.position.y = Math.sin(t * 1.4 + v.userData.ph) * 0.01; v.userData.head.rotation.y = Math.sin(t * 0.6 + v.userData.ph) * 0.35; v.userData.arms[1].rotation.x = Math.sin(t * 1.1 + v.userData.ph) * 0.06; if (v.userData.anim) for (const fn of v.userData.anim) fn(t); }
+      for (const fn of this.gearAnim || []) fn(t);
       if (this.merchant) { const m = this.merchant; m.userData.head.rotation.y = Math.sin(t * 0.7) * 0.3; m.userData.arms[0].rotation.x = Math.sin(t * 1.3) * 0.08; m.userData.arms[1].rotation.x = Math.sin(t * 1.3 + 1) * 0.08; }
       if (this.remotes) { this.remotes.update(dt); this.netAcc += dt; if (this.netAcc > 0.1) { this.netAcc = 0; Net.send('pos', { x: Math.round(P.pos.x * 100) / 100, y: 1.65, z: Math.round(P.pos.z * 100) / 100, yaw: Math.round(P.yaw * 100) / 100, pitch: Math.round(P.pitch * 100) / 100, nz: 0, fl: 0, sw: 0, sp: Math.round(Math.hypot(P.vel.x, P.vel.y) * 10) / 10, st: 0 , nt: NetParts.code(Save.curNet()) }); } }
     }
 
     // ------------------------------------------------------------ interaction
-    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); if (name === 'collect') this.collOpen(); }
+    open(name) { this.ov = name; this.hooks.unlock(); if (name === 'gear') Gear.shopOpen(this); if (name === 'sell') this.sellOpen(); if (name === 'shop') this.shopOpen(); if (name === 'collect') this.collOpen(); }
     close() { this.ov = null; this.hooks.lock(); }
     openTalk(who) { const sp = Secret.speech(who); this.talk = { who, lines: sp.lines, give: sp.give, giveAt: sp.giveAt, i: 0, chars: 0 }; this.open('talk'); }
     talkNext() {
@@ -608,6 +689,7 @@ const Market = (() => {
       else if (s.id === 'goods') { Snd.sfx.page(); this.open('goods'); this.goodsOpen(s.kind); }
       else if (s.id === 'collect') { Snd.sfx.page(); this.open('collect'); }
       else if (s.id === 'netshop') { Snd.sfx.page(); this.open('shop'); }
+      else if (s.id === 'gear') { Snd.sfx.page(); this.open('gear'); }
       else if (s.id === 'strange') { Snd.sfx.page(); this.openTalk('strange'); }
       else if (s.id === 'codedoor') { if (Secret.unlocked()) { Snd.sfx.door(); this.hooks.secret(); } else { Secret.lock.reset(); this.open('code'); } }
       else if (s.id === 'chat') { this.toast(`${s.line[0]}: «${s.line[1]}»`, 5); Snd.sfx.click(); }
@@ -624,6 +706,7 @@ const Market = (() => {
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
       if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
       if (ov === 'goods') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.goodsMove(-1); else if (e.code === 'ArrowDown') this.goodsMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.goodsBuy(); return; }
+      if (ov === 'gear') { Gear.shopKey(this, e); return; }
       if (ov === 'collect') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.collMove(-1); else if (e.code === 'ArrowDown') this.collMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.collSell(); return; }
       if (ov === 'sell') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.sellMove(-1); else if (e.code === 'ArrowDown') this.sellMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.sellOne(); else if (e.code === 'Tab') this.sellTab(1); }
     }
@@ -634,12 +717,13 @@ const Market = (() => {
       else if (ov === 'journal') { if (Screens.journal.click(x, y) === 'close') { Snd.sfx.page(); this.close(); } }
       else if (ov === 'sell') this.sellClick(x, y);
       else if (ov === 'goods') this.goodsClick(x, y);
+      else if (ov === 'gear') Gear.shopClick(this, x, y);
       else if (ov === 'collect') this.collClick(x, y);
       else if (ov === 'shop') this.shopClick(x, y);
       else if (ov === 'code') { if (Secret.lock.click(x, y) === 'ok') this.codeCloseT = 1.5; }
       else if (ov === 'talk') this.talkNext();
     }
-    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'goods') this.goodsMove(dy > 0 ? 1 : -1); else if (this.ov === 'collect') this.collMove(dy > 0 ? 1 : -1); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
+    wheel(dy) { if (this.ov === 'journal') Screens.journal.turn(dy > 0 ? 1 : -1); else if (this.ov === 'sell') this.sellMove(dy > 0 ? 1 : -1, true); else if (this.ov === 'goods') this.goodsMove(dy > 0 ? 1 : -1); else if (this.ov === 'gear') Gear.shopMove(this, dy > 0 ? 1 : -1); else if (this.ov === 'collect') this.collMove(dy > 0 ? 1 : -1); else if (this.ov === 'shop') this.shopMove(dy > 0 ? 1 : -1); else if (this.ov === 'code') Secret.lock.wheel(dy); }
     closeHelp() { if (this.helpBack) { this.ov = 'pause'; } else { this.ov = null; this.hooks.lock(); } this.helpBack = false; }
     pauseButtons() { const s = Save.data.settings, x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'help', label: 'Управление', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'settings', label: 'Настройки', x, y: 124, w: 180, h: 16 }, { id: 'cabinet', label: 'В кабинет энтомолога', x, y: 146, w: 180, h: 16 }, { id: 'map', label: 'В экспедицию (карта мира)', x, y: 168, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 190, w: 180, h: 16 }]; }
     pauseAct(id) {
@@ -839,7 +923,7 @@ const Market = (() => {
       const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, забирайте улов (E) — до того, как ловушка сломается или вы уйдёте с локации: улов пропадает вместе с ловушкой.' };
       this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
     }
-    goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret); }
+    goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret && !x.gear); }
     goodsMove(d) { const G = this.gd, n = this.goodsList().length; G.sel = clamp(G.sel + d, 0, n - 1); if (G.sel < G.scroll) G.scroll = G.sel; if (G.sel >= G.scroll + 6) G.scroll = G.sel - 5; Snd.sfx.page(); }
     goodsBuy() {
       const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(G.kind, it.id);
@@ -934,6 +1018,7 @@ const Market = (() => {
       const ov = this.ov;
       if (ov === 'sell') return this.drawSell(ctx, t, m, dt);
       if (ov === 'goods') return this.drawGoods(ctx, t, m, dt);
+      if (ov === 'gear') return Gear.shopDraw(this, ctx, t, m, dt);
       if (ov === 'collect') return this.drawColl(ctx, t, m, dt);
       if (ov === 'shop') return this.drawShop(ctx, t, m, dt);
       if (ov === 'journal') return Screens.journal.draw(ctx, t, m);

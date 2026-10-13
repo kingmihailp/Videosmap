@@ -96,6 +96,30 @@ const Portrait = (() => {
       head(ctx, ox, oy, { skin: '#d8a070', light: '#e8c090', dark: '#b88050', blush: 'rgba(200,90,70,0.3)', brow: '#4a3020', iris: '#3a5a3a', blink: o.blink }); mouth(ctx, ox, oy, { mustache: '#4a3020', talk: o.talk, stubble: true });
       R(ctx, ox, oy, 6, 11, 28, 3, '#b8a068'); R(ctx, ox, oy, 9, 4, 22, 8, '#d0b880'); R(ctx, ox, oy, 11, 3, 18, 3, '#d8c48c'); R(ctx, ox, oy, 12, 5, 5, 5, '#e8d8a8'); R(ctx, ox, oy, 9, 10, 22, 2, '#5a4a2a'); R(ctx, ox, oy, 6, 13, 28, 1, '#8a7240');   // pith helmet with a band
     },
+    // the entomologist-enthusiast: young, freckled, messy hair, amber goggles pushed up with a headlamp, an orange scarf; behind him a huge backpack with a bedroll, a net pole and an antenna
+    enthusiast(ctx, ox, oy, o) {
+      R(ctx, ox, oy, 0, 0, 40, 48, '#86b6bc'); R(ctx, ox, oy, 0, 30, 40, 18, '#6a9aa4'); for (let i = 0; i < 40; i += 8) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(30,70,80,0.12)');
+      // the backpack: orange canvas with shading, a rolled mat on top, straps, a net pole sticking out on the right, an antenna with a red tip on the left
+      R(ctx, ox, oy, 1, 14, 38, 34, '#b8662c'); R(ctx, ox, oy, 1, 14, 3, 34, '#d88444'); R(ctx, ox, oy, 35, 14, 4, 34, '#8a4a1c'); R(ctx, ox, oy, 4, 11, 32, 4, '#c87634'); R(ctx, ox, oy, 7, 6, 26, 6, '#5a7a3a'); R(ctx, ox, oy, 7, 6, 26, 2, '#7a9a54'); for (let i = 0; i < 26; i += 5) R(ctx, ox, oy, 7 + i, 6, 1, 6, '#3a5a24');
+      R(ctx, ox, oy, 36, 1, 2, 28, '#8a5a2a'); R(ctx, ox, oy, 36, 1, 1, 28, '#b07a40'); R(ctx, ox, oy, 33, 1, 7, 3, '#eef2f4'); R(ctx, ox, oy, 4, 0, 1, 13, '#4a4a52'); R(ctx, ox, oy, 3, 0, 3, 2, '#e03030');
+      R(ctx, ox, oy, 2, 24, 7, 9, '#7a3c14'); R(ctx, ox, oy, 3, 25, 5, 2, '#a85a24'); R(ctx, ox, oy, 31, 24, 7, 9, '#7a3c14'); R(ctx, ox, oy, 32, 25, 5, 2, '#a85a24'); R(ctx, ox, oy, 5, 26, 1, 3, '#e8c040'); R(ctx, ox, oy, 34, 26, 1, 3, '#e8c040');   // side pockets with buckles
+      R(ctx, ox, oy, 29, 16, 5, 7, '#cfe0e8'); R(ctx, ox, oy, 29, 16, 5, 1, '#8a98a8'); R(ctx, ox, oy, 30, 18, 3, 4, '#7ab0d8');                                                   // a jar clipped to the pack
+      // vest, scarf and the straps
+      R(ctx, ox, oy, 3, 37, 34, 11, '#6a7a3a'); R(ctx, ox, oy, 5, 35, 30, 3, '#6a7a3a'); R(ctx, ox, oy, 3, 37, 3, 11, '#4a5a28'); R(ctx, ox, oy, 34, 37, 3, 11, '#4a5a28'); R(ctx, ox, oy, 14, 35, 12, 13, '#e8e0c8'); R(ctx, ox, oy, 14, 35, 2, 13, '#cfc7ac');
+      R(ctx, ox, oy, 10, 30, 3, 18, '#2a2a30'); R(ctx, ox, oy, 27, 30, 3, 18, '#2a2a30'); R(ctx, ox, oy, 10, 41, 3, 2, '#e8c040'); R(ctx, ox, oy, 27, 41, 3, 2, '#e8c040'); R(ctx, ox, oy, 11, 30, 1, 18, '#4a4a54');
+      R(ctx, ox, oy, 15, 34, 10, 4, '#e87a2a'); R(ctx, ox, oy, 15, 34, 10, 1, '#f8a050'); R(ctx, ox, oy, 22, 37, 3, 6, '#e87a2a'); R(ctx, ox, oy, 22, 42, 3, 1, '#b85a1a');
+      R(ctx, ox, oy, 5, 40, 5, 5, '#4a5a28'); R(ctx, ox, oy, 5, 40, 5, 1, '#8a9a58'); R(ctx, ox, oy, 30, 40, 5, 5, '#4a5a28'); R(ctx, ox, oy, 30, 40, 5, 1, '#8a9a58');       // chest pockets
+      R(ctx, ox, oy, 16, 42, 1, 3, '#2a2a30'); R(ctx, ox, oy, 15, 45, 4, 3, '#c8ccd2'); R(ctx, ox, oy, 16, 46, 2, 1, '#6a98c8');                                                  // a lens on a lanyard
+      R(ctx, ox, oy, 8, 12, 4, 17, '#7a4a28'); R(ctx, ox, oy, 28, 12, 4, 17, '#7a4a28'); R(ctx, ox, oy, 8, 12, 2, 17, '#965e36');                                                    // hair at the sides
+      head(ctx, ox, oy, { skin: '#f4d2ac', light: '#fbe4c8', dark: '#d8a880', blush: 'rgba(240,110,100,0.4)', brow: '#6a3a1c', iris: '#2a8a6a', blink: o.blink });
+      for (const [fx, fy] of [[13, 22], [15, 23], [26, 22], [24, 23], [17, 24], [22, 24], [12, 24], [28, 24]]) R(ctx, ox, oy, fx, fy, 1, 1, '#b87850');                              // freckles
+      mouth(ctx, ox, oy, { talk: o.talk });
+      // hair, tufts, the goggles on the forehead and the headlamp
+      R(ctx, ox, oy, 9, 8, 22, 6, '#7a4a28'); R(ctx, ox, oy, 11, 6, 18, 3, '#8a5a34'); R(ctx, ox, oy, 8, 12, 3, 5, '#7a4a28'); R(ctx, ox, oy, 29, 12, 3, 5, '#7a4a28'); R(ctx, ox, oy, 13, 5, 3, 2, '#965e36'); R(ctx, ox, oy, 26, 5, 4, 2, '#965e36'); R(ctx, ox, oy, 31, 8, 2, 2, '#7a4a28'); R(ctx, ox, oy, 7, 9, 2, 2, '#7a4a28');
+      R(ctx, ox, oy, 8, 10, 24, 2, '#2a2a30');                                                                                                                                       // the goggles' strap
+      for (const gx of [11, 21]) { R(ctx, ox, oy, gx, 8, 9, 7, '#2a2a30'); R(ctx, ox, oy, gx + 1, 9, 7, 5, '#e8a030'); R(ctx, ox, oy, gx + 1, 9, 7, 1, '#f8d070'); R(ctx, ox, oy, gx + 2, 10, 2, 1, '#fff6d0'); R(ctx, ox, oy, gx + 5, 12, 2, 1, '#b86a10'); }
+      R(ctx, ox, oy, 20, 9, 2, 3, '#2a2a30'); R(ctx, ox, oy, 17, 3, 7, 4, '#d8dce0'); R(ctx, ox, oy, 17, 3, 7, 1, '#f4f6f8'); R(ctx, ox, oy, 24, 4, 2, 2, o.blink ? '#fff6b0' : '#ffe870'); R(ctx, ox, oy, 26, 4, 5, 1, o.blink ? 'rgba(255,240,150,0.0)' : 'rgba(255,240,150,0.35)');
+    },
     // the hooded trader: a deep hood with nothing but darkness inside, pale folded hands holding a glowing orb
     hooded(ctx, ox, oy, o) {
       R(ctx, ox, oy, 0, 0, 40, 48, '#2a2238'); R(ctx, ox, oy, 0, 30, 40, 18, '#1c1628'); for (let i = 0; i < 40; i += 6) R(ctx, ox, oy, i, 0, 1, 30, 'rgba(160,120,220,0.07)');

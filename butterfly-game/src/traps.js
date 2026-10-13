@@ -8,6 +8,8 @@ const Traps = (() => {
     std: { id: 'std', ru: 'Стандартная ловушка', real: 'по образцу ловушки Ван Сомерена — Райдона', price: 900, life: 120, cap: 10, ab: 0, desc: 'Сетчатый цилиндр на треноге с приманочной чашей снизу — классика полевой энтомологии. Служит 2 минуты.' },
     str: { id: 'str', ru: 'Прочная ловушка', real: 'деревянный каркас, как садок-ловушка Девриса', price: 1800, life: 360, cap: 20, ab: 0, desc: 'Деревянный каркас с латунными скобами и мелкой сеткой, вместительная. Служит 6 минут.' },
     imp: { id: 'imp', ru: 'Импортная ловушка', real: 'складная палаточная ловушка (pop-up), как у BioQuip', price: 2800, life: 240, cap: 14, ab: 0.01, desc: 'Складной купол из тонкой сетки с растяжками. Служит 4 минуты, и 1% попавшихся бабочек — аберранты.' },
+    // sold by the entomologist-enthusiast only: it drives by itself through all the natural zones of the location, catches only while it stands
+    drv: { id: 'drv', ru: 'Ловушка с приводом', real: 'самоходная гусеничная ловушка-вездеход', price: 25000, life: 840, cap: 30, ab: 0.4, rare: 0.4, gear: true, drive: true, desc: 'Гусеничный электровездеход с сетчатой кабиной. Сам объезжает природные зоны и стоит в каждой, а ловит только на стоянке. Служит 14 минут, вмещает 30; 40% — аберранты, 40% — редкие.' },
     scr: { id: 'scr', ru: 'Скритчушка', real: 'странная чёрная ловушка из океана', price: 2288, life: 426, cap: 12, ab: 0, only: 'ocean', baitOnly: 'pheromone', secret: true, desc: 'Чёрная, зубастая и улыбчивая. Ставится только в океане, берёт в приманку одну колбу феромонов и ничего больше. Ломается через 6 минут 66 секунд — с визгом.' },
   };
   // real flowers visited by butterflies; scent 1..5 = how far the smell carries (more butterflies come)
@@ -24,6 +26,8 @@ const Traps = (() => {
     { id: 'lavender', ru: 'Лаванда узколистная', la: 'Lavandula angustifolia', scent: 5, price: 110, col: '#8a70c8', shape: 'spike', desc: 'Пьянящий камфорный запах; на лавандовых полях бабочек больше, чем где-либо.' },
     { id: 'lilac', ru: 'Сирень обыкновенная', la: 'Syringa vulgaris', scent: 5, price: 120, col: '#b890d8', shape: 'cluster', desc: 'Мощный сладкий запах, который чувствуется за десятки метров.' },
     { id: 'buddleia', ru: 'Буддлея Давида («бабочкин куст»)', la: 'Buddleja davidii', scent: 5, price: 140, col: '#9a50d0', shape: 'spike', desc: 'Медовый запах, от которого она и получила название «бабочкин куст».' },
+    // sold by the entomologist-enthusiast only
+    { id: 'synth', ru: 'Синтетические цветы', la: 'Flos synthetica', scent: 5, price: 5000, col: '#34d8ff', shape: 'synth', rare: 0.25, gear: true, desc: 'Лабораторные цветы с неоновыми лепестками и светодиодными тычинками, пропитанные концентратом аромата. Пахнут как пьянящие, а редкие виды слетаются на них на 25% чаще.' },
   ];
   // real honeys; quality 1..5 = how rare the visitors it lures are
   const QUAL = ['', 'простой', 'обычный', 'хороший', 'отборный', 'редчайший'];
@@ -55,10 +59,13 @@ const Traps = (() => {
   // the species a trap can lure: daytime butterflies of the location (no glowing or night ones)
   const lure = biome => biome.species.filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
   // the visitor: only species of the sector the trap stands in (Sys.visitors; the ocean: its small pool); src is that list (or a biome: its daytime species, for tests)
-  function pick(src, hn, type) {
+  function pick(src, hn, type, fl) {
     const list = type === 'scr' ? (Array.isArray(src) ? src : src.species) : (Array.isArray(src) ? src : lure(src)).filter(sp => !sp.mystery && !(BEH[sp.beh] && BEH[sp.beh].light) && sp.biome !== 'ocean');
     const pool = list.map(sp => ({ sp, w: sp.scarce ? sp.scarce * 0.3 * quality(hn) * 0.6 : (sp.rar === 1 ? 3 : sp.rar === 2 ? 2 : 1) * (sp.thin || 1) * rarK(hn, sp.rar || 1) })).filter(o => o.w > 0);
-    if (!pool.length) return null; let r = Math.random() * pool.reduce((a, o) => a + o.w, 0); let sp = pool[pool.length - 1].sp; for (const o of pool) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
+    if (!pool.length) return null;
+    // a built-in chance of the trap (the drive trap: 40%) and of the flowers (the synthetic ones: 25%): the visitor is drawn among the rare species only
+    const rp = 1 - (1 - ((TYPES[type] && TYPES[type].rare) || 0)) * (1 - ((FL[fl] && FL[fl].rare) || 0)); let src2 = pool; if (rp > 0 && Math.random() < rp) { const rare = pool.filter(o => (o.sp.rar || 1) >= 2); if (rare.length) src2 = rare; }
+    let r = Math.random() * src2.reduce((a, o) => a + o.w, 0); let sp = src2[src2.length - 1].sp; for (const o of src2) { r -= o.w; if (r <= 0) { sp = o.sp; break; } }
     const abp = TYPES[type].ab + ((HN[hn] && HN[hn].ab) || 0);          // the imported trap's 1% adds to what the bait gives
     return (abp && Aberr.eligible(sp) && Math.random() < abp) ? Aberr.make(sp, Aberr.randomCode()) : sp;
   }
@@ -84,6 +91,7 @@ const Traps = (() => {
     if (type === 'std') for (let i = 0; i < 9; i++) { const y = 0.75 + (i % 3) * 0.3, a = i * 2.4, r = 0.3 + (1.5 - y) * 0.04 - 0.035; out.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, a }); }
     else if (type === 'str') for (let i = 0; i < 9; i++) { const y = 0.65 + (i % 3) * 0.28, a = i * 1.7, s = 0.415; const side = i % 4, t = ((i * 0.37) % 1 - 0.5) * 0.6; const p = [[t, s], [s, t], [t, -s], [-s, t]][side]; out.push({ x: p[0], y, z: p[1], a: [Math.PI, Math.PI * 1.5, 0, Math.PI * 0.5][side] }); }
     else if (type === 'scr') for (let i = 0; i < 9; i++) out.push({ x: ((i % 3) - 1) * 0.08, y: 0.5, z: 0.3 + (i % 2) * 0.04, a: Math.PI });
+    else if (type === 'drv') for (let i = 0; i < 9; i++) { const y = 0.82 + (i % 3) * 0.17, side = i % 3, t = ((i * 0.37) % 1 - 0.5) * 0.5; const p = [[-0.355, t * 0.8 + 0.08], [0.355, t * 0.8 + 0.08], [t * 0.6, -0.275]][side]; out.push({ x: p[0], y, z: p[1], a: [Math.PI * 0.5, Math.PI * 1.5, 0][side] }); }
     else for (let i = 0; i < 9; i++) { const y = 0.3 + (i % 3) * 0.24, a = i * 2.1, r = 0.55 * Math.sqrt(Math.max(0.05, 1 - (y / 1.1) * (y / 1.1))) - 0.03; out.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, a }); }
     return out;
   }
@@ -132,6 +140,11 @@ const Traps = (() => {
         parts.push({ g: new THREE.OctahedronGeometry(buddle ? 0.0105 : 0.0085, 0), m: MX(Math.cos(a) * rad, y, Math.sin(a) * rad, 0.4, a, 0.3, 1, 1.25, 1), c: fc }); parts.push(rodRaw(new THREE.Vector3(0, y, 0), new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad), 0.0016, '#4a7a34'));
         if (buddle && i % 4 === 0) parts.push({ g: new THREE.SphereGeometry(0.0034, 4, 3), m: MX(Math.cos(a) * rad * 1.1, y + 0.002, Math.sin(a) * rad * 1.1), c: '#f09a20' }); }
       parts.push({ g: new THREE.OctahedronGeometry(0.009, 0), m: MX(0, Hh + 0.006, 0, 0, 0, 0, 1, 1.4, 1), c: light });
+    } else if (f.shape === 'synth') {      // a laboratory flower: two rings of glossy neon petals, a hex-nut collar and LED stamens
+      for (let i = 0; i < 9; i++) { const a = i / 9 * 6.283; petal(0.052, 0.02, 0.3, a, 0.3, 0.012, '#18c8f0', '#c050ff', 0.002); petal(0.04, 0.017, 0.35, a + 0.35, 0.72, 0.01, '#ff58d8', '#ffe66a', 0.007); }
+      parts.push({ g: new THREE.CylinderGeometry(0.014, 0.017, 0.012, 6), m: MX(0, 0.002, 0), c: '#9aa6b4' }); parts.push({ g: new THREE.CylinderGeometry(0.009, 0.009, 0.016, 8), m: MX(0, 0.012, 0), c: '#e8f4ff' });
+      for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283, lean = 0.5 + (i % 2) * 0.2, col = ['#7affc8', '#ffffff', '#ffe84a', '#ff7ac8'][i % 4]; parts.push(rodRaw(new THREE.Vector3(0, 0.014, 0), new THREE.Vector3(Math.cos(a) * 0.016 * lean * 2, 0.036 + (i % 3) * 0.004, Math.sin(a) * 0.016 * lean * 2), 0.0013, '#c8d0d8')); parts.push({ g: new THREE.SphereGeometry(0.0036, 5, 4), m: MX(Math.cos(a) * 0.016 * lean * 2, 0.039 + (i % 3) * 0.004, Math.sin(a) * 0.016 * lean * 2), c: col }); }
+      parts.push({ g: new THREE.SphereGeometry(0.008, 7, 5), m: MX(0, 0.03, 0), c: '#ffffff' });
     } else {      // cluster: an umbel / panicle of small stalked florets
       const big = f.id === 'lilac', N = big ? 30 : 17, R = big ? 0.05 : 0.04;
       for (let i = 0; i < N; i++) { const a = i * 2.4 + rng() * 0.3, u = Math.sqrt((i + 0.5) / N), rad = R * u, y = (big ? 0.01 + (1 - u) * 0.07 : 0.026 - u * u * 0.012) + (i % 3) * 0.002, fc = i % 4 ? mixc(c, light, (i % 5) / 6) : dark;
@@ -145,8 +158,8 @@ const Traps = (() => {
   // a stem with leaves and a head at its top; the base is the origin; the tip is at (tx, h, tz)
   function stemParts(f, h, tx, tz, rng) {
     const parts = [], base = new THREE.Vector3(0, 0, 0), mid = new THREE.Vector3(tx * 0.45, h * 0.5, tz * 0.45), tip = new THREE.Vector3(tx, h, tz);
-    parts.push(rodRaw(base, mid, 0.0055, '#3a7a30'), rodRaw(mid, tip, 0.0045, '#4a8a38'));
-    for (let i = 0; i < 3; i++) { const t = 0.2 + i * 0.22, p = base.clone().lerp(tip, t), a = i * 2.2 + rng() * 0.6; parts.push({ g: leafGeo(0.06 - i * 0.012, 0.022), m: MX(p.x, p.y, p.z, 0, -a, 0.55 - i * 0.12), c: (x, y, z) => mixc(GREEN[0], GREEN[2], clamp(x * 14)) }); }
+    const syn = f.shape === 'synth'; parts.push(rodRaw(base, mid, 0.0055, syn ? '#7a8692' : '#3a7a30'), rodRaw(mid, tip, 0.0045, syn ? '#98a4b0' : '#4a8a38'));
+    for (let i = 0; i < 3; i++) { const t = 0.2 + i * 0.22, p = base.clone().lerp(tip, t), a = i * 2.2 + rng() * 0.6; parts.push({ g: leafGeo(0.06 - i * 0.012, 0.022), m: MX(p.x, p.y, p.z, 0, -a, 0.55 - i * 0.12), c: syn ? (x, y, z) => mixc('#1fa8c8', '#7affc8', clamp(x * 14)) : (x, y, z) => mixc(GREEN[0], GREEN[2], clamp(x * 14)) }); }
     const hp = headParts(f, 1, rng), look = new THREE.Vector3(tx, h * 0.5, tz).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), look);
     for (const p of hp) { const m = new THREE.Matrix4().compose(tip.clone().add(new THREE.Vector3(0, -0.002, 0)), q, new THREE.Vector3(1, 1, 1)).multiply(p.m); parts.push({ g: p.g, m, c: p.c }); }
     return parts;
@@ -203,7 +216,7 @@ const Traps = (() => {
   }
   // the three trap bodies; every part touches its neighbour (the float test checks it); y = 0 is the ground
   function body(type) {
-    const g = new THREE.Group(), top = new THREE.Group(), baitG = new THREE.Group(); g.add(top); g.add(baitG); let trayY = 0.34, trayR = 0.26, jawRef = null;
+    const g = new THREE.Group(), top = new THREE.Group(), baitG = new THREE.Group(); g.add(top); g.add(baitG); let trayY = 0.34, trayR = 0.26, jawRef = null, rover = null;
     if (type === 'std') {
       const pole = M('#8a6a3a'), rope = M('#c8b890'), netc = NET('#d8e8d0', 0.4), rib = M('#9aa890');
       for (let k = 0; k < 3; k++) { const a = k * 2.094 + 0.4; g.add(rod([Math.cos(a) * 0.78, -0.02, Math.sin(a) * 0.78], [Math.cos(a) * 0.04, 2.08, Math.sin(a) * 0.04], 0.03, pole, 6)); }      // the tripod
@@ -256,6 +269,51 @@ const Traps = (() => {
       // a crooked bowl on the head for the flask
       baitG.add(cyl(0.27, 0.21, 0.06, M('#cfc68a'), 0, 1.5, 0, 12)); baitG.add(mesh(new THREE.TorusGeometry(0.265, 0.018, 5, 14), M('#f4eaa0'), 0, 1.53, 0, Math.PI / 2));
       trayY = 1.53; trayR = 0.26; jawRef = jaw;
+    } else if (type === 'drv') {
+      // the drive trap: a tracked electric rover, nose to -z; behind the electronics bay stands a net cab with a slot in its rear wall (+z) and the bait dish inside
+      const hull = M('#4a6a4e'), hull2 = M('#2e4034'), orange = M('#e8782a'), rubber = M('#1e2024'), steel = M('#98a2ac'), dsteel = M('#5a626c'), netc = NET('#eaf2e6', 0.4), panel = M('#1c2c52'), glass = M('#9ad8ff', { transparent: true, opacity: 0.6 });
+      const bright = c => new THREE.MeshBasicMaterial({ color: c }); const ledMat = bright('#6af08a'), beaconMat = bright('#ffb020'), lamp = bright('#fff4b0'), tail = bright('#ff3a2a');
+      const U0 = { cleats: [], wheels: [], phase: 0, track: [] };
+      const ra = 0.19, L1 = 1.1, AL = Math.PI * ra, LT = 2 * L1 + 2 * AL;
+      const pathAt = s => { s = ((s % LT) + LT) % LT; if (s < L1) return [-0.55 + s, 0.05, 1, 0]; s -= L1; if (s < AL) { const a = -Math.PI / 2 + s / AL * Math.PI; return [0.55 + ra * Math.cos(a), 0.24 + ra * Math.sin(a), -Math.sin(a), Math.cos(a)]; } s -= AL; if (s < L1) return [0.55 - s, 0.43, -1, 0]; s -= L1; const a = Math.PI / 2 + s / AL * Math.PI; return [-0.55 + ra * Math.cos(a), 0.24 + ra * Math.sin(a), -Math.sin(a), Math.cos(a)]; };
+      U0.pathAt = pathAt; U0.LT = LT;
+      for (const sx of [-1, 1]) {
+        const x = sx * 0.56; const tg = new THREE.Group(); tg.position.x = x; g.add(tg);
+        const NC = 26; for (let i = 0; i < NC; i++) { const c = box(0.22, 0.034, 0.075, rubber, 0, 0, 0); c.add(box(0.2, 0.02, 0.012, dsteel, 0, 0.018, 0.02)); tg.add(c); U0.cleats.push({ m: c, s0: i / NC * LT }); }       // the rubber belt: cleats going round the wheels
+        tg.add(box(0.16, 0.12, 1.16, rubber, 0, 0.24, 0));                                                                                                 // the inner belt skin (so no daylight shows through)
+        for (const z of [-0.55, 0.55]) { const sp = cyl(0.19, 0.19, 0.2, dsteel, 0, 0.24, z, 14, false, 0, 0, Math.PI / 2); tg.add(sp); U0.wheels.push({ m: sp, r: 0.19 }); tg.add(cyl(0.07, 0.07, 0.23, steel, 0, 0.24, z, 8, false, 0, 0, Math.PI / 2)); }   // sprocket and idler
+        for (const z of [-0.3, -0.1, 0.1, 0.3]) { const rw = cyl(0.1, 0.1, 0.17, dsteel, 0, 0.16, z, 12, false, 0, 0, Math.PI / 2); tg.add(rw); U0.wheels.push({ m: rw, r: 0.1 }); tg.add(cyl(0.04, 0.04, 0.2, steel, 0, 0.16, z, 6, false, 0, 0, Math.PI / 2)); }   // road wheels with hubs
+        g.add(box(0.05, 0.16, 1.3, hull2, sx * 0.69, 0.3, 0)); g.add(box(0.26, 0.03, 1.46, hull2, x, 0.5, 0)); g.add(box(0.26, 0.02, 1.46, orange, x, 0.52, 0.0));   // the side plate, the mudguard with an orange stripe
+        for (let k = 0; k < 3; k++) g.add(box(0.012, 0.05, 0.16, M('#101214'), sx * 0.7, 0.34, -0.35 + k * 0.35));                                                // vents
+      }
+      g.add(box(0.92, 0.26, 1.56, hull, 0, 0.4, 0));                                                                                                       // the hull
+      g.add(box(0.94, 0.04, 1.58, orange, 0, 0.53, 0)); g.add(box(0.94, 0.03, 1.58, hull2, 0, 0.27, 0));                                                  // orange coaming, belly plate
+      g.add(box(0.9, 0.2, 0.34, hull2, 0, 0.48, -0.78, -0.55));                                                                                            // the sloping nose
+      g.add(box(0.96, 0.1, 0.06, steel, 0, 0.3, -0.84));                                                                                                   // bumper
+      for (const sx of [-1, 1]) { g.add(cyl(0.05, 0.065, 0.06, dsteel, sx * 0.3, 0.42, -0.86, 10, false, Math.PI / 2)); g.add(mesh(new THREE.CircleGeometry(0.05, 10), lamp, sx * 0.3, 0.42, -0.892, 0, Math.PI)); g.add(box(0.07, 0.025, 0.02, tail, sx * 0.38, 0.4, 0.795)); }   // headlamps and tail lamps
+      g.add(box(0.5, 0.13, 0.02, M('#d8d0b0'), 0, 0.37, 0.795)); g.add(box(0.46, 0.09, 0.012, M('#2a2a30'), 0, 0.37, 0.804));                                  // number plate
+      g.add(cyl(0.025, 0.025, 0.1, steel, 0.25, 0.3, 0.84, 6, false, Math.PI / 2)); g.add(mesh(new THREE.TorusGeometry(0.04, 0.012, 5, 10), steel, 0.25, 0.3, 0.89));   // tow hook
+      // the electronics bay (nose half of the deck): vents, a battery label and a mast with a radar dish
+      g.add(box(0.74, 0.26, 0.42, hull2, 0, 0.67, -0.54)); for (let k = 0; k < 4; k++) g.add(box(0.5, 0.012, 0.012, M('#0c0e10'), 0, 0.6 + k * 0.045, -0.752));
+      g.add(box(0.2, 0.08, 0.012, orange, -0.22, 0.74, -0.752)); g.add(box(0.2, 0.08, 0.012, ledMat, 0.22, 0.74, -0.752)); U0.led = ledMat;                 // a warning plate and the status LED
+      g.add(box(0.74, 0.03, 0.44, steel, 0, 0.815, -0.54));
+      g.add(cyl(0.03, 0.04, 0.55, dsteel, 0.24, 1.1, -0.54, 8)); g.add(cyl(0.05, 0.05, 0.06, steel, 0.24, 0.85, -0.54, 8));
+      const dish = new THREE.Group(); dish.position.set(0.24, 1.42, -0.54); const bowl = mesh(new THREE.SphereGeometry(0.17, 14, 6, 0, 6.2832, 0, 1.0), steel, 0, 0.0, 0.0, -Math.PI / 2 + 0.2); bowl.material = M('#c8d0d8', { side: THREE.DoubleSide }); dish.add(bowl); dish.add(rod([0, 0, 0], [0, 0.0, -0.17], 0.01, dsteel)); dish.add(box(0.04, 0.04, 0.05, orange, 0, 0, -0.2)); dish.add(cyl(0.025, 0.025, 0.06, dsteel, 0, -0.04, 0, 6)); g.add(dish); U0.dish = dish;
+      g.add(cyl(0.035, 0.035, 0.1, dsteel, -0.22, 0.87, -0.5, 8)); g.add(mesh(new THREE.SphereGeometry(0.06, 8, 5, 0, 6.2832, 0, 1.57), M('#e8ecf0'), -0.22, 0.92, -0.5)); g.add(box(0.12, 0.04, 0.12, steel, -0.22, 0.9, -0.5, 0, 0.5, 0));       // the GPS puck on its stand
+      // the net cab on the deck: four posts, frames, mesh walls (the rear wall has an open slot at the height of the bait), a solar roof
+      const cz = 0.08;
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) top.add(box(0.045, 0.86, 0.045, steel, sx * 0.4, 0.98, cz + sz * 0.4)); 
+      for (const y of [0.56, 1.41]) for (const [x, z, w, d] of [[0, cz + 0.4, 0.85, 0.045], [0, cz - 0.4, 0.85, 0.045], [0.4, cz, 0.045, 0.85], [-0.4, cz, 0.045, 0.85]]) top.add(box(w, 0.04, d, steel, x, y, z));
+      top.add(box(0.8, 0.8, 0.012, netc, 0, 0.99, cz - 0.4)); for (const sx of [-1, 1]) top.add(box(0.012, 0.8, 0.8, netc, sx * 0.4, 0.99, cz));
+      top.add(box(0.8, 0.4, 0.012, netc, 0, 1.2, cz + 0.4)); top.add(box(0.8, 0.12, 0.02, orange, 0, 0.64, cz + 0.4));                                           // the rear wall above the slot (y .84..1.4) and the orange kick-plate under it
+      for (const y of [0.9, 1.1, 1.3]) { top.add(box(0.8, 0.008, 0.008, dsteel, 0, y, cz - 0.4)); for (const sx of [-1, 1]) top.add(box(0.008, 0.008, 0.8, dsteel, sx * 0.4, y, cz)); }   // ribs
+      const roof = new THREE.Group(); roof.position.set(0, 1.46, cz); roof.rotation.x = 0.08; top.add(roof); roof.add(box(0.98, 0.04, 0.98, steel, 0, 0, 0)); roof.add(box(0.9, 0.02, 0.9, panel, 0, 0.025, 0));
+      for (let k = 1; k < 4; k++) { roof.add(box(0.9, 0.004, 0.008, glass, 0, 0.037, -0.45 + k * 0.225)); roof.add(box(0.008, 0.004, 0.9, glass, -0.45 + k * 0.225, 0.037, 0)); }                          // the cells of the solar panel
+      top.add(cyl(0.05, 0.07, 0.07, dsteel, -0.3, 1.52, cz + 0.32, 8)); const beacon = mesh(new THREE.SphereGeometry(0.06, 10, 7, 0, 6.2832, 0, 1.6), beaconMat, -0.3, 1.56, cz + 0.32); top.add(beacon); U0.beacon = beaconMat;       // the amber beacon
+      top.add(rod([0.34, 1.5, cz + 0.4], [0.3, 2.35, cz + 0.44], 0.008, dsteel, 4)); top.add(mesh(new THREE.ConeGeometry(0.07, 0.2, 3), orange, 0.37, 2.1, cz + 0.44, 0, 0, -Math.PI / 2)); top.add(mesh(new THREE.SphereGeometry(0.02, 6, 5), steel, 0.3, 2.36, cz + 0.44));   // whip antenna with a pennant
+      g.add(box(0.8, 0.03, 0.28, dsteel, 0, 0.545, 0.64)); g.add(box(0.8, 0.02, 0.012, orange, 0, 0.56, 0.78));                                              // the landing step in front of the slot
+      g.add(cyl(0.3, 0.3, 0.04, M('#c8d0d8'), 0, 0.57, cz, 14)); baitG.position.set(0, 0, cz); trayY = 0.59; trayR = 0.27;                                     // the dish deck
+      rover = U0;
     } else {
       const netc = NET('#f4f6f0', 0.4), orange = M('#e8782a'), rib = M('#c8ccc4'), peg = M(IRON), line = M('#e8d8b0');
       g.add(mesh(new THREE.TorusGeometry(0.55, 0.022, 5, 18), rib, 0, 0.025, 0, Math.PI / 2));                                            // the base hoop on the ground
@@ -267,7 +325,7 @@ const Traps = (() => {
       for (let k = 0; k < 4; k++) { const a = k * 1.571 + 0.78, X = Math.cos(a), Z = Math.sin(a); g.add(rod([X * 1.0, -0.05, Z * 1.0], [X * 0.92, 0.2, Z * 0.92], 0.014, peg, 4)); top.add(rod([X * 0.92, 0.2, Z * 0.92], [X * 0.45, 0.62, Z * 0.45], 0.005, line, 3)); }    // pegs and guy lines to the dome
       baitG.add(cyl(0.3, 0.3, 0.035, M('#3a4a58'), 0, 0.05, 0, 12)); trayY = 0.07; trayR = 0.3;
     }
-    g.userData = { top, baitG, trayY, trayR, type, jaw: jawRef };
+    g.userData = { top, baitG, trayY, trayR, type, jaw: jawRef, rover };
     return g;
   }
   // a whole model with its contents: fl / hn ids, n resting butterflies (cols: their colours), broken: collapsed
@@ -299,6 +357,7 @@ const Traps = (() => {
   function doorway(type, a) {
     if (type === 'std') { const d = [Math.cos(a), Math.sin(a)]; return { dir: a, pts: [[d[0] * 1.2, 0.43, d[1] * 1.2], [d[0] * 0.26, 0.43, d[1] * 0.26], [d[0] * 0.05, 0.62, d[1] * 0.05], [0, 0.82, 0]] }; }
     if (type === 'str') { const k = Math.round(a / (Math.PI / 2)), aa = k * Math.PI / 2, d = [Math.round(Math.cos(aa)), Math.round(Math.sin(aa))]; return { dir: aa, pts: [[d[0] * 1.3, 0.48, d[1] * 1.3], [d[0] * 0.3, 0.48, d[1] * 0.3], [0, 0.52, 0], [0, 0.7, 0]] }; }
+    if (type === 'drv') return { dir: Math.PI / 2, pts: [[0, 0.82, 1.7], [0, 0.82, 0.62], [0, 0.9, 0.3], [0, 1.0, 0.1]] };       // through the open slot of the cab's rear wall (+z)
     if (type === 'scr') return { dir: Math.PI / 2, pts: [[0, 0.5, 1.5], [0, 0.49, 0.78], [0, 0.49, 0.5], [0, 0.48, 0.34]] };       // the skrichushka: straight into the mouth (centred on +z)
     return { dir: Math.PI / 2, pts: [[0, 0.09, 1.3], [0, 0.09, 0.42], [0, 0.14, 0.15], [0, 0.4, 0.04]] };       // the dome: a doorway centred on +z
   }
@@ -306,7 +365,7 @@ const Traps = (() => {
     constructor(sys, trap, sp, spotIdx) {
       this.sys = sys; this.trap = trap; this.sp = sp; this.done = false; this.t = Math.random() * 6; const w = sys.world, yaw = trap.yaw;
       const toW = (x, y, z) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, yaw).add(new THREE.Vector3(trap.x, trap.y, trap.z));
-      const doorT = trap.type === 'imp' || trap.type === 'scr', a0 = doorT ? Math.PI / 2 + (Math.random() - 0.5) * 1.5 : Math.random() * 6.283;             // the side it comes from (local); the dome only from its door
+      const doorT = trap.type === 'imp' || trap.type === 'scr' || trap.type === 'drv', a0 = doorT ? Math.PI / 2 + (Math.random() - 0.5) * 1.5 : Math.random() * 6.283;             // the side it comes from (local); the dome only from its door
       const door = doorway(trap.type, doorT ? 0 : a0); const out = toW(...door.pts[0]), inn = toW(...door.pts[1]);
       const away = doorT ? new THREE.Vector3(0, 0, 1).applyAxisAngle(UP, yaw) : new THREE.Vector3(Math.cos(door.dir), 0, Math.sin(door.dir)).applyAxisAngle(UP, yaw);
       const side = new THREE.Vector3(-away.z, 0, away.x), dist = 5 + Math.random() * 3, start = new THREE.Vector3(trap.x, 0, trap.z).addScaledVector(away, dist).addScaledVector(side, (Math.random() - 0.5) * 5); start.y = w.groundAt(start.x, start.z) + 1.1 + Math.random() * 1.1;
@@ -329,13 +388,25 @@ const Traps = (() => {
     dispose() { this.sys.group.remove(this.g); this.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
   }
 
+  // ================================================================== the drive trap: tracks, wheels, the dish and the lights follow its speed
+  const DRIVE = { speed: 3.2, near: 2.4, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
+  function animRover(U, v, dt, mode, tt) {
+    const R = U && U.rover; if (!R) return; R.phase += v * dt;
+    if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) w.m.rotation.x = -R.phase / w.r; }
+    R.dish.rotation.y += dt * (mode === 'drive' ? 3.2 : 0.7);
+    const blink = Math.sin(tt * (mode === 'drive' ? 12 : 3)) > 0 ? 1 : 0.18; R.beacon.color.setRGB(1 * blink, 0.69 * blink, 0.12 * blink);
+    if (mode === 'drive') R.led.color.set('#ffb020'); else if (mode === 'stop') R.led.color.set('#6af08a'); else R.led.color.set('#4a9aff');
+  }
+  const angDiff = (a, b) => { let d = (a - b) % 6.2832; if (d > 3.1416) d -= 6.2832; if (d < -3.1416) d += 6.2832; return d; };
+
   // ================================================================== the traps of a location
   class Sys {
     constructor(play) { this.play = play; this.list = []; this.fliers = []; this.group = new THREE.Group(); play.scene.add(this.group); this.seq = 0; this.cntT = 0; this.near = null; }
     get world() { return this.play.world; }
     own() { return this.list.filter(t => t.mine); }
     mk(spec, mine) {
-      const T0 = TYPES[spec.type]; if (!T0) return null; const t = { tid: spec.tid, mine, owner: spec.owner, name: spec.name || '?', type: spec.type, x: spec.x, y: spec.y, z: spec.z, yaw: spec.yaw || 0, t: spec.age || 0, life: T0.life, cap: T0.cap, fl: spec.fl || '', hn: spec.hn || '', items: spec.items || [], n: spec.n || 0, inflight: 0, broken: false, goneT: 0, dirty: true, label: null };
+      const T0 = TYPES[spec.type]; if (!T0) return null; const t = { tid: spec.tid, mine, owner: spec.owner, name: spec.name || '?', type: spec.type, x: spec.x, y: spec.y, z: spec.z, yaw: spec.yaw || 0, t: spec.age || 0, life: T0.life, cap: T0.cap, fl: spec.fl || '', hn: spec.hn || '', items: spec.items || [], n: spec.n || 0, inflight: 0, broken: false, goneT: 0, dirty: true, label: null, run: spec.run ? 1 : 0, sp: 0, tx: spec.x, ty: spec.y, tz: spec.z, tyaw: spec.yaw || 0, tp: 0, tr: 0 };
+      if (T0.drive) t.dr = { mode: 'idle', visited: [], tgt: -1, wp: null, stopLeft: 0, stuck: 0, best: 1e9, bias: 0, biasT: 0, send: 0, ph: 0 };
       this.list.push(t); t.col = { x: spec.x, z: spec.z, r: 0.5, trap: t.tid }; this.world.colliders.push(t.col); this.rebuild(t); return t;
     }
     rebuild(t) {
@@ -346,8 +417,51 @@ const Traps = (() => {
     }
     net(m) {      // a message from the server about somebody else's trap
       if (m.k === 'put') { if (m.trap && !this.list.some(t => t.tid === m.trap.tid)) this.mk(m.trap, false); }
-      else { const t = this.list.find(q => q.tid === m.tid && !q.mine); if (!t) return; if (m.k === 'set') { t.fl = m.fl; t.hn = m.hn; t.dirty = true; } else if (m.k === 'cnt') { t.n = m.n; t.dirty = true; } else if (m.k === 'del') this.drop(t); else if (m.k === 'arr') { if (!t.broken) this.spawn(t, null); } }
+      else { const t = this.list.find(q => q.tid === m.tid && !q.mine); if (!t) return; if (m.k === 'set') { t.fl = m.fl; t.hn = m.hn; t.dirty = true; } else if (m.k === 'cnt') { t.n = m.n; t.dirty = true; } else if (m.k === 'del') this.drop(t); else if (m.k === 'arr') { if (!t.broken && !t.run) this.spawn(t, null); } else if (m.k === 'mv') this.remoteMove(t, m); }
     }
+    // ---- the drive trap
+    stateOf(t) { return t.dr ? t.dr.mode : 'stop'; }
+    driving(t) { return t.dr ? t.dr.mode === 'drive' : !!(t.run && t.type === 'drv'); }
+    canCatch(t) { return !t.broken && !this.driving(t); }
+    clearFliers(t) { this.fliers = this.fliers.filter(o => { if (o.t === t) { o.f.dispose(); return false; } return true; }); t.inflight = 0; }
+    sendMv(t) { this.send({ k: 'mv', tid: t.tid, x: +t.x.toFixed(2), y: +t.y.toFixed(2), z: +t.z.toFixed(2), yaw: +t.yaw.toFixed(2), run: t.run ? 1 : 0 }); }
+    remoteMove(t, m) { if (![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return; t.tx = m.x; t.ty = m.y; t.tz = m.z; t.tyaw = m.yaw; const r = m.run ? 1 : 0; if (r && !t.run) this.clearFliers(t); t.run = r; if (Math.hypot(t.tx - t.x, t.tz - t.z) > 25) this.place2(t, t.tx, t.ty, t.tz, t.tyaw); }
+    place2(t, x, y, z, yaw) { t.x = x; t.y = y; t.z = z; t.yaw = yaw; if (t.col) { t.col.x = x; t.col.z = z; } if (t.group) { t.group.position.set(x, y, z); t.group.rotation.set(t.tp, yaw, t.tr, 'YXZ'); } if (t.label) t.label.position.set(x, y + 2.7, z); }
+    // can the rover stand / drive here
+    okAt(t, x, z) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.inWater && w.inWater(x, z, 0.9)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + 0.95) return false; return true; }
+    // a point in a zone the rover can reach (the middle of it, or the nearest free spot to it)
+    zoneSpot(t, i) { const S = this.play.sectors, q = S.rects[i], cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2; for (let r = 0; r < 40; r += 1.5) for (let k = 0; k < Math.max(1, Math.round(r * 1.2)); k++) { const a = k / Math.max(1, Math.round(r * 1.2)) * 6.2832, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (S.at(x, z) === i && this.okAt(t, x, z)) return { x, z }; } return { x: cx, z: cz }; }
+    nextZone(t) { const S = this.play.sectors, D = t.dr; let best = -1, bd = 1e9; S.rects.forEach((q, i) => { if (D.visited.includes(i)) return; const d = Math.hypot((q.x0 + q.x1) / 2 - t.x, (q.z0 + q.z1) / 2 - t.z); if (d < bd) { bd = d; best = i; } }); return best; }
+    // how long it stands in a zone: 4 minutes at most, less when the rest of its life has to cover the remaining zones too
+    stopFor(t) { const S = this.play.sectors, D = t.dr, rem = S.rects.length - D.visited.length, left = t.life - t.t; return clamp((left - rem * (DRIVE.leg / DRIVE.speed + 8)) / (rem + 1), DRIVE.stopMin, DRIVE.stopMax); }
+    launch(t) {
+      const P = this.play, S = P.sectors, D = t.dr; if (!t.mine || !D || t.broken) return false; if (!S) { P.toast('Здесь нет природных зон: ловушка с приводом стоит на месте', 3.5); return false; }
+      if (D.mode === 'drive') return false; const z0 = S.at(t.x, t.z); if (!D.visited.includes(z0)) D.visited.push(z0);
+      const nz = this.nextZone(t); if (nz < 0) { P.toast('Ловушка уже объехала все природные зоны', 3.5); Snd.sfx.deny(); return false; }
+      D.tgt = nz; D.wp = this.zoneSpot(t, nz); D.mode = 'drive'; D.best = 1e9; D.stuck = 0; D.bias = 0; D.biasT = 0; t.run = 1; this.clearFliers(t); this.sendMv(t); Snd.sfx.servo(); P.toast(`Ловушка поехала в природную зону ${nz + 1}: «${S.rects[nz].name}» — пока едет, она не ловит`, 4, true); return true;
+    }
+    halt(t, hold) { const D = t.dr; if (!D || D.mode !== 'drive') return false; D.mode = hold ? 'hold' : 'stop'; D.tgt = -1; t.run = 0; this.sendMv(t); Snd.sfx.servo(); this.play.toast('Ловушка остановилась и ловит бабочек', 3.5, true); return true; }
+    arrive(t, forced) {
+      const P = this.play, S = P.sectors, D = t.dr, i = D.tgt; if (!D.visited.includes(i)) D.visited.push(i); D.mode = 'stop'; D.tgt = -1; t.run = 0; D.stopLeft = this.stopFor(t); this.sendMv(t); Snd.sfx.servo();
+      P.toast(`Ловушка встала в природной зоне ${i + 1}: «${S.rects[i].name}»${forced ? ' (застряла по пути)' : ''} · стоянка ${mmss(D.stopLeft)}${D.visited.length >= S.rects.length ? ' · это последняя зона' : ''}`, 5, true);
+    }
+    // the rover drives towards its waypoint: turns on the spot, goes round trees and water, gives up after being stuck for a while
+    driveStep(t, dt) {
+      const D = t.dr, w = this.world; let dx = D.wp.x - t.x, dz = D.wp.z - t.z; const d = Math.hypot(dx, dz);
+      if (d < DRIVE.near) { this.arrive(t, false); return; }
+      if (d < D.best - 0.4) { D.best = d; D.stuck = 0; } else D.stuck += dt;
+      if (D.stuck > 30) { this.arrive(t, true); return; }
+      let want = Math.atan2(-dx, -dz); D.biasT -= dt;
+      const fwd = y => [-Math.sin(y), -Math.cos(y)], ahead = (y, L) => { const f = fwd(y); return this.okAt(t, t.x + f[0] * L, t.z + f[1] * L); };
+      if (D.stuck > 7 && D.biasT <= 0) { D.bias = (Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random() * 1.6); D.biasT = 2.5; }
+      if (D.biasT > 0) want += D.bias;
+      else if (!ahead(want, 1.6)) { for (const o of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.3, -2.3, 3.14]) if (ahead(want + o, 1.6)) { D.bias = o; D.biasT = 1.0; want += o; break; } }
+      const df = angDiff(want, t.yaw), turn = clamp(df, -DRIVE.turn * dt, DRIVE.turn * dt); t.yaw += turn;
+      const al = Math.abs(angDiff(want, t.yaw)), v = DRIVE.speed * clamp(1 - al / 1.1) * clamp(d / 3.5 + 0.35); let moved = 0;
+      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz)) { moved = v; t.x = nx; t.z = nz; } else D.stuck += dt * 2; }
+      D.sp = moved; t.y = w.groundAt(t.x, t.z); this.tilt(t); this.place2(t, t.x, t.y, t.z, t.yaw);
+    }
+    tilt(t) { const w = this.world, f = [-Math.sin(t.yaw), -Math.cos(t.yaw)], r = [Math.cos(t.yaw), -Math.sin(t.yaw)], h = (a, b) => w.groundAt(t.x + f[0] * a + r[0] * b, t.z + f[1] * a + r[1] * b); const tp = Math.atan2(h(0.75, 0) - h(-0.75, 0), 1.5), tr = Math.atan2(h(0, 0.6) - h(0, -0.6), 1.2); t.tp = clamp(tp, -0.45, 0.45); t.tr = clamp(tr, -0.45, 0.45); }
     spawn(t, sp) { const idx = (t.mine ? t.items.length : t.n) + t.inflight; t.inflight++; this.fliers.push({ f: new Flier(this, t, sp, idx), t, sp }); }
     // a trap wears out: it vanishes together with everything in it (no catch is credited)
     expire(t) { if (t.type === 'scr' && Math.hypot(t.x - this.play.player.pos.x, t.z - this.play.player.pos.z) < 45) Snd.sfx.scream(); if (t.mine) { this.play.toast(`${TYPES[t.type].ru} сломалась — вместе с ней пропал улов (${t.items.length})`, 5, true); Snd.sfx.deny(); this.send({ k: 'del', tid: t.tid }); } this.drop(t); }
@@ -372,12 +486,14 @@ const Traps = (() => {
     update(dt) {
       this.flyAll(dt); this.near = this.play.entering ? null : this.nearest(); const tt = this.play.t;
       for (const t of this.list.slice()) {
-        t.t += dt; if (t.label) { const left = Math.max(0, t.life - t.t); t.label.userData.set(t.mine ? TYPES[t.type].ru : t.name, 'сломается в ' + mmss(left), t.mine ? '#f0e8c0' : '#9ae0b0', left < 20); }
+        t.t += dt;
+        if (t.type === 'drv') this.driveUpdate(t, dt);
+        if (t.label) { const left = Math.max(0, t.life - t.t); t.label.userData.set(t.mine ? TYPES[t.type].ru : t.name, 'сломается в ' + mmss(left), t.mine ? '#f0e8c0' : '#9ae0b0', left < 20); }
         if (t.t >= t.life) { this.expire(t); continue; }
-        if (t.mine && !t.broken && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
-          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.visitors(t), t.hn, t.type); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
+        if (t.mine && this.canCatch(t) && t.items.length + t.inflight < t.cap) {                 // a butterfly sets off towards the trap (it is in the trap only when it has flown in)
+          const r = rate(t.fl, t.hn); if (r > 0 && Math.random() < r / 60 * dt) { const sp = pick(this.visitors(t), t.hn, t.type, t.fl); if (sp) { this.spawn(t, sp); this.send({ k: 'arr', tid: t.tid }); } }
         }
-        if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); }
+        if (t.dirty) { this.rebuild(t); setBroken(t.group, t.broken); if (t.type === 'drv') this.place2(t, t.x, t.y, t.z, t.yaw); }
         const U = t.group && t.group.userData;
         if (U && U.jaw) {       // the skrichushka's mouth opens when a butterfly is about to come in, and shuts (with a snap) after it
           const fo = this.fliers.find(o => o.t === t); if (fo && fo.f.s > fo.f.sOut * 0.55) t.hold = 0.7; t.hold = Math.max(0, (t.hold || 0) - dt); t.open = damp(t.open || 0, t.hold > 0 ? 1 : 0, 9, dt);
@@ -385,7 +501,18 @@ const Traps = (() => {
           U.jaw.rotation.x = 0.7 * t.open;
         }
         if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
-        if (U && !t.broken) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
+        if (U && !t.broken && !U.rover) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
+        if (U && U.rover) animRover(U, t.sp, dt, this.driving(t) ? 'drive' : this.stateOf(t) === 'idle' ? 'idle' : 'stop', tt);
+      }
+    }
+    driveUpdate(t, dt) {
+      const D = t.dr;
+      if (t.mine && D) {
+        if (D.mode === 'drive') { if (!t.broken) this.driveStep(t, dt); D.send -= dt; if (D.send <= 0) { D.send = 0.2; this.sendMv(t); } t.sp = damp(t.sp, D.sp || 0, 8, dt); }
+        else { t.sp = damp(t.sp, 0, 8, dt); if (D.mode === 'stop') { D.stopLeft -= dt; if (D.stopLeft <= 0) { const S = this.play.sectors, nz = S ? this.nextZone(t) : -1; if (nz >= 0 && !t.broken) this.launch(t); else { D.mode = 'hold'; this.play.toast('Ловушка объехала все природные зоны и осталась на месте — она продолжает ловить', 4.5, true); } } } }
+      } else if (!t.mine) {      // somebody else's rover: it glides to the last reported place
+        const ex = t.tx - t.x, ez = t.tz - t.z, k = 1 - Math.exp(-6 * dt), nx = t.x + ex * k, nz = t.z + ez * k, dd = Math.hypot(nx - t.x, nz - t.z), yaw = t.yaw + angDiff(t.tyaw, t.yaw) * k;
+        t.sp = damp(t.sp, t.run ? dd / Math.max(dt, 1e-3) : 0, 8, dt); if (dd > 1e-4 || Math.abs(angDiff(t.tyaw, t.yaw)) > 1e-3) { t.y = this.world.groundAt(nx, nz); t.x = nx; t.z = nz; this.tilt(t); this.place2(t, nx, t.y, nz, yaw); }
       }
     }
     flyAll(dt) {
@@ -427,7 +554,8 @@ const Traps = (() => {
   };
   const UI = {
     mode: null, t: null, sel: 0, msg: '', msgT: 0, scroll: 0, btns: [],
-    openPlace(play) { this.mode = 'place'; this.play = play; this.sel = Math.max(0, Object.keys(TYPES).findIndex(id => count('tr', id) > 0)); this.msg = ''; this.msgT = 0; },
+    placeList() { return Object.values(TYPES).filter(T0 => !T0.gear || count('tr', T0.id) > 0); },
+    openPlace(play) { this.mode = 'place'; this.play = play; this.sel = Math.max(0, this.placeList().findIndex(T0 => count('tr', T0.id) > 0)); this.msg = ''; this.msgT = 0; },
     openTrap(play, t) { this.mode = t.mine ? 'manage' : 'view'; this.play = play; this.t = t; this.pf = ''; this.ph = ''; this.msg = ''; this.msgT = 0; this.scroll = 0; },
     say(m) { this.msg = m; this.msgT = 3.5; },
     // the candidate shown in a slider (it is not in the trap yet): always one of the items in stock; the arrows go round in both directions
@@ -436,11 +564,12 @@ const Traps = (() => {
     cyc(list, cur, d) { const ids = [''].concat(list.map(x => x.id)); const i = ids.indexOf(cur || ''); return ids[(i + d + ids.length) % ids.length]; },
     layout() {
       const b = [{ id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 }];
-      if (this.mode === 'place') Object.values(TYPES).forEach((T0, i) => b.push({ id: 'type' + i, tid: T0.id, x: 40, y: 50 + i * 48, w: 400, h: 44 }));
+      if (this.mode === 'place') { const L = this.placeList(), pitch = L.length > 4 ? 36 : 48; L.forEach((T0, i) => b.push({ id: 'type' + i, tid: T0.id, x: 40, y: (L.length > 4 ? 54 : 50) + i * pitch, w: 400, h: pitch - 4 })); }
       else if (this.mode === 'manage') {
         const t = this.t;
         if (!t.fl && !TYPES[t.type].baitOnly) b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'flput', label: 'Положить', x: 162, y: 94, w: 78, h: 14, disabled: !this.cand('fl') });
         if (!t.hn) b.push({ id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 }, { id: 'hnput', label: 'Положить', x: 162, y: 134, w: 78, h: 14, disabled: !this.cand('hn') });
+        if (t.dr) { const m = t.dr.mode, S0 = this.play.sectors; b.push({ id: m === 'drive' ? 'halt' : 'go', label: m === 'drive' ? 'Остановить' : m === 'stop' ? 'Ехать дальше' : 'Запустить', x: 168, y: 232, w: 110, h: 18, disabled: !S0 || (m !== 'drive' && t.dr.visited.length >= S0.rects.length) }); }
         b.push({ id: 'take', label: t.items.length ? `Забрать улов (${t.items.length})` : 'Улова нет', x: 12, y: 232, w: 150, h: 18, disabled: !t.items.length });
       }
       if (this.t && this.mode !== 'place' && this.play && !this.play.traps.list.includes(this.t)) b.length = 1;      // the trap is gone (it wore out): only the way out
@@ -455,6 +584,7 @@ const Traps = (() => {
       else if (b.id === 'hnp' || b.id === 'hnn') { if (!this.step('hn', b.id === 'hnn' ? 1 : -1)) this.say('Нет мёда в запасе: его продаёт медовщик'); }
       else if (b.id === 'flput') { const c = this.cand('fl'); if (c && S.bait(t, c.id, undefined)) this.say('Цветы положены — достать их обратно нельзя'); else Snd.sfx.deny(); }
       else if (b.id === 'hnput') { const c = this.cand('hn'); if (c && S.bait(t, undefined, c.id)) this.say('Положено — достать обратно нельзя'); else Snd.sfx.deny(); }
+      else if (b.id === 'go') { if (!S.launch(t)) Snd.sfx.deny(); } else if (b.id === 'halt') S.halt(t, true);
       else if (b.id === 'take') { S.take(t); if (!S.list.includes(t)) return 'close'; }
       return null;
     },
@@ -465,8 +595,8 @@ const Traps = (() => {
       if (this.mode === 'place') {
         UIK.panel(ctx, 20, 14, 440, 242, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Поставить ловушку', SW / 2, 22, { size: 12, align: 'c', color: cl.gold }); T.draw(ctx, 'Она встанет перед вами.', SW / 2, 40, { size: 8, align: 'c', color: cl.dim });
         bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), why = allowed(b.tid, P.biome.id), h = hv(b) && !why; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n && !why ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n && !why ? cl.gold : cl.line, shadow: false });
-          T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ' · 1% аберрантов' : ''), b.x + 8, b.y + 17, { size: 8, color: cl.dim }); T.para(ctx, T0.desc, b.x + 8, b.y + 27, 380, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, why ? (T0.id === 'scr' ? 'только в океане' : 'не в океане') : n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: why ? '#c8a060' : n ? '#9af0a0' : '#c87060' }); });
-        T.draw(ctx, this.msgT > 0 ? this.msg : 'Купить ловушки можно у торговца ловушками на рынке насекомых.', SW / 2, 238, { size: 8, align: 'c', color: this.msgT > 0 ? '#ffb070' : cl.dim });
+          T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ` · ${+(T0.ab * 100).toFixed(1)}% аберрантов` : '') + (T0.rare ? ` · ${Math.round(T0.rare * 100)}% редких` : ''), b.x + 8, b.y + 16, { size: 8, color: cl.dim }); if (b.h > 40) T.para(ctx, T0.desc, b.x + 8, b.y + 27, 380, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, why ? (T0.id === 'scr' ? 'только в океане' : 'не в океане') : n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: why ? '#c8a060' : n ? '#9af0a0' : '#c87060' }); });
+        T.draw(ctx, this.msgT > 0 ? this.msg : 'Купить ловушки можно у торговца ловушками на рынке насекомых.', SW / 2, 243, { size: 8, align: 'c', color: this.msgT > 0 ? '#ffb070' : cl.dim });
       } else if (this.t) {
         const tr = this.t, T0 = TYPES[tr.type], mine = this.mode === 'manage';
         UIK.panel(ctx, 6, 6, 468, 258, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, mine ? T0.ru : `Ловушка игрока ${tr.name}`, 14, 12, { size: 10, color: cl.gold }); T.draw(ctx, T0.real, 14, 26, { size: 8, color: cl.dim });
@@ -485,15 +615,16 @@ const Traps = (() => {
           if (f) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 97, { size: 8, color: '#e0a070' }); else T.draw(ctx, cf ? `в запасе: ${count('fl', cf.id)} (видов: ${owned('fl').length})` : '', 246, 97, { size: 8, color: cl.dim });
           if (h) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 137, { size: 8, color: '#e0a070' }); else T.draw(ctx, ch ? `в запасе: ${count('hn', ch.id)} (видов: ${owned('hn').length})` : '', 246, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
-          T.draw(ctx, h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс', 124, 172, { size: 8, color: h ? '#e0c0ff' : cl.dim });
+          { const rp = 1 - (1 - (T0.rare || 0)) * (1 - ((f && f.rare) || 0)); T.draw(ctx, (h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс') + (rp > 0 ? ` · и ещё ${Math.round(rp * 100)}% встреч — редкие` : ''), 124, 172, { size: 8, color: h || rp > 0 ? '#e0c0ff' : cl.dim }); }
+          if (tr.dr) { const D = tr.dr, S0 = P.sectors, md = D.mode, nm = i => S0 && S0.rects[i] ? `${i + 1} «${S0.rects[i].name}»` : '?'; T.draw(ctx, md === 'drive' ? `Едет в природную зону ${nm(D.tgt)} — не ловит · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : md === 'stop' ? `Стоит в зоне ${nm(S0 ? S0.at(tr.x, tr.z) : 0)} ещё ${mmss(D.stopLeft)} · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : md === 'hold' ? `Остановлена, ловит · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : 'Стоит на месте и ловит. «Запустить» — объехать все природные зоны', 124, 149, { size: 8, color: md === 'drive' ? '#ffd070' : '#9ad8ff' }); }
           { const abp = TYPES[tr.type].ab + ((h && h.ab) || 0); if (abp > 0) T.draw(ctx, `Аберранты: ${+(abp * 100).toFixed(1)}% (ловушка ${+(TYPES[tr.type].ab * 100).toFixed(1)}%${h && h.ab ? ` + приманка ${Math.round(h.ab * 100)}%` : ''})`, 124, 184, { size: 8, color: '#ff9ae8' }); }
           // the catch
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
           if (!ids.length) T.draw(ctx, tr.broken ? 'В ловушке никого нет.' : 'Пока никто не прилетел.', 14, 212, { size: 8, color: cl.dim });
-          bs.filter(b => b.id === 'take').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b))); T.draw(ctx, 'Уйдёте с локации, не забрав улов, — он пропадёт', 172, 238, { size: 8, color: '#e0a070' });
+          bs.filter(b => b.id === 'take' || b.id === 'go' || b.id === 'halt').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b))); T.draw(ctx, 'Уйдёте с локации, не забрав улов, — он пропадёт', tr.dr ? 284 : 172, tr.dr ? 232 : 238, { size: 8, color: '#e0a070' });
         } else {
-          T.draw(ctx, 'Чужая ловушка: открыть её и забрать бабочек может только владелец.', 124, 80, { size: 8, color: cl.text }); const f = FL[tr.fl], h = HN[tr.hn]; T.draw(ctx, `Цветы: ${f ? f.ru : 'нет'}`, 124, 100, { size: 8, color: cl.dim }); T.draw(ctx, `Мёд: ${h ? h.ru : 'нет'}`, 124, 112, { size: 8, color: cl.dim });
+          T.draw(ctx, 'Чужая ловушка: открыть её и забрать бабочек может только владелец.', 124, 80, { size: 8, color: cl.text }); const f = FL[tr.fl], h = HN[tr.hn]; T.draw(ctx, `Цветы: ${f ? f.ru : 'нет'}`, 124, 100, { size: 8, color: cl.dim }); T.draw(ctx, `Мёд: ${h ? h.ru : 'нет'}`, 124, 112, { size: 8, color: cl.dim }); if (T0.drive) T.draw(ctx, tr.run ? 'Сейчас едет: пока едет, не ловит' : 'Сейчас стоит и ловит', 124, 126, { size: 8, color: tr.run ? '#ffd070' : '#9ad8ff' });
         }
         if (this.msgT > 0) T.draw(ctx, this.msg, 300, 222, { size: 8, align: 'c', color: '#ffe070' });
       }
@@ -514,6 +645,7 @@ const Traps = (() => {
     else if (f.shape === 'ball') { R(5, 1, 5, 6, c); R(4, 2, 7, 4, c); R(6, 2, 2, 2, '#ffffff55'); }
     else if (f.shape === 'cone') { R(6, 2, 3, 4, '#8a4a20'); R(7, 1, 1, 1, '#a05a28'); for (const [a, b] of [[3, 2], [3, 4], [11, 2], [11, 4], [4, 6], [10, 6], [4, 0], [10, 0]]) R(a, b, 2, 1, c); }
     else if (f.shape === 'spike') { for (let j = 0; j < 7; j++) R(6 + (j % 2), j, 2, 1, c); R(7, 0, 1, 1, c); }
+    else if (f.shape === 'synth') { for (const [a, b, w, h, cc] of [[3, 2, 3, 2, '#18c8f0'], [10, 2, 3, 2, '#c050ff'], [5, 0, 2, 3, '#ff58d8'], [9, 0, 2, 3, '#ff58d8'], [4, 5, 3, 2, '#c050ff'], [9, 5, 3, 2, '#18c8f0'], [6, 1, 3, 4, '#ffe66a']]) R(a, b, w, h, cc); R(7, 3, 1, 1, '#fff'); R(6, 2, 1, 1, '#7affc8'); R(9, 2, 1, 1, '#ff7ac8'); }
     else if (f.shape === 'star') { R(7, 1, 1, 5, c); R(5, 3, 5, 1, c); R(6, 2, 3, 3, c); R(7, 3, 1, 1, '#fff'); }
     else { for (const [a, b] of [[4, 2], [7, 1], [10, 2], [5, 4], [8, 4], [6, 6], [9, 6], [7, 3]]) R(a, b, 2, 2, c); }
   }
@@ -530,5 +662,7 @@ const Traps = (() => {
       const cam = kind === 'fl' ? [0.37, 0.165, 0.5] : id === 'pheromone' ? [0.26, 0.09, 0.7] : [0.3, 0.03, 1.1]; R.close(g, t, cam[0], cam[1], cam[2]); cv = document.createElement('canvas'); cv.width = 100; cv.height = 150; cv.getContext('2d').drawImage(R.close(g, t, cam[0], cam[1], cam[2]), 0, 0); closeCache[key] = cv; g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     return cv;
   }
-  return { allowed, accepts, closeup, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
+  // a bunch of flowers standing on a small dish, for the stalls (static, at the origin; scale it as needed)
+  function bunch(id, r = 0.14) { const g = new THREE.Group(); g.add(cyl(r, r, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], r, 0); return g; }
+  return { allowed, accepts, closeup, bunch, animRover, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
 })();

@@ -82,17 +82,18 @@ function renew(name, why) {
 setInterval(() => { const now = Date.now(); for (const b of BIOMES) if (timed(b) && now - state.born[b] >= REGEN_MS) renew(b, '1 hour'); }, 500);
 
 // butterfly traps stand in a location while their owner is there (nothing of their contents is known to the server: only the count, so nobody else can take it)
-const TRAP_LIFE = { std: 120, str: 360, imp: 240, scr: 426 };
-const trapView = (t, now) => ({ tid: t.tid, owner: t.owner, name: t.name, type: t.type, x: t.x, z: t.z, y: t.y, yaw: t.yaw, age: Math.round((now - t.at) / 1000), fl: t.fl, hn: t.hn, n: t.n });
+const TRAP_LIFE = { std: 120, str: 360, imp: 240, scr: 426, drv: 840 };
+const trapView = (t, now) => ({ tid: t.tid, owner: t.owner, name: t.name, type: t.type, x: t.x, z: t.z, y: t.y, yaw: t.yaw, age: Math.round((now - t.at) / 1000), fl: t.fl, hn: t.hn, n: t.n, run: t.run ? 1 : 0 });
 function trapMsg(me, m) {
   const l = me.loc && locs.get(me.loc); if (!l || !BIOMES.includes(me.loc)) return; l.traps = l.traps || new Map();
   const tid = String(m.tid || '').slice(0, 24); if (!tid) return; const t = l.traps.get(tid);
   if (m.k === 'put') {
     if (t || !TRAP_LIFE[m.type] || (m.type === 'scr') !== (me.loc === 'ocean') || ![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return;
-    const n = { tid, owner: me.id, name: me.name, type: m.type, x: m.x, y: m.y, z: m.z, yaw: m.yaw, at: Date.now(), fl: '', hn: '', n: 0 }; l.traps.set(tid, n); toLoc(me.loc, { t: 'trap', k: 'put', trap: trapView(n, Date.now()) }, me.id);
+    const n = { tid, owner: me.id, name: me.name, type: m.type, x: m.x, y: m.y, z: m.z, yaw: m.yaw, at: Date.now(), fl: '', hn: '', n: 0, run: 0 }; l.traps.set(tid, n); toLoc(me.loc, { t: 'trap', k: 'put', trap: trapView(n, Date.now()) }, me.id);
   } else if (t && t.owner === me.id) {             // only the owner changes or removes a trap
     if (m.k === 'set') { t.fl = String(m.fl || '').slice(0, 24); t.hn = String(m.hn || '').slice(0, 24); toLoc(me.loc, { t: 'trap', k: 'set', tid, fl: t.fl, hn: t.hn }, me.id); }
     else if (m.k === 'cnt') { t.n = Math.max(0, Math.min(40, m.n | 0)); toLoc(me.loc, { t: 'trap', k: 'cnt', tid, n: t.n }, me.id); }
+    else if (m.k === 'mv') { if (t.type !== 'drv' || ![m.x, m.y, m.z, m.yaw].every(Number.isFinite) || Math.abs(m.x) > 600 || Math.abs(m.z) > 600) return; t.x = m.x; t.y = m.y; t.z = m.z; t.yaw = m.yaw; t.run = m.run ? 1 : 0; toLoc(me.loc, { t: 'trap', k: 'mv', tid, x: t.x, y: t.y, z: t.z, yaw: t.yaw, run: t.run }, me.id); }   // the drive trap reports where it is
     else if (m.k === 'del') { l.traps.delete(tid); toLoc(me.loc, { t: 'trap', k: 'del', tid }, me.id); }
     else if (m.k === 'arr') toLoc(me.loc, { t: 'trap', k: 'arr', tid }, me.id);          // a butterfly sets off towards the trap (nothing is stored)
   }
@@ -137,7 +138,7 @@ wss.on('connection', ws => {
     }
     switch (m.t) {
       case 'join': if (Array.isArray(m.maps)) me.maps = m.maps.filter(x => typeof x === 'string').slice(0, 16); joinLoc(me, m.loc); break;
-      case 'pos': if (me.loc) toLoc(me.loc, { t: 'p', id: me.id, x: m.x, y: m.y, z: m.z, yaw: m.yaw, pitch: m.pitch, nz: m.nz, fl: m.fl, sw: m.sw, sp: m.sp, st: m.st, nt: (typeof m.nt === 'string' && /^[a-z_.]{0,40}$/.test(m.nt)) ? m.nt : '' }, me.id); break;
+      case 'pos': if (me.loc) toLoc(me.loc, { t: 'p', id: me.id, x: m.x, y: m.y, z: m.z, yaw: m.yaw, pitch: m.pitch, nz: m.nz, fl: m.fl, sw: m.sw, sp: m.sp, st: m.st, nt: (typeof m.nt === 'string' && /^[a-z0-9_.+,]{0,90}$/.test(m.nt)) ? m.nt : '' }, me.id); break;
       case 'flies': { const l = me.loc && locs.get(me.loc); if (!l || l.host !== me.id || !Array.isArray(m.list)) break; l.lastFlies = Date.now(); const now = Date.now(); for (const [k, t] of l.caught) if (now - t > 15000) l.caught.delete(k); l.flies = m.list.filter(f => !l.caught.has(f[0])); toLoc(me.loc, { t: 'flies', list: l.flies }, me.id); break; }
       case 'catch': { const l = me.loc && locs.get(me.loc); if (!l) break; const fl = l.flies.find(f => f[0] === m.fid); if (!fl || l.caught.has(m.fid)) { send(me, { t: 'catchNo', fid: m.fid }); break; } l.caught.set(m.fid, Date.now()); l.flies = l.flies.filter(f => f[0] !== m.fid); send(me, { t: 'catchOk', fid: m.fid, sp: fl[1] }); toLoc(me.loc, { t: 'caught', fid: m.fid, by: me.id, name: me.name, sp: fl[1] }, me.id); break; }
       case 'mod': { const l = me.loc && locs.get(me.loc); if (!l) break; l.mod = { id: m.id, until: Date.now() + 90000, by: me.name }; toLoc(me.loc, { t: 'mod', id: m.id, by: me.name }); break; }
