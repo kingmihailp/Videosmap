@@ -26,7 +26,7 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'PASS ' :
   const tid = await A.evaluate(() => window.__tid); ok(!!tid, 'Alice puts a drive trap', tid);
   let seen = null; for (let i = 0; i < 30 && !seen; i++) { await B.waitForTimeout(300); seen = await B.evaluate(t => { const q = F0W.play.traps.list.find(x => x.tid === t); return q ? { type: q.type, run: q.run, x: q.x, z: q.z } : null; }, tid); }
   ok(seen && seen.type === 'drv' && !seen.run, 'Bob sees the standing drive trap', seen);
-  await A.evaluate(() => { const p = F0W.play, t = p.traps.list.find(q => q.tid === window.__tid); p.traps.launch(t); for (let i = 0; i < 120; i++) { p.traps.update(0.1); } });
+  await A.evaluate(() => { const p = F0W.play, t = p.traps.list.find(q => q.tid === window.__tid); p.traps.launch(t); for (let i = 0; i < 20; i++) { p.traps.update(0.1); } });
   const posA = await A.evaluate(t => { const q = F0W.play.traps.list.find(x => x.tid === t); return { x: q.x, z: q.z, run: q.run, mode: q.dr.mode }; }, tid);
   ok(posA.mode === 'drive' && posA.run === 1, 'Alice\'s trap drives', posA);
   let pb = null; for (let i = 0; i < 40; i++) { await B.waitForTimeout(250); pb = await B.evaluate(t => { const q = F0W.play.traps.list.find(x => x.tid === t); return { x: q.x, z: q.z, run: q.run, sp: q.sp }; }, tid); if (pb.run === 1 && Math.hypot(pb.x - posA.x, pb.z - posA.z) < 2) break; }

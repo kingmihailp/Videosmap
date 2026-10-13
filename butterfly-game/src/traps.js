@@ -430,38 +430,40 @@ const Traps = (() => {
     remoteMove(t, m) { if (![m.x, m.y, m.z, m.yaw].every(Number.isFinite)) return; t.tx = m.x; t.ty = m.y; t.tz = m.z; t.tyaw = m.yaw; const r = m.run ? 1 : 0; if (r && !t.run) this.clearFliers(t); t.run = r; if (Math.hypot(t.tx - t.x, t.tz - t.z) > 25) this.place2(t, t.tx, t.ty, t.tz, t.tyaw); }
     place2(t, x, y, z, yaw) { t.x = x; t.y = y; t.z = z; t.yaw = yaw; if (t.col) { t.col.x = x; t.col.z = z; } if (t.group) { t.group.position.set(x, y, z); t.group.rotation.set(t.tp, yaw, t.tr, 'YXZ'); } if (t.label) t.label.position.set(x, y + 2.7, z); }
     // can the rover stand / drive here
-    okAt(t, x, z, clear = 0.95) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; return true; }
+    deckOf(x, z) { const w = this.world; if (!w.bridges) return null; for (const b of w.bridges) { if (b.state === 'fall' || b.state === 'gone' || b.Lh === undefined) continue; const u = (x - b.cx) * b.nx + (z - b.cz) * b.nz, v = (x - b.cx) * b.tx + (z - b.cz) * b.tz; if (Math.abs(u) < b.Lh && Math.abs(v) < b.hw) return b; } return null; }
+    okAt(t, x, z, clear = 0.95, slope = this.world.bridges ? 1.1 : 0.75) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && !this.deckOf(x, z) && w.slopeAt(x, z) > slope) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; return true; }
     // a point in a zone the rover can reach (the middle of it, or the nearest free spot to it)
     zoneSpot(t, i) { const S = this.play.sectors, q = S.rects[i], cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2; for (let r = 0; r < 40; r += 1.5) for (let k = 0; k < Math.max(1, Math.round(r * 1.2)); k++) { const a = k / Math.max(1, Math.round(r * 1.2)) * 6.2832, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (S.at(x, z) === i && this.okAt(t, x, z) && !(this.world.inWater && this.world.inWater(x, z, 1.2))) return { x, z }; } return { x: cx, z: cz }; }
     nextZone(t) { const S = this.play.sectors, D = t.dr; let best = -1, bd = 1e9; S.rects.forEach((q, i) => { if (D.visited.includes(i)) return; const d = Math.hypot((q.x0 + q.x1) / 2 - t.x, (q.z0 + q.z1) / 2 - t.z); if (d < bd) { bd = d; best = i; } }); return best; }
     // how long it stands in a zone: 4 minutes at most, less when the rest of its life has to cover the remaining zones too
     stopFor(t) { const S = this.play.sectors, D = t.dr, rem = S.rects.length - D.visited.length, left = t.life - t.t; return clamp((left - rem * (DRIVE.leg / DRIVE.speed + 8)) / (rem + 1), DRIVE.stopMin, DRIVE.stopMax); }
     // ---- path finding: A* over a 1 m grid of the location (water, steep ground, trees and rocks with the rover's clearance are walls), then the path is pulled straight
-    planPath(t, gx, gz, clear = 1.4) {
-      const w = this.world, R = w.R, CS = 1, N = Math.ceil(2 * R / CS) + 2, H = new Map(), key = (a, b) => (a + 400) * 1000 + (b + 400);
+    planPath(t, gx, gz, clear = 1.4, weak = false, zone) {       // with zone given the goal is not fixed: the reachable dry spot of that zone nearest to its middle (path.goal)
+      const w = this.world, R = w.R, hl = !!w.bridges, CS = hl ? 0.6 : 1, N = Math.ceil(2 * R / CS) + 2, H = new Map(), key = (a, b) => (a + 400) * 1000 + (b + 400);
       for (const c of w.colliders) { if (c === t.col) continue; const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4)); let l = H.get(k); if (!l) H.set(k, l = []); l.push(c); }
-      const freeAt = (x, z) => { if (Math.hypot(x, z) > R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && w.slopeAt(x, z) > 0.75) return false;
+      const deckOf = (x, z) => { if (!hl) return null; for (const b of w.bridges) { if (b.state === 'fall' || b.state === 'gone' || b.Lh === undefined) continue; const u = (x - b.cx) * b.nx + (z - b.cz) * b.nz, v = (x - b.cx) * b.tx + (z - b.cz) * b.tz; if (Math.abs(u) < b.Lh && Math.abs(v) < b.hw) return { b, m: b.hw - Math.abs(v) }; } return null; };
+      const freeAt = (x, z) => { if (Math.hypot(x, z) > R - 2) return false; const dk = deckOf(x, z); if (dk) { if (dk.b.weak && !weak) return false; return dk.m > 0.18; }       // a bridge: only along its middle (the rover is 1.4 m wide, the planks 1.76 m); the worn ones snap, so they are the last resort
+        if (w.canWalk && !w.canWalk(x, z)) return false; if (w.slopeAt && w.slopeAt(x, z) > (hl ? 1.1 : 0.75)) return false;
         const a = Math.floor(x / 4), b = Math.floor(z / 4); for (let i = a - 1; i <= a + 1; i++) for (let j = b - 1; j <= b + 1; j++) { const l = H.get(key(i, j)); if (l) for (const c of l) if (Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; } return true; };
       const memo = new Int8Array(N * N), cx = i => i * CS - R, idx = (x, z) => [Math.round((x + R) / CS), Math.round((z + R) / CS)];
       const free = (i, j) => { if (i < 0 || j < 0 || i >= N || j >= N) return false; const k = i * N + j; if (!memo[k]) memo[k] = freeAt(cx(i), cx(j)) ? (w.inWater && w.inWater(cx(i), cx(j), 0) ? 3 : 1) : 2; return memo[k] !== 2; }, wet = (i, j) => memo[i * N + j] === 3 ? 3.5 : 1;       // the rover is amphibious: water is passable, only slow, so it is avoided when there is a dry way
       let [si, sj] = idx(t.x, t.z); let [ti, tj] = idx(gx, gz);
       if (!free(si, sj)) { let f = false; for (let r = 1; r < 8 && !f; r++) for (let a = -r; a <= r && !f; a++) for (let b = -r; b <= r && !f; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && free(si + a, sj + b)) { si += a; sj += b; f = true; } if (!f) return null; }
-      if (!free(ti, tj)) { let f = false; for (let r = 1; r <= 2 && !f; r++) for (let a = -r; a <= r && !f; a++) for (let b = -r; b <= r && !f; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && free(ti + a, tj + b)) { ti += a; tj += b; gx = cx(ti); gz = cx(tj); f = true; } if (!f) return clear > 1 ? this.planPath(t, gx, gz, 0.95) : null; }       // (the goal cell itself is blocked: take a free one next to it)
+      if (zone === undefined && !free(ti, tj)) { let f = false; for (let r = 1; r <= 2 && !f; r++) for (let a = -r; a <= r && !f; a++) for (let b = -r; b <= r && !f; b++) if (Math.max(Math.abs(a), Math.abs(b)) === r && free(ti + a, tj + b)) { ti += a; tj += b; gx = cx(ti); gz = cx(tj); f = true; } if (!f) return clear > 1 ? this.planPath(t, gx, gz, 0.95, weak, zone) : null; }       // (the goal cell itself is blocked: take a free one next to it)
       const G = new Float32Array(N * N).fill(1e9), from = new Int32Array(N * N).fill(-1), heap = [], push = (k, f) => { heap.push([f, k]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } }, pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { let l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-      const hh = (i, j) => Math.hypot(i - ti, j - tj), s0 = si * N + sj; G[s0] = 0; push(s0, hh(si, sj)); let found = false, n = 0;
-      const done = new Uint8Array(N * N); while (heap.length && n++ < 200000) { const [, k] = pop(), i = (k / N) | 0, j = k % N; if (done[k]) continue; done[k] = 1; if (i === ti && j === tj) { found = true; break; }
-        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { if (!a && !b) continue; const ni = i + a, nj = j + b; if (!free(ni, nj)) continue; if (a && b && (!free(i + a, j) || !free(i, j + b))) continue; const g = G[k] + (a && b ? 1.414 : 1) * wet(ni, nj), nk = ni * N + nj; if (g < G[nk]) { G[nk] = g; from[nk] = k; push(nk, g + hh(ni, nj)); } } }
-      if (!found) return clear > 1 ? this.planPath(t, gx, gz, 0.95) : null;
+      const hh = (i, j) => zone === undefined ? Math.hypot(i - ti, j - tj) : 0, s0 = si * N + sj; G[s0] = 0; push(s0, hh(si, sj)); let found = false, n = 0;
+      const done = new Uint8Array(N * N); while (heap.length && n++ < (hl ? 600000 : 200000)) { const [, k] = pop(), i = (k / N) | 0, j = k % N; if (done[k]) continue; done[k] = 1; if (zone === undefined && i === ti && j === tj) { found = true; break; }
+        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { if (!a && !b) continue; const ni = i + a, nj = j + b; if (!free(ni, nj)) continue; if (a && b && (hl ? (!free(i + a, j) && !free(i, j + b)) : (!free(i + a, j) || !free(i, j + b)))) continue; const g = G[k] + (a && b ? 1.414 : 1) * wet(ni, nj), nk = ni * N + nj; if (g < G[nk]) { G[nk] = g; from[nk] = k; push(nk, g + hh(ni, nj)); } } }
+      if (zone !== undefined) { const S = this.play.sectors, q = S.rects[zone], mx = (q.x0 + q.x1) / 2, mz = (q.z0 + q.z1) / 2; let best = 1e9; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const k = i * N + j; if (!done[k] || memo[k] !== 1) continue; const x = cx(i), z = cx(j); if (S.at(x, z) !== zone || x < q.x0 + 3.5 || x > q.x1 - 3.5 || z < q.z0 + 3.5 || z > q.z1 - 3.5) continue; const d = Math.hypot(x - mx, z - mz); if (d < best) { best = d; ti = i; tj = j; found = true; } } if (found) { gx = cx(ti); gz = cx(tj); } }
+      if (!found) return clear > 1 ? this.planPath(t, gx, gz, 0.95, weak, zone) : (hl && !weak ? this.planPath(t, gx, gz, 1.4, true, zone) : null);
       let pts = [], k = ti * N + tj; while (k >= 0) { pts.push({ x: cx((k / N) | 0), z: cx(k % N) }); k = from[k]; } pts.reverse();
       const los = (a, b) => { const d = Math.hypot(b.x - a.x, b.z - a.z), m = Math.ceil(d / 0.6); for (let q = 1; q < m; q++) if (!freeAt(a.x + (b.x - a.x) * q / m, a.z + (b.z - a.z) * q / m)) return false; return true; };
       const out = [pts[0]]; let a = 0; while (a < pts.length - 1) { let b = pts.length - 1; while (b > a + 1 && !los(pts[a], pts[b])) b--; out.push(pts[b]); a = b; }
-      out[out.length - 1] = { x: gx, z: gz }; return out.slice(1);
+      out[out.length - 1] = { x: gx, z: gz }; const res = out.slice(1); res.goal = { x: gx, z: gz }; return res;
     }
     // choose the spot to drive to in zone i and plan the way; a few other spots are tried when the middle of the zone cannot be reached
     setTarget(t, i) {
-      const S = this.play.sectors, q = S.rects[i], D = t.dr, tries = [this.zoneSpot(t, i)]; for (let k = 0; k < 9; k++) tries.push({ x: q.x0 + (q.x1 - q.x0) * (0.15 + 0.7 * Math.random()), z: q.z0 + (q.z1 - q.z0) * (0.15 + 0.7 * Math.random()) });
-      for (const sp of tries) { if (S.at(sp.x, sp.z) !== i || !this.okAt(t, sp.x, sp.z) || (this.world.inWater && this.world.inWater(sp.x, sp.z, 1.2))) continue; const path = this.planPath(t, sp.x, sp.z); if (path) { D.tgt = i; D.wp = sp; D.path = path; D.pi = 0; return true; } }
-      return false;
+      const D = t.dr, path = this.planPath(t, 0, 0, 1.4, false, i); if (!path || !path.goal) return false; D.tgt = i; D.wp = path.goal; D.path = path; D.pi = 0; return true;
     }
     launch(t) {
       const P = this.play, S = P.sectors, D = t.dr; if (!t.mine || !D || t.broken) return false; if (!S) { P.toast('Здесь нет природных зон: ловушка с приводом стоит на месте', 3.5); return false; }
@@ -477,18 +479,22 @@ const Traps = (() => {
     }
     // the rover drives towards its waypoint: turns on the spot, goes round trees and water, gives up after being stuck for a while
     driveStep(t, dt) {
-      const D = t.dr, w = this.world; let dx = D.wp.x - t.x, dz = D.wp.z - t.z; const d = Math.hypot(dx, dz);
+      const D = t.dr, w = this.world;
+      if (w.canWalk && !w.canWalk(t.x, t.z)) { const lb = D.lastDeck; if (lb && (lb.state === 'fall' || lb.state === 'gone') && D.safe) { this.place2(t, D.safe.x, w.groundAt(D.safe.x, D.safe.z), D.safe.z, t.yaw); this.play.toast('Мост под ловушкой не выдержал — она вернулась на твёрдую землю', 4, true); D.stuck = 99; D.lastDeck = null; } }       // (a worn bridge snapped under it; a thin crack at a bridge end is just driven over)
+      else { const dk = this.deckOf(t.x, t.z); D.lastDeck = dk; if (!dk || !dk.weak) { if (!D.safe || Math.hypot(D.safe.x - t.x, D.safe.z - t.z) > 3) D.safe = { x: t.x, z: t.z }; } }
+      const SM = w.bridges ? 1.65 : 1.2;       // driving tolerates steeper ground than planning does (the plan keeps a margin)
+      let dx = D.wp.x - t.x, dz = D.wp.z - t.z; const d = Math.hypot(dx, dz);
       if (d < DRIVE.near) { this.arrive(t, false); return; }
-      if (d < D.best - 0.4) { D.best = d; D.stuck = 0; } else D.stuck += dt;
+      { const q0 = D.path && D.path[D.pi] ? Math.hypot(D.path[D.pi].x - t.x, D.path[D.pi].z - t.z) : d; if (D.pi !== D.lastPi) { D.lastPi = D.pi; D.best = 1e9; } if (q0 < D.best - 0.3) { D.best = q0; D.stuck = 0; } else D.stuck += dt; }       // progress = getting closer to the next point of the path (a path may wind away from the goal, e.g. round a gorge to a bridge)
       if (D.stuck > 3.5) { D.stuck = 0; D.best = 1e9; D.replans = (D.replans || 0) + 1; const path = D.replans > 6 ? null : this.planPath(t, D.wp.x, D.wp.z, D.replans > 2 ? 0.95 : 1.4); if (path) { D.path = path; D.pi = 0; } else if (D.replans > 6) { this.arrive(t, true); return; } }
-      if (D.path) { while (D.pi < D.path.length - 1 && Math.hypot(D.path[D.pi].x - t.x, D.path[D.pi].z - t.z) < 1.6) D.pi++; const q = D.path[D.pi]; dx = q.x - t.x; dz = q.z - t.z; }
+      if (D.path) { const wr = w.bridges ? 0.8 : 1.6; while (D.pi < D.path.length - 1 && Math.hypot(D.path[D.pi].x - t.x, D.path[D.pi].z - t.z) < wr) D.pi++; const q = D.path[D.pi]; dx = q.x - t.x; dz = q.z - t.z; }
       let want = Math.atan2(-dx, -dz); D.biasT -= dt;
       const fwd = y => [-Math.sin(y), -Math.cos(y)], ahead = (y, L) => { const f = fwd(y); return this.okAt(t, t.x + f[0] * L, t.z + f[1] * L); };
       if (D.biasT > 0) want += D.bias;
       else if (!D.path && !ahead(want, 1.6)) { for (const o of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.3, -2.3, 3.14]) if (ahead(want + o, 1.6)) { D.bias = o; D.biasT = 1.0; want += o; break; } }
       const df = angDiff(want, t.yaw), turn = clamp(df, -DRIVE.turn * dt, DRIVE.turn * dt); t.yaw += turn;
       const al = Math.abs(angDiff(want, t.yaw)), v = DRIVE.speed * (w.inWater && w.inWater(t.x, t.z, 0) ? 0.55 : 1) * clamp(1 - al / 1.1) * clamp(d / 3.5 + 0.35); let moved = 0;
-      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz, 0.5) || !this.okAt(t, t.x, t.z, 0.5)) { moved = v;       // (a rover that came to rest hard by a tree may always drive off)
+      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz, 0.5, SM) || !this.okAt(t, t.x, t.z, 0.5, SM) || (w.bridges && this.okAt(t, t.x + f[0] * 1.2, t.z + f[1] * 1.2, 0.5, SM))) {       // (in the highlands a thin crack between a bridge and the ground is driven over when firm ground lies just beyond it) moved = v;       // (a rover that came to rest hard by a tree may always drive off)
          t.x = nx; t.z = nz; } else D.stuck += dt * 2; }
       D.sp = moved; t.y = w.groundAt(t.x, t.z); this.tilt(t); this.place2(t, t.x, t.y, t.z, t.yaw);
     }
