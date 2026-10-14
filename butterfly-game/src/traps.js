@@ -629,7 +629,8 @@ const Traps = (() => {
     toMap(x, z) { const m = this.mapRect(), R = this.play.world.R; return [m.x + (x / R + 1) / 2 * m.w, m.y + (z / R + 1) / 2 * m.h]; },
     click(x, y) {
       if (this.mode === 'route' && this.t && this.play.traps.list.includes(this.t) && UIK.hit(this.mapRect(), x, y)) {
-        const [wx, wz] = this.toWorld(x, y), r = this.play.traps.routeAdd(this.t, wx, wz);
+        let [wx, wz] = this.toWorld(x, y); const L = this.play.world.storm || 0; if (L > 0.3) { wx += (Math.random() - 0.5) * 50 * L; wz += (Math.random() - 0.5) * 50 * L; }       // a sandstorm: the navigation unit makes mistakes
+        const r = this.play.traps.routeAdd(this.t, wx, wz);
         if (r === 'ok') { Snd.sfx.click(); this.say(`Точка ${this.t.dr.route.length} поставлена`); } else { Snd.sfx.deny(); this.say(r === 'full' ? `Не больше ${DRIVE.maxPts} точек` : 'Сюда не проехать: поставьте точку рядом'); } return null;
       }
       const bs = this.layout(), b = bs.find(q => !q.disabled && UIK.hit(q, x, y)); if (!b) return null; const P = this.play, S = P.traps;
@@ -658,7 +659,10 @@ const Traps = (() => {
       } else if (this.t && this.mode === 'route') {
         const tr = this.t, D = tr.dr, S0 = P.sectors, M = this.mapRect(), R = P.world.R;
         UIK.panel(ctx, 6, 6, 468, 258, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Маршрут ловушки', 14, 12, { size: 10, color: cl.gold }); T.draw(ctx, 'Нажимайте на карту: ловушка поедет по точкам по порядку', 14, 22, { size: 8, color: cl.dim });
-        ctx.fillStyle = '#0a120c'; ctx.fillRect(M.x - 2, M.y - 2, M.w + 4, M.h + 4); ctx.imageSmoothingEnabled = false; if (S0) ctx.drawImage(Sectors.mapImage(S0, M.w, -1, P.world), M.x, M.y); else { ctx.fillStyle = '#4a6a3a'; ctx.fillRect(M.x, M.y, M.w, M.h); }
+        ctx.fillStyle = '#0a120c'; ctx.fillRect(M.x - 2, M.y - 2, M.w + 4, M.h + 4); ctx.imageSmoothingEnabled = false; const SL = P.world.storm || 0, img = S0 ? Sectors.mapImage(S0, M.w, -1, P.world) : null;
+        if (!img) { ctx.fillStyle = '#4a6a3a'; ctx.fillRect(M.x, M.y, M.w, M.h); }
+        else if (SL < 0.05) ctx.drawImage(img, M.x, M.y);
+        else { ctx.save(); ctx.beginPath(); ctx.rect(M.x, M.y, M.w, M.h); ctx.clip(); const q = Math.floor(t * 9); for (let yy = 0; yy < M.h; yy += 4) { const sl = (((yy * 13 + q * 7) % 5) === 0 || Math.sin(yy * 0.3 + t * 3) > 1 - 0.8 * SL) ? Math.round(Math.sin(yy * 3 + t * 40) * (6 + 40 * SL)) : 0; ctx.drawImage(img, 0, yy, M.w, 4, M.x + sl, M.y + yy, M.w, 4); } ctx.restore(); }
         // the route: dashes from the trap through the points, numbered markers, the trap and the player
         const pts = [[tr.x, tr.z]].concat(D.route.map(q => [q.x, q.z])); for (let k = 0; k < pts.length - 1; k++) { const [ax, ay] = this.toMap(pts[k][0], pts[k][1]), [bx, by] = this.toMap(pts[k + 1][0], pts[k + 1][1]), nn = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 4)); for (let i = 0; i < nn; i += 1) if (i % 2 === 0) { const qx = Math.round(ax + (bx - ax) * i / nn), qy = Math.round(ay + (by - ay) * i / nn); ctx.fillStyle = '#10201c'; ctx.fillRect(qx - 1, qy - 1, 4, 4); ctx.fillStyle = '#ffe070'; ctx.fillRect(qx, qy, 2, 2); } }
         D.route.forEach((q, i) => { const [mx, my] = this.toMap(q.x, q.z), cur = md0(D, i); ctx.fillStyle = '#10201c'; ctx.fillRect(mx - 4, my - 4, 9, 9); ctx.fillStyle = cur ? '#ffd070' : '#e8e0c0'; ctx.fillRect(mx - 3, my - 3, 7, 7); T.draw(ctx, String(i + 1), mx, my - 3, { size: 8, align: 'c', color: '#10201c' }); });
@@ -668,6 +672,15 @@ const Traps = (() => {
         { let yy = 36; for (const part of `Точек: ${D.route.length} из ${DRIVE.maxPts}.\nПуть: около ${Math.round(L)} м (≈ ${mmss(L / DRIVE.speed * 1.3)} в дороге).\nВ каждой точке она стоит и ловит, потом едет дальше. Точка — в любом месте локации (если не проехать, сдвинется рядом).\nЗелёный квадрат — ловушка, белая точка — вы.`.split('\n')) yy += T.para(ctx, part, 252, yy, 214, { size: 8, color: cl.text, lh: 10 }) + 4; }
         for (const b of bs.slice(1)) UIK.btn(ctx, b, !b.disabled && hv(b));
         if (this.msgT > 0) T.draw(ctx, this.msg, 252, 166, { size: 8, color: '#ffe070' });
+        if (SL > 0.05) {         // a sandstorm: the whole menu glitches (red tint, static, torn lines, error messages kept inside the map)
+          const q = Math.floor(t * 7); ctx.fillStyle = `rgba(255,40,30,${0.22 * SL})`; ctx.fillRect(6, 6, 468, 258);
+          for (let i = 0, n = Math.round(900 * SL); i < n; i++) { ctx.fillStyle = Math.random() < 0.5 ? 'rgba(220,255,220,0.5)' : 'rgba(0,0,0,0.5)'; ctx.fillRect(M.x + Math.random() * M.w | 0, M.y + Math.random() * M.h | 0, 2, 1); }
+          for (let i = 0, n = Math.round(10 * SL); i < n; i++) { ctx.fillStyle = 'rgba(255,90,70,0.45)'; ctx.fillRect(6, 6 + Math.random() * 258 | 0, 468, 1 + (Math.random() * 3 | 0)); }
+          ctx.save(); ctx.beginPath(); ctx.rect(M.x, M.y, M.w, M.h); ctx.clip(); const junk = ['ОШИБКА НАВИГАЦИИ', 'НЕТ СИГНАЛА GPS', 'ERR 0x' + ((q * 2654435761 >>> 8) & 0xffff).toString(16).toUpperCase().padStart(4, '0'), 'KERNEL PANIC', 'СБОЙ ДАННЫХ'];
+          for (let k = 0; k < 4; k++) if (Math.sin(t * 4 + k * 2.1) > -0.5 + 0.7 * (1 - SL)) T.draw(ctx, junk[(q + k * 2) % junk.length], M.x + 4 + ((q * 17 + k * 41) % 60), M.y + 10 + k * 52 + ((q * 7 + k * 11) % 30), { size: 8, color: k % 2 ? '#ff5040' : '#ffd050', shadow: '#000' }); ctx.restore();
+          if (Math.sin(t * 3.3) > 0.2) T.draw(ctx, 'ОШИБКА НАВИГАЦИИ', 14, 22, { size: 8, color: '#ff6050' });
+          if (SL > 0.5 && Math.sin(t * 2.1) > 0.7) { ctx.fillStyle = '#05100c'; ctx.fillRect(M.x, M.y, M.w, M.h); for (let i = 0; i < 1500; i++) { const v = Math.random() * 255 | 0; ctx.fillStyle = `rgb(${v},${v},${v})`; ctx.fillRect(M.x + Math.random() * M.w | 0, M.y + Math.random() * M.h | 0, 2, 1); } }
+        }
       } else if (this.t) {
         const tr = this.t, T0 = TYPES[tr.type], mine = this.mode === 'manage';
         UIK.panel(ctx, 6, 6, 468, 258, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, mine ? T0.ru : `Ловушка игрока ${tr.name}`, 14, 12, { size: 10, color: cl.gold }); T.draw(ctx, T0.real, 14, 26, { size: 8, color: cl.dim });

@@ -210,7 +210,7 @@ const Gear = (() => {
     }
     // the model's lights: the auto LED (green when on), the infrared lens (bright while it sweeps), map screen flicker
     const M = play.netModel && play.netModel.mats; if (M) {
-      if (M.autoLed) M.autoLed.color.set(rt.auto ? '#4aff6a' : '#c83a2a'); if (M.irLens) M.irLens.color.set(rt.ir.t >= 0 ? '#ffffff' : '#ff3a20'); if (M.mapScreen && M.mapScreen.color) M.mapScreen.color.setScalar(0.8 + Math.sin(play.t * 31) * 0.1);
+      if (M.autoLed) M.autoLed.color.set(rt.auto ? '#4aff6a' : '#c83a2a'); if (M.irLens) M.irLens.color.set(rt.ir.t >= 0 ? '#ffffff' : '#ff3a20'); if (M.mapScreen && M.mapScreen.color) { const st = (play.world && play.world.storm) || 0; if (st > 0.05) M.mapScreen.color.setRGB(1, 0.08 + 0.1 * Math.random(), 0.06).multiplyScalar(0.55 + 0.45 * (Math.sin(play.t * 23) > -0.3 ? 1 : 0.35) * st + 0.2 * (1 - st)); else M.mapScreen.color.setScalar(0.8 + Math.sin(play.t * 31) * 0.1); }       // a sandstorm: the screen of the module on the net turns red and flickers
       if (M.stud) M.stud.forEach((m, i) => m.color.set((Math.sin(play.t * 18 + i * 1.7) > 0.2) ? '#d8f8ff' : '#4a8ac8')); if (M.beads) M.beads.color.set(Math.sin(play.t * 3) > 0 ? '#d0a0ff' : '#a070e8');
       if (M.cells) { const k = 1 - clamp(rt.cd / rt.cdMax); M.cells.forEach((m, i) => m.color.set(k > (i + 1) / 4 - 0.01 ? '#58d8ff' : '#1a3a48')); } if (M.needle && play.netStats.cannon) M.needle.rotation.z = -0.9 + (1 - clamp(rt.cd / rt.cdMax)) * 1.8;
     }
@@ -244,12 +244,17 @@ const Gear = (() => {
     const bar = (t * 26) % 120 - 20; cx.fillStyle = 'rgba(160,255,190,0.11)'; cx.fillRect(0, bar, 78, 9); cx.fillStyle = 'rgba(160,255,190,0.07)'; cx.fillRect(0, bar + 9, 78, 4);
     for (let i = 0, n = 70 + Math.round(500 * L); i < n; i++) { cx.fillStyle = Math.random() < 0.5 ? 'rgba(200,255,210,0.55)' : 'rgba(0,0,0,0.5)'; cx.fillRect((Math.random() * 78) | 0, (Math.random() * 78) | 0, 1, 1); }
     if (glitch) { cx.fillStyle = 'rgba(180,255,200,0.35)'; cx.fillRect(0, ((t * 97) % 78) | 0, 78, 1); }
+    const bad = L > 0.05 && (L > 0.4 || Math.sin(t * 6) > 0.2), qk = Math.floor(t * 7);
+    if (bad) {          // the error messages live on the little screen itself (kept inside it)
+      const junk = ['ERR 0x' + ((qk * 2654435761 >>> 8) & 0xffff).toString(16).toUpperCase().padStart(4, '0'), 'НЕТ СИГНАЛА', 'СБОЙ НАВИГ.', 'GPS ???', 'ОШИБКА', 'PANIC']; cx.save(); cx.beginPath(); cx.rect(0, 0, 78, 78); cx.clip();
+      for (let k = 0; k < 3; k++) { const m = (qk + k * 3) % junk.length, w = T.width(junk[m], 8); if (Math.sin(t * 5 + k * 2) > -0.4 + 0.6 * (1 - L)) T.draw(cx, junk[m], clamp(2 + ((qk * 17 + k * 29) % 12), 1, Math.max(1, 76 - w)), 8 + k * 24 + ((qk * 7 + k * 5) % 10), { size: 8, color: k % 2 ? '#ff5040' : '#ffd050', shadow: '#000' }); }
+      cx.restore();
+    }
     ctx.imageSmoothingEnabled = false; ctx.drawImage(crt, X + 7, Y + 7, 78, 78);
     // the bezel: rounded glass corners, a dim glare, the zone caption
     ctx.fillStyle = '#1a1c20'; for (const [ax, ay] of [[0, 0], [W - 5, 0], [0, H - 5], [W - 5, H - 5]]) { ctx.fillRect(X + ax, Y + ay, 5, 5); }
     ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(X + 9, Y + 9, 22, 3); ctx.fillRect(X + 9, Y + 12, 3, 8);
-    const here = S.at(play.player.pos.x, play.player.pos.z), bad = L > 0.05 && (L > 0.4 || Math.sin(t * 6) > 0.2), qk = Math.floor(t * 7);
-    if (bad) { const junk = ['ERR 0x' + ((qk * 2654435761 >>> 8) & 0xffff).toString(16).toUpperCase().padStart(4, '0'), 'НЕТ СИГНАЛА', 'СБОЙ НАВИГАЦИИ', 'GPS ???', 'ОШИБКА ДАННЫХ', 'KERNEL PANIC']; for (let k = 0; k < 3; k++) { const m = (qk + k * 3) % junk.length; if (Math.sin(t * 5 + k * 2) > -0.4 + 0.6 * (1 - L)) T.draw(ctx, junk[m], X + 10 + ((qk * 17 + k * 29) % 30), Y + 12 + k * 26 + ((qk * 7 + k * 5) % 12), { size: 8, color: k % 2 ? '#ff5040' : '#ffd050', shadow: '#000' }); } }
+    const here = S.at(play.player.pos.x, play.player.pos.z);
     T.draw(ctx, bad ? (Math.floor(t * 4) % 2 ? 'ЗОНА ?? · ERROR' : 'ЗОНА 0x' + ((qk * 40503) & 0xfff).toString(16).toUpperCase() + ' · ???') : `ЗОНА ${here + 1} · ${S.rects[here].name}`, X + W / 2, Y + H + 2, { size: 8, align: 'c', color: bad ? '#ff6050' : '#7affa0' });
     ctx.fillStyle = Math.floor(t * 1.2) % 2 ? '#3aff6a' : '#1a6a30'; ctx.fillRect(X + W - 4, Y + H + 4, 2, 2);
   }
