@@ -44,6 +44,11 @@ const Panorama = (() => {
       if (L.snow && L.snowY !== undefined) { const se = Math.min(SH, Math.max(hy, L.snowY)); ctx.fillStyle = L.snow; if (hy < se) ctx.fillRect(x, hy, 1, se - hy); ctx.fillStyle = L.col; ctx.fillRect(x, se, 1, SH - se); continue; }
       if (L.terrace) { for (let y = hy; y < SH; y += 1) { ctx.fillStyle = ((y - hy) >> 2) % 2 ? L.col : L.terrace; ctx.fillRect(x, y, 1, 1); } continue; }
       ctx.fillStyle = L.col; ctx.fillRect(x, hy, 1, SH - hy);
+      { const lt = L.lt || (L.lt = rgb(mixc(base, [255, 255, 230], 0.22))), dk = L.dk || (L.dk = rgb(mixc(base, [0, 10, 30], 0.2))), slope = ridgeY(L, wx + 2) - ridgeY(L, wx - 2);
+        ctx.fillStyle = slope < -0.5 ? lt : dk; ctx.fillRect(x, hy, 1, 2);                                  // the lit side of a slope and its shaded side
+        const k = Math.floor(wx), h1 = hash(k * 0.37 + L.base), h2 = hash(k * 0.91 + 3 + L.base);
+        if (h1 < 0.5) { ctx.fillStyle = h2 < 0.5 ? lt : dk; ctx.fillRect(x, hy + 3 + ((h2 * 40) | 0), 1, 1 + (h1 < 0.1 ? 1 : 0)); }           // texture: tufts and shade flecks
+        if (L.par > 0.2 && h2 < 0.08) { ctx.fillStyle = dk; ctx.fillRect(x, hy + 8 + ((h1 * 30) | 0), 2, 1); } }
       if (L.rim) { ctx.fillStyle = L.rim; ctx.fillRect(x, hy, 1, 1); }
     }
   }
@@ -75,6 +80,10 @@ const Panorama = (() => {
     chalet(ctx, x, y, h, w, c1, c2) { ctx.fillStyle = c1; R_(ctx, x - w / 2, y - h * 0.6, w, h * 0.6); ctx.fillStyle = c2; for (let j = 0; j < h * 0.4; j++) { const hw = Math.round(w * 0.62 * (1 - j / (h * 0.4))); ctx.fillRect(x - hw, y - h * 0.6 - j, hw * 2 + 1, 1); } ctx.fillStyle = '#f4d878'; R_(ctx, x - 2, y - h * 0.4, 3, 3); },
     ruin(ctx, x, y, h, w, c1) { ctx.fillStyle = c1; for (let k = 0; k < 4; k++) { const hh = h * (k === 2 ? 0.5 : 1) * (0.85 + (k % 2) * 0.15); R_(ctx, x + k * 6 - 9, y - hh, 3, hh); R_(ctx, x + k * 6 - 10, y - hh - 1, 5, 1); } R_(ctx, x - 10, y - h - 3, 12, 2); },
     reed(ctx, x, y, h, w, c1, c2, t, i) { ctx.fillStyle = c1; const sw = Math.sin(t * 1.5 + i); for (let j = 0; j < h; j++) ctx.fillRect(Math.round(x + sw * (j / h) ** 2 * 2), y - j, 1, 1); ctx.fillStyle = c2; ctx.fillRect(Math.round(x + sw * 2) - 1, y - h - 1, 3, 3); },
+    rock(ctx, x, y, h, w, c1, c2) { ctx.fillStyle = c1; blob(ctx, x, y - h * 0.4, w * 0.5, h * 0.4); ctx.fillStyle = c2 || c1; blob(ctx, x - w * 0.12, y - h * 0.55, w * 0.25, h * 0.18); },
+    patch(ctx, x, y, h, w, c1, c2, t, i) { for (let k = 0; k < 7; k++) { const px = x + (k - 3) * 3 + (k % 2), py = y - (k * 5) % 4, s = Math.round(Math.sin(t * 1.4 + i + k)); ctx.fillStyle = '#2e5a24'; ctx.fillRect(px, py - 3, 1, 3); ctx.fillStyle = k % 3 ? c1 : c2; ctx.fillRect(px - 1 + s, py - 5, 3, 2); } },
+    fence(ctx, x, y, h, w, c1) { ctx.fillStyle = c1; for (let k = 0; k < 6; k++) R_(ctx, x + k * 6, y - h, 1, h); R_(ctx, x, y - h + 2, 31, 1); R_(ctx, x, y - h * 0.4, 31, 1); },
+    hut(ctx, x, y, h, w, c1, c2) { ctx.fillStyle = c1; R_(ctx, x - w / 2, y - h * 0.55, w, h * 0.55); ctx.fillStyle = c2; for (let j = 0; j < h * 0.45; j++) { const hw = Math.round(w * 0.65 * (1 - j / (h * 0.45))); ctx.fillRect(x - hw, y - h * 0.55 - j, hw * 2 + 1, 1); } ctx.fillStyle = '#f4d878'; R_(ctx, x - 1, y - h * 0.35, 2, 2); },
     stump(ctx, x, y, h, w, c1) { ctx.fillStyle = c1; R_(ctx, x - w / 2, y - h, w, h); },
   };
 
@@ -116,8 +125,23 @@ const Panorama = (() => {
       ground: { y: 218, col: '#c0a068' }, grass: ['#8a7240', '#c8a860', '#e0c880'], flowers: ['#ffc81e', '#f06a22', '#b45ad8'], parts: 'dust', pcol: '#f0d8a8', gravel: true },
   };
   for (const id in SCENES) SCENES[id].id = id;
+  // extras per scene: more things on the layers, a lake / river, birds, light shafts and a plant frame in the corners (fcol = dark, mid, light)
+  const EX = {
+    russia: { add: { 1: [['hut', 1, 14, 16, 18, '#8a5a3a', '#6a3a2a'], ['rock', 3, 6, 9, 12, '#8a9098', '#a8b0b6']], 2: [['patch', 8, 6, 6, 10, '#ffd23c', '#c060b0'], ['rock', 3, 6, 9, 12, '#8a9098', '#a8b0b6']] }, lake: { after: 1, y: 176, h: 9, x0: 20, x1: 260, col: '#5a98c8' }, birds: 5, frame: 'branch', fcol: ['#2a5a24', '#4a8a38', '#7ac04a'], shafts: 2 },
+    alps: { add: { 2: [['hut', 2, 12, 14, 14, '#9a6a44', '#5a3a2a'], ['rock', 4, 7, 10, 12, '#7a8088', '#a0a8b0']], 3: [['patch', 9, 6, 6, 10, '#ffcc2a', '#8a5ae0']] }, lake: { after: 1, y: 170, h: 8, x0: 130, x1: 390, col: '#4a88c8' }, birds: 4, frame: 'rocks', fcol: ['#4a5058', '#6a727a', '#8a9a6a'] },
+    med: { add: { 2: [['patch', 6, 6, 6, 10, '#a050c8', '#ffffff'], ['rock', 5, 6, 9, 12, '#b8a888', '#d8c8a8'], ['hut', 3, 16, 18, 18, '#f4f0e8', '#4a8ac8']] }, birds: 6, frame: 'branch', fcol: ['#5a6a48', '#8a9a68', '#aab888'] },
+    amazon: { add: { 2: [['reed', 10, 14, 22, 3, '#3a7a3a', '#8a6a3a']] }, lake: { after: 1, y: 178, h: 7, x0: 0, x1: 480, col: '#4a8a88' }, frame: 'fern', fcol: ['#0e3a1a', '#1e6a2e', '#3a9a44'], shafts: 4 },
+    borneo: { add: { 2: [['reed', 10, 14, 22, 3, '#3a7a3a', '#8a6a3a']] }, lake: { after: 1, y: 182, h: 6, x0: 0, x1: 480, col: '#4a8a98' }, frame: 'fern', fcol: ['#0e3a1a', '#1e6a2e', '#3a9a44'], shafts: 4 },
+    kenya: { add: { 1: [['rock', 5, 6, 10, 14, '#5a3a28', '#7a5438']], 2: [['patch', 5, 6, 6, 10, '#e84a1a', '#ffffff']] }, lake: { after: 1, y: 180, h: 5, x0: 100, x1: 250, col: '#e09060' }, birds: 5, frame: 'grass', fcol: ['#1e1410', '#3a2418', '#6a4a28'] },
+    prairie: { add: { 1: [['fence', 2, 10, 10, 0, '#6a4a30'], ['hut', 1, 18, 20, 24, '#a83a2a', '#6a2a1a']], 2: [['patch', 10, 6, 6, 10, '#c060b0', '#ffcc20']] }, lake: { after: 1, y: 184, h: 5, x0: 300, x1: 430, col: '#6aa0d0' }, birds: 5, frame: 'grass', fcol: ['#3a5a20', '#6a8a38', '#a8b858'] },
+    japan: { add: { 1: [['hut', 2, 14, 16, 18, '#c8b898', '#4a3a3a']], 2: [['patch', 8, 6, 6, 10, '#f06aa0', '#ffffff']] }, lake: { after: 1, y: 172, h: 10, x0: 0, x1: 480, col: '#7a88c0' }, birds: 3, frame: 'branch', fcol: ['#5a3a30', '#e88aa8', '#ffc0d4'] },
+    papua: { add: { 2: [['rock', 4, 7, 10, 12, '#2a2a30', '#4a4a50'], ['reed', 8, 14, 22, 3, '#2a6a3a', '#6a4a3a']] }, lake: { after: 2, y: 192, h: 5, x0: 0, x1: 480, col: '#2e6a6a' }, frame: 'fern', fcol: ['#0a2a14', '#1a5a28', '#38884a'], shafts: 3 },
+    vietnam: { add: { 2: [['hut', 3, 12, 14, 14, '#9a7a4a', '#5a4a2a']], 3: [['patch', 6, 6, 6, 10, '#e0284a', '#ffffff']] }, birds: 4, frame: 'bamboo', fcol: ['#1a4a22', '#3a7a3a', '#6aa858'], shafts: 2 },
+    chihuahua: { add: { 2: [['rock', 8, 6, 10, 14, '#8a6a50', '#a8886a'], ['patch', 6, 6, 6, 10, '#ffc81e', '#f06a22']], 3: [['rock', 5, 5, 8, 12, '#8a6a50', '#a8886a']] }, birds: 3, frame: 'cactus', fcol: ['#3a6a44', '#5a9a5a', '#d84a60'] },
+  };
+  for (const id in EX) { const S = SCENES[id], E = EX[id]; Object.assign(S, E, { add: undefined }); for (const li in E.add || {}) S.layers[li].items = (S.layers[li].items || []).concat(E.add[li]); }
   // the items of every layer are planted once (world x on the periodic layer)
-  for (const id in SCENES) { const S = SCENES[id]; (S.layers || []).forEach((L, li) => { L.planted = []; for (const [kind, n, h0, h1, w, c1, c2] of L.items || []) for (let i = 0; i < n; i++) L.planted.push({ kind, x: hash(li * 31 + i * 7.3 + kind.length) * PER, h: h0 + hash(li * 5 + i * 3.1 + 1) * (h1 - h0), w: w * (0.8 + hash(i + li) * 0.4), c1, c2, i }); L.planted.sort((a, b) => a.x - b.x); }); }
+  for (const id in SCENES) { const S = SCENES[id]; (S.layers || []).forEach((L, li) => { L.planted = []; for (const [kind, n, h0, h1, w, c1, c2] of L.items || []) for (let i = 0; i < Math.ceil(n * 1.5); i++) L.planted.push({ kind, x: hash(li * 31 + i * 7.3 + kind.length) * PER, h: h0 + hash(li * 5 + i * 3.1 + 1) * (h1 - h0), w: w * (0.8 + hash(i + li) * 0.4), c1, c2, i }); L.planted.sort((a, b) => a.x - b.x); }); }
 
   const ids = Object.keys(SCENES); let cur = SCENES[ids[(Math.random() * ids.length) | 0]], last = null;
   function next() { let c; do { c = ids[(Math.random() * ids.length) | 0]; } while (c === last && ids.length > 1); last = c; cur = SCENES[c]; return c; }
@@ -138,22 +162,48 @@ const Panorama = (() => {
     ctx.fillStyle = '#a89c98'; for (let i = 0; i < 14; i++) { const u = ((t * 0.18 + i / 14) % 1), y = top - u * 56, xx = x + Math.sin(u * 5 + i) * 6 + u * 28; ctx.globalAlpha = (1 - u) * 0.75; blob(ctx, xx, y, 3 + u * 9, 2 + u * 6); } ctx.globalAlpha = 1;
   }
 
+  function lake(ctx, Lk, t) {
+    const c = hex(Lk.col), lt = rgb(mixc(c, [255, 255, 255], 0.35)), dk = rgb(mixc(c, [0, 10, 30], 0.3));
+    for (let x = Lk.x0; x < Lk.x1; x++) { const u = (x - Lk.x0) / (Lk.x1 - Lk.x0), hh = Math.max(1, Math.round(Lk.h * Math.pow(Math.sin(Math.PI * u), 0.5))); ctx.fillStyle = rgb(c); ctx.fillRect(x, Lk.y, 1, hh); ctx.fillStyle = dk; ctx.fillRect(x, Lk.y + hh - 1, 1, 1);
+      if (hash(x * 0.7 + Math.floor(t * 1.5 + x * 0.1)) < 0.06) { ctx.fillStyle = lt; ctx.fillRect(x, Lk.y + 1 + ((hash(x) * (hh - 1)) | 0), 2, 1); } }
+  }
+  function birds(ctx, sc, t) {
+    if (!sc.birds) return; ctx.fillStyle = sc.id === 'kenya' || sc.id === 'chihuahua' ? '#2a1c14' : '#2a3a48';
+    for (let i = 0; i < sc.birds; i++) { const x = ((hash(i + 40) * 560 + t * (10 + hash(i + 41) * 8)) % 560) - 40, y = 36 + hash(i + 42) * 70 + Math.sin(t * 0.8 + i) * 4, f = Math.sin(t * 6 + i * 2) > 0 ? 1 : -1; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); ctx.fillRect(Math.round(x) - 1, Math.round(y) - f, 1, 1); ctx.fillRect(Math.round(x) + 1, Math.round(y) - f, 1, 1); ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2 * f, 1, 1); ctx.fillRect(Math.round(x) + 2, Math.round(y) - 2 * f, 1, 1); }
+  }
+  function shafts(ctx, sc, t) {
+    if (!sc.shafts) return; for (let i = 0; i < sc.shafts; i++) { const x0 = 60 + i * (SW / sc.shafts) + Math.sin(t * 0.3 + i) * 14, w = 18 + (i % 2) * 10; ctx.fillStyle = 'rgba(255,250,200,0.07)'; for (let y = 0; y < 190; y += 2) { const sh = y * 0.35; ctx.fillRect(Math.round(x0 + sh), y, Math.round(w + y * 0.06), 2); } }
+  }
+  function frame(ctx, sc, t) {
+    const f = sc.frame; if (!f) return; const [d, m, l] = sc.fcol;
+    if (f === 'fern') for (const side of [-1, 1]) { const bx = side < 0 ? -6 : SW + 6; for (let k = 0; k < 8; k++) { const ang = side < 0 ? -(0.25 + k * 0.17) : -(Math.PI - 0.25 - k * 0.17), Lf = 46 + (k % 3) * 16; for (let s2 = 0; s2 <= Lf; s2 += 1) { const u = s2 / Lf, x = bx + Math.cos(ang) * s2 + Math.sin(t * 1.2 + k + side) * 3 * u * u, y = SH + 4 + Math.sin(ang) * s2 + u * u * Lf * 0.55; ctx.fillStyle = d; ctx.fillRect(Math.round(x), Math.round(y), 2, 1); if (s2 % 4 === 0 && u > 0.1) { ctx.fillStyle = u > 0.6 ? l : m; const ln = Math.round(7 * Math.sin(Math.PI * u)); ctx.fillRect(Math.round(x), Math.round(y) - ln, 1, ln); ctx.fillRect(Math.round(x), Math.round(y) + 1, 1, ln >> 1); } } } }
+    else if (f === 'branch') for (const side of [-1, 1]) { const ox = side < 0 ? 0 : SW; for (let s2 = 0; s2 < 130; s2++) { const x = ox + side * s2, y = 4 + s2 * 0.26 + Math.sin(s2 * 0.08) * 4; ctx.fillStyle = sc.id === 'japan' ? '#4a2e28' : '#3a2a1c'; ctx.fillRect(x, Math.round(y), 1, Math.max(1, 4 - (s2 / 40) | 0)); if (s2 % 9 === 0 && s2 > 8) { const sw = Math.sin(t * 1.1 + s2) * 1.5; ctx.fillStyle = m; blob(ctx, x + sw, y + 5, 9, 5); ctx.fillStyle = l; blob(ctx, x - side * 3 + sw, y + 3, 4, 2); ctx.fillStyle = d; blob(ctx, x + side * 4 + sw, y + 9, 4, 2); } } }
+    else if (f === 'rocks') for (const side of [-1, 1]) { const bx = side < 0 ? 20 : SW - 20; ctx.fillStyle = d; blob(ctx, bx, SH - 2, 46, 24); ctx.fillStyle = m; blob(ctx, bx - side * 6, SH - 12, 30, 12); ctx.fillStyle = l; blob(ctx, bx - side * 10, SH - 18, 14, 3); ctx.fillStyle = '#3a4a32'; for (let k = 0; k < 7; k++) ctx.fillRect(bx - 30 + k * 9, SH - 22 + (k * 5) % 7, 4, 1); }
+    else if (f === 'grass') for (let k = 0; k < 34; k++) { const x = k < 17 ? (k * 5) % 90 : SW - ((k - 17) * 5) % 90, hgt = 44 + (k * 23) % 56, sw = Math.sin(t * 1.4 + k) * 3; ctx.fillStyle = k % 3 ? d : m; for (let y = 0; y < hgt; y++) ctx.fillRect(Math.round(x + sw * (y / hgt) ** 2), SH - y, 1, 1); ctx.fillStyle = l; ctx.fillRect(Math.round(x + sw) - 1, SH - hgt - 2, 3, 4); }
+    else if (f === 'bamboo') for (const side of [-1, 1]) for (let k = 0; k < 3; k++) { const x = side < 0 ? 8 + k * 14 : SW - 10 - k * 14, sw = Math.sin(t * 1.1 + k + side) * 2; ctx.fillStyle = k % 2 ? m : d; for (let y = 0; y < SH; y++) ctx.fillRect(Math.round(x + sw * (y / SH) ** 2), SH - y, 4, 1); ctx.fillStyle = l; for (let y = 8; y < SH; y += 34) ctx.fillRect(Math.round(x + sw * (y / SH) ** 2), SH - y, 4, 1); ctx.fillStyle = m; for (let q = 0; q < 4; q++) line(ctx, x + sw, 6 + k * 3, x + sw + (q - 1.5) * 12, 18 + q * 3 + k * 4); }
+    else if (f === 'cactus') { ctx.fillStyle = d; for (const [px, py, rx, ry] of [[444, SH - 14, 16, 12], [430, SH - 36, 12, 10], [458, SH - 38, 10, 9], [446, SH - 56, 9, 8]]) { blob(ctx, px, py, rx, ry); } ctx.fillStyle = m; for (const [px, py, rx, ry] of [[444, SH - 15, 12, 8], [430, SH - 37, 8, 6], [458, SH - 39, 6, 5], [446, SH - 57, 5, 4]]) blob(ctx, px, py, rx, ry); ctx.fillStyle = '#e8e0b8'; for (let k = 0; k < 22; k++) ctx.fillRect(418 + (k * 13) % 48, SH - 62 + (k * 7) % 56, 1, 1); ctx.fillStyle = l; for (const [px, py] of [[432, SH - 48], [458, SH - 46], [446, SH - 64]]) blob(ctx, px, py, 3, 2);
+      for (let k = 0; k < 6; k++) { const bx = 6 + k * 5; ctx.fillStyle = '#5a5a40'; for (let y = 0; y < 90 + k * 8; y++) ctx.fillRect(Math.round(bx + Math.sin(k - 2.5) * y * 0.18 + Math.sin(t * 1.2 + k) * (y / 90) * 1.5), SH - y, 1, 1); ctx.fillStyle = '#e8341c'; ctx.fillRect(Math.round(bx + Math.sin(k - 2.5) * (90 + k * 8) * 0.18), SH - 92 - k * 8, 2, 3); } }
+  }
+  let vigC = null; const vig = () => { if (vigC) return vigC; vigC = document.createElement('canvas'); vigC.width = SW; vigC.height = SH; const g = vigC.getContext('2d'), gr = g.createRadialGradient(SW / 2, SH / 2, SH * 0.5, SW / 2, SH / 2, SW * 0.68); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,10,20,0.32)'); g.fillStyle = gr; g.fillRect(0, 0, SW, SH); return vigC; };
   // draws the scene; false = this scene is the night forest (the caller draws it)
   function draw(ctx, t, dim = 0) {
     const sc = cur; if (sc.custom) return false;
     ctx.imageSmoothingEnabled = false; ctx.drawImage(sky(sc), 0, 0); clouds(ctx, sc, t);
-    sc.layers.forEach(L => {
+    sc.layers.forEach((L, li) => {
       drawLayer(ctx, L, sc, t);
       if (L.volcano) { const cx = (L.cx - t * 3 * L.par), sx = Math.round(((cx % PER) + PER) % PER); ctx.fillStyle = '#d8582a'; ctx.fillRect(sx - 3, Math.round(L.base - L.amp * 1.6) + 1, 7, 2); volcanoSmoke(ctx, Object.assign({}, L, { cx: sx + t * 3 * L.par }), t); }
-      const off = t * 3 * L.par; for (const it of L.planted || []) { const sx = Math.round((((it.x - off) % PER) + PER) % PER) - 60; if (sx < -50 || sx > SW + 50) continue; const wy = Math.round(ridgeY(L, sx + off)) + 2; KINDS[it.kind](ctx, sx, wy, Math.round(it.h), Math.round(it.w), it.c1, it.c2, t, it.i); }
+      const off = t * 3 * L.par; for (const it of L.planted || []) { const sx = Math.round((((it.x - off) % PER) + PER) % PER) - 60; if (sx < -50 || sx > SW + 50) continue; const wy = Math.round(ridgeY(L, sx + off)) + 2; if (it.kind !== 'patch' && it.kind !== 'fence') { ctx.fillStyle = 'rgba(0,0,20,0.16)'; ctx.fillRect(sx - Math.round(it.w * 0.35), wy - 1, Math.round(it.w * 0.7), 2); } KINDS[it.kind](ctx, sx, wy, Math.round(it.h), Math.round(it.w), it.c1, it.c2, t, it.i); }
+      if (sc.lake && sc.lake.after === li) lake(ctx, sc.lake, t);
     });
+    birds(ctx, sc, t);
+    // (the lake is painted over the layer it lies after, so the nearer layers cover its shore)
     const G = sc.ground; ctx.fillStyle = G.col; ctx.fillRect(0, G.y, SW, SH - G.y); ctx.fillStyle = rgb(mixc(hex(G.col), [0, 0, 0], 0.18)); ctx.fillRect(0, SH - 28, SW, 28);
     // the foreground: swaying grass, flowers, gravel
     const sw = sc.sway || 1;
     for (let i = 0; i < 150; i++) { const x = (i * 37 + 11) % SW, h = 6 + (i * 13) % 14, s = Math.sin(t * 1.5 + i) * sw; ctx.fillStyle = sc.grass[i % sc.grass.length]; ctx.fillRect(x, SH - h - 4 + (i % 5), 1, h); ctx.fillRect(x + Math.round(s / 2), SH - h - 6 + (i % 5), 1, 3); }
     for (let i = 0; i < 22; i++) { const x = (i * 71 + 23) % SW, h = 14 + (i * 19) % 22, s = Math.round(Math.sin(t * 1.3 + i * 2) * sw * 0.8); ctx.fillStyle = sc.grass[1]; ctx.fillRect(x, SH - h - 4, 1, h); ctx.fillStyle = sc.flowers[i % sc.flowers.length]; ctx.fillRect(x - 1 + s, SH - h - 6, 3, 2); ctx.fillRect(x + s, SH - h - 7, 1, 4); }
     if (sc.gravel) for (let i = 0; i < 70; i++) { ctx.fillStyle = i % 3 ? '#a8885a' : '#e0c890'; ctx.fillRect((i * 53) % SW, 224 + (i * 29) % 40, 2, 1); }
-    particles(ctx, sc, t);
+    shafts(ctx, sc, t); frame(ctx, sc, t); particles(ctx, sc, t); ctx.drawImage(vig(), 0, 0);
     if (dim) { ctx.fillStyle = `rgba(0,0,0,${dim})`; ctx.fillRect(0, 0, SW, SH); }
     return true;
   }

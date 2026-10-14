@@ -77,9 +77,9 @@ const Screens = (() => {
       T.draw(ctx, 'Flora0world', lx, 16, { size: 22, align: 'c', color: '#b8f090', outline: '#0c2a1a', shadow: '#061810' });
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
-      { const x0 = Math.min(...this.btns.map(b => b.x)) - 8, y0 = Math.min(...this.btns.map(b => b.y)) - 8, x1 = Math.max(...this.btns.map(b => b.x + b.w)) + 8, y1 = Math.max(...this.btns.map(b => b.y + b.h)) + 8; UIK.panel(ctx, x0, y0, x1 - x0, y1 - y0, { fill: 'rgba(8,20,16,0.55)', border: '#3a6a52', shadow: false }); ctx.fillStyle = c.gold; ctx.fillRect(SW / 2 - 40, 94, 80, 1); ctx.fillRect(SW / 2 - 2, 92, 5, 5); ctx.fillStyle = '#10201c'; ctx.fillRect(SW / 2, 94, 1, 1); }       // the menu stands in a frame; a gold rule with a diamond under the logo
+      { const x0 = Math.min(...this.btns.map(b => b.x)) - 8, y0 = Math.min(...this.btns.map(b => b.y)) - 8, x1 = Math.max(...this.btns.map(b => b.x + b.w)) + 8, y1 = Math.max(...this.btns.map(b => b.y + b.h)) + 3; UIK.panel(ctx, x0, y0, x1 - x0, y1 - y0, { fill: 'rgba(8,20,16,0.55)', border: '#3a6a52', shadow: false }); ctx.fillStyle = c.gold; ctx.fillRect(SW / 2 - 40, 94, 80, 1); ctx.fillRect(SW / 2 - 2, 92, 5, 5); ctx.fillStyle = '#10201c'; ctx.fillRect(SW / 2, 94, 1, 1); }       // the menu stands in a frame; a gold rule with a diamond under the logo
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
-      T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#d8e8dc', shadow: '#000' });
+      T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 10, { size: 8, align: 'c', color: '#d8e8dc', shadow: '#000' });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
