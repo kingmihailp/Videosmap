@@ -500,9 +500,9 @@ const Traps = (() => {
       else if (!D.path && !ahead(want, 1.6)) { for (const o of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.3, -2.3, 3.14]) if (ahead(want + o, 1.6)) { D.bias = o; D.biasT = 1.0; want += o; break; } }
       const df = angDiff(want, t.yaw), turn = clamp(df, -DRIVE.turn * dt, DRIVE.turn * dt); t.yaw += turn;
       const al = Math.abs(angDiff(want, t.yaw)), v = DRIVE.speed * (w.inWater && w.inWater(t.x, t.z, 0) ? 0.55 : 1) * clamp(1 - al / 1.1) * clamp(d / 3.5 + 0.35); let moved = 0;
-      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz, 0.5, SM) || !this.okAt(t, t.x, t.z, 0.5, SM) || (w.bridges && this.okAt(t, t.x + f[0] * 1.2, t.z + f[1] * 1.2, 0.5, SM))) {       // (in the highlands a thin crack between a bridge and the ground is driven over when firm ground lies just beyond it) moved = v;       // (a rover that came to rest hard by a tree may always drive off)
+      if (v > 0.01) { const f = fwd(t.yaw), nx = t.x + f[0] * v * dt, nz = t.z + f[1] * v * dt; if (this.okAt(t, nx, nz, 0.5, SM) || !this.okAt(t, t.x, t.z, 0.5, SM) || (w.bridges && this.okAt(t, t.x + f[0] * 1.2, t.z + f[1] * 1.2, 0.5, SM))) { moved = v;       // (in the highlands a thin crack between a bridge and the ground is driven over when firm ground lies just beyond it; a rover that came to rest hard by a tree may always drive off)
          t.x = nx; t.z = nz; } else D.stuck += dt * 2; }
-      D.sp = moved; t.y = w.groundAt(t.x, t.z); this.tilt(t); this.place2(t, t.x, t.y, t.z, t.yaw);
+      D.sp = Math.max(moved, Math.abs(turn) / Math.max(dt, 1e-4) * 0.5); t.y = w.groundAt(t.x, t.z); this.tilt(t); this.place2(t, t.x, t.y, t.z, t.yaw);
     }
     tilt(t) { const w = this.world, f = [-Math.sin(t.yaw), -Math.cos(t.yaw)], r = [Math.cos(t.yaw), -Math.sin(t.yaw)], h = (a, b) => w.groundAt(t.x + f[0] * a + r[0] * b, t.z + f[1] * a + r[1] * b); const tp = Math.atan2(h(0.75, 0) - h(-0.75, 0), 1.5), tr = Math.atan2(h(0, 0.6) - h(0, -0.6), 1.2); t.tp = clamp(tp, -0.45, 0.45); t.tr = clamp(tr, -0.45, 0.45); }
     spawn(t, sp) { const idx = (t.mine ? t.items.length : t.n) + t.inflight; t.inflight++; this.fliers.push({ f: new Flier(this, t, sp, idx), t, sp }); }
@@ -545,7 +545,7 @@ const Traps = (() => {
         }
         if (U && U.wings) for (const w of U.wings) { const f = Math.sin(tt * 3 + w.ph) * 0.5 + 0.5, open = (Math.sin(tt * 0.7 + w.ph * 3) > 0.7) ? f : 0.15; w.l.rotation.y = -open * 0.9; w.r.rotation.y = open * 0.9; }
         if (U && !t.broken && !U.rover) U.top.rotation.z = Math.sin(tt * 0.9 + t.x) * 0.012;
-        if (U && U.rover) animRover(U, t.sp, dt, this.driving(t) ? 'drive' : this.stateOf(t) === 'idle' ? 'idle' : 'stop', tt);
+        if (U && U.rover) animRover(U, this.driving(t) ? Math.max(t.sp, 0.9) : t.sp, dt, this.driving(t) ? 'drive' : this.stateOf(t) === 'idle' ? 'idle' : 'stop', tt);
       }
     }
     driveUpdate(t, dt) {
