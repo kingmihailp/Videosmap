@@ -30,7 +30,8 @@
 | Library Logo (прозрачный) | `capsules/library_logo_transparent.png` |
 | Page Background 1438×810 | `capsules/page_background_1438x810.png` |
 | Community/Client Icon 184×184 | `capsules/icon_184x184.jpg` |
-| Скриншоты (1920×1080), 10 шт. | `screenshots/*.png` |
+| Скриншоты (1920×1080), 10 шт. — русские | `screenshots/*.png` (для русской страницы) |
+| Скриншоты — английские | `screenshots_en/*.png` (для английской страницы; в Steamworks можно загрузить отдельно для каждого языка) |
 
 * Клиентская иконка `.ico`: `desktop/build/icon.ico`. Нужен ещё **трейлер** (видео): тизер лежит в `../../teaser`, но он для Flora0world HUB — запиши отдельный ролик геймплея 30–60 с (OBS).
 * Пересоздать графику: `node tools/test/steam_art_src.js` → `python3 tools/make_steam_art.py`; скриншоты: `node tools/test/steam_shots.js`.

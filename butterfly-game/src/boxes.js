@@ -258,7 +258,7 @@ const Boxes = (() => {
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       // list
       T.draw(ctx, `Ваши коробки (${Save.data.boxes.length})`, 8, 83, { size: 8, color: c.dim });
-      if (!Save.data.boxes.length) T.para(ctx, Save.stockTotal() ? 'Пока пусто. Выберите размер (число — сколько коробок в запасе) и стиль — и создайте первую коробку.' : 'Пока пусто. Коробки продаёт торговец коллекциями на рынке насекомых: малая — 200, средняя — 300, большая — 400 монет. Стиль можно менять здесь.', 10, 86, 134, { size: 8, color: '#6a8a78', lh: 10 });
+      if (!Save.data.boxes.length) T.para(ctx, Save.stockTotal() ? 'Пока пусто. Выберите размер (число — сколько коробок в запасе) и стиль — и создайте первую коробку.' : 'Пока пусто. Коробки продаёт торговец коллекциями на рынке насекомых: малая — 200, средняя — 300, большая — 400 монет. Стиль можно менять здесь.', 8, 98, 144, { size: 8, color: '#6a8a78', lh: 10 });
       this.rows.forEach(r => { const hv = UIK.hit(r, m.x, m.y), sl = r.idx === this.sel; UIK.panel(ctx, r.x, r.y, r.w, r.h, { fill: sl ? '#2a5a46' : hv ? '#244a3c' : '#1a3228', border: sl ? c.gold : c.line, shadow: false }); T.draw(ctx, `${r.b.size} ${STYLES[r.b.style].name} ${fillOf(r.b)}/${r.b.items.length}`, r.x + 4, r.y + 2, { size: 8, color: c.text }); T.draw(ctx, r.b.loc ? '▪' : '', r.x + r.w - 8, r.y + 2, { size: 8, color: c.gold }); });
       // centre: box view
       const cb = this.cur();

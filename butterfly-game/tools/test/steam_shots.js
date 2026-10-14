@@ -1,10 +1,10 @@
-// Steam store screenshots (1920x1080) -> steam/screenshots
+// Steam store screenshots (1920x1080) -> steam/screenshots (node steam_shots.js ru) or steam/screenshots_en (node steam_shots.js en)
 const { chromium } = require(process.env.PW_CORE || 'playwright-core');
-const OUT = '/home/user/Videosmap/butterfly-game/steam/screenshots/';
+const LANG = process.argv[2] || 'ru', OUT = '/home/user/Videosmap/butterfly-game/steam/' + (LANG === 'en' ? 'screenshots_en' : 'screenshots') + '/';
 (async () => {
   const br = await chromium.launch({ executablePath: process.env.CHROME, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
   const pg = await br.newPage({ viewport: { width: 1920, height: 1080 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(3000);
+  await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock&lang=' + LANG); await pg.waitForTimeout(3000);
   const shot = async n => { await pg.waitForTimeout(1200); await pg.screenshot({ path: OUT + n + '.png' }); };
   // menu: three locations
   for (const [i, id] of ['alps', 'japan', 'chihuahua'].entries()) { await pg.evaluate(id => { F0W.fade = 0; F0W.fadeTarget = 0; F0W.screen = 'title'; Panorama.set(id); }, id); await shot('0' + (i + 1) + '_menu_' + id); }
