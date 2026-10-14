@@ -12,9 +12,20 @@ const UIK = {
       ctx.fillStyle = o.inner || 'rgba(255,255,255,0.05)'; ctx.fillRect(x + 1, y + 1, w - 2, 1); ctx.fillRect(x + 1, y + 1, 1, h - 2);
       if (w > 6 && h > 6) { ctx.fillStyle = 'rgba(0,0,0,0.26)'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1); ctx.fillRect(x + w - 2, y + 1, 1, h - 2); }                    // the bevel: light on the upper-left, shade on the lower-right
       if (h >= 14 && o.sheen !== false) { ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(x + 2, y + 2, w - 4, Math.min(6, h >> 2)); }                           // a soft sheen on the top
+      const fillHex = typeof o.fill === 'string' && /^#[0-9a-f]{6}$/i.test(o.fill) ? o.fill : null, paper = fillHex && (parseInt(fillHex.slice(1, 3), 16) * 0.3 + parseInt(fillHex.slice(3, 5), 16) * 0.59 + parseInt(fillHex.slice(5, 7), 16) * 0.11) > 165;
+      if (paper && w > 20 && h > 12 && o.grain !== false) { try { ctx.fillStyle = ctx.createPattern(this.grain(), 'repeat'); ctx.fillRect(x + 1, y + 1, w - 2, h - 2); } catch (e) {} }          // paper: a fibre texture
+      if (w >= 50 && h >= 30 && o.frame !== false) {          // a fine inner frame line and brackets in the corners
+        const bc = o.border || this.col.line; ctx.globalAlpha = paper ? 0.28 : 0.2; ctx.fillStyle = bc; ctx.fillRect(x + 3, y + 3, w - 6, 1); ctx.fillRect(x + 3, y + h - 4, w - 6, 1); ctx.fillRect(x + 3, y + 3, 1, h - 6); ctx.fillRect(x + w - 4, y + 3, 1, h - 6); ctx.globalAlpha = paper ? 0.55 : 0.7;
+        for (const [cx, cy, dx, dy] of [[x + 3, y + 3, 1, 1], [x + w - 4, y + 3, -1, 1], [x + 3, y + h - 4, 1, -1], [x + w - 4, y + h - 4, -1, -1]]) { ctx.fillRect(dx > 0 ? cx : cx - 3, cy, 4, 1); ctx.fillRect(cx, dy > 0 ? cy : cy - 3, 1, 4); }
+        ctx.globalAlpha = 1;
+      }
       if (w >= 40 && h >= 18 && o.studs !== false) { ctx.fillStyle = 'rgba(255,255,255,0.2)'; for (const [sx, sy] of [[2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3]]) ctx.fillRect(x + sx, y + sy, 1, 1); }       // four little rivets
     }
   },
+  _g: null,
+  grain() { if (this._g) return this._g; const c = document.createElement('canvas'); c.width = c.height = 48; const g = c.getContext('2d'); let s = 7; const r = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    for (let i = 0; i < 280; i++) { g.fillStyle = r() < 0.5 ? 'rgba(90,60,20,0.09)' : 'rgba(255,255,255,0.14)'; g.fillRect(r() * 48 | 0, r() * 48 | 0, 1 + (r() * 2 | 0), 1); }
+    for (let i = 0; i < 22; i++) { g.fillStyle = 'rgba(90,60,20,0.07)'; g.fillRect(r() * 44 | 0, r() * 48 | 0, 3 + (r() * 5 | 0), 1); } return this._g = c; },
   // a glossy segmented bar: k 0..1; a groove, glow, tick marks
   meter(ctx, x, y, w, h, k, col, o = {}) {
     ctx.fillStyle = '#0a1612'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2); ctx.fillStyle = '#1c3028'; ctx.fillRect(x, y, w, h);
@@ -28,7 +39,7 @@ const UIK = {
     this.panel(ctx, b.x, b.y, b.w, b.h, { fill, border: hover ? c.gold : c.line, studs: false });
     if (b.h >= 12) { ctx.fillStyle = b.disabled ? 'rgba(255,255,255,0.02)' : hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, Math.max(2, (b.h - 4) >> 1)); }          // the lit upper half of a key
     if (hover && !b.disabled) { ctx.fillStyle = 'rgba(240,200,90,0.35)'; ctx.fillRect(b.x + 1, b.y + 1, b.w - 2, 1); ctx.fillRect(b.x + 1, b.y + b.h - 2, b.w - 2, 1); }
-    T.draw(ctx, b.label, b.x + b.w / 2, b.y + (b.h - 8) / 2 - (b.size > 8 ? 1 : 0), { size: b.size || 8, align: 'c', color: b.disabled ? '#5a7a68' : hover ? '#fff' : c.text });
+    T.draw(ctx, b.label, b.x + b.w / 2, b.y + (b.h - 8) / 2 - (b.size > 8 ? 1 : 0), { size: b.size || 8, align: 'c', color: b.disabled ? '#5a7a68' : hover ? '#fff' : c.text, shadow: b.disabled ? undefined : 'rgba(0,0,0,0.55)' });
   },
   hit(b, x, y) { return x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h; },
 };

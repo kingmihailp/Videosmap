@@ -74,6 +74,7 @@ const Screens = (() => {
       T.draw(ctx, 'Flora0world', lx, 16, { size: 22, align: 'c', color: '#b8f090', outline: '#0c2a1a', shadow: '#061810' });
       ctx.restore();
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
+      { const x0 = Math.min(...this.btns.map(b => b.x)) - 8, y0 = Math.min(...this.btns.map(b => b.y)) - 8, x1 = Math.max(...this.btns.map(b => b.x + b.w)) + 8, y1 = Math.max(...this.btns.map(b => b.y + b.h)) + 8; UIK.panel(ctx, x0, y0, x1 - x0, y1 - y0, { fill: 'rgba(8,20,16,0.55)', border: '#3a6a52', shadow: false }); ctx.fillStyle = c.gold; ctx.fillRect(SW / 2 - 40, 94, 80, 1); ctx.fillRect(SW / 2 - 2, 92, 5, 5); ctx.fillStyle = '#10201c'; ctx.fillRect(SW / 2, 94, 1, 1); }       // the menu stands in a frame; a gold rule with a diamond under the logo
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
     },
@@ -251,7 +252,7 @@ const Screens = (() => {
       this.layout(); const b = visibleBiomes()[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
       T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
-      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = visibleBiomes()[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898' }); });
+      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = visibleBiomes()[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898', shadow: '#000' }); if (on) { ctx.fillStyle = '#4a3220'; ctx.fillRect(tb.x + 1, tb.y + tb.h - 1, tb.w - 2, 2); ctx.fillStyle = c.gold; ctx.fillRect(tb.x + 2, tb.y + 1, tb.w - 4, 1); } if (full) { ctx.fillStyle = c.gold; ctx.fillRect(tb.x + tb.w - 4, tb.y + 2, 2, 2); } });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
       for (let i = 0; i < 240; i++) { const x = 9 + (i * 97) % 210, y = 45 + (i * 53) % 216; ctx.fillStyle = i % 3 ? '#b89860' : '#d8b880'; ctx.fillRect(x, y, 2, 1); }
@@ -263,7 +264,8 @@ const Screens = (() => {
         if (has) { ctx.fillStyle = '#111'; ctx.fillRect(s.x + 50, s.y + 15, 2, 2); }
         { const plus = (cx, c1, c2) => { ctx.fillStyle = c1; ctx.fillRect(cx, s.y + 5, 1, 5); ctx.fillRect(cx - 2, s.y + 7, 5, 1); ctx.fillStyle = c2; ctx.fillRect(cx, s.y + 7, 1, 1); };      // a purple cross: an aberration is caught; a red one: a rare find (both side by side)
           const ab = has && Save.aberrants(s.sp.id).length > 0, rare = has && Rare.is(s.sp); if (ab) plus(s.x + s.w - 9, '#c0309a', '#ff9ae8'); if (rare) plus(s.x + s.w - 9 - (ab ? 8 : 0), '#d02028', '#ff8a8a'); }
-        ctx.fillStyle = '#f2ead0'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 14); ctx.fillStyle = '#8a7650'; ctx.fillRect(s.x + 4, s.y + 63, s.w - 8, 1);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(s.x + 5, s.y + 51, s.w - 8, 14); ctx.fillStyle = '#f2ead0'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 14); ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(s.x + 4, s.y + 50, s.w - 8, 1); ctx.fillStyle = '#8a7650'; ctx.fillRect(s.x + 4, s.y + 63, s.w - 8, 1);
+        ctx.fillStyle = '#7a5a20'; ctx.fillRect(s.x + 6, s.y + 52, 2, 2); ctx.fillRect(s.x + s.w - 8, s.y + 52, 2, 2); ctx.fillStyle = '#e8c860'; ctx.fillRect(s.x + 6, s.y + 52, 1, 1); ctx.fillRect(s.x + s.w - 8, s.y + 52, 1, 1);       // two brass pins hold the label
         T.draw(ctx, has ? fit(s.sp.ru, s.w - 12) : '??? Не найдено', s.x + s.w / 2, s.y + 52, { size: 8, align: 'c', color: has ? '#2a1a0c' : '#8a7a5a' });
       });
       // detail page
@@ -277,8 +279,8 @@ const Screens = (() => {
       const cu = Save.data.caught[sp.id];
       T.draw(ctx, 'Размах', sx + 4, 51, { size: 8, color: dim }); T.draw(ctx, has ? `${sp.mm[0]}–${sp.mm[1]} мм${sp.approx ? '≈' : ''}` : `≈${sp.mm[0]}–${sp.mm[1]} мм`, sx + 4, 60, { size: 8, color: ink });
       T.draw(ctx, 'Семейство', sx + 4, 72, { size: 8, color: dim }); T.draw(ctx, sp.fam, sx + 4, 81, { size: 8, color: ink });
-      T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 50 + i * 8, py = 94; ctx.fillStyle = on ? '#d8a020' : '#cdbf94'; ctx.fillRect(px + 2, py, 3, 7); ctx.fillRect(px, py + 2, 7, 3); ctx.fillRect(px + 1, py + 1, 5, 5); }
-      T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 106, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 115, { size: 8, color: ink });
+      T.draw(ctx, 'Редкость', sx + 4, 93, { size: 8, color: dim }); for (let i = 0; i < 3; i++) { const on = i < sp.rar; const px = sx + 5 + i * 7, py = 102; ctx.fillStyle = '#5a4020'; ctx.fillRect(px, py + 1, 5, 3); ctx.fillRect(px + 1, py, 3, 5); ctx.fillStyle = on ? '#e8b020' : '#d6c9a0'; ctx.fillRect(px + 1, py + 1, 3, 3); if (on) { ctx.fillStyle = '#fff0a0'; ctx.fillRect(px + 1, py + 1, 1, 1); } }       // the dots stay inside the box
+      T.draw(ctx, has ? `Поймано ×${cu.count}` : 'Не поймано', sx + 4, 110, { size: 8, color: has ? '#2a6a2a' : dim }); T.draw(ctx, has ? fmtDate(cu.first) : '—', sx + 4, 119, { size: 8, color: ink });
       let y = 136; const abl = has ? Save.aberrants(sp.id) : [], bottom = this.fragRect ? 200 : abl.length ? 240 : 262, lh = 9; let left = 0; this.abBtn = null;
       if (abl.length) { this.abBtn = { id: 'ab', label: `Аберранты (${abl.length})`, x: x0 + 8, y: 244, w: w0 - 16, h: 15 }; UIK.btn(ctx, this.abBtn, UIK.hit(this.abBtn, m.x, m.y)); }
       const take = (str, want, reserve, col, fx = tx) => { const lines = T.wrap(str, tw, 8); const n = Math.max(1, Math.min(lines.length, want, left - reserve)); if (left <= 0) return; for (let i = 0; i < n; i++) { let l = lines[i]; if (i === n - 1 && n < lines.length) l = fit(l + ' ' + lines[i + 1], tw); T.draw(ctx, l, tx, y, { size: 8, color: col }); y += lh; left--; } y += 1; };
@@ -374,8 +376,10 @@ const Screens = (() => {
       this.btns.forEach(b => UIK.btn(ctx, b, UIK.hit(b, m.x, m.y)));
       for (const sl of this.sliders) {                      // volume sliders: a track with a filled part and a knob
         const hv = UIK.hit(sl, m.x, m.y) || (window.F0W && F0W.sliderDrag === sl.id), ty = sl.y + 3; T.draw(ctx, sl.label, sl.x + 2, sl.y + 3, { size: 8, color: hv ? c.gold : c.text });
-        ctx.fillStyle = '#0a1a14'; ctx.fillRect(sl.tx, ty, sl.tw, 8); ctx.strokeStyle = hv ? c.gold : c.line; ctx.strokeRect(sl.tx + 0.5, ty + 0.5, sl.tw - 1, 7); ctx.fillStyle = hv ? '#7ee08a' : '#4aa86a'; ctx.fillRect(sl.tx + 1, ty + 1, Math.round((sl.tw - 2) * sl.v), 6);
-        const kx = sl.tx + Math.round((sl.tw - 4) * sl.v); ctx.fillStyle = '#efe6c8'; ctx.fillRect(kx, ty - 2, 4, 12); T.draw(ctx, Math.round(sl.v * 100) + '%', sl.x + sl.w, sl.y + 3, { size: 8, align: 'r', color: c.dim });
+        UIK.meter(ctx, sl.tx, ty, sl.tw, 8, 0, '#000', { ticks: 5 }); ctx.strokeStyle = hv ? c.gold : c.line; ctx.strokeRect(sl.tx - 0.5, ty - 0.5, sl.tw + 1, 9);
+        { const fw = Math.round((sl.tw - 2) * sl.v); ctx.fillStyle = hv ? '#7ee08a' : '#4aa86a'; ctx.fillRect(sl.tx + 1, ty + 1, fw, 6); ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(sl.tx + 1, ty + 1, fw, 1); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sl.tx + 1, ty + 6, fw, 1); }
+        const kx = sl.tx + Math.round((sl.tw - 4) * sl.v); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(kx + 1, ty - 1, 5, 12); ctx.fillStyle = '#05080a'; ctx.fillRect(kx - 1, ty - 3, 6, 14); ctx.fillStyle = '#9aa2a8'; ctx.fillRect(kx, ty - 2, 4, 12); ctx.fillStyle = '#e8eef0'; ctx.fillRect(kx, ty - 2, 4, 2); ctx.fillStyle = '#4a525a'; ctx.fillRect(kx + 1, ty + 3, 2, 1); ctx.fillRect(kx + 1, ty + 5, 2, 1);
+        T.draw(ctx, Math.round(sl.v * 100) + '%', sl.x + sl.w, sl.y + 3, { size: 8, align: 'r', color: c.dim });
       }
     },
     set(id, mx) { const sl = this.sliders.find(s => s.id === id); if (!sl) return; Save.data.settings[id] = Math.round(clamp((mx - sl.tx) / sl.tw) * 20) / 20; },
