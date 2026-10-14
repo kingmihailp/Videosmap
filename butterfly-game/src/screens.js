@@ -4,7 +4,7 @@ const Screens = (() => {
   const c = UIK.col;
   const short = { ocean: '???', russia: 'Луг РФ', alps: 'Альпы', med: 'Греция', amazon: 'Амазония', borneo: 'Борнео', kenya: 'Кения', prairie: 'Прерия', japan: 'Япония', bog: 'Болото', papua: 'Н. Гвинея', vietnam: 'Вьетнам', chihuahua: 'Пустыня' };
   const biomeCol = { ocean: '#c0304a', russia: '#7ac04a', alps: '#8ab8e8', med: '#c8a860', amazon: '#2e9a4a', borneo: '#3ec0a0', kenya: '#e8b040', prairie: '#c8c850', japan: '#e86a8a', bog: '#8aa860', papua: '#38c070', vietnam: '#e0903a', chihuahua: '#e8a45a' };
-  const fit = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
+  const fit = (str, maxW, size = 8) => { str = I18N.tr(str); if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
   const R = new Rng(2024);
   const fireflies = Array.from({ length: 34 }, () => ({ x: R.range(0, SW), y: R.range(110, 250), sp: R.range(0.3, 1), ph: R.range(0, 6.28), a: R.range(6, 22) }));
   const stars = Array.from({ length: 70 }, () => ({ x: R.range(0, SW), y: R.range(0, 120), b: R.range(0.3, 1), ph: R.range(0, 6.28) }));
@@ -84,9 +84,11 @@ const Screens = (() => {
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       { const x0 = Math.min(...this.btns.map(b => b.x)) - 8, y0 = Math.min(...this.btns.map(b => b.y)) - 8, x1 = Math.max(...this.btns.map(b => b.x + b.w)) + 8, y1 = Math.max(...this.btns.map(b => b.y + b.h)) + 3; UIK.panel(ctx, x0, y0, x1 - x0, y1 - y0, { fill: 'rgba(8,20,16,0.55)', border: '#3a6a52', shadow: false }); ctx.fillStyle = c.gold; ctx.fillRect(SW / 2 - 40, 94, 80, 1); ctx.fillRect(SW / 2 - 2, 92, 5, 5); ctx.fillStyle = '#10201c'; ctx.fillRect(SW / 2, 94, 1, 1); }       // the menu stands in a frame; a gold rule with a diamond under the logo
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
+      { const lb = this.langBtn(); UIK.btn(ctx, lb, UIK.hit(lb, m.x, m.y)); }
       T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 10, { size: 8, align: 'c', color: '#d8e8dc', shadow: '#000' });
     },
-    click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
+    langBtn() { return { id: 'lang', label: I18N.en ? 'Language: English' : 'Язык: Русский', x: SW - 100, y: 6, w: 94, h: 14 }; },
+    click(x, y) { const lb = this.langBtn(); if (UIK.hit(lb, x, y)) return 'lang'; const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
 
   // ------------------------------------------------------------------ MULTIPLAYER (connect to a server)
@@ -372,6 +374,7 @@ const Screens = (() => {
       const s = Save.data.settings, x = SW / 2 - 90, inPlay = !!(window.F0W && F0W.screen === 'play' && F0W.play); let y = 76; const out = [];
       out.push({ id: 'sound', label: s.sound ? 'Звук: вкл' : 'Звук: выкл', x, y, w: 88, h: 16 }, { id: 'music', label: s.music ? 'Музыка: вкл' : 'Музыка: выкл', x: x + 92, y, w: 88, h: 16 }); y += 22;
       this.sliders = [['volume', 'Общая', s.volume], ['volSfx', 'Звуки', s.volSfx], ['volMusic', 'Музыка', s.volMusic]].map(([id, label, v], i) => ({ id, label, v: v === undefined ? 1 : v, x, y: y + i * 18, w: 180, h: 14, tx: x + 58, tw: 90 })); y += 3 * 18 + 4;
+      out.push({ id: 'lang', label: I18N.en ? 'Language: English' : 'Язык: Русский', x, y, w: 180, h: 16 }); y += 22;
       if (inPlay) { out.push({ id: 'quality', label: s.quality === 'low' ? 'Качество: низкое (быстрее)' : 'Качество: высокое (тени)', x, y, w: 180, h: 16 }); y += 22; }
       out.push({ id: 'keys', label: 'Клавиши управления', x, y, w: 180, h: 16 }); y += 22;
       if (inPlay) { out.push({ id: 'card', label: 'Карточка улова: положение и размер', x, y, w: 180, h: 16 }); y += 22; }

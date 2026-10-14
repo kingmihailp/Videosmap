@@ -325,14 +325,14 @@ const SecretMarket = (() => {
       if (this.prompt && !this.ov) { const s = this.prompt.label(), w = T.width(s, 8) + 20; UIK.panel(ctx, SW / 2 - w / 2, SH - 54, w, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s, SW / 2, SH - 49, { size: 8, align: 'c', color: '#fff' }); }
       if (this.toastT > 0) { ctx.globalAlpha = Math.min(1, this.toastT); T.draw(ctx, this.toastText, SW / 2, 62, { size: 8, align: 'c', color: '#d8c8f0', shadow: '#000' }); ctx.globalAlpha = 1; }
       T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · I — склад · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.5)', shadow: '#000' });
-      if (this.ov === 'talk') { const T0 = this.talk, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length); T.draw(ctx, 'Торговец в капюшоне', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, line.slice(0, Math.floor(T0.chars)), 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 }); T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' }); }
+      if (this.ov === 'talk') { const T0 = this.talk, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length); T.draw(ctx, 'Торговец в капюшоне', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, I18N.typed(line, T0.chars), 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 }); T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' }); }
       if (this.ov === 'shop') {
         const S0 = this.shop, coins = Save.data.coins || 0; S0.chars = Math.min(S0.line.length, S0.chars + dt * 34);
         ctx.fillStyle = 'rgba(4,2,8,0.62)'; ctx.fillRect(0, 0, SW, SH); UIK.panel(ctx, 20, 10, 440, 250, { fill: 'rgba(20,14,30,0.97)', border: '#a070e0' });
         T.draw(ctx, S0.tab === 1 ? 'Торговец в капюшоне · предметы' : 'Торговец в капюшоне · карты мест', 34, 19, { size: 10, color: '#c8a8f0' }); T.draw(ctx, `Монеты: ${coins}`, 446, 20, { size: 8, align: 'r', color: c.gold });
         // the trader and what he says (in a bubble to the right of the portrait, inside the window)
         Portrait.draw(ctx, 'hooded', 36, 38, t, S0.chars < S0.line.length);
-        UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
+        UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, I18N.typed(S0.line, S0.chars), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
         ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
         if (S0.tab === 0) {
         const sc0 = S0.scroll || 0;

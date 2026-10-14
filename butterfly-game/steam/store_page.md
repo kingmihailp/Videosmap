@@ -24,7 +24,7 @@ Flora0world: Butterflies — спокойная, но азартная игра 
 * **Опасности и приключения**: зыбучие пески и песчаные бури в пустыне, заброшенный дом в Альпах, тайные места с легендарными бабочками.
 * **Мультиплеер**: общий кабинет и лов вместе с друзьями на своём сервере (запускается из папки `server/`).
 * **Пиксельная графика и звуки**, тихая музыка, меняющиеся панорамы в главном меню — бабочки в нём разлетаются от курсора.
-* Игра на русском языке; Steam-достижения и облачные сохранения.
+* Игра на русском и английском языках (переключается в меню); Steam-достижения и облачные сохранения.
 
 **EN**
 
@@ -39,7 +39,7 @@ Flora0world: Butterflies is a calm yet compulsive game about collecting butterfl
 * **Danger and adventure**: quicksand and sandstorms in the desert, an abandoned chalet in the Alps, secret places with legendary butterflies.
 * **Multiplayer**: a shared cabinet and co-op catching on your own server (run from the `server/` folder).
 * **Pixel art and sound**, quiet music, a different panorama on the main menu each time — its butterflies flutter away from your cursor.
-* The game is in Russian; Steam achievements and cloud saves.
+* The game is available in English and Russian (switch it in the menu); Steam achievements and cloud saves.
 
 ## Теги / Tags (предложение)
 Collectathon · Relaxing · Pixel Graphics · First-Person · Exploration · Nature · Singleplayer · Co-op · Online Co-Op · Casual · Cute · Simulation · Educational · Open World · Colorful
@@ -48,7 +48,7 @@ Collectathon · Relaxing · Pixel Graphics · First-Person · Exploration · Nat
 Casual · Indie · Simulation
 
 ## Языки / Languages
-Interface + subtitles: Russian. (Add English UI before claiming it — right now the game text is in Russian.)
+Interface + subtitles: Russian, English (switch in the main menu or Settings; the first start follows the system language). Full audio: none (sound effects only).
 
 ## Системные требования / System requirements
 * **OS:** Windows 10 64-bit · Linux 64-bit

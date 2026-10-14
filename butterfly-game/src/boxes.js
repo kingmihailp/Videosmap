@@ -50,7 +50,7 @@ const Boxes = (() => {
       // label
       // the label: the full name (wrapped, never cut), the quality and the date, then the Latin name and the place while there is room (4 lines of the smallest font)
       if (LB === 'none') return;
-      if (LB === 'basic') { x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1); let nm = sp.ru; const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(x, nm + tail, cx0 + CW / 2, cy0 + 62, { size: 8, align: 'c', color: st.ink }); return; }
+      if (LB === 'basic') { x.fillStyle = st.lab; x.fillRect(cx0 + 14, cy0 + 60, CW - 28, 12); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 14, cy0 + 72, CW - 28, 1); let nm = I18N.tr(sp.ru); const tail = ' ' + s.q + '%'; while (T.width(nm + tail, 8) > CW - 32 && nm.length > 3) nm = nm.slice(0, -2) + '…'; T.draw(x, nm + tail, cx0 + CW / 2, cy0 + 62, { size: 8, align: 'c', color: st.ink }); return; }
       const LW = CW - 12, lines = labelLines(sp, s, LW); x.fillStyle = st.lab; x.fillRect(cx0 + 6, cy0 + LABY, LW, CH - LABY - 2); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(cx0 + 6, cy0 + CH - 2, LW, 1);
       lines.forEach((ln, k) => T.draw(x, ln.t, cx0 + CW / 2, cy0 + LABY + 1 + k * 8, { size: 8, align: 'c', color: ln.dim ? st.ink + 'bb' : st.ink }));
     });
@@ -419,7 +419,7 @@ const Boxes = (() => {
       if (pv) {
         const lst = pv.items.map(Save.spec.bind(Save)).filter(Boolean).map(s => SPECIES_BY_ID[s.sp].ru);
         if (this.tab === 'wall') { UIK.panel(ctx, 150, 130, 322, 100, { fill: '#10201c', border: c.line, shadow: false }); drawBoxScaled(ctx, pv, 154, 134, 140, 92); T.para(ctx, lst.length ? lst.join(', ') : 'коробка пуста', 300, 136, 166, { size: 8, color: '#9ab8a4', lh: 10 }); }
-        else T.draw(ctx, lst.length ? lst.join(', ').slice(0, 60) + (lst.join(', ').length > 60 ? '…' : '') : 'коробка пуста', 156, this.museum() ? 234 : 226, { size: 8, color: '#9ab8a4' });
+        else T.draw(ctx, lst.length ? I18N.tr(lst.join(', ')).slice(0, 60) + (I18N.tr(lst.join(', ')).length > 60 ? '…' : '') : 'коробка пуста', 156, this.museum() ? 234 : 226, { size: 8, color: '#9ab8a4' });
       }
       T.draw(ctx, hint, SW / 2 + 70, 244, { size: 8, align: 'c', color: c.text });
     },

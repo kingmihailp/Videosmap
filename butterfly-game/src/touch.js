@@ -20,14 +20,15 @@
   #kb{position:fixed;left:50%;bottom:0;width:60px;height:24px;font-size:16px;opacity:.02;border:0;padding:0;z-index:4;pointer-events:none}`;
   document.head.appendChild(st);
   const root = document.createElement('div'); root.id = 'tc'; document.body.appendChild(root);
-  const rot = document.createElement('div'); rot.id = 'rot'; rot.innerHTML = '<div>Поверни телефон горизонтально<br><br>↻ 📱</div>'; document.body.appendChild(rot);
+  const rot = document.createElement('div'); rot.id = 'rot'; const ROT = '<div>Поверни телефон горизонтально<br><br>↻ 📱</div>'; rot.innerHTML = I18N.tr(ROT); document.body.appendChild(rot);
+  setInterval(() => { rot.innerHTML = I18N.tr(ROT); document.querySelectorAll('#tc .b[data-ru]').forEach(e => { e.textContent = I18N.tr(e.dataset.ru); }); }, 1000);   // the language can change at any time
   const kb = document.createElement('input'); kb.id = 'kb'; kb.autocapitalize = 'off'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.value = ' '; kb.setAttribute('inputmode', 'text'); kb.setAttribute('enterkeyhint', 'done'); document.body.appendChild(kb);
   const S = () => Math.max(44, Math.min(70, Math.round(Math.min(innerWidth, innerHeight) * 0.15)));
 
   const key = (code, k) => { const o = { code, key: k || code, bubbles: true }; for (const t of ['keydown', 'keyup']) { const ev = new KeyboardEvent(t, o); ev.__tr = true; window.dispatchEvent(ev); } };
   const btns = [];
   function mk(label, place, show, act, cls) {
-    const b = document.createElement('div'); b.className = 'b' + (cls ? ' ' + cls : ''); b.textContent = label; Object.assign(b.style, place);
+    const b = document.createElement('div'); b.className = 'b' + (cls ? ' ' + cls : ''); b.textContent = I18N.tr(label); if (/[А-Яа-я]/.test(label)) b.dataset.ru = label; Object.assign(b.style, place);
     b.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); Snd.init(); Snd.resume(); act(); }, { passive: false });
     root.appendChild(b); btns.push({ b, show }); return b;
   }

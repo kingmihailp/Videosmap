@@ -297,7 +297,7 @@ const Gear = (() => {
 
 
   // ================================================================== the shop window of the market (overlay 'gear'); state lives in mk.gr
-  const ROWS = 7, fit = (str, maxW) => { if (T.width(str, 8) <= maxW) return str; while (str.length > 1 && T.width(str + '…', 8) > maxW) str = str.slice(0, -1); return str + '…'; };
+  const ROWS = 7, fit = (str, maxW) => { str = I18N.tr(str); if (T.width(str, 8) <= maxW) return str; while (str.length > 1 && T.width(str + '…', 8) > maxW) str = str.slice(0, -1); return str + '…'; };
   const BASE = () => ({ uid: 0, h: 'h_basic', r: 'r_basic', m: 'm_basic' });
   function modelOf(it) {
     if (it.kind === 'cannon') return makeNetModel(Object.assign(BASE(), { uid: -1, cannon: true, g: [] })).g;

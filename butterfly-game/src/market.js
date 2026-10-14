@@ -1031,7 +1031,7 @@ const Market = (() => {
       T.draw(ctx, 'WASD — ходить · мышь — осмотр · E — действие · Tab — журнал · Esc — пауза', 8, SH - 12, { size: 8, color: 'rgba(230,240,220,0.7)', shadow: '#000' });
     }
     drawTalk(ctx, t, dt) {
-      const T0 = this.talk; if (!T0) return; const c2 = UIK.col, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); const shown = line.slice(0, Math.floor(T0.chars));
+      const T0 = this.talk; if (!T0) return; const c2 = UIK.col, line = T0.lines[T0.i]; T0.chars = Math.min(line.length, T0.chars + dt * 34); const shown = I18N.typed(line, T0.chars);
       UIK.panel(ctx, 14, 178, 452, 76, { fill: 'rgba(20,14,30,0.95)', border: '#a070e0' }); Portrait.draw(ctx, 'hooded', 24, 189, t, T0.chars < line.length);
       T.draw(ctx, T0.who === 'inside' ? 'Торговец в капюшоне' : '???', 78, 184, { size: 8, color: '#c8a8f0' }); T.para(ctx, shown, 78, 198, 376, { size: 10, color: '#f0e8ff', lh: 13 });
       T.draw(ctx, T0.chars < line.length ? 'E — пропустить' : T0.i < T0.lines.length - 1 ? 'E — дальше' : 'E — закрыть', 458, 242, { size: 8, align: 'r', color: '#8a78a8' });
@@ -1050,7 +1050,7 @@ const Market = (() => {
     }
     dispose() { if (this.remotes) { this.remotes.dispose(); Net.hooks.cab = Net.hooks.pjoin = Net.hooks.pleave = null; } Snd.stopAmbient(); this.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); const mt = o.material; if (mt) (Array.isArray(mt) ? mt : [mt]).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); }); }
   }
-  const fitTxt = (s, maxW) => { if (T.width(s, 8) <= maxW) return s; while (s.length > 1 && T.width(s + '…', 8) > maxW) s = s.slice(0, -1); return s + '…'; };
+  const fitTxt = (s, maxW) => { s = I18N.tr(s); if (T.width(s, 8) <= maxW) return s; while (s.length > 1 && T.width(s + '…', 8) > maxW) s = s.slice(0, -1); return s + '…'; };
   Mkt.person = person; Mkt.eyeTex = eyeTex; Mkt.ctex = ctex;
   return Mkt;
 })();

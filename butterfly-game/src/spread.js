@@ -21,7 +21,7 @@ function specCard(ctx, x, y, w, h, spec, hover, sel, count) {
   if (ab) { const lb = 'аберрант', lw = T.width(lb, 8) + 8; UIK.panel(ctx, x + 3, y + 3, lw, 12, { fill: 'rgba(60,30,100,0.95)', border: '#c090ff', shadow: false }); T.draw(ctx, lb, x + 3 + lw / 2, y + 5, { size: 8, align: 'c', color: '#f0d8ff' }); }
   if (rare) { const lb = 'редкий', lw = T.width(lb, 8) + 8; UIK.panel(ctx, ab ? x + w - lw - 3 : x + 3, y + 3, lw, 12, { fill: 'rgba(90,16,16,0.95)', border: Rare.col, shadow: false }); T.draw(ctx, lb, (ab ? x + w - lw - 3 : x + 3) + lw / 2, y + 5, { size: 8, align: 'c', color: '#ffd0d0' }); }
   const nm = ab ? (SPECIES_BY_ID[sp.base] || sp).ru : sp.ru;
-  let n = nm; while (T.width(n, 8) > w - 6 && n.length > 3) n = n.slice(0, -2) + '…';
+  let n = I18N.tr(nm); while (T.width(n, 8) > w - 6 && n.length > 3) n = n.slice(0, -2) + '…';
   T.draw(ctx, n, x + w / 2, y + h - 21, { size: 8, align: 'c', color: ab ? '#f0d8ff' : c.text });
   if (spec.q !== null) { const g = Grade(spec.q); T.draw(ctx, spec.q + '% ' + g.name.split(' ')[0], x + w / 2, y + h - 11, { size: 8, align: 'c', color: g.col }); }
   else T.draw(ctx, fmtDate(spec.date), x + w / 2, y + h - 11, { size: 8, align: 'c', color: c.dim });

@@ -1,0 +1,10 @@
+// run any playwright test in English and list the texts that still have Russian:  node -r ./tools/test/en_wrap.js tools/test/<test>.js
+const pw = require(process.env.PW_CORE || 'playwright-core'); const orig = pw.chromium.launch.bind(pw.chromium);
+const HOOK = () => { window.__res = new Map(); window.__wide = new Map(); const iv = setInterval(() => { if (typeof I18N !== 'undefined' && !window.__hooked) { window.__hooked = 1; clearInterval(iv); const t0 = I18N.tr.bind(I18N), CY = /[А-Яа-яЁё]/; const d0 = T.draw; T.draw = (ctx, str, x, y, o = {}) => { const r = d0(ctx, str, x, y, o); try { if (!o.raw && typeof str === 'string' && CY.test(str)) { const wr = T.width(str, o.size || 8, true); if (r > wr + 1 && !window.__wide.has(str)) window.__wide.set(str, [wr, r]); } } catch (e) {} return r; };
+      I18N.tr = s => { const r = t0(s); if (typeof r === 'string' && CY.test(r) && !window.__res.has(s)) window.__res.set(s, r); return r; }; } }, 5); };
+pw.chromium.launch = async (...a) => {
+  const br = await orig(...a), pages = [], np = br.newPage.bind(br);
+  br.newPage = async (...x) => { const pg = await np(...x); pages.push(pg); const g = pg.goto.bind(pg); pg.goto = (u, o) => g(u + (u.includes('#') ? '&' : '#') + 'lang=en', o); await pg.addInitScript(HOOK); return pg; };
+  const cl = br.close.bind(br); br.close = async () => { const all = new Set(); for (const pg of pages) { try { (await pg.evaluate(() => [...window.__res.entries()])).forEach(([a, b]) => all.add(JSON.stringify(a).slice(0, 120) + ' => ' + JSON.stringify(b).slice(0, 90))); } catch (e) {} } console.log('RESIDUAL-RU', all.size); [...all].slice(0, 40).forEach(x => console.log('  ', x)); let wide = new Map(); for (const pg of pages) { try { (await pg.evaluate(() => [...window.__wide.entries()])).forEach(([k, v]) => wide.set(k, v)); } catch (e) {} } console.log('WIDER-THAN-RU', wide.size); [...wide].slice(0, 30).forEach(([k, v]) => console.log('  ', JSON.stringify(k).slice(0, 90), v)); return cl(); };
+  return br;
+};

@@ -17,8 +17,8 @@ const T = (() => {
     return c;
   }
   function meta(size) { return FONT_META[size] || FONT_META[8]; }
-  function width(str, size = 8) {
-    const m = meta(size).g; let w = 0;
+  function width(str, size = 8, raw = false) {
+    if (!raw) str = I18N.tr(str); const m = meta(size).g; let w = 0;
     for (const ch of str) { const g = m[ch] || m['?']; w += g[4]; }
     return w;
   }
@@ -34,8 +34,8 @@ const T = (() => {
   // opt: size, color, align ('l','c','r'), shadow, outline
   function draw(ctx, str, x, y, opt = {}) {
     const size = opt.size || 8; const color = opt.color || '#fff';
-    x = Math.round(x); y = Math.round(y);
-    const w = width(str, size);
+    x = Math.round(x); y = Math.round(y); if (!opt.raw) str = I18N.tr(str);   // raw: text typed by players (chat) is never translated
+    const w = width(str, size, true);
     if (opt.align === 'c') x -= Math.round(w / 2); else if (opt.align === 'r') x -= w;
     if (opt.outline) for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) drawRaw(ctx, str, x + dx, y + dy, size, opt.outline);
     if (opt.shadow) drawRaw(ctx, str, x + 1, y + 1, size, opt.shadow);
@@ -43,7 +43,7 @@ const T = (() => {
     return w;
   }
   function wrap(str, maxW, size = 8) {
-    const words = str.split(' '); const lines = []; let cur = '';
+    const words = I18N.tr(str).split(' '); const lines = []; let cur = '';
     for (const w of words) {
       const t = cur ? cur + ' ' + w : w;
       if (width(t, size) > maxW && cur) { lines.push(cur); cur = w; } else cur = t;

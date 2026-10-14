@@ -693,5 +693,5 @@ Play.pickPool = (biome, rng, size = 9, shared = false) => {
   return out;
 };
 Play.CARD_SCALES = [0.6, 0.8, 1, 1.25, 1.5, 2];
-const fitStr = (str, maxW, size = 8) => { if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
+const fitStr = (str, maxW, size = 8) => { str = I18N.tr(str); if (T.width(str, size) <= maxW) return str; while (str.length > 1 && T.width(str + '…', size) > maxW) str = str.slice(0, -1); return str + '…'; };
 const ease = t => 1 - Math.pow(1 - clamp(t), 3);

@@ -4,7 +4,7 @@
   gl.width = SW; gl.height = SH; let uiK = 2; ui.width = SW * uiK; ui.height = SH * uiK;
   const ctx = ui.getContext('2d');
   const params = new URLSearchParams(location.hash.replace('#', '?'));
-  Save.load(); Keys.rebuild(); revealOcean();
+  Save.load(); I18N.sync(); Keys.rebuild(); revealOcean();
 
   // ---------------- renderer + post (palette quantisation + ordered dither + depth outlines)
   const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: params.has('debug') });
@@ -134,7 +134,7 @@
     if (App.modal === 'keys') { if (S.keys.click(x, y)) App.modal = 'settings'; return; }
     if (App.modal === 'stash') { if (Secret.stash.click(x, y) === 'close') { App.modal = null; Snd.sfx.page(); } return; }
     const id = S.settings.click(x, y); if (!id) return; if (id.startsWith('vol:')) { App.sliderDrag = id.slice(4); S.settings.set(App.sliderDrag, x); Snd.applySettings(); return; } Snd.sfx.click();
-    if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
+    if (id === 'lang') I18N.toggle(); else if (id === 'sound') toggleSetting('sound'); else if (id === 'music') toggleSetting('music');
     else if (id === 'quality' && App.play) { Save.data.settings.quality = Save.data.settings.quality === 'low' ? 'high' : 'low'; Save.write(); App.play.applyQuality(); }
     else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.modal = 'keys'; }
     else if (id === 'card' && App.play) { App.modal = null; App.overlay = 'cardpos'; }
@@ -216,6 +216,7 @@
       if (App.locked) inp.fire = true; else lock();
     } else if (sc === 'title') {
       const id = S.title.click(x, y); if (!id) return; Snd.sfx.click();
+      if (id === 'lang') { I18N.toggle(); S.title.layout(); return; }
       if (id === 'play') go(() => { App.screen = 'map'; }); else if (id === 'journal') openJournal('title'); else if (id === 'cabinet') go(() => App.toCabinet()); else if (id === 'mp') { S.mp.msg = ''; App.screen = 'mp'; } else if (id === 'keys') { S.keys.wait = -1; S.keys.msg = ''; App.screen = 'keys'; } else if (id === 'sound') toggleSetting('sound'); else if (id === 'help') { App.helpFromTitle = true; }
     } else if (sc === 'keys') { if (S.keys.click(x, y)) App.screen = 'title';
     } else if (sc === 'mp') { mpAct(S.mp.click(x, y));
