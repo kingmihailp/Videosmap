@@ -115,10 +115,12 @@ class Fly {
     // ---- senses
     if (p.hasMod('teleport') && this.state !== CAUGHT && this.kind !== 'rush' && this.kind !== 'ambush' && Math.random() < dt * 0.45) { const a = Math.random() * 6.28, d = 3 + Math.random() * 5, nx = this.pos.x + Math.cos(a) * d, nz = this.pos.z + Math.sin(a) * d; if (Math.hypot(nx, nz) < w.R * 0.9 && !w.inWater(nx, nz)) { this.releaseFlower(); this.pos.set(nx, w.flyH(nx, nz) + 0.6 + Math.random() * 1.6, nz); this.state = FLY; this.pickTarget(); } }
     if (this.kind && this.special(this.kind, dt, t, dx, dz, dist)) return;
+    const storm = !this.kind && w.storm > 0.3;          // a sandstorm: nothing flies, the butterflies cling to the ground until it passes
+    if (storm && this.state !== CAUGHT) { if (this.state === FLEE) this.state = FLY; if (this.state === FLY) { this.releaseFlower(); this.perchTarget = true; this.tgt.set(this.pos.x, w.flyH(this.pos.x, this.pos.z) + 0.1, this.pos.z); } else if (this.state === PERCH) this.t = Math.max(this.t, 2); }
     const scareBase = (this.kind === 'figure' ? (pl.noise > 0.45 ? 11 : 0.4) : b.wary * (0.3 + 0.7 * pl.noise)) * p.calmMul();
     if (this.state === PERCH) {
       this.t -= dt;
-      if (dist < scareBase * 0.62 || (p.netBusyAny(this.pos, 2.8) && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
+      if (dist < scareBase * (storm ? 0.25 : 0.62) || (p.netBusyAny(this.pos, 2.8) && Math.random() < dt * 5)) { this.startFlee(_v.set(dx, 0, dz)); }
       else if (this.t <= 0) { this.state = FLY; this.pickTarget(); }
     } else if (this.state === FLY) {
       if (dist < 1.4 * (0.5 + pl.noise * 0.5) && pl.noise > 1) { this.startFlee(_v.set(dx, 0, dz)); }
@@ -275,7 +277,10 @@ class Play {
     this.blackT = 6; return d;
   }
   bridgeEvent(e) {
-    if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят — мост ветхий. Идите осторожно и не бегите.', 4); }
+    if (e.k === 'stormWarn') this.toast('Вдали поднимается стена пыли — скоро песчаная буря!', 5, true);
+    else if (e.k === 'stormStart') this.toast('Песчаная буря! Видимость почти нулевая, бабочки прижались к земле', 5, true);
+    else if (e.k === 'stormEnd') this.toast('Буря стихает…', 3);
+    else if (e.k === 'creak') { Snd.sfx.creak(); this.toast('Доски скрипят — мост ветхий. Идите осторожно и не бегите.', 4); }
     else if (e.k === 'creak2') Snd.sfx.creak();
     else if (e.k === 'warn') { Snd.sfx.creak(); this.toast('Мост ходит ходуном — остановитесь!', 2.4); }
     else if (e.k === 'shake') { Snd.sfx.creak(); this.toast('Мост трещит!', 1.6); }
@@ -475,7 +480,8 @@ class Play {
     const len = Math.hypot(mx, mz); if (len > 0) { mx /= len; mz /= len; }
     const slow = inp.keys.has('ControlLeft') || inp.keys.has('KeyC') || inp.keys.has('ControlRight'), sprint = !slow && (inp.keys.has('ShiftLeft') || inp.keys.has('ShiftRight'));      // creeping wins over running (on a phone the stick's edge also means Shift)
     const wading = w.inWater(P.pos.x, P.pos.z, 0);
-    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1) * (1 - this.netStats.slow);
+    const qs = w.quicksand ? w.quicksand(P.pos.x, P.pos.z) : 0;          // quicksand: the deeper the pit and the deeper you have sunk, the slower the legs
+    const spd = (sprint ? 6.2 : slow ? 1.35 : 3.3) * (this.hasMod('heavy') ? 0.6 : 1) * (wading ? 0.5 : 1) * (1 - this.netStats.slow) * (1 - 0.32 * qs - 0.5 * (this.sink || 0));
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
     const mk = w.moveK ? w.moveK(P.pos.x, P.pos.z, fx * -mz + rx * mx, fz * -mz + rz * mx) : 1;      // mountains: climbing is slow
     const tx = (fx * -mz + rx * mx) * spd * mk, tz = (fz * -mz + rz * mx) * spd * mk;
@@ -487,10 +493,19 @@ class Play {
     for (const c of w.colliders) { const cx = nx - c.x, cz = nz - c.z, mr = c.r + 0.38, d2 = cx * cx + cz * cz; if (d2 < mr * mr) { const d = Math.sqrt(d2) || 0.01; nx += cx / d * (mr - d); nz += cz / d * (mr - d); } }
     const rr = Math.hypot(nx, nz); if (rr > w.R) { nx *= w.R / rr; nz *= w.R / rr; if (!this.edgeT || this.t - this.edgeT > 6) { this.toast(w.edgeMsg || 'Дальше — только горы. Вернитесь к цветам!', 3); this.edgeT = this.t; } }
     const moved = Math.hypot(nx - P.pos.x, nz - P.pos.z); P.pos.x = nx; P.pos.z = nz; P.moving = moved > 0.002;
-    const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
+    if (w.quicksand) {          // the pit pulls you down slowly while you walk in it, much faster while you stand; leave it and the legs come free again; sunk completely, you are dragged under and wake up on the map
+      const qn = w.quicksand(nx, nz), mv = moved / Math.max(dt, 1e-4) > 0.5;
+      if (qn > 0.02) { this.sinkT = (this.sinkT || 0) + dt * (mv ? 0.6 : 1.6) * (0.35 + qn);
+        if (!this.qsWarned) { this.qsWarned = true; this.toast('Зыбучий песок! Ноги вязнут — скорее на твёрдую землю, не стойте на месте!', 4.5, true); Snd.sfx.sandsink(0.3); }
+        if (this.sinkT > 12 && !this.qsWarn2) { this.qsWarn2 = true; this.toast('Песок затягивает всё глубже!', 3, true); Snd.sfx.sandsink(0.8); } }
+      else { this.sinkT = Math.max(0, (this.sinkT || 0) - dt * 2.5); if (this.sinkT < 6) { this.qsWarned = false; this.qsWarn2 = false; } }
+      this.sink = clamp((this.sinkT || 0) / 26);
+      if (this.sink >= 1 && !this.sunkDone) { this.sunkDone = true; Snd.sfx.sandsink(1); if (window.F0W && F0W.sunk) F0W.sunk(this); }
+    }
+    const gy = (w.groundAt || w.heightAt)(nx, nz) + 1.65 - (this.sink || 0) * 1.1; P.y = this.fall ? this.stepFall(dt, w, nx, nz) : damp(P.y, gy, 14, dt);
     const speedNow = moved / Math.max(dt, 1e-4); w.pstate = { speed: speedNow, sprint };
     P.bob += speedNow * dt * 2.2; P.stepD += moved;
-    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
+    const stride = slow ? 1.1 : sprint ? 2.2 : 1.7; if (P.stepD > stride) { P.stepD = 0; Snd.sfx.step(wading ? 'water' : (this.sink || 0) > 0.05 ? 'quick' : w.inWater(nx, nz, 3) ? 'sand' : w.slopeAt(nx, nz) > 0.8 ? 'rock' : 'grass'); }
     // after a run the steps stay heavy for a while: walking is louder (4 bars on the meter) than ordinary walking (3 bars)
     P.tired = sprint && speedNow > 2 ? 6 : Math.max(0, (P.tired || 0) - dt);
     const targetNoise = (wading && speedNow > 0.3 ? 1.2 : 1) * (speedNow < 0.2 ? 0.1 : sprint ? 1.55 : slow ? 0.25 : P.tired > 0 ? 0.8 : 0.6) * (this.hasMod('loud') ? 1.8 : this.hasMod('silent') ? 0.4 : 1);
@@ -530,7 +545,7 @@ class Play {
     this.reticle = 0; const fwd = new THREE.Vector3(0, 0, -1).applyEuler(this.camera.rotation);
     for (const f of this.flies) { if (f.state === CAUGHT) continue; _v.copy(f.pos).sub(this.camera.position); const d = _v.length(); if (d < 2.9 && d > 0.5 && _v.normalize().dot(fwd) > 0.93) this.reticle = Math.max(this.reticle, 1 - d / 3); }
     // world
-    w.update(dt, this.t, P.pos);
+    w.update(dt, this.t, P.pos); if (w.stormInfo !== undefined) Snd.setStorm(w.storm || 0);
     if (w.cull) { this.camera.updateMatrixWorld(); w.cull(this.camera); }
     if (w.events && w.events.length) for (const e of w.events.splice(0)) this.bridgeEvent(e);
     if (w.pendingFall && !this.fall) { this.fall = { t: 0, vy: 0 }; w.pendingFall = null; }
@@ -551,6 +566,9 @@ class Play {
     const c = UIK.col, P = this.player, b = this.biome;
     // vignette
     const g = ctx.createRadialGradient(SW / 2, SH / 2, SH * 0.45, SW / 2, SH / 2, SW * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.28)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
+    // sandstorm: a dusty veil with streaks of flying sand; quicksand: the dark sand rises over the view as you sink
+    { const stl = this.world.storm || 0; if (stl > 0.02) { ctx.fillStyle = `rgba(190,146,86,${0.2 * stl})`; ctx.fillRect(0, 0, SW, SH); for (let i = 0, n = Math.round(26 * stl); i < n; i++) { ctx.fillStyle = `rgba(238,212,160,${0.08 + Math.random() * 0.12})`; ctx.fillRect(Math.random() * SW, Math.random() * SH, 24 + Math.random() * 90, 1); } }
+      const sk = this.sink || 0; if (sk > 0.03) { const gr = ctx.createLinearGradient(0, SH, 0, SH * (1 - 0.7 * sk)); gr.addColorStop(0, `rgba(96,78,52,${0.95 * Math.min(1, sk * 1.4)})`); gr.addColorStop(1, 'rgba(96,78,52,0)'); ctx.fillStyle = gr; ctx.fillRect(0, SH * (1 - 0.7 * sk), SW, SH * 0.7 * sk + 1); } }
     // biome plate
     const full = b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, line2 = T.width(full, 8) <= 158 ? full : fitStr(b.place, 158);      // the plate must hold the longest names (the coordinates give way)
     const pw = clamp(Math.max(T.width(b.name, 8), T.width(line2, 8)) + 14, 158, 174);
@@ -594,6 +612,7 @@ class Play {
       UIK.panel(ctx, 6, SH - 48, 92, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ [F]', 11, SH - 44, { size: 8, color: c.dim }); ctx.fillStyle = this.flashOn ? '#ffe9a0' : '#3a3a3a'; ctx.fillRect(80, SH - 43, 12, 8); ctx.fillStyle = this.flashOn ? '#fff8d8' : '#1a1a1a'; ctx.fillRect(81, SH - 42, 10, 3);
       if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
     }
+    { const wi = this.world.stormInfo; if (wi && (this.world.storm || 0) > 0.3) { const tx = `Песчаная буря · ${Math.max(0, Math.ceil((wi.end - Date.now()) / 1000))} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 54, w2, 16, { fill: 'rgba(70,46,20,0.9)' }); T.draw(ctx, tx, SW / 2 - w2 / 2 + 7, 58, { size: 8, color: '#f0c880' }); } }
     if (this.mod) { const tx = `${this.mod.name} · ${Math.ceil(this.mod.t)} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 34, w2, 16, { fill: this.mod.good ? 'rgba(16,48,28,0.9)' : 'rgba(56,16,20,0.9)', border: this.mod.good ? '#7ee08a' : '#ff6a6a' }); T.draw(ctx, tx, SW / 2, 38, { size: 8, align: 'c', color: this.mod.good ? '#c8ffd0' : '#ffc8c8' }); }
     if (this.revealT > 0) this.flies.forEach(f => { if (f.state === CAUGHT) return; const q = f.pos.clone().project(this.camera); if (q.z > 1) return; const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (sx < 4 || sx > SW - 4 || sy < 4 || sy > SH - 4) return; ctx.fillStyle = `rgba(255,190,80,${0.5 + 0.5 * Math.sin(this.t * 6)})`; ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 9, 3, 3); ctx.fillRect(Math.round(sx), Math.round(sy) - 6, 1, 3); });
     if (this.sense || this.guideT > 0) this.drawSense(ctx);

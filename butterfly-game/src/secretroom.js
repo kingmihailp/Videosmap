@@ -198,7 +198,22 @@ const SecretMarket = (() => {
         const route = [[14, 41], [26, 40], [38, 40], [50, 38], [58, 34], [60, 30]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#6a2a18'); }
         for (let k = -2; k <= 2; k++) { px(60 + k, 29 + k, '#b02a1c'); px(60 + k, 29 - k, '#b02a1c'); }
       };
-      if (id === 'papua') drawPapua(); else if (id === 'vietnam') drawVietnam(); else {
+      const drawChihuahua = () => {
+        // the Chihuahuan Desert: a pale sky with a wall of dust on the horizon, brown ranges, the ochre gravel plain with creosote dots, an ocotillo, a yucca and a cactus, a dark pit of quicksand and the route to the red cross
+        for (let yy = 12; yy < 36; yy++) for (let xx = 7; xx < W - 7; xx++) px(xx, yy, yy < 17 ? '#e8d6a8' : yy < 21 ? '#dcc490' : '#d4b074');
+        for (let xx = 8; xx < W - 8; xx++) { const hh = Math.round(4 + 3 * Math.sin(xx * 0.31) + 2 * Math.sin(xx * 0.73 + 1)); for (let k = 0; k < hh; k++) px(xx, 21 - k, k > hh - 2 ? '#a07a5a' : k % 3 === 0 ? '#80604a' : '#8e6c52'); }          // the ranges
+        for (let xx = 8; xx < W - 8; xx++) for (let yy = 16; yy < 21; yy++) if (rnd() < 0.55 - (yy - 16) * 0.08) px(xx, yy, yy < 18 ? '#d8b87c' : '#c8a064');                       // dust on the horizon
+        for (let yy = 22; yy < 36; yy++) for (let xx = 7; xx < W - 7; xx++) { const r0 = rnd(); px(xx, yy, r0 < 0.07 ? '#8a6a48' : r0 < 0.2 ? '#c4a068' : r0 < 0.4 ? '#cfae78' : '#d6b680'); }       // gravel
+        for (let k = 0; k < 40; k++) { const xx = 9 + Math.floor(rnd() * 58), yy = 23 + Math.floor(rnd() * 12); px(xx, yy, '#7a8450'); if (rnd() < 0.5) px(xx + 1, yy, '#6a7444'); }                    // creosote
+        for (const [qx, qy, qrx, qry] of [[26, 31, 6, 2.2], [52, 28, 4, 1.6]]) for (let yy = -3; yy <= 3; yy++) for (let xx = -7; xx <= 7; xx++) { const d = (xx / qrx) ** 2 + (yy / qry) ** 2; if (d <= 1) px(Math.round(qx + xx), Math.round(qy + yy), d > 0.7 ? '#e6dcc0' : (xx + yy) % 3 === 0 ? '#8a7a5c' : '#6e6048'); }        // pits of quicksand
+        for (let k = 0; k < 9; k++) { const ox = 14 + (k % 3), oy = 34 - k; px(ox - (k > 4 ? 1 : 0), oy, '#6a6a4a'); px(ox + 1 + (k > 4 ? 1 : 0), oy, '#6a6a4a'); if (k > 5) px(ox + (k % 2 ? 2 : -1), oy - 1, '#d83a22'); }      // an ocotillo
+        for (const [yx, yy2] of [[44, 27], [60, 33]]) { for (let k = 0; k < 4; k++) px(yx, yy2 - k, '#6a5a3e'); for (let k = -2; k <= 2; k++) px(yx + k, yy2 - 4 - (k === 0 ? 1 : 0), '#7a9a5a'); px(yx, yy2 - 6, '#f0e8c8'); }       // yuccas
+        for (const [cx2, cy2] of [[34, 35], [66, 29]]) { x.fillStyle = '#4a7a4a'; x.fillRect(cx2, cy2 - 3, 2, 4); px(cx2 - 1, cy2 - 2, '#4a7a4a'); px(cx2 + 2, cy2 - 3, '#4a7a4a'); px(cx2, cy2 - 4, '#f0a02a'); }          // cacti
+        for (const [bx, by] of [[3, 0], [4, 1], [5, 1], [2, 1], [1, 2], [6, 2]]) px(40 + bx, 11 + by, '#f6f0e0');                                                                             // a pale butterfly (the Sonoran marble)
+        const route = [[11, 40], [22, 38], [32, 36], [42, 33], [52, 31], [58, 25]]; for (let k = 0; k < route.length - 1; k++) { const [x0, y0] = route[k], [x1, y1] = route[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) if (i % 2 === 0) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), '#7a3a1c'); }
+        for (let k = -2; k <= 2; k++) { px(58 + k, 24 + k, '#b02a1c'); px(58 + k, 24 - k, '#b02a1c'); }
+      };
+      if (id === 'chihuahua') drawChihuahua(); else if (id === 'papua') drawPapua(); else if (id === 'vietnam') drawVietnam(); else {
       // the land: a lumpy island of moss and peat
       const cx = 37, cy = 27, rx = 25, ry = 12, land = [];
       for (let yy = 11; yy < H - 11; yy++) for (let xx = 8; xx < W - 8; xx++) { const d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 + (Math.sin(xx * 0.9) * Math.cos(yy * 0.7) * 0.22 + (rnd() - 0.5) * 0.2); if (d < 1) { land.push([xx, yy, d]); } }
@@ -277,13 +292,15 @@ const SecretMarket = (() => {
     close() { this.ov = null; this.hooks.lock(); }
     openTalk() { const sp = Secret.speech('shop'); this.talk = { who: 'inside', lines: sp.lines, i: 0, chars: 0 }; this.open('talk'); }
     // the trader's goods: maps of secret locations (personal: bought once, kept in the save)
-    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0, tab: 0 }; this.open('shop'); }
+    openShop(line) { this.shop = { line: line || Secret.speech('shop').lines[0], chars: 0, sel: 0, tab: 0, scroll: 0 }; this.open('shop'); }
     shopTabs() { return [{ id: 'tab0', i: 0, label: 'Карты', x: 196, y: 240, w: 60, h: 16 }, { id: 'tab1', i: 1, label: 'Предметы', x: 260, y: 240, w: 88, h: 16 }]; }
     setTab(i) { this.shop.tab = i; this.shop.sel = 0; this.shop.line = i ? 'Не карта… но тоже дорога. Для тех, кто ставит ловушки.' : Secret.speech('shop').lines[0]; this.shop.chars = 0; Snd.sfx.page(); }
     shopItems() { return [{ kind: 'hn', id: 'pheromone', name: Traps.HN.pheromone.ru, price: Traps.HN.pheromone.price, blurb: 'Запечатанный флакон без этикетки. Кладётся в ловушку вместо мёда: редчайшие гости почти наверняка, и каждая десятая бабочка — аберрант.' }, { kind: 'tr', id: 'scr', name: Traps.TYPES.scr.ru, price: Traps.TYPES.scr.price, blurb: 'Чёрная улыбчивая ловушка с щупальцами. Только для океана, берёт одну колбу феромонов. Ломается через 6 минут 66 секунд — с визгом.' }]; }
     buyItem(i) { const it = this.shopItems()[i || 0]; if (!it) return; const r = Traps.buy(it.kind, it.id), say = t => { this.shop.line = t; this.shop.chars = 0; }; if (r) { Snd.sfx.coin(); say(it.id === 'scr' ? 'Она улыбается. Не смотри ей в рот долго… Ставь в океане.' : ['Бери. Не нюхай. Положи в ловушку — и жди.', 'Он зовёт тех, кто редко приходит.'][(Math.random() * 2) | 0]); this.toast(it.id === 'scr' ? 'Куплена скритчушка (ставится только в океане: G)' : 'Куплено: непонятные феромоны (кладутся в ловушку вместо мёда)', 4); } else { Snd.sfx.deny(); say(`${it.price}. Тишина стоит дороже, но это — тоже не даром.`); } }
     buy(i) { if (this.shop.tab === 1) { this.buyItem(i); return; } const m = Maps.LIST[i]; if (!m) return; const r = Maps.buy(m.id); const say = k => { this.shop.line = Secret.speech(k).lines[0]; this.shop.chars = 0; }; if (r === 'ok') { Snd.sfx.coin(); say('sold'); this.toast('Новая локация открыта на карте экспедиций', 4); } else if (r === 'poor') { Snd.sfx.deny(); say('poor'); } else { say('have'); } }
-    shopRows() { return (this.shop && this.shop.tab === 1 ? [0, 1] : Maps.LIST.map((m, i) => i)).map(i => ({ id: 'buy' + i, i, x: 352, y: 118 + i * 47, w: 88, h: 18 })); }
+    shopRows() { const sc = this.shop && this.shop.tab === 0 ? this.shop.scroll || 0 : 0; return (this.shop && this.shop.tab === 1 ? [0, 1] : Maps.LIST.map((m, i) => i).filter(i => i >= sc && i < sc + 3)).map(i => ({ id: 'buy' + i, i, x: 352, y: 118 + (i - sc) * 47, w: 88, h: 18 })); }
+    shopScroll(d) { const S0 = this.shop; if (!S0 || S0.tab !== 0) return; const n = Math.max(0, Maps.LIST.length - 3), v = clamp((S0.scroll || 0) + d, 0, n); if (v !== S0.scroll) { S0.scroll = v; Snd.sfx.page(); } }       // more than three maps: the list scrolls (wheel, arrows)
+    shopArrows() { const S0 = this.shop, n = Maps.LIST.length - 3; if (!S0 || S0.tab !== 0 || n <= 0) return []; return [{ id: 'up', d: -1, x: 450, y: 96, w: 10, h: 12, on: (S0.scroll || 0) > 0 }, { id: 'down', d: 1, x: 450, y: 226, w: 10, h: 12, on: (S0.scroll || 0) < n }]; }
     shopClose() { return { x: 352, y: 240, w: 88, h: 16 }; }
     talkNext() { const T0 = this.talk; if (!T0) return; const len = T0.lines[T0.i].length; if (T0.chars < len) { T0.chars = len; return; } if (T0.i < T0.lines.length - 1) { T0.i++; T0.chars = 0; } else { this.openShop(T0.lines[T0.lines.length - 1]); } }
     interact() { const s = this.prompt; if (!s) return; if (s.id === 'exit') { Snd.sfx.door(); this.hooks.exitSecret(); } else if (s.id === 'seller') { Snd.sfx.page(); this.openTalk(); } }
@@ -291,17 +308,17 @@ const SecretMarket = (() => {
       const ov = this.ov;
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
-      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Tab' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') this.setTab(1 - this.shop.tab); else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
+      if (ov === 'shop') { if (e.code === 'Escape') { Snd.sfx.page(); this.close(); } else if (e.code === 'Tab' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') this.setTab(1 - this.shop.tab); else if ((e.code === 'ArrowDown' || e.code === 'ArrowUp') && this.shop.tab === 0) { const d = e.code === 'ArrowDown' ? 1 : -1; this.shop.sel = clamp(this.shop.sel + d, 0, Maps.LIST.length - 1); if (this.shop.sel < (this.shop.scroll || 0)) this.shop.scroll = this.shop.sel; else if (this.shop.sel > (this.shop.scroll || 0) + 2) this.shop.scroll = this.shop.sel - 2; Snd.sfx.hover(); } else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') this.buy(this.shop.sel); return; }
       if (ov === 'pause' && e.code === 'Escape') { this.ov = null; this.hooks.lock(); }
     }
     pauseButtons() { const x = SW / 2 - 90; return [{ id: 'resume', label: 'Продолжить', x, y: 76, w: 180, h: 20, size: 10 }, { id: 'settings', label: 'Настройки', x, y: 102, w: 88, h: 16 }, { id: 'stash', label: 'Склад (I)', x: x + 92, y: 102, w: 88, h: 16 }, { id: 'exit', label: 'Выйти на рынок', x, y: 126, w: 180, h: 16 }, { id: 'title', label: 'Выход в главное меню', x, y: 148, w: 180, h: 16 }]; }
     click(x, y) {
       if (this.ov === 'talk') { this.talkNext(); return; }
-      if (this.ov === 'shop') { const tb = this.shopTabs().find(b => UIK.hit(b, x, y)); if (tb) { if (tb.i !== this.shop.tab) this.setTab(tb.i); return; } const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
+      if (this.ov === 'shop') { const tb = this.shopTabs().find(b => UIK.hit(b, x, y)); if (tb) { if (tb.i !== this.shop.tab) this.setTab(tb.i); return; } const ar = this.shopArrows().find(b => UIK.hit(b, x, y)); if (ar) { this.shopScroll(ar.d); return; } const b = this.shopRows().find(b => UIK.hit(b, x, y)); if (b) { Snd.sfx.click(); this.shop.sel = b.i; this.buy(b.i); } else if (UIK.hit(this.shopClose(), x, y)) { Snd.sfx.page(); this.close(); } return; }
       if (this.ov !== 'pause') return; const b = this.pauseButtons().find(b => UIK.hit(b, x, y)); if (!b) return; Snd.sfx.click();
       if (b.id === 'resume') { this.ov = null; this.hooks.lock(); } else if (b.id === 'settings') this.hooks.settings(); else if (b.id === 'stash') this.hooks.stash(); else if (b.id === 'exit') this.hooks.exitSecret(); else if (b.id === 'title') this.hooks.title();
     }
-    wheel() {}
+    wheel(dy) { if (this.ov === 'shop') this.shopScroll(dy > 0 ? 1 : -1); }
     draw(ctx, t, m, dt) {
       const m_ = m; UIK.panel(ctx, 6, 6, 150, 20, { fill: 'rgba(16,28,24,0.82)', border: c.line }); T.draw(ctx, 'Тайный рынок', 12, 12, { size: 8, color: '#c8a8f0' });
       ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(SW / 2 - 1, SH / 2 - 1, 2, 2);
@@ -318,14 +335,17 @@ const SecretMarket = (() => {
         UIK.panel(ctx, 90, 36, 358, 52, { fill: 'rgba(36,26,52,0.95)', border: '#6a4a98', shadow: false }); T.para(ctx, S0.line.slice(0, Math.floor(S0.chars)), 98, 43, 342, { size: 10, color: '#f0e8ff', lh: 13 });
         ctx.fillStyle = 'rgba(160,112,224,0.4)'; ctx.fillRect(34, 92, 412, 1);
         if (S0.tab === 0) {
+        const sc0 = S0.scroll || 0;
         Maps.LIST.forEach((m, i) => {
-            const y = 96 + i * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);
+            if (i < sc0 || i >= sc0 + 3) return;
+            const y = 96 + (i - sc0) * 47, have = Maps.has(m.id), sel = this.shop.sel === i, b = this.shopRows().find(r => r.i === i), hv = UIK.hit(b, m_.x, m_.y);
             if (sel) { ctx.fillStyle = 'rgba(160,112,224,0.12)'; ctx.fillRect(32, y - 2, 416, 47); }
             ctx.drawImage(mapSprite(m.id), 36, y, 76, 46);
             T.draw(ctx, m.name, 122, y, { size: 10, color: have ? c.green : c.gold }); T.para(ctx, m.blurb, 122, y + 14, 214, { size: 8, color: '#c8c0d8', lh: 10 });
             if (!have) T.draw(ctx, `${m.price} монет`, b.x + b.w / 2, b.y - 11, { size: 8, align: 'c', color: coins >= m.price ? c.gold : '#e07070' });
             UIK.btn(ctx, Object.assign({}, b, { label: have ? 'Куплено' : 'Купить', disabled: have }), hv && !have);
           });
+          for (const a of this.shopArrows()) { ctx.fillStyle = a.on ? (UIK.hit(a, m_.x, m_.y) ? '#fff' : '#c8a8f0') : '#4a3a6a'; ctx.beginPath(); if (a.d < 0) { ctx.moveTo(a.x + 5, a.y + 2); ctx.lineTo(a.x + 10, a.y + 10); ctx.lineTo(a.x, a.y + 10); } else { ctx.moveTo(a.x, a.y + 2); ctx.lineTo(a.x + 10, a.y + 2); ctx.lineTo(a.x + 5, a.y + 10); } ctx.closePath(); ctx.fill(); }
         } else {
           this.shopItems().forEach((it, i) => {
             const y = 96 + i * 47, b = this.shopRows()[i], hv = UIK.hit(b, m_.x, m_.y);

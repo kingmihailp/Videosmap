@@ -48,7 +48,8 @@ const Snd = (() => {
   const sfx = {
     click() { if (!ac) return; const t = now(); osc('square', 880, t, 0.06, 0.07); osc('square', 1320, t + 0.045, 0.07, 0.06); },
     hover() { if (!ac) return; osc('square', 1320, now(), 0.03, 0.025); },
-    step(kind) { if (!ac) return; const t = now(); if (kind === 'water') { noiseBurst(t, 0.2, 2400, 800, 0.16, 'bandpass', 0.9); noiseBurst(t + 0.05, 0.12, 900, 500, 0.08, 'lowpass', 0.7); return; } const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
+    sandsink(k) { if (!ac) return; const t = now(); noiseBurst(t, 0.45, 420, 140, 0.16 + 0.1 * k, 'lowpass', 0.8); noiseBurst(t + 0.1, 0.3, 900, 300, 0.06, 'bandpass', 1.4); osc('sine', 90 - 20 * k, t, 0.35, 0.06, null, 50); },
+    step(kind) { if (!ac) return; const t = now(); if (kind === 'quick') { noiseBurst(t, 0.22, 700, 220, 0.16, 'lowpass', 0.8); noiseBurst(t + 0.08, 0.16, 300, 150, 0.1, 'lowpass', 0.8); return; } if (kind === 'water') { noiseBurst(t, 0.2, 2400, 800, 0.16, 'bandpass', 0.9); noiseBurst(t + 0.05, 0.12, 900, 500, 0.08, 'lowpass', 0.7); return; } const f = kind === 'sand' ? 900 : kind === 'rock' ? 1400 : kind === 'wood' ? 760 : 520; noiseBurst(t, 0.07, f, f * 0.6, 0.12, 'lowpass', 0.7); },
     // the skrichushka wears out: a long shriek that starts high and tears (the doors-and-screech kind of scream)
     scream() { if (!ac) return; if (scrBuf) { const src = ac.createBufferSource(), g = ac.createGain(); src.buffer = scrBuf; g.gain.value = 1.0; src.connect(g); g.connect(sfxG); src.start(); return; } loadScr(); const t = now(); for (let k = 0; k < 3; k++) { const o = ac.createOscillator(), g = ac.createGain(), vb = ac.createOscillator(), vg = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(600 + k * 90, t); o.frequency.exponentialRampToValueAtTime(2400 + k * 160, t + 0.25); o.frequency.exponentialRampToValueAtTime(1400 + k * 60, t + 1.3); vb.frequency.value = 36 + k * 5; vg.gain.value = 90; vb.connect(vg); vg.connect(o.frequency); env(g, t, 0.02, 1.4, 0.14); o.connect(g); g.connect(sfxG); o.start(t); vb.start(t); o.stop(t + 1.5); vb.stop(t + 1.5); } noiseBurst(t, 1.3, 3200, 5200, 0.2, 'bandpass', 2); noiseBurst(t, 0.2, 1200, 400, 0.25, 'lowpass', 1); },
     chomp() { if (!ac) return; const t = now(); noiseBurst(t, 0.07, 1400, 300, 0.28, 'lowpass', 1); osc('square', 150, t, 0.1, 0.12, null, 70); osc('triangle', 95, t + 0.04, 0.14, 0.1); },
@@ -121,6 +122,7 @@ const Snd = (() => {
     ocean:      { wind: 0.25, bird: null, insect: null, rain: true, eerie: true, base: 38, scale: [0, 1, 3, 5, 7, 8], mus: 0.5 },
     bog:        { wind: 0.45, bird: 'sparse', insect: ['cricket', 3200, 0.025], frog: true, base: 45, scale: [0, 2, 3, 7, 8], mus: 0.7 },
     papua:      { wind: 0.12, bird: 'tropic', insect: ['cicada', 4800, 0.075], frog: true, base: 49, scale: [0, 2, 3, 7, 10], mus: 0.8 },
+    chihuahua:  { wind: 0.42, bird: 'dove', insect: ['cicada', 4200, 0.05], base: 50, scale: [0, 3, 5, 7, 10], mus: 0.7 },
     vietnam:    { wind: 0.55, bird: 'song', insect: ['cicada', 5000, 0.06], water: true, base: 53, scale: [0, 2, 3, 7, 9], mus: 0.85 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
@@ -138,11 +140,28 @@ const Snd = (() => {
     }
     if (cfg.insect) { // constant insect bed
       const [kind2, fq, vol] = cfg.insect; const o = ac.createOscillator(), g = ac.createGain(), am = ac.createOscillator(), amg = ac.createGain();
-      o.frequency.value = fq; am.frequency.value = kind2 === 'cicada' ? 38 : 9; amg.gain.value = vol * 0.5; g.gain.value = vol * 0.5; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(ambG); o.start(); am.start(); amb.nodes.push(o, am);
+      o.frequency.value = fq; am.frequency.value = kind2 === 'cicada' ? 38 : 9; amg.gain.value = vol * 0.5; g.gain.value = vol * 0.5; am.connect(amg); amg.connect(g.gain); const im = ac.createGain(); im.gain.value = 1; o.connect(g); g.connect(im); im.connect(ambG); amb.insMix = im; o.start(); am.start(); amb.nodes.push(o, am);
     }
     ambG.gain.cancelScheduledValues(t); ambG.gain.setValueAtTime(0.0001, t); ambG.gain.linearRampToValueAtTime(0.9 * K.s, t + 2.0);
     musG.gain.cancelScheduledValues(t); musG.gain.setTargetAtTime(A.music ? 0.5 * K.mu : 0, t, 0.8);
     nextEvt = t + 1; musNext = t + 1.5; musStep = 0;
+  }
+  // the sandstorm (v = 0..1, the world's storm level): a low roar, a howl that sweeps up and down, the hiss of sand skating over the ground and a thin whistle in the thorns;
+  // the insects go quiet, gusts and rattling grains come as ambience events
+  let stormLast = -1;
+  function setStorm(v) {
+    if (!ac || !amb) return; if (amb.storm && Math.abs(v - stormLast) < 0.01) return; stormLast = v; const t = now(); let S = amb.storm;
+    if (!S) {
+      if (v < 0.01) return; S = amb.storm = { v: 0, g: [] };
+      const lfo = (rate, depth, param) => { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); amb.nodes.push(o); };
+      const layer = (type, f, q, vol, fl) => { const n = noiseSrc(true), b = ac.createBiquadFilter(), g = ac.createGain(); b.type = type; b.frequency.value = f; b.Q.value = q; g.gain.value = 0; n.connect(b); b.connect(g); g.connect(ambG); n.start(); amb.nodes.push(n); S.g.push([g, vol]); if (fl) fl(b, g); return b; };
+      layer('lowpass', 230, 0.7, 0.62, (b, g) => { lfo(0.09, 0.14, g.gain); });
+      layer('bandpass', 520, 5, 0.3, (b, g) => { lfo(0.21, 190, b.frequency); lfo(0.07, 120, b.frequency); lfo(0.13, 0.07, g.gain); });
+      layer('highpass', 3300, 0.5, 0.26, (b, g) => { lfo(0.31, 0.07, g.gain); });
+      layer('bandpass', 1500, 9, 0.06, (b, g) => { lfo(0.4, 420, b.frequency); lfo(0.17, 0.03, g.gain); });
+    }
+    S.v = v; for (const [g, vol] of S.g) g.gain.setTargetAtTime(vol * v, t, 1.2);
+    if (amb.insMix) amb.insMix.gain.setTargetAtTime(Math.max(0, 1 - v * 1.6), t, 1.0);
   }
   function stopAmbient() {
     if (!ac) return; const t = now(); ambG.gain.cancelScheduledValues(t); ambG.gain.setTargetAtTime(0.0001, t, 0.25);
@@ -153,7 +172,12 @@ const Snd = (() => {
     for (let i = 0; i < n; i++) { const f = base * (0.9 + Math.random() * 0.4); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; const tt = t + i * 0.085; o.frequency.setValueAtTime(f, tt); o.frequency.exponentialRampToValueAtTime(f * (Math.random() < 0.5 ? 1.35 : 0.7), tt + 0.06); env(g, tt, 0.006, 0.07, vol); o.connect(g); g.connect(ambG); o.start(tt); o.stop(tt + 0.1); }
   }
   function ambientEvents(t) {
-    const c = amb.cfg;
+    const c = amb.cfg; const S = amb.storm;
+    if (S && S.v > 0.15) {          // in a sandstorm nothing sings: gusts sweep past and the grains rattle on the dry plants
+      if (Math.random() < 0.6) noiseBurst(t, 1.2 + Math.random() * 1.6, 240, 800 + Math.random() * 900, 0.13 * S.v, 'bandpass', 1.1, ambG);
+      if (Math.random() < 0.4) for (let i = 0; i < 4; i++) noiseBurst(t + i * 0.05 + Math.random() * 0.08, 0.05, 5200, 3600, 0.06 * S.v, 'highpass', 0.8, ambG);
+      return;
+    }
     if (c.bird === 'song') chirp(t + Math.random() * 0.4, 2600 + Math.random() * 1800, 2 + (Math.random() * 5 | 0), 0.07);
     else if (c.bird === 'sparse' && Math.random() < 0.5) chirp(t, 3200 + Math.random() * 800, 2, 0.05);
     else if (c.bird === 'tropic') { if (Math.random() < 0.5) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(700, t); o.frequency.exponentialRampToValueAtTime(1500, t + 0.25); o.frequency.exponentialRampToValueAtTime(900, t + 0.4); env(g, t, 0.02, 0.42, 0.08); o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 0.5); } else chirp(t, 3800, 3, 0.05); }
@@ -239,5 +263,5 @@ const Snd = (() => {
     if (amb.cfg.clock) { if (!amb.clockNext || amb.clockNext < t - 1) amb.clockNext = t; while (amb.clockNext < t + 0.2) { amb.clockHi = !amb.clockHi; osc('square', amb.clockHi ? 1900 : 1500, amb.clockNext, 0.025, 0.035, ambG); amb.clockNext += 1; } }
   }
   function hush(on) { hushed = !!on; if (ac) sfxG.gain.setTargetAtTime(on ? 0 : 0.9 * K.s, now(), 0.05); }   // total silence for sound effects (the abandoned house room)
-  return { scrInfo() { return { state: scrState, dur: scrBuf ? scrBuf.duration : 0 }; }, init, sfx, hush, startAmbient, stopAmbient, applySettings, levels() { return ac ? { master: master.gain.value, sfx: sfxG.gain.value, amb: ambG.gain.value, music: musG.gain.value } : null; }, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
+  return { scrInfo() { return { state: scrState, dur: scrBuf ? scrBuf.duration : 0 }; }, init, sfx, hush, startAmbient, setStorm, stopAmbient, applySettings, levels() { return ac ? { master: master.gain.value, sfx: sfxG.gain.value, amb: ambG.gain.value, music: musG.gain.value } : null; }, get ready() { return !!ac; }, resume() { if (ac && ac.state === 'suspended') ac.resume(); } };
 })();
