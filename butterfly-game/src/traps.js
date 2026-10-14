@@ -279,10 +279,10 @@ const Traps = (() => {
       U0.pathAt = pathAt; U0.LT = LT;
       for (const sx of [-1, 1]) {
         const x = sx * 0.56; const tg = new THREE.Group(); tg.position.x = x; g.add(tg);
-        const NC = 26; for (let i = 0; i < NC; i++) { const c = box(0.22, 0.034, 0.075, rubber, 0, 0, 0); c.add(box(0.2, 0.02, 0.012, dsteel, 0, 0.018, 0.02)); tg.add(c); U0.cleats.push({ m: c, s0: i / NC * LT }); }       // the rubber belt: cleats going round the wheels
+        const NC = 14; for (let i = 0; i < NC; i++) { const c = box(0.22, 0.034, 0.13, rubber, 0, 0, 0); c.add(box(0.2, 0.02, 0.02, dsteel, 0, 0.018, 0.035)); tg.add(c); U0.cleats.push({ m: c, s0: i / NC * LT }); }       // the rubber belt: cleats going round the wheels
         tg.add(box(0.16, 0.12, 1.16, rubber, 0, 0.24, 0));                                                                                                 // the inner belt skin (so no daylight shows through)
-        for (const z of [-0.55, 0.55]) { const sp = cyl(0.19, 0.19, 0.2, dsteel, 0, 0.24, z, 14, false, 0, 0, Math.PI / 2); tg.add(sp); U0.wheels.push({ m: sp, r: 0.19 }); tg.add(cyl(0.07, 0.07, 0.23, steel, 0, 0.24, z, 8, false, 0, 0, Math.PI / 2)); }   // sprocket and idler
-        for (const z of [-0.3, -0.1, 0.1, 0.3]) { const rw = cyl(0.1, 0.1, 0.17, dsteel, 0, 0.16, z, 12, false, 0, 0, Math.PI / 2); tg.add(rw); U0.wheels.push({ m: rw, r: 0.1 }); tg.add(cyl(0.04, 0.04, 0.2, steel, 0, 0.16, z, 6, false, 0, 0, Math.PI / 2)); }   // road wheels with hubs
+        for (const z of [-0.55, 0.55]) { const sp = cyl(0.19, 0.19, 0.2, dsteel, 0, 0.24, z, 28, false, 0, 0, Math.PI / 2); sp.add(box(0.32, 0.215, 0.05, steel, 0, 0, 0)); tg.add(sp); U0.wheels.push({ m: sp, r: 0.19 }); tg.add(cyl(0.07, 0.07, 0.23, steel, 0, 0.24, z, 8, false, 0, 0, Math.PI / 2)); }   // sprocket and idler
+        for (const z of [-0.3, -0.1, 0.1, 0.3]) { const rw = cyl(0.1, 0.1, 0.17, dsteel, 0, 0.16, z, 24, false, 0, 0, Math.PI / 2); rw.add(box(0.15, 0.18, 0.035, steel, 0, 0, 0)); tg.add(rw); U0.wheels.push({ m: rw, r: 0.1 }); tg.add(cyl(0.04, 0.04, 0.2, steel, 0, 0.16, z, 6, false, 0, 0, Math.PI / 2)); }   // road wheels with hubs
         g.add(box(0.05, 0.16, 1.3, hull2, sx * 0.69, 0.3, 0)); g.add(box(0.26, 0.03, 1.46, hull2, x, 0.5, 0)); g.add(box(0.26, 0.02, 1.46, orange, x, 0.52, 0.0));   // the side plate, the mudguard with an orange stripe
         for (let k = 0; k < 3; k++) g.add(box(0.012, 0.05, 0.16, M('#101214'), sx * 0.7, 0.34, -0.35 + k * 0.35));                                                // vents
       }
@@ -393,8 +393,10 @@ const Traps = (() => {
   // ================================================================== the drive trap: tracks, wheels, the dish and the lights follow its speed
   const DRIVE = { maxPts: 12, speed: 3.2, near: 3.0, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
   function animRover(U, v, dt, mode, tt) {
-    const R = U && U.rover; if (!R) return; R.phase += v * dt;
-    if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) w.m.rotation.x = -R.phase / w.r; }
+    const R = U && U.rover; if (!R) return;
+    // the tracks never advance more than under half a cleat pitch (the wheels under 0.7 rad) per frame: on a slow machine a faster step would look like the tracks running backwards (the wagon-wheel effect)
+    const adv = v * dt; R.phase += Math.min(adv, 0.45 * R.LT / (R.cleats.length / 2));
+    if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) { w.ang = (w.ang || 0) + Math.min(adv / w.r, 0.7); w.m.rotation.x = -w.ang; } }
     R.dish.rotation.y = damp(R.dish.rotation.y, mode === 'drive' ? Math.sin(tt * 1.6) * 1.0 : Math.sin(tt * 0.35) * 0.35, 6, dt);       // the dish always looks forward and up, sweeping to the sides
     const blink = Math.sin(tt * (mode === 'drive' ? 12 : 3)) > 0 ? 1 : 0.18; R.beacon.color.setRGB(1 * blink, 0.69 * blink, 0.12 * blink);
     if (mode === 'drive') R.led.color.set('#ffb020'); else if (mode === 'stop') R.led.color.set('#6af08a'); else R.led.color.set('#4a9aff');
