@@ -258,6 +258,7 @@
       cb.draw(ctx, t, mouse, dt);
     } else {
       gl.style.visibility = 'hidden'; ctx.clearRect(0, 0, SW, SH);
+      if (sc !== App._scr) { if (sc === 'title' && !['mp', 'help', 'keys', 'settings'].includes(App._scr)) S.newPanorama(); App._scr = sc; }       // every new entry into the main menu: another location's panorama
       if (sc === 'title') { S.title.draw(ctx, t, mouse); if (App.helpFromTitle) S.help.draw(ctx, t, mouse); }
       else if (sc === 'map') S.wmap.draw(ctx, t, mouse);
       else if (sc === 'mp') S.mp.draw(ctx, t, mouse);

@@ -11,6 +11,8 @@ const Screens = (() => {
   const flyers = SPECIES.filter((s, i) => i % 5 === 0).slice(0, 8).map((sp, i) => ({ sp, x: R.range(-60, SW), y: R.range(40, 190), v: R.range(14, 30), ph: R.range(0, 6.28), a: R.range(8, 22), s: R.range(0.5, 1) }));
   const pines = Array.from({ length: 18 }, (_, i) => ({ x: i * 28 + R.range(-6, 6), h: R.range(34, 64), w: R.range(10, 15) }));
   let mapCanvas = null;
+  // a new panorama (and its own butterflies) for every new visit to the main menu
+  function newPanorama() { const id = Panorama.next(), b = BIOME_BY_ID[id], list = b ? b.species.filter(s => !s.mystery).slice() : []; for (let k = list.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [list[k], list[m]] = [list[m], list[k]]; } flyers.length = 0; list.slice(0, 8).forEach((sp, i) => flyers.push({ sp, x: R.range(-60, SW), y: R.range(40, 190), v: R.range(14, 30), ph: R.range(0, 6.28), a: R.range(8, 22), s: R.range(0.5, 1) })); return id; }
 
   // everything in the menu backdrop is drawn with whole pixels only (no anti-aliased paths or smooth gradients)
   function pine(ctx, x, base, h, w) {
@@ -34,6 +36,7 @@ const Screens = (() => {
     x.putImageData(im, 0, 0); return skyImg = cv;
   }
   function nightBackdrop(ctx, t, dim = 0) {
+    if (Panorama.draw(ctx, t, dim)) return;          // a daytime panorama of the chosen location; the bog (and this fallback) is the night forest
     ctx.imageSmoothingEnabled = false; ctx.drawImage(skyCache(), 0, 0);
     for (const s of stars) { const a = 0.35 + 0.65 * Math.abs(Math.sin(t * s.b + s.ph)); ctx.fillStyle = `rgba(230,240,255,${a * s.b})`; ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); }
     const sc = t * 3, hillY = wx => 164 + Math.sin(wx * 0.03) * 10 + Math.sin(wx * 0.09) * 5;                 // the hill scrolls with the trees, so the trees stay planted on it
@@ -76,7 +79,7 @@ const Screens = (() => {
       T.draw(ctx, 'BUTTERFLIES', SW / 2, 78, { size: 14, align: 'c', color: c.gold, outline: '#2a1a08', shadow: '#000' });
       { const x0 = Math.min(...this.btns.map(b => b.x)) - 8, y0 = Math.min(...this.btns.map(b => b.y)) - 8, x1 = Math.max(...this.btns.map(b => b.x + b.w)) + 8, y1 = Math.max(...this.btns.map(b => b.y + b.h)) + 8; UIK.panel(ctx, x0, y0, x1 - x0, y1 - y0, { fill: 'rgba(8,20,16,0.55)', border: '#3a6a52', shadow: false }); ctx.fillStyle = c.gold; ctx.fillRect(SW / 2 - 40, 94, 80, 1); ctx.fillRect(SW / 2 - 2, 92, 5, 5); ctx.fillStyle = '#10201c'; ctx.fillRect(SW / 2, 94, 1, 1); }       // the menu stands in a frame; a gold rule with a diamond under the logo
       this.hover = -1; this.btns.forEach((b, i) => { const h = UIK.hit(b, m.x, m.y); if (h) this.hover = i; UIK.btn(ctx, b, h); });
-      T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#6a8a78' });
+      T.draw(ctx, '© Flora0world: HUB · данные о видах — по открытым источникам', SW / 2, SH - 12, { size: 8, align: 'c', color: '#d8e8dc', shadow: '#000' });
     },
     click(x, y) { const b = this.btns.find(b => UIK.hit(b, x, y)); return b ? b.id : null; },
   };
@@ -463,5 +466,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, biomeCol, short };
+  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, newPanorama, biomeCol, short };
 })();
