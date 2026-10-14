@@ -870,10 +870,10 @@ const World = (() => {
       return h;
     },
     place(rng, baseH, PLAY_R, LITE) {       // pits of soft, water-soaked sand among the dunes; they swallow whoever stands in them
-      const quick = [], nQ = LITE ? 2 : 9;
-      for (let tries = 0; quick.length < nQ && tries < 500; tries++) {
+      const quick = [], nQ = LITE ? 4 : rng.int(14, 20);        // 14-20 pits on the big map
+      for (let tries = 0; quick.length < nQ && tries < 3000; tries++) {
         const a = rng.range(0, 6.283), d = rng.range(26, PLAY_R - 22), r0 = rng.range(5, 8.5) * (LITE ? 0.8 : 1), x = Math.cos(a) * d, z = Math.sin(a) * d;
-        if (quick.some(q => Math.hypot(q.x - x, q.z - z) < q.r + r0 + 18)) continue;
+        if (quick.some(q => Math.hypot(q.x - x, q.z - z) < q.r + r0 + 11)) continue;
         let lo = 1e9, hi = -1e9; for (let k = 0; k < 8; k++) { const h2 = baseH(x + Math.cos(k * 0.785) * r0 * 1.5, z + Math.sin(k * 0.785) * r0 * 1.5); lo = Math.min(lo, h2); hi = Math.max(hi, h2); }
         if (hi - lo > 1.4) continue;
         quick.push({ x, z, r: r0, ph: rng.range(0, 6.28), ph2: rng.range(0, 6.28), lvl: baseH(x, z) - 0.05 });
@@ -916,7 +916,7 @@ const World = (() => {
     },
     // the schedule is a pure function of the wall clock and the map's seed, so everybody on the same map sees the same storm at the same moment;
     // every 4-minute slot holds a storm with a 60 % chance, 40-70 s long, with a 9 s build-up and die-down. world.storm (0..1) is read by the butterflies, the sound and the HUD.
-    storm(c) {
+    storm(c) {       // (at full strength the fog density is 0.27: a few metres are all one sees)
       const { world, biome, seedStr, seed, scene, skyMat, sun, hemi, shared, clouds, fogC, fogDen, heightAt } = c;
       const SLOT = 240000, slotStorm = k => { const h = strSeed(biome.id + ':' + seedStr + ':st' + k), h2 = strSeed('d' + h), h3 = strSeed('o' + h); if ((h % 1000) / 1000 > 0.6) return null; const dur = 40000 + (h2 % 1000) / 1000 * 30000, off = 20000 + (h3 % 1000) / 1000 * (SLOT - dur - 40000); return { start: k * SLOT + off, end: k * SLOT + off + dur }; };
       const stormAt = ms => { if (world.stormForce !== undefined) return world.stormForce; const k = Math.floor(ms / SLOT); for (const kk of [k, k + 1]) { const q = slotStorm(kk); if (q && q.end > ms) return q; } return null; };
@@ -938,7 +938,7 @@ const World = (() => {
           if (ms >= q.end - 9000 && !m.off) { m.off = 1; world.events.push({ k: 'stormEnd' }); }
         }
         world.storm = L; world.stormInfo = q;
-        fogC.copy(baseFog).lerp(dustFog, 0.9 * L); scene.background.copy(fogC); scene.fog.density = fogDen * (1 + 7.5 * L); shared.uFogD.value = scene.fog.density;
+        fogC.copy(baseFog).lerp(dustFog, 0.9 * L); scene.background.copy(fogC); scene.fog.density = fogDen + 0.26 * Math.pow(L, 1.4); shared.uFogD.value = scene.fog.density;
         skyMat.uniforms.uTop.value.copy(baseTop).lerp(dustTop, L); skyMat.uniforms.uHor.value.copy(baseHor).lerp(dustFog, L); skyMat.uniforms.uSunCol.value.copy(baseSun).multiplyScalar(1 - L);
         sun.intensity = baseSunI * (1 - 0.6 * L); hemi.intensity = baseHemiI * (1 - 0.22 * L); shared.uWind.value = baseWind * (1 + 2.6 * L);
         for (const c of clouds) c.material.opacity = 0.92 * (1 - L);

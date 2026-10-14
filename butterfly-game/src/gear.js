@@ -228,24 +228,29 @@ const Gear = (() => {
     ctx.fillStyle = '#0a120c'; ctx.fillRect(X, Y, W, H);
     const base = Sectors.mapImage(S, 78, -1, play.world); cx.globalCompositeOperation = 'source-over'; cx.clearRect(0, 0, 78, 78);
     // the picture, torn into bands that slip sideways now and then (interference), tinted phosphor green
-    const glitch = (Math.sin(t * 2.3) > 0.82) || (Math.sin(t * 7.1) > 0.97); let y = 0;
-    while (y < 78) { const h = 2 + ((y * 7 + Math.floor(t * 6)) % 3), off = glitch && ((y * 13 + Math.floor(t * 20)) % 5 === 0) ? Math.round((Math.sin(y * 3 + t * 40) * 6)) : (Math.sin(y * 0.7 + t * 5) > 0.93 ? 1 : 0); cx.drawImage(base, 0, y, 78, h, off, y, 78, h); y += h; }
+    const L = (play.world && play.world.storm) || 0;      // a sandstorm: the module goes mad (torn bands, static, red tint, error messages, a wrong position)
+    const glitch = (Math.sin(t * 2.3) > 0.82) || (Math.sin(t * 7.1) > 0.97) || (L > 0.05 && Math.sin(t * 9 + 1) > 1 - 1.5 * L), dead = L > 0.55 && Math.sin(t * 2.7) > 0.55 - (L - 0.55) * 1.2; let y = 0;
+    while (y < 78) { const h = 2 + ((y * 7 + Math.floor(t * 6)) % 3), off = glitch && ((y * 13 + Math.floor(t * 20)) % (L > 0.05 ? 2 : 5) === 0) ? Math.round((Math.sin(y * 3 + t * 40) * (6 + 24 * L))) : (Math.sin(y * 0.7 + t * 5) > 0.93 ? 1 : 0); cx.drawImage(base, 0, y, 78, h, off, y, 78, h); y += h; }
     cx.globalCompositeOperation = 'multiply'; cx.fillStyle = '#b8ffc8'; cx.fillRect(0, 0, 78, 78); cx.globalCompositeOperation = 'source-over';
     // the locators: you (white arrow) and the others
     const mp = (px, pz) => [Math.round((px / S.R + 1) / 2 * 78), Math.round((pz / S.R + 1) / 2 * 78)];
     const arrow = (c2, x, y2, yaw, col) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); for (const [pad, fill] of [[0.9, '#08140a'], [0, col]]) { c2.fillStyle = fill; for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) { const u = dx * fx + dy * fz, v = -dx * fz + dy * fx; if ((u >= -0.5 - pad && u <= 4.5 + pad && Math.abs(v) <= (4.5 - u) * 0.65 + pad) || (u >= -3 - pad && u < 0.5 && Math.abs(v) <= 0.6 + pad)) c2.fillRect(x + dx, y2 + dy, 1, 1); } } };
     if (play.mp) for (const r of play.others()) { const [x, yy] = mp(r.pos.x, r.pos.z); arrow(cx, x, yy, r.yaw || 0, '#7affd0'); }
-    { const [x, yy] = mp(play.player.pos.x, play.player.pos.z); arrow(cx, x, yy, play.player.yaw, Math.floor(t * 3) % 2 ? '#ffffff' : '#ffe070'); }
+    { const [x, yy] = mp(play.player.pos.x, play.player.pos.z), jx = Math.round((Math.sin(t * 13) + Math.sin(t * 5.3 + 2)) * L * 14), jy = Math.round((Math.sin(t * 11 + 1) + Math.sin(t * 4.1)) * L * 14); arrow(cx, clamp(x + jx, 4, 74), clamp(yy + jy, 4, 74), play.player.yaw + Math.sin(t * 9) * L * 2.5, Math.floor(t * 3) % 2 ? '#ffffff' : '#ffe070'); }
+    if (L > 0.05) { cx.fillStyle = `rgba(255,40,30,${0.3 * L})`; cx.fillRect(0, 0, 78, 78); for (let k = 0, n = Math.round(6 * L); k < n; k++) { cx.fillStyle = 'rgba(255,90,70,0.5)'; cx.fillRect(0, (Math.random() * 78) | 0, 78, 1 + (Math.random() * 3 | 0)); } }
+    if (dead) { for (let i = 0; i < 700; i++) { const v = (Math.random() * 255) | 0; cx.fillStyle = `rgb(${v},${Math.min(255, v + 20)},${v})`; cx.fillRect((Math.random() * 78) | 0, (Math.random() * 78) | 0, 2, 1); } }
     // scanlines, a roll bar, grain, the vignette
     cx.fillStyle = 'rgba(0,0,0,0.28)'; for (let yy = 0; yy < 78; yy += 2) cx.fillRect(0, yy, 78, 1);
     const bar = (t * 26) % 120 - 20; cx.fillStyle = 'rgba(160,255,190,0.11)'; cx.fillRect(0, bar, 78, 9); cx.fillStyle = 'rgba(160,255,190,0.07)'; cx.fillRect(0, bar + 9, 78, 4);
-    for (let i = 0; i < 70; i++) { cx.fillStyle = Math.random() < 0.5 ? 'rgba(200,255,210,0.55)' : 'rgba(0,0,0,0.5)'; cx.fillRect((Math.random() * 78) | 0, (Math.random() * 78) | 0, 1, 1); }
+    for (let i = 0, n = 70 + Math.round(500 * L); i < n; i++) { cx.fillStyle = Math.random() < 0.5 ? 'rgba(200,255,210,0.55)' : 'rgba(0,0,0,0.5)'; cx.fillRect((Math.random() * 78) | 0, (Math.random() * 78) | 0, 1, 1); }
     if (glitch) { cx.fillStyle = 'rgba(180,255,200,0.35)'; cx.fillRect(0, ((t * 97) % 78) | 0, 78, 1); }
     ctx.imageSmoothingEnabled = false; ctx.drawImage(crt, X + 7, Y + 7, 78, 78);
     // the bezel: rounded glass corners, a dim glare, the zone caption
     ctx.fillStyle = '#1a1c20'; for (const [ax, ay] of [[0, 0], [W - 5, 0], [0, H - 5], [W - 5, H - 5]]) { ctx.fillRect(X + ax, Y + ay, 5, 5); }
     ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(X + 9, Y + 9, 22, 3); ctx.fillRect(X + 9, Y + 12, 3, 8);
-    const here = S.at(play.player.pos.x, play.player.pos.z); T.draw(ctx, `ЗОНА ${here + 1} · ${S.rects[here].name}`, X + W / 2, Y + H + 2, { size: 8, align: 'c', color: '#7affa0' });
+    const here = S.at(play.player.pos.x, play.player.pos.z), bad = L > 0.05 && (L > 0.4 || Math.sin(t * 6) > 0.2), qk = Math.floor(t * 7);
+    if (bad) { const junk = ['ERR 0x' + ((qk * 2654435761 >>> 8) & 0xffff).toString(16).toUpperCase().padStart(4, '0'), 'НЕТ СИГНАЛА', 'СБОЙ НАВИГАЦИИ', 'GPS ???', 'ОШИБКА ДАННЫХ', 'KERNEL PANIC']; for (let k = 0; k < 3; k++) { const m = (qk + k * 3) % junk.length; if (Math.sin(t * 5 + k * 2) > -0.4 + 0.6 * (1 - L)) T.draw(ctx, junk[m], X + 10 + ((qk * 17 + k * 29) % 30), Y + 12 + k * 26 + ((qk * 7 + k * 5) % 12), { size: 8, color: k % 2 ? '#ff5040' : '#ffd050', shadow: '#000' }); } }
+    T.draw(ctx, bad ? (Math.floor(t * 4) % 2 ? 'ЗОНА ?? · ERROR' : 'ЗОНА 0x' + ((qk * 40503) & 0xfff).toString(16).toUpperCase() + ' · ???') : `ЗОНА ${here + 1} · ${S.rects[here].name}`, X + W / 2, Y + H + 2, { size: 8, align: 'c', color: bad ? '#ff6050' : '#7affa0' });
     ctx.fillStyle = Math.floor(t * 1.2) % 2 ? '#3aff6a' : '#1a6a30'; ctx.fillRect(X + W - 4, Y + H + 4, 2, 2);
   }
   function drawHud(play, ctx, t) {

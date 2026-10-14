@@ -9,7 +9,7 @@ const Traps = (() => {
     str: { id: 'str', ru: 'Прочная ловушка', real: 'деревянный каркас, как садок-ловушка Девриса', price: 1800, life: 360, cap: 20, ab: 0, desc: 'Деревянный каркас с латунными скобами и мелкой сеткой, вместительная. Служит 6 минут.' },
     imp: { id: 'imp', ru: 'Импортная ловушка', real: 'складная палаточная ловушка (pop-up), как у BioQuip', price: 2800, life: 240, cap: 14, ab: 0.01, desc: 'Складной купол из тонкой сетки с растяжками. Служит 4 минуты, и 1% попавшихся бабочек — аберранты.' },
     // sold by the entomologist-enthusiast only: it drives by itself through all the natural zones of the location, catches only while it stands
-    drv: { id: 'drv', ru: 'Ловушка с приводом', real: 'самоходная гусеничная ловушка-вездеход', price: 25000, life: 840, cap: 30, ab: 0.4, rare: 0.4, gear: true, drive: true, desc: 'Гусеничный электровездеход с сетчатой кабиной. Сам объезжает природные зоны и стоит в каждой, а ловит только на стоянке. Служит 14 минут, вмещает 30; 40% — аберранты, 40% — редкие.' },
+    drv: { id: 'drv', ru: 'Ловушка с приводом', real: 'самоходная гусеничная ловушка-вездеход', price: 25000, life: 840, cap: 30, ab: 0.4, rare: 0.4, gear: true, drive: true, desc: 'Гусеничный электровездеход с сетчатой кабиной. Едет по маршруту, который вы задаёте точками на карте, и стоит в каждой точке, а ловит только на стоянке. В песчаную бурю навигация отказывает. Служит 14 минут, вмещает 30; 40% — аберранты, 40% — редкие.' },
     scr: { id: 'scr', ru: 'Скритчушка', real: 'странная чёрная ловушка из океана', price: 2288, life: 426, cap: 12, ab: 0, only: 'ocean', baitOnly: 'pheromone', secret: true, desc: 'Чёрная, зубастая и улыбчивая. Ставится только в океане, берёт в приманку одну колбу феромонов и ничего больше. Ломается через 6 минут 66 секунд — с визгом.' },
   };
   // real flowers visited by butterflies; scent 1..5 = how far the smell carries (more butterflies come)
@@ -391,7 +391,7 @@ const Traps = (() => {
   }
 
   // ================================================================== the drive trap: tracks, wheels, the dish and the lights follow its speed
-  const DRIVE = { speed: 3.2, near: 3.0, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
+  const DRIVE = { maxPts: 12, speed: 3.2, near: 3.0, turn: 1.9, stopMax: 240, stopMin: 15, leg: 70 };
   function animRover(U, v, dt, mode, tt) {
     const R = U && U.rover; if (!R) return; R.phase += v * dt;
     if (v > 0.001 || !R.init) { R.init = true; for (const c of R.cleats) { const [z, y, dz, dy] = R.pathAt(c.s0 + R.phase); c.m.position.set(0, y, z); c.m.rotation.x = Math.atan2(-dy, dz); } for (const w of R.wheels) w.m.rotation.x = -R.phase / w.r; }
@@ -408,7 +408,7 @@ const Traps = (() => {
     own() { return this.list.filter(t => t.mine); }
     mk(spec, mine) {
       const T0 = TYPES[spec.type]; if (!T0) return null; const t = { tid: spec.tid, mine, owner: spec.owner, name: spec.name || '?', type: spec.type, x: spec.x, y: spec.y, z: spec.z, yaw: spec.yaw || 0, t: spec.age || 0, life: T0.life, cap: T0.cap, fl: spec.fl || '', hn: spec.hn || '', items: spec.items || [], n: spec.n || 0, inflight: 0, broken: false, goneT: 0, dirty: true, label: null, run: spec.run ? 1 : 0, sp: 0, tx: spec.x, ty: spec.y, tz: spec.z, tyaw: spec.yaw || 0, tp: 0, tr: 0 };
-      if (T0.drive) t.dr = { mode: 'idle', visited: [], tgt: -1, wp: null, stopLeft: 0, stuck: 0, best: 1e9, bias: 0, biasT: 0, send: 0, ph: 0 };
+      if (T0.drive) t.dr = { mode: 'idle', route: [], next: 0, navErr: false, tgt: -1, wp: null, stopLeft: 0, stuck: 0, best: 1e9, bias: 0, biasT: 0, send: 0, ph: 0 };
       this.list.push(t); t.col = { x: spec.x, z: spec.z, r: 0.5, trap: t.tid }; this.world.colliders.push(t.col); this.rebuild(t); return t;
     }
     rebuild(t) {
@@ -431,12 +431,15 @@ const Traps = (() => {
     place2(t, x, y, z, yaw) { t.x = x; t.y = y; t.z = z; t.yaw = yaw; if (t.col) { t.col.x = x; t.col.z = z; } if (t.group) { t.group.position.set(x, y, z); t.group.rotation.set(t.tp, yaw, t.tr, 'YXZ'); } if (t.label) t.label.position.set(x, y + 2.7, z); }
     // can the rover stand / drive here
     deckOf(x, z) { const w = this.world; if (!w.bridges) return null; for (const b of w.bridges) { if (b.state === 'fall' || b.state === 'gone' || b.Lh === undefined) continue; const u = (x - b.cx) * b.nx + (z - b.cz) * b.nz, v = (x - b.cx) * b.tx + (z - b.cz) * b.tz; if (Math.abs(u) < b.Lh && Math.abs(v) < b.hw) return b; } return null; }
-    okAt(t, x, z, clear = 0.95, slope = this.world.bridges ? 1.1 : 0.75) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.onQuick && w.onQuick(x, z, 2.4)) return false; if (w.slopeAt && !this.deckOf(x, z) && w.slopeAt(x, z) > slope) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; return true; }
-    // a point in a zone the rover can reach (the middle of it, or the nearest free spot to it)
-    zoneSpot(t, i) { const S = this.play.sectors, q = S.rects[i], cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2; for (let r = 0; r < 40; r += 1.5) for (let k = 0; k < Math.max(1, Math.round(r * 1.2)); k++) { const a = k / Math.max(1, Math.round(r * 1.2)) * 6.2832, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (S.at(x, z) === i && this.okAt(t, x, z) && !(this.world.inWater && this.world.inWater(x, z, 1.2))) return { x, z }; } return { x: cx, z: cz }; }
-    nextZone(t) { const S = this.play.sectors, D = t.dr; let best = -1, bd = 1e9; S.rects.forEach((q, i) => { if (D.visited.includes(i)) return; const d = Math.hypot((q.x0 + q.x1) / 2 - t.x, (q.z0 + q.z1) / 2 - t.z); if (d < bd) { bd = d; best = i; } }); return best; }
-    // how long it stands in a zone: 4 minutes at most, less when the rest of its life has to cover the remaining zones too
-    stopFor(t) { const S = this.play.sectors, D = t.dr, rem = S.rects.length - D.visited.length, left = t.life - t.t; return clamp((left - rem * (DRIVE.leg / DRIVE.speed + 8)) / (rem + 1), DRIVE.stopMin, DRIVE.stopMax); }
+    okAt(t, x, z, clear = 0.95, slope = this.world.bridges ? 1.1 : 0.75) { const w = this.world; if (Math.hypot(x, z) > w.R - 2) return false; if (w.canWalk && !w.canWalk(x, z)) return false; if (w.onQuick && w.onQuick(x, z, clear < 0.9 ? 0.8 : 2.4)) return false; if (w.slopeAt && !this.deckOf(x, z) && w.slopeAt(x, z) > slope) return false; for (const c of w.colliders) if (c !== t.col && Math.hypot(c.x - x, c.z - z) < c.r + clear) return false; return true; }
+    // how long it stands at a route point: 4 minutes at most, less when the rest of its life has to cover the remaining legs too
+    stopFor(t) { const D = t.dr, rem = D.route.length - D.next; let L = 0, px = t.x, pz = t.z; for (let k = D.next; k < D.route.length; k++) { L += Math.hypot(D.route[k].x - px, D.route[k].z - pz) * 1.3; px = D.route[k].x; pz = D.route[k].z; } return clamp((t.life - t.t - L / DRIVE.speed - rem * 8) / (rem + 1), DRIVE.stopMin, DRIVE.stopMax); }
+    // ---- the route: points the player sets on the map of the location (any place of it); the rover drives them in order and stands at each one for a while
+    routeSnap(t, x, z) { if (Math.hypot(x, z) > this.world.R - 3) return null; for (let r = 0; r <= 8; r += 1) for (let k = 0, n = Math.max(1, r * 6); k < n; k++) { const a = k / n * 6.2832, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (this.okAt(t, px, pz, 1.4)) return { x: +px.toFixed(1), z: +pz.toFixed(1) }; } return null; }
+    routeAdd(t, x, z) { const D = t.dr; if (!D || D.route.length >= DRIVE.maxPts) return 'full'; const q = this.routeSnap(t, x, z); if (!q) return 'bad'; D.route.push(q); return 'ok'; }
+    routeUndo(t) { const D = t.dr; if (!D || !D.route.length) return false; D.route.pop(); if (D.mode !== 'drive' && D.next > D.route.length) D.next = D.route.length; return true; }
+    routeClear(t) { const D = t.dr; if (!D || D.mode === 'drive') return false; D.route = []; D.next = 0; return true; }
+    routeLen(t) { const D = t.dr; let L = 0, px = t.x, pz = t.z; for (const q of D.route) { L += Math.hypot(q.x - px, q.z - pz); px = q.x; pz = q.z; } return L; }
     // ---- path finding: A* over a 1 m grid of the location (water, steep ground, trees and rocks with the rover's clearance are walls), then the path is pulled straight
     planPath(t, gx, gz, clear = 1.4, weak = false, zone) {       // with zone given the goal is not fixed: the reachable dry spot of that zone nearest to its middle (path.goal)
       const w = this.world, R = w.R, hl = !!w.bridges, CS = hl ? 0.6 : 1, N = Math.ceil(2 * R / CS) + 2, H = new Map(), key = (a, b) => (a + 400) * 1000 + (b + 400);
@@ -461,21 +464,24 @@ const Traps = (() => {
       const out = [pts[0]]; let a = 0; while (a < pts.length - 1) { let b = pts.length - 1; while (b > a + 1 && !los(pts[a], pts[b])) b--; out.push(pts[b]); a = b; }
       out[out.length - 1] = { x: gx, z: gz }; const res = out.slice(1); res.goal = { x: gx, z: gz }; return res;
     }
-    // choose the spot to drive to in zone i and plan the way; a few other spots are tried when the middle of the zone cannot be reached
+    // plan the way to route point i
     setTarget(t, i) {
-      const D = t.dr, path = this.planPath(t, 0, 0, 1.4, false, i); if (!path || !path.goal) return false; D.tgt = i; D.wp = path.goal; D.path = path; D.pi = 0; return true;
+      const D = t.dr, q = D.route[i]; if (!q) return false; const path = this.planPath(t, q.x, q.z, 1.4, false); if (!path || !path.goal) return false; D.tgt = i; D.wp = path.goal; D.path = path; D.pi = 0; return true;
     }
     launch(t) {
-      const P = this.play, S = P.sectors, D = t.dr; if (!t.mine || !D || t.broken) return false; if (!S) { P.toast('Здесь нет природных зон: ловушка с приводом стоит на месте', 3.5); return false; }
-      if (D.mode === 'drive') return false; const z0 = S.at(t.x, t.z); if (!D.visited.includes(z0)) D.visited.push(z0);
-      const nz = this.nextZone(t); if (nz < 0) { P.toast('Ловушка уже объехала все природные зоны', 3.5); Snd.sfx.deny(); return false; }
-      let nz2 = nz; while (nz2 >= 0 && !this.setTarget(t, nz2)) { P.toast(`Природная зона ${nz2 + 1} недоступна для ловушки — пропускаю`, 3.5); D.visited.push(nz2); nz2 = this.nextZone(t); } if (nz2 < 0) { P.toast('Ловушка не нашла дороги к остальным природным зонам', 3.5); Snd.sfx.deny(); return false; }
-      D.mode = 'drive'; D.best = 1e9; D.stuck = 0; D.bias = 0; D.biasT = 0; D.replans = 0; t.run = 1; this.clearFliers(t); this.sendMv(t); Snd.sfx.servo(); P.toast(`Ловушка поехала в природную зону ${D.tgt + 1}: «${S.rects[D.tgt].name}» — пока едет, она не ловит`, 4, true); return true;
+      const P = this.play, D = t.dr; if (!t.mine || !D || t.broken) return false; if (D.mode === 'drive') return false;
+      if (this.world.storm > 0.3) { P.toast('Ошибка навигации: песчаная буря — ловушка не поедет, пока она не утихнет', 4.5, true); Snd.sfx.deny(); return false; }
+      if (!D.route.length) { P.toast('Сначала задайте маршрут: кнопка «Маршрут» — точки на карте локации', 4.5, true); Snd.sfx.deny(); return false; }
+      if (D.next >= D.route.length) D.next = 0;
+      let i = D.next; while (i < D.route.length && !this.setTarget(t, i)) { P.toast(`К точке ${i + 1} не проехать — пропускаю`, 3.5); i++; } if (i >= D.route.length) { P.toast('Ловушка не нашла дороги к точкам маршрута', 3.5); Snd.sfx.deny(); D.next = D.route.length; return false; }
+      D.next = i; D.mode = 'drive'; D.navErr = false; D.best = 1e9; D.stuck = 0; D.bias = 0; D.biasT = 0; D.replans = 0; t.run = 1; this.clearFliers(t); this.sendMv(t); Snd.sfx.servo(); P.toast(`Ловушка поехала к точке ${i + 1} из ${D.route.length} — пока едет, она не ловит`, 4, true); return true;
     }
     halt(t, hold) { const D = t.dr; if (!D || D.mode !== 'drive') return false; D.mode = hold ? 'hold' : 'stop'; D.tgt = -1; t.run = 0; this.sendMv(t); Snd.sfx.servo(); this.play.toast('Ловушка остановилась и ловит бабочек', 3.5, true); return true; }
+    // a sandstorm jams the navigation: the rover stops at once and waits until the storm has passed
+    navError(t) { const D = t.dr; D.mode = 'stop'; D.navErr = true; D.stopLeft = 0; t.run = 0; this.sendMv(t); Snd.sfx.deny(); this.play.toast('Ошибка навигации! Песчаная буря сбила маршрут — ловушка остановилась и ждёт, пока буря утихнет', 6, true); }
     arrive(t, forced) {
-      const P = this.play, S = P.sectors, D = t.dr, i = D.tgt; if (!D.visited.includes(i)) D.visited.push(i); D.mode = 'stop'; D.tgt = -1; t.run = 0; D.stopLeft = this.stopFor(t); this.sendMv(t); Snd.sfx.servo();
-      P.toast(`Ловушка встала в природной зоне ${i + 1}: «${S.rects[i].name}»${forced ? ' (застряла по пути)' : ''} · стоянка ${mmss(D.stopLeft)}${D.visited.length >= S.rects.length ? ' · это последняя зона' : ''}`, 5, true);
+      const P = this.play, D = t.dr, i = D.tgt; D.next = i + 1; D.mode = 'stop'; D.tgt = -1; t.run = 0; D.stopLeft = this.stopFor(t); this.sendMv(t); Snd.sfx.servo();
+      P.toast(`Ловушка встала в точке ${i + 1} из ${D.route.length}${forced ? ' (застряла по пути)' : ''} · стоянка ${mmss(D.stopLeft)}${D.next >= D.route.length ? ' · это последняя точка' : ''}`, 5, true);
     }
     // the rover drives towards its waypoint: turns on the spot, goes round trees and water, gives up after being stuck for a while
     driveStep(t, dt) {
@@ -545,8 +551,11 @@ const Traps = (() => {
     driveUpdate(t, dt) {
       const D = t.dr;
       if (t.mine && D) {
+        if (D.mode === 'drive' && this.world.storm > 0.3) this.navError(t);
         if (D.mode === 'drive') { if (!t.broken) this.driveStep(t, dt); D.send -= dt; if (D.send <= 0) { D.send = 0.2; this.sendMv(t); } t.sp = damp(t.sp, D.sp || 0, 8, dt); }
-        else { t.sp = damp(t.sp, 0, 8, dt); if (D.mode === 'stop') { D.stopLeft -= dt; if (D.stopLeft <= 0) { const S = this.play.sectors, nz = S ? this.nextZone(t) : -1; if (nz >= 0 && !t.broken) this.launch(t); else { D.mode = 'hold'; this.play.toast('Ловушка объехала все природные зоны и осталась на месте — она продолжает ловить', 4.5, true); } } } }
+        else { t.sp = damp(t.sp, 0, 8, dt);
+          if (D.mode === 'stop' && D.navErr) { if (!(this.world.storm > 0.05)) { D.navErr = false; this.play.toast('Навигация восстановлена — ловушка едет дальше', 4, true); if (!this.launch(t)) D.mode = 'hold'; } }
+          else if (D.mode === 'stop') { D.stopLeft -= dt; if (D.stopLeft <= 0) { if (D.next < D.route.length && !t.broken) { if (!this.launch(t)) D.mode = 'hold'; } else { D.mode = 'hold'; this.play.toast('Маршрут пройден — ловушка осталась на месте и продолжает ловить', 4.5, true); } } } }
       } else if (!t.mine) {      // somebody else's rover: it glides to the last reported place
         const ex = t.tx - t.x, ez = t.tz - t.z, k = 1 - Math.exp(-6 * dt), nx = t.x + ex * k, nz = t.z + ez * k, dd = Math.hypot(nx - t.x, nz - t.z), yaw = t.yaw + angDiff(t.tyaw, t.yaw) * k;
         t.sp = damp(t.sp, t.run ? dd / Math.max(dt, 1e-3) : 0, 8, dt); if (dd > 1e-4 || Math.abs(angDiff(t.tyaw, t.yaw)) > 1e-3) { t.y = this.world.groundAt(nx, nz); t.x = nx; t.z = nz; this.tilt(t); this.place2(t, nx, t.y, nz, yaw); }
@@ -589,6 +598,7 @@ const Traps = (() => {
       return this.r;
     },
   };
+  const md0 = (D, i) => D.mode === 'drive' ? i === D.tgt : D.mode === 'stop' && !D.navErr ? i === D.next - 1 : false;       // the point the rover is heading to / standing at
   const UI = {
     mode: null, t: null, sel: 0, msg: '', msgT: 0, scroll: 0, btns: [],
     placeList() { return Object.values(TYPES).filter(T0 => !T0.gear || count('tr', T0.id) > 0); },
@@ -606,13 +616,22 @@ const Traps = (() => {
         const t = this.t;
         if (!t.fl && !TYPES[t.type].baitOnly) b.push({ id: 'flp', label: '<', x: 124, y: 94, w: 16, h: 14 }, { id: 'fln', label: '>', x: 142, y: 94, w: 16, h: 14 }, { id: 'flput', label: 'Положить', x: 162, y: 94, w: 78, h: 14, disabled: !this.cand('fl') });
         if (!t.hn) b.push({ id: 'hnp', label: '<', x: 124, y: 134, w: 16, h: 14 }, { id: 'hnn', label: '>', x: 142, y: 134, w: 16, h: 14 }, { id: 'hnput', label: 'Положить', x: 162, y: 134, w: 78, h: 14, disabled: !this.cand('hn') });
-        if (t.dr) { const m = t.dr.mode, S0 = this.play.sectors; b.push({ id: m === 'drive' ? 'halt' : 'go', label: m === 'drive' ? 'Остановить' : m === 'stop' ? 'Ехать дальше' : 'Запустить', x: 168, y: 232, w: 110, h: 18, disabled: !S0 || (m !== 'drive' && t.dr.visited.length >= S0.rects.length) }); }
+        if (t.dr) { const m = t.dr.mode; b.push({ id: m === 'drive' ? 'halt' : 'go', label: m === 'drive' ? 'Остановить' : m === 'stop' ? 'Ехать дальше' : 'Запустить', x: 168, y: 232, w: 110, h: 18, disabled: m !== 'drive' && !t.dr.route.length }, { id: 'route', label: `Маршрут (${t.dr.route.length})`, x: 284, y: 232, w: 120, h: 18, disabled: m === 'drive' }); }
         b.push({ id: 'take', label: t.items.length ? `Забрать улов (${t.items.length})` : 'Улова нет', x: 12, y: 232, w: 150, h: 18, disabled: !t.items.length });
       }
+      else if (this.mode === 'route') { const D = this.t.dr; b.push({ id: 'rdone', label: 'Готово', x: 352, y: 232, w: 108, h: 18 }, { id: 'rundo', label: 'Убрать точку', x: 352, y: 178, w: 108, h: 15, disabled: !D.route.length }, { id: 'rclear', label: 'Очистить', x: 352, y: 196, w: 108, h: 15, disabled: !D.route.length }); }
       if (this.t && this.mode !== 'place' && this.play && !this.play.traps.list.includes(this.t)) b.length = 1;      // the trap is gone (it wore out): only the way out
       this.btns = b; return b;
     },
+    // the map of the route editor: 224 px for the whole location
+    mapRect() { return { x: 14, y: 34, w: 224, h: 224 }; },
+    toWorld(x, y) { const m = this.mapRect(), R = this.play.world.R; return [((x - m.x) / m.w * 2 - 1) * R, ((y - m.y) / m.h * 2 - 1) * R]; },
+    toMap(x, z) { const m = this.mapRect(), R = this.play.world.R; return [m.x + (x / R + 1) / 2 * m.w, m.y + (z / R + 1) / 2 * m.h]; },
     click(x, y) {
+      if (this.mode === 'route' && this.t && this.play.traps.list.includes(this.t) && UIK.hit(this.mapRect(), x, y)) {
+        const [wx, wz] = this.toWorld(x, y), r = this.play.traps.routeAdd(this.t, wx, wz);
+        if (r === 'ok') { Snd.sfx.click(); this.say(`Точка ${this.t.dr.route.length} поставлена`); } else { Snd.sfx.deny(); this.say(r === 'full' ? `Не больше ${DRIVE.maxPts} точек` : 'Сюда не проехать: поставьте точку рядом'); } return null;
+      }
       const bs = this.layout(), b = bs.find(q => !q.disabled && UIK.hit(q, x, y)); if (!b) return null; const P = this.play, S = P.traps;
       if (b.id === 'close') return 'close';
       if (b.tid) { if (count('tr', b.tid) < 1) { this.say('У вас нет такой ловушки: купите её у торговца ловушками на рынке'); Snd.sfx.deny(); return null; } return S.place(b.tid) ? 'close' : null; }
@@ -621,6 +640,8 @@ const Traps = (() => {
       else if (b.id === 'hnp' || b.id === 'hnn') { if (!this.step('hn', b.id === 'hnn' ? 1 : -1)) this.say('Нет мёда в запасе: его продаёт медовщик'); }
       else if (b.id === 'flput') { const c = this.cand('fl'); if (c && S.bait(t, c.id, undefined)) this.say('Цветы положены — достать их обратно нельзя'); else Snd.sfx.deny(); }
       else if (b.id === 'hnput') { const c = this.cand('hn'); if (c && S.bait(t, undefined, c.id)) this.say('Положено — достать обратно нельзя'); else Snd.sfx.deny(); }
+      else if (b.id === 'route') { this.mode = 'route'; this.msg = ''; this.msgT = 0; Snd.sfx.page(); }
+      else if (b.id === 'rdone') { this.mode = 'manage'; Snd.sfx.page(); } else if (b.id === 'rundo') { S.routeUndo(t); Snd.sfx.click(); } else if (b.id === 'rclear') { S.routeClear(t); Snd.sfx.click(); }
       else if (b.id === 'go') { if (!S.launch(t)) Snd.sfx.deny(); } else if (b.id === 'halt') S.halt(t, true);
       else if (b.id === 'take') { S.take(t); if (!S.list.includes(t)) return 'close'; }
       return null;
@@ -634,6 +655,19 @@ const Traps = (() => {
         bs.filter(b => b.tid).forEach(b => { const T0 = TYPES[b.tid], n = count('tr', b.tid), why = allowed(b.tid, P.biome.id), h = hv(b) && !why; UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: n && !why ? (h ? '#2a5a46' : '#1a3228') : '#1a2420', border: n && !why ? cl.gold : cl.line, shadow: false });
           T.draw(ctx, T0.ru, b.x + 8, b.y + 5, { size: 8, color: n ? '#fff' : cl.dim }); T.draw(ctx, `служит ${mmss(T0.life)} · вмещает ${T0.cap}` + (T0.ab ? ` · ${+(T0.ab * 100).toFixed(1)}% аберрантов` : '') + (T0.rare ? ` · ${Math.round(T0.rare * 100)}% редких` : ''), b.x + 8, b.y + 16, { size: 8, color: cl.dim }); if (b.h > 40) T.para(ctx, T0.desc, b.x + 8, b.y + 27, 380, { size: 8, color: '#8aa898', lh: 8 }); T.draw(ctx, why ? (T0.id === 'scr' ? 'только в океане' : 'не в океане') : n ? `есть: ${n}` : 'нет в запасе', b.x + b.w - 8, b.y + 5, { size: 8, align: 'r', color: why ? '#c8a060' : n ? '#9af0a0' : '#c87060' }); });
         T.draw(ctx, this.msgT > 0 ? this.msg : 'Купить ловушки можно у торговца ловушками на рынке насекомых.', SW / 2, 243, { size: 8, align: 'c', color: this.msgT > 0 ? '#ffb070' : cl.dim });
+      } else if (this.t && this.mode === 'route') {
+        const tr = this.t, D = tr.dr, S0 = P.sectors, M = this.mapRect(), R = P.world.R;
+        UIK.panel(ctx, 6, 6, 468, 258, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, 'Маршрут ловушки', 14, 12, { size: 10, color: cl.gold }); T.draw(ctx, 'Нажимайте на карту: ловушка поедет по точкам по порядку', 14, 22, { size: 8, color: cl.dim });
+        ctx.fillStyle = '#0a120c'; ctx.fillRect(M.x - 2, M.y - 2, M.w + 4, M.h + 4); ctx.imageSmoothingEnabled = false; if (S0) ctx.drawImage(Sectors.mapImage(S0, M.w, -1, P.world), M.x, M.y); else { ctx.fillStyle = '#4a6a3a'; ctx.fillRect(M.x, M.y, M.w, M.h); }
+        // the route: dashes from the trap through the points, numbered markers, the trap and the player
+        const pts = [[tr.x, tr.z]].concat(D.route.map(q => [q.x, q.z])); for (let k = 0; k < pts.length - 1; k++) { const [ax, ay] = this.toMap(pts[k][0], pts[k][1]), [bx, by] = this.toMap(pts[k + 1][0], pts[k + 1][1]), nn = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 4)); for (let i = 0; i < nn; i += 1) if (i % 2 === 0) { const qx = Math.round(ax + (bx - ax) * i / nn), qy = Math.round(ay + (by - ay) * i / nn); ctx.fillStyle = '#10201c'; ctx.fillRect(qx - 1, qy - 1, 4, 4); ctx.fillStyle = '#ffe070'; ctx.fillRect(qx, qy, 2, 2); } }
+        D.route.forEach((q, i) => { const [mx, my] = this.toMap(q.x, q.z), cur = md0(D, i); ctx.fillStyle = '#10201c'; ctx.fillRect(mx - 4, my - 4, 9, 9); ctx.fillStyle = cur ? '#ffd070' : '#e8e0c0'; ctx.fillRect(mx - 3, my - 3, 7, 7); T.draw(ctx, String(i + 1), mx, my - 3, { size: 8, align: 'c', color: '#10201c' }); });
+        { const [mx, my] = this.toMap(tr.x, tr.z); ctx.fillStyle = '#10201c'; ctx.fillRect(mx - 3, my - 3, 7, 7); ctx.fillStyle = '#6af08a'; ctx.fillRect(mx - 2, my - 2, 5, 5); const [px, py] = this.toMap(P.player.pos.x, P.player.pos.z); ctx.fillStyle = '#fff'; ctx.fillRect(px - 1, py - 1, 3, 3); }
+        if (UIK.hit(M, m.x, m.y)) { ctx.fillStyle = '#ffffff'; ctx.fillRect(m.x - 4, m.y, 9, 1); ctx.fillRect(m.x, m.y - 4, 1, 9); }
+        const L = this.play.traps.routeLen(tr);
+        { let yy = 36; for (const part of `Точек: ${D.route.length} из ${DRIVE.maxPts}.\nПуть: около ${Math.round(L)} м (≈ ${mmss(L / DRIVE.speed * 1.3)} в дороге).\nВ каждой точке она стоит и ловит, потом едет дальше. Точка — в любом месте локации (если не проехать, сдвинется рядом).\nЗелёный квадрат — ловушка, белая точка — вы.`.split('\n')) yy += T.para(ctx, part, 252, yy, 214, { size: 8, color: cl.text, lh: 10 }) + 4; }
+        for (const b of bs.slice(1)) UIK.btn(ctx, b, !b.disabled && hv(b));
+        if (this.msgT > 0) T.draw(ctx, this.msg, 252, 166, { size: 8, color: '#ffe070' });
       } else if (this.t) {
         const tr = this.t, T0 = TYPES[tr.type], mine = this.mode === 'manage';
         UIK.panel(ctx, 6, 6, 468, 258, { fill: 'rgba(16,32,28,0.97)', border: cl.gold }); T.draw(ctx, mine ? T0.ru : `Ловушка игрока ${tr.name}`, 14, 12, { size: 10, color: cl.gold }); T.draw(ctx, T0.real, 14, 26, { size: 8, color: cl.dim });
@@ -653,13 +687,13 @@ const Traps = (() => {
           if (h) T.draw(ctx, 'Положено — достать обратно нельзя', 124, 137, { size: 8, color: '#e0a070' }); else T.draw(ctx, ch ? `в запасе: ${count('hn', ch.id)} (видов: ${owned('hn').length})` : '', 246, 137, { size: 8, color: cl.dim });
           T.draw(ctx, tr.broken ? 'Ловушка сломана: новые бабочки не прилетят' : rr > 0 ? `Прилёт: около ${rr.toFixed(1)} бабочек в минуту` : 'Положите цветы или мёд — иначе ловушка пуста', 124, 160, { size: 8, color: !tr.broken && rr > 0 ? '#9af0a0' : '#e07060' });
           { const rp = 1 - (1 - (T0.rare || 0)) * (1 - ((f && f.rare) || 0)); T.draw(ctx, (h ? `Редкие виды: до ×${rarK(tr.hn, 3).toFixed(1)} чаще` : 'Редкие виды: обычный шанс') + (rp > 0 ? ` · и ещё ${Math.round(rp * 100)}% встреч — редкие` : ''), 124, 172, { size: 8, color: h || rp > 0 ? '#e0c0ff' : cl.dim }); }
-          if (tr.dr) { const D = tr.dr, S0 = P.sectors, md = D.mode, nm = i => S0 && S0.rects[i] ? `${i + 1} «${S0.rects[i].name}»` : '?'; T.draw(ctx, md === 'drive' ? `Едет в природную зону ${nm(D.tgt)} — не ловит · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : md === 'stop' ? `Стоит в зоне ${nm(S0 ? S0.at(tr.x, tr.z) : 0)} ещё ${mmss(D.stopLeft)} · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : md === 'hold' ? `Остановлена, ловит · объехано ${D.visited.length}/${S0 ? S0.rects.length : '?'}` : 'Стоит на месте и ловит. «Запустить» — объехать все природные зоны', 124, 149, { size: 8, color: md === 'drive' ? '#ffd070' : '#9ad8ff' }); }
+          if (tr.dr) { const D = tr.dr, md = D.mode, n = D.route.length; T.draw(ctx, md === 'drive' ? `Едет к точке ${D.tgt + 1} из ${n} — не ловит` : md === 'stop' ? (D.navErr ? 'Ошибка навигации (песчаная буря): ждёт, пока буря утихнет' : `Стоит в точке ${D.next} из ${n} ещё ${mmss(D.stopLeft)}`) : md === 'hold' ? `Маршрут пройден или прерван: стоит и ловит · точек: ${n}` : n ? `Стоит и ловит. «Запустить» — поехать по маршруту (точек: ${n})` : 'Стоит и ловит. Задайте маршрут (кнопка «Маршрут») и запустите', 124, 149, { size: 8, color: md === 'drive' ? '#ffd070' : D.navErr ? '#ff8070' : '#9ad8ff' }); }
           { const abp = TYPES[tr.type].ab + ((h && h.ab) || 0); if (abp > 0) T.draw(ctx, `Аберранты: ${+(abp * 100).toFixed(1)}% (ловушка ${+(TYPES[tr.type].ab * 100).toFixed(1)}%${h && h.ab ? ` + приманка ${Math.round(h.ab * 100)}%` : ''})`, 124, 184, { size: 8, color: '#ff9ae8' }); }
           // the catch
           T.draw(ctx, 'Улов', 14, 196, { size: 8, color: cl.dim }); const sp = {}; for (const id of tr.items) sp[id] = (sp[id] || 0) + 1; const ids = Object.keys(sp);
           ids.slice(0, 12).forEach((id, i) => { const x = 14 + (i % 12) * 38, y = 207, S0 = SPECIES_BY_ID[id]; ctx.fillStyle = '#c8a870'; ctx.fillRect(x, y, 36, 20); ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(S0), x + 1, y + 1, 34, 18); if (sp[id] > 1) T.draw(ctx, '×' + sp[id], x + 35, y + 12, { size: 8, align: 'r', color: '#fff', shadow: '#000' }); if (S0.ab) T.draw(ctx, 'аб.', x + 2, y + 2, { size: 8, color: '#ff9ae8', shadow: '#000' }); });
           if (!ids.length) T.draw(ctx, tr.broken ? 'В ловушке никого нет.' : 'Пока никто не прилетел.', 14, 212, { size: 8, color: cl.dim });
-          bs.filter(b => b.id === 'take' || b.id === 'go' || b.id === 'halt').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b))); T.draw(ctx, 'Уйдёте с локации, не забрав улов, — он пропадёт', tr.dr ? 284 : 172, tr.dr ? 232 : 238, { size: 8, color: '#e0a070' });
+          bs.filter(b => b.id === 'take' || b.id === 'go' || b.id === 'halt' || b.id === 'route').forEach(b => UIK.btn(ctx, b, !b.disabled && hv(b))); T.draw(ctx, 'Уйдёте с локации, не забрав улов, — он пропадёт', tr.dr ? 12 : 172, tr.dr ? 254 : 238, { size: 8, color: '#e0a070' });
         } else {
           T.draw(ctx, 'Чужая ловушка: открыть её и забрать бабочек может только владелец.', 124, 80, { size: 8, color: cl.text }); const f = FL[tr.fl], h = HN[tr.hn]; T.draw(ctx, `Цветы: ${f ? f.ru : 'нет'}`, 124, 100, { size: 8, color: cl.dim }); T.draw(ctx, `Мёд: ${h ? h.ru : 'нет'}`, 124, 112, { size: 8, color: cl.dim }); if (T0.drive) T.draw(ctx, tr.run ? 'Сейчас едет: пока едет, не ловит' : 'Сейчас стоит и ловит', 124, 126, { size: 8, color: tr.run ? '#ffd070' : '#9ad8ff' });
         }

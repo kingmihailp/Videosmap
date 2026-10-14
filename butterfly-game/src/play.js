@@ -567,7 +567,7 @@ class Play {
     // vignette
     const g = ctx.createRadialGradient(SW / 2, SH / 2, SH * 0.45, SW / 2, SH / 2, SW * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.28)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SW, SH);
     // sandstorm: a dusty veil with streaks of flying sand; quicksand: the dark sand rises over the view as you sink
-    { const stl = this.world.storm || 0; if (stl > 0.02) { ctx.fillStyle = `rgba(190,146,86,${0.2 * stl})`; ctx.fillRect(0, 0, SW, SH); for (let i = 0, n = Math.round(26 * stl); i < n; i++) { ctx.fillStyle = `rgba(238,212,160,${0.08 + Math.random() * 0.12})`; ctx.fillRect(Math.random() * SW, Math.random() * SH, 24 + Math.random() * 90, 1); } }
+    { const stl = this.world.storm || 0; if (stl > 0.02) { ctx.fillStyle = `rgba(190,146,86,${0.3 * stl})`; ctx.fillRect(0, 0, SW, SH); for (let i = 0, n = Math.round(26 * stl); i < n; i++) { ctx.fillStyle = `rgba(238,212,160,${0.08 + Math.random() * 0.12})`; ctx.fillRect(Math.random() * SW, Math.random() * SH, 24 + Math.random() * 90, 1); } }
       const sk = this.sink || 0; if (sk > 0.03) { const gr = ctx.createLinearGradient(0, SH, 0, SH * (1 - 0.7 * sk)); gr.addColorStop(0, `rgba(96,78,52,${0.95 * Math.min(1, sk * 1.4)})`); gr.addColorStop(1, 'rgba(96,78,52,0)'); ctx.fillStyle = gr; ctx.fillRect(0, SH * (1 - 0.7 * sk), SW, SH * 0.7 * sk + 1); } }
     // biome plate
     const full = b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, line2 = T.width(full, 8) <= 158 ? full : fitStr(b.place, 158);      // the plate must hold the longest names (the coordinates give way)
