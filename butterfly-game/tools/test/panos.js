@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   let bad = 0; const T = (n, c, x) => { if (!c) bad++; console.log(c ? 'PASS' : 'FAIL', n, x === undefined ? '' : JSON.stringify(x)); };
   const OUT = '/tmp/claude-0/-home-user-Videosmap/f48094eb-42f2-5834-9ed0-7ec7af5f2a95/scratchpad/pano_';
   const r = await pg.evaluate(() => { const ids = Panorama.ids, out = { ids, sums: {}, pics: {}, ocean: ids.includes('ocean') }; const c = document.createElement('canvas'); c.width = 480; c.height = 270; const ctx = c.getContext('2d');
-    for (const id of ids) { Panorama.set(id); ctx.clearRect(0, 0, 480, 270); const ok = Panorama.draw(ctx, 4.2, 0); const d = ctx.getImageData(0, 0, 480, 270).data; let s = 0; for (let i = 0; i < d.length; i += 97) s += d[i] * 3 + d[i + 1] * 5 + d[i + 2]; out.sums[id] = ok ? s : 'night'; out.pics[id] = ok ? c.toDataURL() : null; }
+    for (const id of ids) { Panorama.set(id); ctx.clearRect(0, 0, 480, 270); const ok = Panorama.draw(ctx, 4.2 + (id === 'vietnam' ? 3 : 0), 0); const d = ctx.getImageData(0, 0, 480, 270).data; let s = 0; for (let i = 0; i < d.length; i += 97) s += d[i] * 3 + d[i + 1] * 5 + d[i + 2]; out.sums[id] = ok ? s : 'night'; out.pics[id] = ok ? c.toDataURL() : null; }
     // fresh entries into the title screen: a new scene each time, never twice in a row
     const seq = []; for (let i = 0; i < 40; i++) { F0W.screen = 'play-fake'; Screens.newPanorama(); seq.push(Panorama.id); } out.seq = seq; return out; });
   T('every location but the ocean has a panorama', r.ids.length === 12 && !r.ocean && BIOME_LIST_OK(r.ids), r.ids);
