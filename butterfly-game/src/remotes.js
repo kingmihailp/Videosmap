@@ -8,6 +8,26 @@ function mergeGeos(list) {
   for (const g of list) { P.set(g.attributes.position.array, o * 3); if (g.attributes.normal) N.set(g.attributes.normal.array, o * 3); if (g.index) for (let i = 0; i < g.index.count; i++) I.push(g.index.array[i] + o); else for (let i = 0; i < g.attributes.position.count; i++) I.push(i + o); o += g.attributes.position.count; }
   const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(P, 3)); m.setAttribute('normal', new THREE.BufferAttribute(N, 3)); m.setIndex(I); return m;
 }
+// the autonomy module on the handle: a housing, a slotted steel plate with a toggle lever that flips between ON and OFF (mats.autoLever), two lamps (mats.autoOnLamp / autoOffLamp),
+// four brass screws, a status LED (mats.autoLed), a cable loop
+function autoSwitch3d(g, x, y, z, mats, dark, steel, brass) {
+  const box = (w, h, d, m, px, py, pz) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x + px, y + py, z + pz); g.add(o); return o; };
+  box(0.08, 0.055, 0.135, dark, 0, 0, 0);                                       // the housing
+  box(0.074, 0.005, 0.125, steel, 0, 0.03, 0);                                  // the plate on top
+  box(0.018, 0.004, 0.085, new THREE.MeshBasicMaterial({ color: '#05080a' }), 0, 0.0335, 0);          // the slot the lever runs in
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.0055, 0.004, 6), brass); sc.position.set(x + sx * 0.032, y + 0.0335, z + sz * 0.054); g.add(sc); }
+  const piv = new THREE.Group(); piv.position.set(x, y + 0.034, z); g.add(piv);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.0055, 0.034, 6), steel); stem.position.y = 0.017; piv.add(stem);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.0115, 8, 6), new THREE.MeshLambertMaterial({ color: '#d84a30' })); knob.position.y = 0.037; piv.add(knob);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0085, 0.0022, 4, 8), brass); ring.rotation.x = Math.PI / 2; ring.position.y = 0.011; piv.add(ring);
+  piv.rotation.x = 0.6; mats.autoLever = piv;
+  const onM = new THREE.MeshBasicMaterial({ color: '#1e3a24' }), offM = new THREE.MeshBasicMaterial({ color: '#ff4a3a' });
+  const lo = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.005, 0.012), onM); lo.position.set(x - 0.026, y + 0.0345, z - 0.045); g.add(lo);          // the ON lamp (front)
+  const lf = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.005, 0.012), offM); lf.position.set(x - 0.026, y + 0.0345, z + 0.045); g.add(lf);         // the OFF lamp (back)
+  mats.autoOnLamp = onM; mats.autoOffLamp = offM;
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.0095, 6, 4), new THREE.MeshBasicMaterial({ color: '#c83a2a' })); led.position.set(x, y + 0.012, z - 0.072); g.add(led); mats.autoLed = led.material;
+  const cab = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 4, 10, Math.PI), dark); cab.position.set(x, y - 0.03, z + 0.072); cab.rotation.z = Math.PI; g.add(cab);         // a cable loop at the back
+}
 function makeNetModel(cfg) {
   if (cfg && cfg.cannon) return makeCannonModel(cfg);
   const V = NetParts.vis(cfg), gads = (cfg && cfg.g) || [], mats = {};
@@ -81,10 +101,8 @@ function makeNetModel(cfg) {
       for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.005, 4, 10), steel); f.position.set(0, 0.075, gz + 0.06 - k * 0.04); g.add(f); }
       const lens = new THREE.Mesh(new THREE.CircleGeometry(0.03, 10), new THREE.MeshBasicMaterial({ color: '#ff3a20' })); lens.position.set(0, 0.075, gz - 0.101); lens.rotation.y = Math.PI; g.add(lens); mats.irLens = lens.material;
       const br = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.05, 0.03), steel); br.position.set(0, 0.03, gz); g.add(br);
-    } else if (id === 'g_auto') {  // a servo with a lever, a battery and a status LED
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.12), dark); box.position.set(0.055, 0.0, gz); g.add(box);
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.09), steel); arm.position.set(0.055, 0.04, gz - 0.02); g.add(arm); const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 8), brass); hub.position.set(0.055, 0.035, gz + 0.03); g.add(hub);
-      const led = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 4), new THREE.MeshBasicMaterial({ color: '#c83a2a' })); led.position.set(0.055, 0.034, gz - 0.065); g.add(led); mats.autoLed = led.material;
+    } else if (id === 'g_auto') {  // the autonomy module: a housing with a toggle lever on a slotted plate, ON / OFF lamps, screws, a status LED
+      autoSwitch3d(g, 0.055, 0.0, gz, mats, dark, steel, brass);
     }
   });
   g.userData.mats = mats;
@@ -152,7 +170,7 @@ function makeCannonModel(cfg) {
     const gz = -0.5 - i * 0.12;
     if (id === 'g_map') { const box = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.08, 0.05), dark); box.position.set(-0.1, 0.07, gz); g.add(box); const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.062), new THREE.MeshBasicMaterial({ color: '#2ad060' })); sc.position.set(-0.1, 0.07, gz + 0.027); sc.scale.x = -1; g.add(sc); mats.mapScreen = sc.material; }
     else if (id === 'g_ir') { const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.18, 10), dark); tube.rotation.x = Math.PI / 2; tube.position.set(-0.11, 0.0, gz); g.add(tube); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.026, 10), new THREE.MeshBasicMaterial({ color: '#ff3a20' })); lens.position.set(-0.11, 0, gz - 0.091); lens.rotation.y = Math.PI; g.add(lens); mats.irLens = lens.material; }
-    else if (id === 'g_auto') { const box = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.1), dark); box.position.set(-0.1, -0.06, gz); g.add(box); const led = new THREE.Mesh(new THREE.SphereGeometry(0.009, 6, 4), new THREE.MeshBasicMaterial({ color: '#c83a2a' })); led.position.set(-0.1, -0.032, gz - 0.04); g.add(led); mats.autoLed = led.material; }
+    else if (id === 'g_auto') autoSwitch3d(g, -0.1, -0.06, gz, mats, dark, steel, brass);
   });
   g.userData.mats = mats;
   return { g, root, roll, setExt() {}, setPiston() {}, mats, R: 0.14, POLE: 0.9, cannon: true };

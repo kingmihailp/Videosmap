@@ -8,11 +8,26 @@ const UIK = {
     ctx.fillStyle = o.shadow === false ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.35)'; ctx.fillRect(x + 2, y + 2, w, h);
     ctx.fillStyle = o.fill || this.col.bg; ctx.fillRect(x, y, w, h);
     ctx.fillStyle = o.border || this.col.line; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h);
-    if (o.inner !== false) { ctx.fillStyle = o.inner || 'rgba(255,255,255,0.05)'; ctx.fillRect(x + 1, y + 1, w - 2, 1); ctx.fillRect(x + 1, y + 1, 1, h - 2); }
+    if (o.inner !== false) {
+      ctx.fillStyle = o.inner || 'rgba(255,255,255,0.05)'; ctx.fillRect(x + 1, y + 1, w - 2, 1); ctx.fillRect(x + 1, y + 1, 1, h - 2);
+      if (w > 6 && h > 6) { ctx.fillStyle = 'rgba(0,0,0,0.26)'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1); ctx.fillRect(x + w - 2, y + 1, 1, h - 2); }                    // the bevel: light on the upper-left, shade on the lower-right
+      if (h >= 14 && o.sheen !== false) { ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(x + 2, y + 2, w - 4, Math.min(6, h >> 2)); }                           // a soft sheen on the top
+      if (w >= 40 && h >= 18 && o.studs !== false) { ctx.fillStyle = 'rgba(255,255,255,0.2)'; for (const [sx, sy] of [[2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3]]) ctx.fillRect(x + sx, y + sy, 1, 1); }       // four little rivets
+    }
   },
+  // a glossy segmented bar: k 0..1; a groove, glow, tick marks
+  meter(ctx, x, y, w, h, k, col, o = {}) {
+    ctx.fillStyle = '#0a1612'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2); ctx.fillStyle = '#1c3028'; ctx.fillRect(x, y, w, h);
+    const fw = Math.round(w * clamp(k)); if (fw > 0) { ctx.fillStyle = col; ctx.fillRect(x, y, fw, h); ctx.fillStyle = 'rgba(255,255,255,0.34)'; ctx.fillRect(x, y, fw, 1); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x, y + h - 1, fw, 1); }
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; for (let i = 1; i < (o.ticks || 8); i++) ctx.fillRect(x + Math.round(w * i / (o.ticks || 8)), y, 1, h);
+  },
+  led(ctx, x, y, on, col, t = 0) { ctx.fillStyle = '#05100c'; ctx.fillRect(x - 1, y - 1, 5, 5); ctx.fillStyle = on ? col : '#2a3a34'; ctx.fillRect(x, y, 3, 3); if (on) { ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(x, y, 1, 1); ctx.globalAlpha = 0.25 + 0.1 * Math.sin(t * 6); ctx.fillStyle = col; ctx.fillRect(x - 2, y - 2, 7, 7); ctx.globalAlpha = 1; } },
+  screw(ctx, x, y, a = 0) { ctx.fillStyle = '#05080a'; ctx.fillRect(x - 1, y - 1, 4, 4); ctx.fillStyle = '#8a9298'; ctx.fillRect(x, y, 2, 2); ctx.fillStyle = '#3a4046'; if (a % 2) ctx.fillRect(x, y, 1, 2); else ctx.fillRect(x, y, 2, 1); },
   btn(ctx, b, hover) {
     const c = this.col; const fill = b.disabled ? '#1a2a24' : hover ? '#2a5a46' : '#1e4034';
-    this.panel(ctx, b.x, b.y, b.w, b.h, { fill, border: hover ? c.gold : c.line });
+    this.panel(ctx, b.x, b.y, b.w, b.h, { fill, border: hover ? c.gold : c.line, studs: false });
+    if (b.h >= 12) { ctx.fillStyle = b.disabled ? 'rgba(255,255,255,0.02)' : hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, Math.max(2, (b.h - 4) >> 1)); }          // the lit upper half of a key
+    if (hover && !b.disabled) { ctx.fillStyle = 'rgba(240,200,90,0.35)'; ctx.fillRect(b.x + 1, b.y + 1, b.w - 2, 1); ctx.fillRect(b.x + 1, b.y + b.h - 2, b.w - 2, 1); }
     T.draw(ctx, b.label, b.x + b.w / 2, b.y + (b.h - 8) / 2 - (b.size > 8 ? 1 : 0), { size: b.size || 8, align: 'c', color: b.disabled ? '#5a7a68' : hover ? '#fff' : c.text });
   },
   hit(b, x, y) { return x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h; },
@@ -573,7 +588,8 @@ class Play {
     const full = b.secret ? b.place : `${b.place} · ${b.lat.toFixed(1)}° ${b.lat >= 0 ? 'с.ш.' : 'ю.ш.'}`, line2 = T.width(full, 8) <= 158 ? full : fitStr(b.place, 158);      // the plate must hold the longest names (the coordinates give way)
     const pw = clamp(Math.max(T.width(b.name, 8), T.width(line2, 8)) + 14, 158, 174);
     UIK.panel(ctx, 6, 6, pw, 24, { fill: 'rgba(16,32,28,0.82)' });
-    T.draw(ctx, fitStr(b.name, pw - 12), 12, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, line2, 12, 19, { size: 8, color: c.dim });
+    ctx.fillStyle = b.secret ? 'rgba(232,96,74,0.55)' : 'rgba(240,200,90,0.5)'; ctx.fillRect(8, 8, 2, 20);       // an accent bar on the plate
+    T.draw(ctx, fitStr(b.name, pw - 14), 13, 9, { size: 8, color: b.secret ? c.red : c.gold }); T.draw(ctx, fitStr(line2, pw - 14), 13, 19, { size: 8, color: c.dim });
     if (this.mp) T.draw(ctx, 'Онлайн: ' + [Net.name].concat(Object.values(Net.remote).map(r => r.name)).join(', ') + '   [T — чат]', 8, 33, { size: 8, color: '#9ae0b0', shadow: '#000' });
     // species checklist
     // the sector you stand in and the key of the map / species menu
@@ -596,7 +612,9 @@ class Play {
     // noise meter
     UIK.panel(ctx, 6, SH - 26, 92, 20, { fill: 'rgba(16,32,28,0.82)' });
     T.draw(ctx, 'ШУМ', 11, SH - 22, { size: 8, color: c.dim });
-    const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl; ctx.fillStyle = on ? (i < 3 ? c.green : i < 6 ? c.gold : c.red) : '#233a30'; ctx.fillRect(40 + i * 7, SH - 21, 5, 10); }
+    { const lvl = clamp(P.noise / 1.6); for (let i = 0; i < 8; i++) { const on = (i + 0.5) / 8 <= lvl, col = i < 3 ? c.green : i < 6 ? c.gold : c.red, x0 = 40 + i * 7; ctx.fillStyle = '#05100c'; ctx.fillRect(x0 - 1, SH - 22, 7, 12); ctx.fillStyle = on ? col : '#1e332a'; ctx.fillRect(x0, SH - 21, 5, 10);
+        if (on) { ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(x0, SH - 21, 5, 1); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x0, SH - 12, 5, 1); } else { ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x0, SH - 21, 5, 1); } }
+      if (lvl > 0.75 && Math.sin(this.t * 14) > 0) { ctx.fillStyle = 'rgba(232,96,74,0.35)'; ctx.fillRect(7, SH - 25, 90, 1); ctx.fillRect(7, SH - 8, 90, 1); } }
     if (this.pickNear && !this.doorNear) { const s2 = this.pickNear.label, w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.doorNear) { const s2 = 'E — войти в заброшенный дом', w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: c.gold }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     if (this.traps && this.traps.near && !this.doorNear && !this.pickNear) { const s2 = this.traps.label(this.traps.near), w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: this.traps.near.mine ? c.gold : '#6a9a80' }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }

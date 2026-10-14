@@ -210,7 +210,7 @@ const Gear = (() => {
     }
     // the model's lights: the auto LED (green when on), the infrared lens (bright while it sweeps), map screen flicker
     const M = play.netModel && play.netModel.mats; if (M) {
-      if (M.autoLed) M.autoLed.color.set(rt.auto ? '#4aff6a' : '#c83a2a'); if (M.irLens) M.irLens.color.set(rt.ir.t >= 0 ? '#ffffff' : '#ff3a20'); if (M.mapScreen && M.mapScreen.color) { const st = (play.world && play.world.storm) || 0; if (st > 0.05) M.mapScreen.color.setRGB(1, 0.08 + 0.1 * Math.random(), 0.06).multiplyScalar(0.55 + 0.45 * (Math.sin(play.t * 23) > -0.3 ? 1 : 0.35) * st + 0.2 * (1 - st)); else M.mapScreen.color.setScalar(0.8 + Math.sin(play.t * 31) * 0.1); }       // a sandstorm: the screen of the module on the net turns red and flickers
+      if (M.autoLed) M.autoLed.color.set(rt.auto ? '#4aff6a' : '#c83a2a'); if (M.autoLever) M.autoLever.rotation.x = damp(M.autoLever.rotation.x, rt.auto ? -0.6 : 0.6, 16, dt); if (M.autoOnLamp) M.autoOnLamp.color.set(rt.auto ? '#4aff6a' : '#1e3a24'); if (M.autoOffLamp) M.autoOffLamp.color.set(rt.auto ? '#3a1a16' : '#ff4a3a'); if (M.irLens) M.irLens.color.set(rt.ir.t >= 0 ? '#ffffff' : '#ff3a20'); if (M.mapScreen && M.mapScreen.color) { const st = (play.world && play.world.storm) || 0; if (st > 0.05) M.mapScreen.color.setRGB(1, 0.08 + 0.1 * Math.random(), 0.06).multiplyScalar(0.55 + 0.45 * (Math.sin(play.t * 23) > -0.3 ? 1 : 0.35) * st + 0.2 * (1 - st)); else M.mapScreen.color.setScalar(0.8 + Math.sin(play.t * 31) * 0.1); }       // a sandstorm: the screen of the module on the net turns red and flickers
       if (M.stud) M.stud.forEach((m, i) => m.color.set((Math.sin(play.t * 18 + i * 1.7) > 0.2) ? '#d8f8ff' : '#4a8ac8')); if (M.beads) M.beads.color.set(Math.sin(play.t * 3) > 0 ? '#d0a0ff' : '#a070e8');
       if (M.cells) { const k = 1 - clamp(rt.cd / rt.cdMax); M.cells.forEach((m, i) => m.color.set(k > (i + 1) / 4 - 0.01 ? '#58d8ff' : '#1a3a48')); } if (M.needle && play.netStats.cannon) M.needle.rotation.z = -0.9 + (1 - clamp(rt.cd / rt.cdMax)) * 1.8;
     }
@@ -258,14 +258,35 @@ const Gear = (() => {
     T.draw(ctx, bad ? (Math.floor(t * 4) % 2 ? 'ЗОНА ?? · ERROR' : 'ЗОНА 0x' + ((qk * 40503) & 0xfff).toString(16).toUpperCase() + ' · ???') : `ЗОНА ${here + 1} · ${S.rects[here].name}`, X + W / 2, Y + H + 2, { size: 8, align: 'c', color: bad ? '#ff6050' : '#7affa0' });
     ctx.fillStyle = Math.floor(t * 1.2) % 2 ? '#3aff6a' : '#1a6a30'; ctx.fillRect(X + W - 4, Y + H + 4, 2, 2);
   }
+  // the autonomy switch of the module: a plate with screws, the key [X], a recessed slide switch with a metal knob that slides (ON green / OFF red), a status LED
+  function drawAutoSwitch(ctx, x, y, rt, t) {
+    const W = 92, H = 20, on = !!rt.auto; rt.autoK = (rt.autoK === undefined ? (on ? 1 : 0) : rt.autoK) + ((on ? 1 : 0) - (rt.autoK === undefined ? (on ? 1 : 0) : rt.autoK)) * 0.28;
+    const k = rt.autoK;
+    UIK.panel(ctx, x, y, W, H, { fill: '#1b1f23', border: on ? '#3aa05a' : '#5a6068', shadow: false, studs: false });
+    ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(x + 2, y + 2, W - 4, 4); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + 2, y + H - 4, W - 4, 2);          // brushed metal
+    UIK.screw(ctx, x + 3, y + 3, 0); UIK.screw(ctx, x + W - 5, y + 3, 1); UIK.screw(ctx, x + 3, y + H - 5, 1); UIK.screw(ctx, x + W - 5, y + H - 5, 0);
+    T.draw(ctx, 'АВТО', x + 10, y + 3, { size: 8, color: on ? '#9af0b0' : '#9aa4a8' });
+    // the key hint: a little keycap with X
+    ctx.fillStyle = '#05080a'; ctx.fillRect(x + 10, y + 11, 15, 7); ctx.fillStyle = '#3a4046'; ctx.fillRect(x + 11, y + 11, 13, 5); ctx.fillStyle = '#5a626a'; ctx.fillRect(x + 11, y + 11, 13, 1); T.draw(ctx, 'X', x + 17, y + 10, { size: 8, color: '#e8f0dc' });
+    // the slide switch: a recessed track, the lit half shows the state
+    const sx = x + 38, sy = y + 4, sw = 46, sh = 12;
+    ctx.fillStyle = '#05080a'; ctx.fillRect(sx - 1, sy - 1, sw + 2, sh + 2); ctx.fillStyle = on ? '#174a26' : '#4a1c18'; ctx.fillRect(sx, sy, sw, sh);
+    ctx.fillStyle = on ? 'rgba(74,255,106,0.35)' : 'rgba(255,90,70,0.25)'; ctx.fillRect(sx + 1, sy + 1, sw - 2, 3); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(sx, sy + sh - 2, sw, 2);          // glass over the track, shade below
+    if (on) T.draw(ctx, 'ВКЛ', sx + sw - 4, sy + 2, { size: 8, align: 'r', color: '#caffd4' }); else T.draw(ctx, 'ВЫКЛ', sx + 4, sy + 2, { size: 8, color: '#ffb0a0' });          // the state word sits on the free side of the track
+    const kx = Math.round(sx + 1 + (1 - k) * (sw - 20)), ky = sy + 1;       // the knob: ON = left end, OFF = right end
+    ctx.fillStyle = on ? 'rgba(74,255,106,0.28)' : 'rgba(255,70,50,0.2)'; ctx.fillRect(kx - 2, ky - 1, 22, sh); ctx.fillStyle = '#05080a'; ctx.fillRect(kx, ky, 18, sh - 2);
+    ctx.fillStyle = '#7a848c'; ctx.fillRect(kx + 1, ky + 1, 16, sh - 4); ctx.fillStyle = '#c8d0d6'; ctx.fillRect(kx + 1, ky + 1, 16, 2); ctx.fillStyle = '#4a525a'; ctx.fillRect(kx + 1, ky + sh - 5, 16, 2);
+    ctx.fillStyle = '#3a4248'; for (const gx of [6, 9, 12]) ctx.fillRect(kx + gx, ky + 3, 1, sh - 8);            // grip ridges
+    UIK.led(ctx, x + W - 8, y + 8, true, on ? '#4aff6a' : '#c83a2a', t);
+  }
   function drawHud(play, ctx, t) {
     const rt = play.gear, S = play.netStats; if (!rt) return; const c = UIK.col;
     if (S.map) drawMap(play, ctx, t);
     let by = S.map ? SH - 128 : SH - 28;
-    const bar = (label, k, col, hot) => { UIK.panel(ctx, SW - 98, by - 16, 92, 15, { fill: 'rgba(16,28,24,0.88)', shadow: false }); T.draw(ctx, label, SW - 94, by - 13, { size: 8, color: hot ? '#fff' : c.dim }); ctx.fillStyle = '#233a30'; ctx.fillRect(SW - 50, by - 12, 40, 6); ctx.fillStyle = col; ctx.fillRect(SW - 50, by - 12, Math.round(40 * k), 6); by -= 17; };
+    const bar = (label, k, col, hot) => { UIK.panel(ctx, SW - 98, by - 16, 92, 15, { fill: 'rgba(16,28,24,0.88)', shadow: false }); T.draw(ctx, label, SW - 94, by - 13, { size: 8, color: hot ? '#fff' : c.dim }); UIK.meter(ctx, SW - 50, by - 12, 40, 6, k, col, { ticks: 5 }); if (hot) { ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(SW - 50, by - 12, 40, 6); } by -= 17; };
     if (S.ir) bar('ИК-скан', rt.ir.t >= 0 ? 1 : clamp(1 - rt.ir.cd / IR_CD), '#ff5a38', rt.ir.t >= 0);
     if (S.cannon) bar('Заряд', 1 - clamp(rt.cd / rt.cdMax), '#58d8ff', rt.cd <= 0);
-    if (S.auto) { UIK.panel(ctx, SW - 98, by - 16, 92, 15, { fill: 'rgba(16,28,24,0.88)', shadow: false, border: rt.auto ? '#4aff6a' : c.line }); T.draw(ctx, 'Авто [X]', SW - 94, by - 13, { size: 8, color: c.text }); ctx.fillStyle = rt.auto ? '#1a5a2a' : '#3a2220'; ctx.fillRect(SW - 36, by - 12, 24, 7); ctx.fillStyle = rt.auto ? '#4aff6a' : '#c83a2a'; ctx.fillRect(rt.auto ? SW - 24 : SW - 36, by - 12, 12, 7); by -= 17; }
+    if (S.auto) { drawAutoSwitch(ctx, SW - 98, by - 21, rt, t); by -= 23; }
     // the infrared marks: the distance under every butterfly lit by the beam (the outline itself glows in the 3D scene, see Ir.halo)
     if (S.ir) { let n = 0; for (const f of play.flies) { if (!(f.irT > 0) || f.state === CAUGHT) continue; _a.copy(f.pos).project(play.camera); if (_a.z > 1 || Math.abs(_a.x) > 1 || Math.abs(_a.y) > 1) continue; const x = Math.round((_a.x * 0.5 + 0.5) * SW), y = Math.round((-_a.y * 0.5 + 0.5) * SH), d = f.pos.distanceTo(play.camera.position), s = clamp(34 / (d * 0.5 + 3), 3, 9) + 3; ctx.fillStyle = f.irT < 1 && Math.floor(t * 10) % 2 ? 'rgba(255,90,60,0.4)' : '#ff4a2a';
       { const hs = s + 2, off = Math.floor(t * 8) % 5; ctx.fillStyle = f.irT < 1 && Math.floor(t * 10) % 2 ? 'rgba(255,40,20,0.45)' : '#ff2a14';       // a square of dashes (the dashes run slowly round it)
