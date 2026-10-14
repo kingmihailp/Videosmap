@@ -47,8 +47,13 @@ const Screens = (() => {
     for (const f of fireflies) { const x = f.x + Math.sin(t * f.sp + f.ph) * f.a, y = f.y + Math.cos(t * f.sp * 0.8 + f.ph) * f.a * 0.5; const b = Math.max(0, Math.sin(t * 1.6 * f.sp + f.ph * 3)) ** 3; if (b > 0.1) { ctx.fillStyle = `rgba(200,255,120,${b})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); ctx.fillStyle = `rgba(160,240,90,${b * 0.2})`; ctx.fillRect(Math.round(x) - 2, Math.round(y) - 2, 6, 6); } }
     if (dim) { ctx.fillStyle = `rgba(0,0,0,${dim})`; ctx.fillRect(0, 0, SW, SH); }
   }
-  function drawFlyer(ctx, f, t) {
-    const x = (f.x + t * f.v) % (SW + 120) - 60, y = f.y + Math.sin(t * 0.9 + f.ph) * f.a; const fl = Math.abs(Math.cos(t * 7 + f.ph)) * 0.8 + 0.2;
+  let flyT = 0;
+  function drawFlyer(ctx, f, t, m) {
+    const dt = clamp(t - flyT, 0, 0.1) ; f.ox = f.ox || 0; f.oy = f.oy || 0; f.scare = f.scare || 0;
+    const bx = (f.x + t * f.v) % (SW + 120) - 60 + f.ox, by = f.y + Math.sin(t * 0.9 + f.ph) * f.a + f.oy;
+    if (m) { const dx = bx - m.x, dy = by - m.y, d = Math.hypot(dx, dy) || 1; if (d < 70) { const k = (70 - d) / 70 * 260 * dt; f.ox += dx / d * k; f.oy += dy / d * k; f.scare = 1; } }
+    f.ox *= Math.exp(-dt * 0.9); f.oy *= Math.exp(-dt * 0.9); f.scare = Math.max(0, f.scare - dt * 0.8);   // the scattered ones drift back to their flight path
+    const x = bx, y = by; const fl = Math.abs(Math.cos(t * (7 + f.scare * 6) + f.ph)) * 0.8 + 0.2;
     const vy = Math.cos(t * 0.9 + f.ph) * 0.9 * f.a; const ang = Math.atan2(vy, f.v);       // fly head-first along the path (the picture's head points up)
     const img = Art.specimen(f.sp); const w = 80 * f.s, h = 40 * f.s; ctx.imageSmoothingEnabled = false;
     ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(Math.PI / 2 + ang); ctx.drawImage(img, 0, 0, 80, 40, -w / 2 * fl, -h / 2, w * fl, h); ctx.restore();
@@ -71,7 +76,7 @@ const Screens = (() => {
     },
     draw(ctx, t, m) {
       this.layout(); nightBackdrop(ctx, t);
-      flyers.forEach(f => drawFlyer(ctx, f, t));
+      flyers.forEach(f => drawFlyer(ctx, f, t, m)); flyT = t;
       // logo (2x pixel doubling)
       ctx.save(); ctx.scale(2, 2); const lx = SW / 4;
       T.draw(ctx, 'Flora0world', lx, 16, { size: 22, align: 'c', color: '#b8f090', outline: '#0c2a1a', shadow: '#061810' });
@@ -466,5 +471,5 @@ const Screens = (() => {
       const f = SPECIES[((Math.floor(Math.abs(t) * 0.7) % SPECIES.length) + SPECIES.length) % SPECIES.length]; const fl = Math.abs(Math.cos(t * 9)) * 0.8 + 0.2; ctx.imageSmoothingEnabled = false; ctx.drawImage(Art.specimen(f), 0, 0, 80, 40, SW / 2 - 40 * fl, 150, 80 * fl, 40);
     },
   };
-  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, newPanorama, biomeCol, short };
+  return { pinPos, title, wmap, journal, pause, cardpos, settings, keys: keysScr, help, loading, mp, nightBackdrop, newPanorama, flyers: () => flyers, biomeCol, short };
 })();

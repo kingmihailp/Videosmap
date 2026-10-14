@@ -238,7 +238,7 @@ New effect kinds: **quiet** (less swing noise, so butterflies are scared less), 
 
 ## Main menu panoramas
 
-The backdrop of the main menu (and of its sub-screens) is a pixel-art panorama of one location (`src/panorama.js`, `Panorama`): 11 daytime scenes (meadow, Alps, Greece, Amazon, Borneo, Kenya sunset, prairie, Japan with Fuji, New Guinea volcano, Vietnam karst, Chihuahuan Desert) and the original night forest for the bog; the ocean has none. A new one is picked on every new entry into the menu (never twice in a row; coming back from the multiplayer, help, keys or settings sub-screens keeps it); the butterflies flying over it are species of that location. Test: `tools/test/panos.js`.
+The backdrop of the main menu (and of its sub-screens) is a pixel-art panorama of one location (`src/panorama.js`, `Panorama`): 11 daytime scenes (meadow, Alps, Greece, Amazon, Borneo, Kenya sunset, prairie, Japan with Fuji, New Guinea volcano, Vietnam karst, Chihuahuan Desert) and the original night forest for the bog; the ocean has none. A new one is picked on every new entry into the menu (never twice in a row; coming back from the multiplayer, help, keys or settings sub-screens keeps it); the butterflies flying over it are species of that location. The butterflies scatter away from the mouse cursor and drift back to their flight path afterwards. Tests: `tools/test/panos.js`, `tools/test/flyers_scare.js`.
 
 ## Hidden console
 
