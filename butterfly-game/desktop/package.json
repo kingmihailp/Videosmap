@@ -6,7 +6,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable --x64"
+    "dist": "electron-builder --win portable --x64",
+    "steam:win": "electron-builder --win dir --x64",
+    "steam:linux": "electron-builder --linux dir --x64"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -16,10 +18,56 @@
     "appId": "local.flora0world.butterflies",
     "productName": "Flora0world Butterflies",
     "icon": "build/icon.ico",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "package.json"],
-    "extraResources": [{ "from": "../Flora0world_Butterflies.html", "to": "game.html" }],
-    "win": { "target": [{ "target": "portable", "arch": ["x64"] }], "icon": "build/icon.ico" },
-    "portable": { "artifactName": "Flora0world-Butterflies.exe" }
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "node_modules/steamworks.js/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../Flora0world_Butterflies.html",
+        "to": "game.html"
+      },
+      {
+        "from": "../steam/steam_appid.txt",
+        "to": "steam_appid.txt"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Flora0world-Butterflies.exe"
+    },
+    "asarUnpack": [
+      "node_modules/steamworks.js/**"
+    ],
+    "linux": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Game"
+    }
+  },
+  "dependencies": {
+    "steamworks.js": "^0.4.0"
   }
 }

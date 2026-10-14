@@ -1,0 +1,20 @@
+name: Steam build
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest, script: 'npx electron-builder --win dir --x64', dir: dist/win-unpacked, name: steam-windows }
+          - { os: ubuntu-latest, script: 'npx electron-builder --linux dir --x64', dir: dist/linux-unpacked, name: steam-linux }
+    runs-on: ${{ matrix.os }}
+    defaults: { run: { working-directory: butterfly-game/desktop } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with: { name: '${{ matrix.name }}', path: 'butterfly-game/desktop/${{ matrix.dir }}' }

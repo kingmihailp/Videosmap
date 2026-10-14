@@ -63,7 +63,7 @@ const Save = {
   mp: false, stash: null, mpIdx: 0, mpCnt: 0,
   load() {
     try {
-      const s = localStorage.getItem(SAVE_KEY);
+      const s = (window.F0WNative && F0WNative.readSave()) || localStorage.getItem(SAVE_KEY);   // the desktop (Steam) build keeps the save in a real file
       if (s) {
         const d = JSON.parse(s); this.data = Object.assign(this.data, d);
         this.data.settings = Object.assign({ sound: true, music: true, quality: 'high', volume: 1, volSfx: 1, volMusic: 1 }, d.settings);
@@ -77,7 +77,7 @@ const Save = {
     } catch (e) {}
   },
   // while online the cabinet (specimens + boxes) is the server's shared one; the personal journal and settings stay local
-  write() { try { const d = this.mp && this.stash ? Object.assign({}, this.data, { specimens: this.stash.specimens, boxes: this.stash.boxes, uid: this.stash.uid }) : this.data; localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} },
+  write() { try { const d = this.mp && this.stash ? Object.assign({}, this.data, { specimens: this.stash.specimens, boxes: this.stash.boxes, uid: this.stash.uid }) : this.data; const j = JSON.stringify(d); if (window.F0WNative) F0WNative.writeSave(j); localStorage.setItem(SAVE_KEY, j); } catch (e) {} },
   enterMP(cab, idx) { if (!this.mp) this.stash = { specimens: this.data.specimens, boxes: this.data.boxes, uid: this.data.uid }; this.mp = true; this.mpT = Date.now(); this.mpIdx = idx; this.mpCnt = 0; this.setCab(cab); },
   // salvage = the connection dropped by itself: the butterflies caught online this session may not have reached the server, so they are kept in the personal cabinet
   leaveMP(salvage) { if (!this.mp) return; this.mp = false; const mine = salvage && this.stash ? this.data.specimens.filter(x => x.by === Net.name && x.date >= this.mpT && x.q === null) : [];

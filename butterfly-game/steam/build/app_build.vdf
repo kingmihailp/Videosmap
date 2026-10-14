@@ -1,0 +1,29 @@
+"AppBuild"
+{
+	"AppID" "YOUR_APP_ID"
+	"Desc" "Flora0world Butterflies build"
+	"BuildOutput" "..\output\"
+	"ContentRoot" "..\content\"
+	"SetLive" ""
+	"Depots"
+	{
+		"YOUR_WINDOWS_DEPOT_ID"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "windows\*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+		}
+		"YOUR_LINUX_DEPOT_ID"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "linux\*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+		}
+	}
+}
