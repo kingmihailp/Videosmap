@@ -12,12 +12,13 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     let inc = {}; const N = 4000; for (let i = 0; i < N; i++) { const pool = Play.pickPool(b, new Rng('seed' + i), b.poolSize, false); for (const s of pool) inc[s.id] = (inc[s.id] || 0) + 1; }
     const red = b.species.filter(s => s.rar === 3), others = red.filter(s => s.id !== sp.id), avgOther = others.reduce((a, s) => a + (inc[s.id] || 0), 0) / others.length / N, mine = (inc[sp.id] || 0) / N;
     const commons = b.species.filter(s => s.rar === 1); const avg1 = commons.reduce((a, s) => a + (inc[s.id] || 0), 0) / commons.length / N;
-    return { raw, spread0, spread, abp, bulk, bulkOther, red: red.length, name: sp.ru, rar: sp.rar, scarce: sp.scarce, mine: +mine.toFixed(3), avgOther: +avgOther.toFixed(3), avg1: +avg1.toFixed(3), n: b.species.length, poolSize: b.poolSize, price: Maps.LIST.find(m => m.id === 'chihuahua').price, rare: Rare.is(sp), rareIds: Rare.ids.size, id: sp.id };
+    return { raw, spread0, spread, abp, bulk, bulkOther, red: red.length, name: sp.ru, rar: sp.rar, scarce: sp.scarce, mine: +mine.toFixed(3), avgOther: +avgOther.toFixed(3), avg1: +avg1.toFixed(3), n: b.species.length, poolSize: b.poolSize, price: Maps.LIST.find(m => m.id === 'chihuahua').price, rare: Rare.is(sp), rareIds: Rare.ids.size, id: sp.id, trapMarble: (() => { let n = 0; const N = 40000; for (let i = 0; i < N; i++) if (Traps.pick(b.species, 'heather', 'drv', 'synth').id === sp.id) n++; return n / N; })(), trapOther: (() => { let n = 0; const N = 40000, o = BIOME_BY_ID.vietnam; for (let i = 0; i < N; i++) if (Traps.pick(o.species, 'heather', 'drv', 'synth').id === 'teinopalpus_aureus') n++; return n / N; })() };
   });
   console.log(JSON.stringify(r));
   T('Sonoran marble: raw exactly 2600', r.raw === 2600, r.raw); T('spread: 3 x raw at quality 100', r.spread === 7800, r.spread); T('aberration multiplies (~x6)', r.abp >= 2600 * 5.3 && r.abp <= 2600 * 6.7, r.abp);
   T('not taken by "sell all"', r.bulk === false && r.bulkOther === true); T('four red butterflies in the biome', r.red === 4, r.red); T('the marble is a rare one (red frame)', r.rare === true && r.rar === 3 && r.rareIds === 4, [r.name, r.id]);
-  T('as rare as the other three reds (no extra scarcity)', !r.scarce && Math.abs(r.mine - r.avgOther) < 0.04, [r.mine, r.avgOther]); T('rarer than a common one', r.mine < r.avg1, [r.mine, r.avg1]);
+  T('as scarce as the other reds (scarce 0.05: seldom in a visit, no respawn)', r.scarce === 0.05 && r.mine < 0.03 && r.mine < r.avg1 / 8, [r.scarce, r.mine, r.avg1]);
+  T('in traps as rare as the other reds (a drive trap with honey and synthetic flowers: well under 0.1% of the visitors)', r.trapMarble < 0.001 && r.trapMarble < r.trapOther * 5 + 0.0005, [r.trapMarble, r.trapOther]);
   T('the map costs 15000', r.price === 15000, r.price);
   // buy + enter
   await ev(() => { Save.data.coins = 15200; F0W.toSecret(); }); for (let i = 0; i < 60; i++) { if (await ev(() => !!(F0W.cab && F0W.cab.seller))) break; await pg.waitForTimeout(300); }

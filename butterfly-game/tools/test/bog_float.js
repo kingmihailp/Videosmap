@@ -8,7 +8,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   const pg = await br.newPage({ viewport: { width: 400, height: 300 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('file:///home/user/Videosmap/butterfly-game/Flora0world_Butterflies.html#debug&nolock'); await pg.waitForTimeout(2500);
   const seed = process.argv[2] || 'BOGF', bid = process.argv[3] || 'bog';
-  await pg.evaluate(([sd, b]) => { Save.data.maps = { bog: true, papua: true, vietnam: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(b, sd); }, [seed, bid]);
+  await pg.evaluate(([sd, b]) => { Save.data.maps = { bog: true, papua: true, vietnam: true, chihuahua: true }; F0W.fade = 0; F0W.fadeTarget = 0; F0W.start(b, sd); }, [seed, bid]);
   for (let i = 0; i < 120; i++) { if (await pg.evaluate(() => !!(F0W.play && F0W.screen === 'play')).catch(() => false)) break; await pg.waitForTimeout(500); }
   const r = await pg.evaluate(() => {
     const w = F0W.play.world, H = w.heightAt, out = { single: [], inst: [], parts: [], checked: { mesh: 0, inst: 0, merged: 0 } }, scene = w.scene, singles = [];

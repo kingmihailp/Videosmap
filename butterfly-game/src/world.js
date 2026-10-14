@@ -628,19 +628,20 @@ const World = (() => {
       return { g: merge(parts, r), rad: 0, h: 1.2 };
     },
     // ---- the Chihuahuan Desert (Chihuahua, Mexico): creosote flats, ocotillo, agaves, yuccas, sotol, prickly pear, cholla, barrel cactus, mesquite in the dry washes
-    creosote(r) {   // Larrea tridentata: a spray of thin knotty stems from the root crown, small resinous olive leaves, yellow flowers, white fluffy fruits
-      const parts = []; const n = r.int(10, 15), H = r.range(1.3, 2.2);
+    creosote(r) {   // Larrea tridentata: a rounded shrub of thin knotty stems from the root crown, dense small resinous olive leaves, yellow flowers, white fluffy fruits
+      const parts = []; const n = r.int(11, 16), H = r.range(1.3, 2.1);
       parts.push({ g: cylG(0.07, 0.1, 0.12, 6), c: '#3e3024', j: 0.06 });
       for (let i = 0; i < n; i++) {
-        const a = i / n * 6.28 + r.range(-0.3, 0.3), lean = r.range(0.25, 0.65), L = H * r.range(0.7, 1.05), ca = Math.cos(a), sa = Math.sin(a);
+        const a = i / n * 6.28 + r.range(-0.3, 0.3), lean = r.range(0.3, 0.7), L = H * r.range(0.7, 1.05), ca = Math.cos(a), sa = Math.sin(a);
         const mid = new V3(ca * L * lean * 0.45, L * 0.55, sa * L * lean * 0.45), tip = new V3(ca * L * lean, L, sa * L * lean);
         const l1 = limb(new V3(0, 0.05, 0), mid, 0.034, 0.024, 4), l2 = limb(mid, tip, 0.024, 0.01, 4);
         parts.push({ g: l1.g, m: l1.m, c: '#4a3a2a', j: 0.05 }, { g: l2.g, m: l2.m, c: '#5e4c36', j: 0.05 });
-        for (const u of [0.1, 0.4, 0.7, 1.0]) {
-          const p = new V3(lerp(mid.x, tip.x, u), lerp(mid.y, tip.y, u), lerp(mid.z, tip.z, u)); const s = r.range(0.7, 1.2) * (u > 0.9 ? 0.8 : 1);
-          parts.push({ g: blobG(0.2 * s, r, 0.35, 0), m: M(p.x, p.y, p.z, 0, r.range(0, 6), 0, 1, 0.7, 1), c: r.pick(['#6e7a34', '#808a3c', '#5e6c2e', '#8a9444']), j: 0.12 });
-          if (r.chance(0.3)) parts.push({ g: blobG(0.045, r, 0.2, 0), m: M(p.x + r.range(-0.15, 0.15), p.y + r.range(0, 0.2), p.z + r.range(-0.15, 0.15)), c: '#f2d23a', j: 0.05 });
-          else if (r.chance(0.16)) parts.push({ g: blobG(0.07, r, 0.2, 0), m: M(p.x + r.range(-0.15, 0.15), p.y + r.range(0, 0.15), p.z + r.range(-0.15, 0.15)), c: '#f4efe2', j: 0.05 });
+        for (const u of [0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.0]) {
+          const p = new V3(lerp(mid.x, tip.x, u) + r.range(-0.05, 0.05), lerp(mid.y, tip.y, u), lerp(mid.z, tip.z, u) + r.range(-0.05, 0.05)); const s = r.range(0.9, 1.3) * (u > 0.9 ? 0.85 : 1), q = 0.14 * s;
+          parts.push({ g: blobG(q, r, 0.35, 0), m: M(p.x, p.y, p.z, 0, r.range(0, 6), 0, 1, 0.75, 1), c: r.pick(['#6e7a34', '#808a3c', '#5e6c2e', '#8a9444', '#74803a']), j: 0.12 });
+          const o = () => r.range(-0.7, 0.7) * q;       // flowers and fruits sit on the surface of the leaf cluster
+          if (r.chance(0.3)) parts.push({ g: blobG(0.05, r, 0.2, 0), m: M(p.x + o(), p.y + q * 0.45, p.z + o()), c: '#f2d23a', j: 0.05 });
+          else if (r.chance(0.16)) parts.push({ g: blobG(0.07, r, 0.2, 0), m: M(p.x + o(), p.y + q * 0.4, p.z + o()), c: '#f4efe2', j: 0.05 });
         }
       }
       return { g: merge(parts, r), rad: 0.45, h: H };
@@ -689,35 +690,40 @@ const World = (() => {
         for (let k = 0; k < 26; k++) { const y = H - r.range(0, 0.9), a = r.range(0, 6.28), d = r.range(0.04, 0.16); parts.push({ g: blobG(0.07, r, 0.3, 0), m: M(Math.cos(a) * d, y, Math.sin(a) * d, 0, 0, 0, 1, 1.2, 1), c: r.pick(['#d8cc98', '#e6dcb0', '#c8bc84']), j: 0.1 }); } h = H + 0.2; }
       return { g: merge(parts, r), rad: 0.55, h };
     },
-    yucca(r) {      // Yucca elata (soaptree) / torreyi: a shaggy trunk under dense rosettes of stiff blades, a skirt of dead leaves, creamy flower spikes
-      const parts = []; const H = r.range(1.3, 3.4), nb = r.int(1, 3);
+    yucca(r) {      // Yucca elata (soaptree) / filifera: a shaggy trunk under a round head of stiff blades, a skirt of dead leaves hanging below it, creamy flower spikes
+      const parts = []; const H = r.range(1.3, 3.2), nb = r.int(1, 3);
       for (let b = 0; b < nb; b++) {
-        const a = b / nb * 6.28 + r.range(-0.4, 0.4), hb = b === 0 ? H : H * r.range(0.55, 0.85), off = b === 0 ? 0.05 : r.range(0.35, 0.8), top = new V3(Math.cos(a) * off, hb, Math.sin(a) * off);
-        const mid = new V3(top.x * 0.3, hb * 0.5, top.z * 0.3), l1 = limb(new V3(0, 0, 0), mid, 0.2 - b * 0.03, 0.15 - b * 0.03, 7), l2 = limb(mid, top, 0.15 - b * 0.03, 0.11 - b * 0.03, 7);
+        const a = b / nb * 6.28 + r.range(-0.4, 0.4), hb = b === 0 ? H : H * r.range(0.6, 0.85), off = b === 0 ? 0.05 : r.range(0.3, 0.7), top = new V3(Math.cos(a) * off, hb, Math.sin(a) * off), k = 1 - b * 0.18;
+        const mid = new V3(top.x * 0.3, hb * 0.5, top.z * 0.3), l1 = limb(new V3(0, -0.05, 0), mid, 0.17 * k, 0.13 * k, 7), l2 = limb(mid, top, 0.13 * k, 0.1 * k, 7);
         parts.push({ g: l1.g, m: l1.m, c: ['#4a3a2a', '#6a5a42', 0, hb], j: 0.1 }, { g: l2.g, m: l2.m, c: ['#6a5a42', '#8a7a58', 0, hb], j: 0.1 });
-        parts.push({ g: coneG(0.5, 0.65, 8), m: M(top.x, top.y + 0.1, top.z, Math.PI, 0, 0), c: ['#9a8458', '#6a5636', 0, 0.65], j: 0.1 });       // the skirt of dead leaves hanging under the head
-        for (let i = 0; i < 46; i++) { const ya = r.range(0, 6.28), tl = Math.pow(r.next(), 0.7) * 1.35 + 0.05, L = r.range(0.55, 0.85); parts.push({ g: coneG(0.045, L, 3), m: M(top.x, top.y + 0.05, top.z, 0, ya, -tl, 1, 1, 0.55), c: ['#5c7e44', '#b6bd78', 0, L], j: 0.08 }); }
-        if (r.chance(0.45)) { const l = limb(top.clone(), top.clone().add(new V3(0, 1.0, 0)), 0.04, 0.03, 5); parts.push({ g: l.g, m: l.m, c: '#8a7a50', j: 0.04 });
-          for (let k = 0; k < 18; k++) parts.push({ g: blobG(0.075, r, 0.3, 0), m: M(top.x + r.range(-0.17, 0.17), top.y + 0.35 + r.range(0, 0.85), top.z + r.range(-0.17, 0.17), 0, 0, 0, 1, 1.25, 1), c: r.pick(['#f4eed6', '#ece4c4', '#e4dcb8']), j: 0.08 }); }
+        for (let i = 0; i < 56; i++) { const ya = r.range(0, 6.28), L = r.range(0.6, 0.9), tl = 2.35 + r.range(0, 0.75); parts.push({ g: coneG(0.045, L, 3), m: M(top.x, top.y - 0.05 - r.range(0, 0.35), top.z, 0, ya, -tl, 1, 1, 0.5), c: ['#9a8458', '#5e4a30', 0, L], j: 0.08 }); }       // the skirt: dead leaves hanging down
+        parts.push({ g: blobG(0.2 * k, r, 0.2, 0), m: M(top.x, top.y, top.z), c: '#6a5a3a', j: 0.06 });
+        for (let i = 0; i < 80; i++) { const ya = r.range(0, 6.28), tl = Math.pow(r.next(), 0.75) * 1.5 + 0.05, L = r.range(0.85, 1.3); parts.push({ g: coneG(0.05, L, 3), m: M(top.x, top.y, top.z, 0, ya, -tl, 1, 1, 0.55), c: ['#5c7e44', '#b6bd78', 0, L], j: 0.08 }); }
+        if (r.chance(0.45)) { const l = limb(top.clone(), top.clone().add(new V3(0, 1.1, 0)), 0.045, 0.03, 5); parts.push({ g: l.g, m: l.m, c: '#8a7a50', j: 0.04 });
+          for (let k2 = 0; k2 < 20; k2++) { const y = 0.25 + k2 * 0.04, rr = 0.05 + (1 - k2 / 20) * 0.04, an = k2 * 2.4; parts.push({ g: blobG(0.085, r, 0.3, 0), m: M(top.x + Math.cos(an) * rr, top.y + y, top.z + Math.sin(an) * rr, 0, 0, 0, 1, 1.25, 1), c: r.pick(['#f4eed6', '#ece4c4', '#e4dcb8']), j: 0.08 }); } }
       }
       return { g: merge(parts, r), rad: 0.5, h: H + 1.4 };
     },
     nopal(r) {      // Opuntia: tiers of flat blue-green pads with pale spine clusters, yellow flowers and red tunas (fruits)
-      const parts = []; const pads = [{ p: new V3(0, 0.3, 0), yaw: r.range(0, 6.28), tl: r.range(-0.25, 0.25), s: 1 }], n = r.int(5, 9);
-      for (let i = 1; i < n; i++) { const par = pads[r.int(0, pads.length - 1)], up = new V3(Math.sin(par.tl) * Math.cos(par.yaw), Math.cos(par.tl), -Math.sin(par.tl) * Math.sin(par.yaw)); if (par.p.y > 1.5) continue;
-        pads.push({ p: par.p.clone().addScaledVector(up, 0.4 * par.s).add(new V3(r.range(-0.12, 0.12), 0, r.range(-0.12, 0.12))), yaw: r.range(0, 6.28), tl: r.range(-0.75, 0.75), s: r.range(0.75, 0.98) * par.s }); }
-      const colr = r.pick([['#4c7a64', '#6c9c84'], ['#52806a', '#76a68a'], ['#587e5c', '#7ca680']]);
+      const parts = []; const padG = new THREE.CylinderGeometry(0.3, 0.3, 0.07, 12, 1).rotateX(Math.PI / 2).translate(0, 0.3, 0);      // an upright oval pad, its edge at the foot
+      const colr = r.pick([['#4c7a64', '#6c9c84'], ['#52806a', '#76a68a'], ['#587e5c', '#7ca680']]), yaw0 = r.range(0, 6.28);
+      const pads = [{ x: 0, y: -0.02, z: 0, yaw: yaw0, tl: r.range(-0.2, 0.2), s: 1 }], n = r.int(7, 12);
+      for (let i = 1; i < n; i++) { const par = pads[r.int(0, pads.length - 1)], sd = r.chance(0.5) ? 1 : -1, tl = clamp(par.tl + sd * r.range(0.5, 1.0), -1.2, 1.2);
+        const up = [Math.sin(par.tl) * Math.cos(par.yaw), Math.cos(par.tl), -Math.sin(par.tl) * Math.sin(par.yaw)], H0 = 0.6 * 1.15 * 0.9 * par.s;       // the child grows from the top edge of its parent
+        const ch = { x: par.x + up[0] * H0, y: par.y + up[1] * H0, z: par.z + up[2] * H0, yaw: par.yaw + r.range(-1.0, 1.0), tl, s: par.s * r.range(0.8, 0.95) }; if (ch.y > 1.6) continue; pads.push(ch); }
       pads.forEach(pd => {
-        parts.push({ g: blobG(0.4, r, 0.12, 1), m: M(pd.p.x, pd.p.y + 0.3 * pd.s, pd.p.z, 0, pd.yaw, -pd.tl, 0.95 * pd.s, 1.1 * pd.s, 0.17 * pd.s), c: [colr[0], colr[1], 0, 1.7], j: 0.07 });
-        for (let k = 0; k < 6; k++) { const sx = r.range(-0.26, 0.26) * pd.s, sy = r.range(-0.1, 0.62) * pd.s, sd = r.chance(0.5) ? 1 : -1; parts.push({ g: coneG(0.016, 0.07, 3), m: M(pd.p.x + sx * Math.cos(pd.yaw), pd.p.y + sy + 0.12, pd.p.z - sx * Math.sin(pd.yaw) + sd * 0.0, 0, pd.yaw, 0), c: '#ece4c0', j: 0.02 }); }
-        if (r.chance(0.4)) parts.push({ g: blobG(0.085, r, 0.25, 0), m: M(pd.p.x + r.range(-0.2, 0.2), pd.p.y + 0.64 * pd.s, pd.p.z + r.range(-0.1, 0.1), 0, 0, 0, 1, 1.35, 1), c: r.pick(['#a8203c', '#b82a44', '#8c1a34']), j: 0.08 });      // a ripe red tuna
-        else if (r.chance(0.18)) parts.push({ g: blobG(0.1, r, 0.25, 0), m: M(pd.p.x, pd.p.y + 0.68 * pd.s, pd.p.z, 0, 0, 0, 1, 0.8, 1), c: '#f4c81e', j: 0.08 });
+        const Mp = M(pd.x, pd.y, pd.z, 0, pd.yaw, -pd.tl, pd.s, pd.s * 1.15, pd.s);
+        parts.push({ g: padG, m: Mp, c: [colr[0], colr[1], 0, 1.7], j: 0.06 });
+        for (let k = 0; k < 9; k++) { const sd = k % 2 ? 1 : -1, ml = M(r.range(-0.2, 0.2), r.range(0.08, 0.52), sd * 0.04, sd * Math.PI / 2, 0, 0); parts.push({ g: coneG(0.014, 0.07, 3), m: Mp.clone().multiply(ml), c: '#ece4c0', j: 0.02 }); }
+        const top = new V3(0, 0.58, 0).applyMatrix4(Mp);
+        if (r.chance(0.4)) parts.push({ g: blobG(0.085, r, 0.25, 0), m: M(top.x, top.y - 0.03, top.z, 0, 0, 0, 1, 1.3, 1), c: r.pick(['#a8203c', '#b82a44', '#8c1a34']), j: 0.08 });       // a ripe red tuna on the edge
+        else if (r.chance(0.2)) parts.push({ g: blobG(0.1, r, 0.25, 0), m: M(top.x, top.y + 0.02, top.z, 0, 0, 0, 1, 0.8, 1), c: '#f4c81e', j: 0.08 });
       });
-      return { g: merge(parts, r), rad: 0.8, h: 1.7 };
+      return { g: merge(parts, r), rad: 0.7, h: 1.7 };
     },
     cholla(r) {     // Cylindropuntia: a short woody trunk with jointed branches so thickly spined that they glow straw-gold in the sun
       const parts = []; const H = r.range(0.45, 0.9), trunk0 = new V3(0, H, 0), tl = limb(new V3(0, 0, 0), trunk0, 0.12, 0.09, 6); parts.push({ g: tl.g, m: tl.m, c: '#4a3a2a', j: 0.08 });
-      const col = r.pick([['#b09a58', '#e8dc9c'], ['#a89458', '#dccf8c'], ['#9a9660', '#d6d494']]);
+      const col = r.pick([['#8c7a3e', '#c8b868'], ['#847440', '#bcae64'], ['#7c7a44', '#b8b870']]);
       const joint = (from, dir, len, rad, depth) => {
         const to = from.clone().addScaledVector(dir, len), l = limb(from, to, rad, rad * 0.9, 6); parts.push({ g: l.g, m: l.m, c: [col[0], col[1], 0.3, 1.7], j: 0.1 });
         parts.push({ g: blobG(rad * 1.05, r, 0.2, 0), m: M(to.x, to.y, to.z), c: col[1], j: 0.1 });
@@ -729,9 +735,8 @@ const World = (() => {
     },
     barrel(r) {     // Ferocactus: a ribbed barrel with red hooked spines and a crown of yellow-orange flowers; it leans to the south-west
       const parts = []; const R = r.range(0.28, 0.42), Hh = r.range(0.55, 1.05), lean = r.range(0.04, 0.16);
-      parts.push({ g: new THREE.CylinderGeometry(R * 0.78, R, Hh, 14, 3).translate(0, Hh / 2, 0), m: M(0, 0, 0, 0, 0, lean), c: ['#3a6a42', '#5c9858', 0, Hh], j: 0.12 });
-      parts.push({ g: blobG(R * 0.8, r, 0.1, 0), m: M(Math.sin(lean) * -Hh, Hh * 0.98, 0, 0, 0, 0, 1, 0.45, 1), c: '#58904e', j: 0.1 });
-      for (let rib = 0; rib < 14; rib++) { const a = rib / 14 * 6.28; for (let k = 0; k < 4; k++) { const y = Hh * (0.15 + k * 0.22), rr = lerp(R, R * 0.78, y / Hh) * 1.03; parts.push({ g: coneG(0.02, 0.15, 3), m: M(Math.cos(a) * rr - Math.sin(lean) * y, y, Math.sin(a) * rr, Math.sin(a) * 0.8, 0, -Math.cos(a) * 0.8), c: ['#a83a24', '#d8c8a0', 0, 0.15], j: 0.04 }); } }
+      parts.push({ g: new THREE.SphereGeometry(R, 14, 9).scale(1, Hh / (2 * R), 1).translate(0, Hh / 2, 0), m: M(0, 0, 0, 0, 0, lean), c: ['#3a6a42', '#5c9858', 0, Hh], j: 0.12 });
+      for (let rib = 0; rib < 14; rib++) { const a = rib / 14 * 6.28; for (let k = 0; k < 4; k++) { const y = Hh * (0.18 + k * 0.2), rr = R * Math.sqrt(Math.max(0.05, 1 - Math.pow((y - Hh / 2) / (Hh / 2), 2))) * 1.03; parts.push({ g: coneG(0.02, 0.15, 3), m: M(Math.cos(a) * rr - Math.sin(lean) * y, y, Math.sin(a) * rr, Math.sin(a) * 0.8, 0, -Math.cos(a) * 0.8), c: ['#a83a24', '#d8c8a0', 0, 0.15], j: 0.04 }); } }
       for (let k = 0; k < 7; k++) { const a = k / 7 * 6.28; parts.push({ g: blobG(0.065, r, 0.25, 0), m: M(Math.cos(a) * R * 0.5 - Math.sin(lean) * Hh, Hh * 1.03, Math.sin(a) * R * 0.5, 0, 0, 0, 1, 0.8, 1), c: r.pick(['#f09a1c', '#f4b42a', '#e8841a']), j: 0.08 }); }
       return { g: merge(parts, r), rad: R + 0.05, h: Hh + 0.2 };
     },
@@ -743,7 +748,6 @@ const World = (() => {
         const l1 = limb(new V3(0, 0.2, 0), c1, 0.17, 0.12, 6), l2 = limb(c1, tip, 0.12, 0.06, 6); parts.push({ g: l1.g, m: l1.m, c: '#42342a', j: 0.1 }, { g: l2.g, m: l2.m, c: '#52422f', j: 0.1 });
         const mid = c1.clone().lerp(tip, 0.6), side = new V3(mid.x + r.range(-1.3, 1.3), mid.y + r.range(0.1, 0.7), mid.z + r.range(-1.3, 1.3)), ls = limb(mid, side, 0.06, 0.03, 5); parts.push({ g: ls.g, m: ls.m, c: '#52422f', j: 0.08 });
         crown(parts, r, tip.x, tip.y + 0.25, tip.z, 1.5, 0.45, 1.5, 7, 0.5, 0.95, cols, 0.45); crown(parts, r, side.x, side.y + 0.15, side.z, 1.0, 0.35, 1.0, 4, 0.45, 0.8, cols, 0.45);
-        for (let k = 0; k < 3; k++) { const p = tip.clone().add(new V3(r.range(-1.2, 1.2), r.range(-0.4, 0), r.range(-1.2, 1.2))); parts.push({ g: coneG(0.025, 0.28, 3), m: M(p.x, p.y - 0.2, p.z, Math.PI, 0, 0), c: '#b09a54', j: 0.06 }); }       // hanging bean pods
       }
       return { g: merge(parts, r), rad: 0.4, h: H + 1 };
     },
@@ -753,10 +757,10 @@ const World = (() => {
       return { g: merge(parts, r), rad: 0, h: R * 2 };
     },
     gypsum(r, env) {    // a pale, wind-scoured outcrop of limestone/gypsum with horizontal strata and rubble at its foot
-      const parts = []; const R = r.range(0.9, 1.7);
-      for (let i = 0; i < r.int(3, 5); i++) { const a = r.range(0, 6.28), d = r.range(0, R * 0.7), h = r.range(0.25, 0.5) * (1 + (i === 0 ? 0.5 : 0)); parts.push({ g: new THREE.BoxGeometry(R * r.range(0.9, 1.5), h, R * r.range(0.8, 1.3)), m: M(Math.cos(a) * d, h / 2 + i * 0.26, Math.sin(a) * d, r.range(-0.05, 0.05), r.range(0, 3), r.range(-0.05, 0.05), 1 - i * 0.14), c: r.pick(['#d6c6a6', '#cdbb98', '#e0d2b4', '#bfae8c']), j: 0.14 }); }
-      for (let i = 0; i < 6; i++) { const a = r.range(0, 6.28), d = r.range(R * 0.9, R * 1.6); parts.push({ g: blobG(r.range(0.1, 0.24), r, 0.4, 0), m: M(Math.cos(a) * d, 0.08, Math.sin(a) * d, 0, 0, 0, 1.2, 0.7, 1), c: r.pick(['#c8b894', '#b4a482']), j: 0.12 }); }
-      return { g: merge(parts, r), rad: R * 0.8, h: 1.6 };
+      const parts = []; const R = r.range(0.9, 1.7); let y = 0, w = R * r.range(1.1, 1.5), d = R * r.range(1, 1.3);
+      for (let i = 0; i < r.int(3, 5); i++) { const h = r.range(0.2, 0.42); parts.push({ g: new THREE.BoxGeometry(w, h, d), m: M(r.range(-0.12, 0.12) * w, y + h / 2 - (i ? 0.02 : 0.06), r.range(-0.12, 0.12) * d, r.range(-0.03, 0.03), r.range(0, 0.5) + i * 0.3, r.range(-0.03, 0.03)), c: r.pick(['#d6c6a6', '#cdbb98', '#e0d2b4', '#bfae8c']), j: 0.14 }); y += h - 0.02; w *= r.range(0.7, 0.9); d *= r.range(0.7, 0.9); }
+      for (let i = 0; i < 6; i++) { const a = r.range(0, 6.28), dd = r.range(R * 0.7, R * 1.2); parts.push({ g: blobG(r.range(0.1, 0.24), r, 0.4, 0), m: M(Math.cos(a) * dd, 0.06, Math.sin(a) * dd, 0, 0, 0, 1.2, 0.7, 1), c: r.pick(['#c8b894', '#b4a482']), j: 0.12 }); }
+      return { g: merge(parts, r), rad: R * 0.7, h: 1.6 };
     },
     bush(r, env) {
       const parts = []; const cols = env._bush;
@@ -891,7 +895,7 @@ const World = (() => {
         const dn = noise.fbm(x * 0.03 + 90, z * 0.03 + 10, 3); if (dn > 0.56) c = mixc(c, hex2rgb(n2 > 0.5 ? '#e2c892' : '#d8bc84'), smooth(0.56, 0.68, dn) * 0.75);         // dune sand
         const gy = noise.fbm(x * 0.05 + 140, z * 0.05 + 77, 3); if (gy > 0.6) c = mixc(c, hex2rgb('#e6dcc4'), smooth(0.6, 0.72, gy) * 0.55);          // gypsum crusts
         if (n2 < 0.14) c = mixc(c, hex2rgb('#6a5646'), 0.45);                                                          // dark desert-varnished pebbles
-        const qn = quick.length ? Desert.dist(quick, x, z) : 99; if (qn < 3) { c = mixc(c, hex2rgb('#e8dcc0'), smooth(3, 0.3, qn) * 0.65); if (qn < 0) c = mixc(c, hex2rgb('#7c6c52'), smooth(0, -2.4, qn) * 0.75); }       // a pale dry crust round the pit, dark wet sand within
+        const qn = quick.length ? Desert.dist(quick, x, z) : 99; if (qn < 0) c = mixc(c, hex2rgb('#d9c08c'), smooth(0, -2.4, qn) * 0.5);       // a pit looks almost like any sand: just a touch smoother and paler
       return c;
     },
     mesh(world, scene, quick, heightAt, fogC, fogDen) {       // the glossy, wet-looking surface of the pits: slow ripples, now and then a gas bubble
@@ -909,14 +913,14 @@ const World = (() => {
         fragmentShader: `uniform float uTime; uniform vec3 uFog; uniform float uFogD; uniform vec3 uLight; varying float vA; varying vec2 vP; varying float vDist;
           float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
           void main(){ float w = sin(vP.x*2.3 + uTime*0.55) * sin(vP.y*2.9 - uTime*0.45) + 0.5*sin((vP.x+vP.y)*4.1 + uTime*0.9); float band = floor(w*2.0 + 0.5)/2.0;
-            vec3 c = mix(vec3(0.52,0.43,0.30), vec3(0.76,0.66,0.48), 0.32 + 0.24*band); vec2 cell = floor(vP*3.2 + floor(uTime*1.3)); c += step(0.985, h21(cell)) * 0.45 * vA; c *= uLight;
-            float f = 1.0 - exp(-uFogD*uFogD*vDist*vDist); gl_FragColor = vec4(mix(c, uFog, clamp(f,0.0,1.0)), clamp(vA*1.6, 0.0, 0.88)); }` });
+            vec3 c = mix(vec3(0.80,0.68,0.50), vec3(0.86,0.75,0.56), 0.4 + 0.2*band); vec2 cell = floor(vP*3.2 + floor(uTime*1.3)); c += step(0.995, h21(cell)) * 0.12 * vA; c *= uLight;
+            float f = 1.0 - exp(-uFogD*uFogD*vDist*vDist); gl_FragColor = vec4(mix(c, uFog, clamp(f,0.0,1.0)), clamp(vA*0.6, 0.0, 0.3)); }` });
       const qmesh = new THREE.Mesh(g, qm); qmesh.renderOrder = 2; qmesh.frustumCulled = false; qmesh.userData.noFloat = true; scene.add(qmesh); world.quickMesh = qmesh;
       world.updaters.push((dt, t) => { qm.uniforms.uTime.value = t; });
     },
     // the schedule is a pure function of the wall clock and the map's seed, so everybody on the same map sees the same storm at the same moment;
     // every 4-minute slot holds a storm with a 60 % chance, 40-70 s long, with a 9 s build-up and die-down. world.storm (0..1) is read by the butterflies, the sound and the HUD.
-    storm(c) {       // (at full strength the fog density is 0.27: a few metres are all one sees)
+    storm(c) {       // (at full strength the fog density is 0.9: you see your own feet and nothing else)
       const { world, biome, seedStr, seed, scene, skyMat, sun, hemi, shared, clouds, fogC, fogDen, heightAt } = c;
       const SLOT = 240000, slotStorm = k => { const h = strSeed(biome.id + ':' + seedStr + ':st' + k), h2 = strSeed('d' + h), h3 = strSeed('o' + h); if ((h % 1000) / 1000 > 0.6) return null; const dur = 40000 + (h2 % 1000) / 1000 * 30000, off = 20000 + (h3 % 1000) / 1000 * (SLOT - dur - 40000); return { start: k * SLOT + off, end: k * SLOT + off + dur }; };
       const stormAt = ms => { if (world.stormForce !== undefined) return world.stormForce; const k = Math.floor(ms / SLOT); for (const kk of [k, k + 1]) { const q = slotStorm(kk); if (q && q.end > ms) return q; } return null; };
@@ -931,15 +935,15 @@ const World = (() => {
       world.updaters.push((dt, t, focus) => {
         const ms = Date.now(), q = stormAt(ms); let L = 0;
         if (q) {
-          if (ms >= q.start) L = smooth(0, 9000, ms - q.start) * smooth(0, 9000, q.end - ms);
+          if (ms >= q.start) L = smooth(0, 6000, ms - q.start) * smooth(0, 6000, q.end - ms);
           const m = mark[q.start] || (mark[q.start] = {});
           if (ms < q.start && q.start - ms < 25000 && !m.warn) { m.warn = 1; world.events.push({ k: 'stormWarn', left: (q.start - ms) / 1000 }); }
           if (ms >= q.start && !m.on) { m.on = 1; world.events.push({ k: 'stormStart', dur: (q.end - q.start) / 1000 }); }
           if (ms >= q.end - 9000 && !m.off) { m.off = 1; world.events.push({ k: 'stormEnd' }); }
         }
         world.storm = L; world.stormInfo = q;
-        fogC.copy(baseFog).lerp(dustFog, 0.9 * L); scene.background.copy(fogC); scene.fog.density = fogDen + 0.26 * Math.pow(L, 1.4); shared.uFogD.value = scene.fog.density;
-        skyMat.uniforms.uTop.value.copy(baseTop).lerp(dustTop, L); skyMat.uniforms.uHor.value.copy(baseHor).lerp(dustFog, L); skyMat.uniforms.uSunCol.value.copy(baseSun).multiplyScalar(1 - L);
+        fogC.copy(baseFog).lerp(dustFog, smooth(0, 0.8, L)); scene.background.copy(fogC); scene.fog.color.copy(fogC); scene.fog.density = fogDen + 0.9 * smooth(0, 0.7, L); shared.uFogD.value = scene.fog.density;
+        skyMat.uniforms.uTop.value.copy(baseTop).lerp(dustFog, smooth(0, 0.8, L)); skyMat.uniforms.uHor.value.copy(baseHor).lerp(dustFog, smooth(0, 0.8, L)); skyMat.uniforms.uSunCol.value.copy(baseSun).multiplyScalar(1 - smooth(0, 0.6, L));
         sun.intensity = baseSunI * (1 - 0.6 * L); hemi.intensity = baseHemiI * (1 - 0.22 * L); shared.uWind.value = baseWind * (1 + 2.6 * L);
         for (const c of clouds) c.material.opacity = 0.92 * (1 - L);
         sandPts.visible = L > 0.02; sandMat.opacity = 0.85 * L;

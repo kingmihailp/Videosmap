@@ -509,7 +509,7 @@
       'Колючие заросли и сухие кустарники у ручьёв', 'Юг Техаса, Мексика, Центральная Америка', 'далехампия (Dalechampia)', 'На тёмных крыльях горит синяя перевязь, в зависимости от света она кажется то синей, то фиолетовой.'],
   ];
   // the Sonoran marble: a raw specimen costs 2600 coins at the merchant (as rare as the other three red butterflies of the desert, so no extra scarcity)
-  { const q = ROWS.chihuahua.find(r => r[0] === 'Euchloe guaymasensis'); q.fixed = 2600; }
+  { const q = ROWS.chihuahua.find(r => r[0] === 'Euchloe guaymasensis'); q.fixed = 2600; q.scarce = 0.05; }       // as scarce as the other reds (a visit seldom brings it, no respawn, a tiny weight in traps)
 
   // ============================================================ assemble
   const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_|_$/g, '');
