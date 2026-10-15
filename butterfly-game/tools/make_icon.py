@@ -70,12 +70,15 @@ for (x0, y0, x1, y1) in [(30, 30, 6, 10), (30, 30, 3, 16), (30, 30, 6, 24), (30,
         x = round(x0 + (x1 - x0) * i / n); y = round(y0 + (y1 - y0) * i / n)
         if 0 <= x < S and 0 <= y < S and wp[x, y][3] and wp[x, y][:3] not in (K, C('#fff4d8')) and i > 2: wp[x, y] = mix(wp[x, y][:3], BR, 0.7) + (255,)
 # blue lunules and an eyespot on the hindwing, a pale cell spot on the forewing
-for (cx, cy, rx, ry) in [(13, 47, 2, 3), (16, 52, 2, 2), (11, 41, 2, 2)]:
+hind_in, fore_in = erode(poly_mask(hind), 3).load(), erode(poly_mask(fore), 3).load()     # patterns may only be painted inside the wing (never on its margin or outside)
+for (cx, cy, rx, ry) in [(16, 47, 2, 3), (18, 52, 2, 2), (15, 41, 2, 2)]:
     for y in range(cy - ry, cy + ry + 1):
         for x in range(cx - rx, cx + rx + 1):
-            if ((x - cx) / (rx + .5)) ** 2 + ((y - cy) / (ry + .5)) ** 2 <= 1: wp[x, y] = C('#2a8ae0' if (x + y) % 3 else '#6ad0ff') + (255,)
-for (x, y) in [(20, 20), (21, 20), (20, 21), (21, 21)]: wp[x, y] = C('#fff4d8') + (255,)
-for (x, y) in [(10, 14), (11, 14), (10, 15), (11, 15)]: wp[x, y] = C('#fff0a0') + (255,)
+            if ((x - cx) / (rx + .5)) ** 2 + ((y - cy) / (ry + .5)) ** 2 <= 1 and hind_in[x, y]: wp[x, y] = C('#2a8ae0' if (x + y) % 3 else '#6ad0ff') + (255,)
+for (x, y) in [(20, 20), (21, 20), (20, 21), (21, 21)]:
+    if fore_in[x, y]: wp[x, y] = C('#fff4d8') + (255,)
+for (x, y) in [(10, 14), (11, 14), (10, 15), (11, 15)]:
+    if fore_in[x, y]: wp[x, y] = C('#fff0a0') + (255,)
 for y in range(S):                                                                   # soft light on the upper edge of the wings
     for x in range(S):
         if wp[x, y][3] and wp[x, y][:3] not in (K, C('#fff4d8')) and y > 0 and not wp[x, y - 1][3]: pass
