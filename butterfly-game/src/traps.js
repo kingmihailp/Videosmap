@@ -756,5 +756,5 @@ const Traps = (() => {
   }
   // a bunch of flowers standing on a small dish, for the stalls (static, at the origin; scale it as needed)
   function bunch(id, r = 0.14) { const g = new THREE.Group(); g.add(cyl(r, r, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], r, 0); return g; }
-  return { LAMPS, LP, allowed, accepts, closeup, bunch, animRover, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
+  return { LAMPS, LP, allowed, accepts, closeup, bunch, animRover, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, Thumb, setBroken, rests, Sys, UI, mmss };
 })();

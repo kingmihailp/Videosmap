@@ -546,7 +546,7 @@ class Play {
     this.fwd.set(0, 0, -1).applyEuler(this.camera.rotation);
     if (this.flash) { this.flickT = Math.max(0, this.flickT - dt); if (this.hasMod('flicker') && Math.random() < dt * 2.5) this.flickT = Math.max(this.flickT, 0.3);
       if (this.hasMod('blackout')) { this.blackT -= dt; if (this.blackT < -2.8) this.blackT = 7 + Math.random() * 5; }
-      let I = this.flashOn && !(this.hasMod('blackout') && this.blackT < 0) ? (this.hasMod('dim') ? 0.375 * (this.lampI || 2.8) : (this.lampI || 2.8)) : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01; }
+      let I = this.flashOn && !(this.hasMod('blackout') && this.blackT < 0) ? (this.hasMod('dim') ? 0.375 * (this.lampI || 2.8) : (this.lampI || 2.8)) : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01;  if (this.lampModel) { const on = I > 0.01; if (this.lampModel._on !== on) { this.lampModel._on = on; Lamps.setLit(this.lampModel.userData.torch, on); } } }
     this.guideT = Math.max(0, this.guideT - dt); this.revealT = Math.max(0, this.revealT - dt);
     if (this.mod) { this.mod.t -= dt; if (this.mod.t <= 0) { this.mod = null; this.world.mod.storm = 1; this.world.mod.bright = 0; this.toast('Модификатор закончился', 2.5); } }
     // swing
@@ -634,15 +634,13 @@ class Play {
     if (this.traps && this.traps.near && !this.doorNear && !this.pickNear) { const s2 = this.traps.label(this.traps.near), w2 = T.width(s2, 8) + 20; UIK.panel(ctx, SW / 2 - w2 / 2, SH - 84, w2, 18, { fill: 'rgba(16,28,24,0.9)', border: this.traps.near.mine ? c.gold : '#6a9a80' }); T.draw(ctx, s2, SW / 2, SH - 79, { size: 8, align: 'c', color: '#fff' }); }
     // controls hint
     const hint = window.F0W && F0W.touch ? 'Стик — ходьба   Палец справа — осмотр   Тап — взмах   Стрелка вниз — красться' : this.flash ? 'ЛКМ — взмах   F — фонарь   Ctrl — красться   Shift — бег   Tab — журнал   Esc — пауза' : 'ЛКМ — взмах   Ctrl — красться   Shift — бег   Tab — журнал   H — нюх   G — ловушка   Esc — пауза';
-    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash ? SH - 68 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
+    if (this.hintT > 0) { const a = clamp(this.hintT / 2); ctx.globalAlpha = a; const hy = this.flash || this.world.night ? SH - 84 : SH - 44; UIK.panel(ctx, SW / 2 - 200, hy, 400, 15, { fill: 'rgba(16,32,28,0.78)' }); T.draw(ctx, hint, SW / 2, hy + 3, { size: 8, align: 'c', color: c.text }); ctx.globalAlpha = 1; }
     // crosshair
     const cx = SW / 2, cy = SH / 2; const hot = this.reticle > 0; ctx.fillStyle = hot ? c.green : 'rgba(255,255,255,0.85)';
     if (hot) { const r = 6 - this.reticle * 2 + Math.sin(this.t * 14) * 0.5; ctx.fillRect(cx - r - 3, cy, 3, 1); ctx.fillRect(cx + r + 1, cy, 3, 1); ctx.fillRect(cx, cy - r - 3, 1, 3); ctx.fillRect(cx, cy + r + 1, 1, 3); }
     ctx.fillRect(cx, cy, 1, 1); ctx.fillRect(cx - 1, cy, 3, 1); ctx.fillRect(cx, cy - 1, 1, 3);
     // flashlight, modifier, reveal markers, sense arrows
-    if (this.flash) {
-      UIK.panel(ctx, 6, SH - 48, 92, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ [F]', 11, SH - 44, { size: 8, color: c.dim }); ctx.fillStyle = this.flashOn ? '#ffe9a0' : '#3a3a3a'; ctx.fillRect(80, SH - 43, 12, 8); ctx.fillStyle = this.flashOn ? '#fff8d8' : '#1a1a1a'; ctx.fillRect(81, SH - 42, 10, 3);
-    } else if (this.world.hasFlash || this.world.night) { UIK.panel(ctx, 6, SH - 48, 104, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ: НЕТ', 11, SH - 44, { size: 8, color: '#c88a7a' }); }
+    if (this.flash || this.world.hasFlash || this.world.night) Lamps.hud(ctx, this, c);
     if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
     { const wi = this.world.stormInfo; if (wi && (this.world.storm || 0) > 0.3) { const tx = `Песчаная буря · ${Math.max(0, Math.ceil((wi.end - Date.now()) / 1000))} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 54, w2, 16, { fill: 'rgba(70,46,20,0.9)' }); T.draw(ctx, tx, SW / 2 - w2 / 2 + 7, 58, { size: 8, color: '#f0c880' }); } }
     if (this.mod) { const tx = `${this.mod.name} · ${Math.ceil(this.mod.t)} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 34, w2, 16, { fill: this.mod.good ? 'rgba(16,48,28,0.9)' : 'rgba(56,16,20,0.9)', border: this.mod.good ? '#7ee08a' : '#ff6a6a' }); T.draw(ctx, tx, SW / 2, 38, { size: 8, align: 'c', color: this.mod.good ? '#c8ffd0' : '#ffc8c8' }); }
