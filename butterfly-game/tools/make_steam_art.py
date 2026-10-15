@@ -44,4 +44,4 @@ hero = cover(pano('amazon', 8), 3840, 1240, 0.5, 0.55).convert('RGBA'); save(her
 lg = logo_on(Image.new('RGBA', (1280, 720), (0, 0, 0, 0)), 1200, 640, 360); lg = lg.crop(lg.getbbox()); lg.save(os.path.join(OUT, 'library_logo_transparent.png')); print('library_logo_transparent.png', lg.size)
 save(cover(pano('chihuahua', 6), 1438, 810, 0.5, 0.6), 'page_background_1438x810.png')
 # community / client icon 184x184 (jpg) from the app icon
-ic = Image.open(os.path.join(ROOT, '..', 'desktop', 'build', 'icon.png')).convert('RGBA'); ic = ic.resize((184, 184), Image.NEAREST); save(ic, 'icon_184x184.jpg', jpg=True)
+ic = Image.open(os.path.join(ROOT, '..', 'desktop', 'build', 'icon_512.png')).convert('RGBA'); ic = ic.resize((184, 184), Image.LANCZOS); save(ic, 'icon_184x184.jpg', jpg=True)

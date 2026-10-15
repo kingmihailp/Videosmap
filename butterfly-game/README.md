@@ -157,7 +157,7 @@ cd server && npm install && node server.js [порт]   # по умолчани�
 `desktop/` wraps the game in an Electron window (own icon, no browser UI, F11 = fullscreen).
 - Ready exe: GitHub → Actions → "Windows exe" → artifact `Flora0world-Butterflies-exe` (built automatically on each push that changes the game).
 - Or build locally on Windows: install Node.js, run `desktop\Собрать exe.bat` → `desktop\dist\Flora0world-Butterflies.exe` (portable, no installer).
-- The icon is drawn by `tools/make_icon.py`. In the app the multiplayer address must be typed manually (`host:port`).
+- The icon is drawn by `tools/make_icon.py` (64x64 pixel art: a butterfly in front of the moon; writes `desktop/build/icon.png`, `icon_512.png`, `icon.ico`). In the app the multiplayer address must be typed manually (`host:port`).
 
 ## Phones / tablets (touch controls)
 `src/touch.js` turns on automatically on touch screens (or with `#touch` in the URL): left thumb = floating stick (push to the edge = run), right thumb drag = look, tap = swing the net,
