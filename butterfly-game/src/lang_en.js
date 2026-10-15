@@ -2934,6 +2934,7 @@ const LANG_EN = {
 "Богатый энтомолог":"Rich Entomologist",
 "Кабинет редкостей":"Cabinet of Curiosities",
 "Профессионал своего дела":"True Professional",
+"Где четвёртое крыло?":"Where's the Fourth Wing?",
 "Махаон":"Old World swallowtail",
 "Павлиний глаз":"European peacock",
 "Лимонница":"Common brimstone",

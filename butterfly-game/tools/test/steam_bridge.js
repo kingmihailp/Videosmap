@@ -13,6 +13,9 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   T('achievements unlock (first catch, rich), each once', r.ach.includes('ACH_FIRST_CATCH') && r.ach.includes('ACH_RICH') && new Set(r.ach).size === r.ach.length, r.ach);
   await pg.evaluate(() => { Save.data = { caught: {}, aberr: {}, coins: 0, settings: Save.data.settings, specimens: [], boxes: [], uid: 1 }; Save.load(); });
   T('and it is read back from there', await pg.evaluate(() => Save.data.coins === 200000));
+  // "Where's the Fourth Wing?": the ocean map
+  const oc = await pg.evaluate(async () => { window.__ach.length = 0; Save.data.maps = {}; await new Promise(r => setTimeout(r, 3200)); const before = window.__ach.includes('ACH_OCEAN_MAP'); Maps.grant('ocean'); await new Promise(r => setTimeout(r, 3200)); return [before, window.__ach.includes('ACH_OCEAN_MAP')]; });
+  T('the ocean map achievement: not without the map, given when the map is received', oc[0] === false && oc[1] === true, oc);
   // "True Professional": a large frame of nine Queen Alexandra's birdwing aberrants, all spread to 100 %
   const pro = await pg.evaluate(async () => {
     window.__ach.length = 0; const out = {}; Save.data.specimens = []; Save.data.boxes = [];

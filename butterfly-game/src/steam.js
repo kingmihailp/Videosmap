@@ -17,6 +17,7 @@
     ['ACH_DESERT', 'Песок и крылья', () => Save.biomeCount(BIOME_BY_ID.chihuahua) > 0],
     ['ACH_RICH', 'Богатый энтомолог', () => (Save.data.coins || 0) >= 100000],
     ['ACH_COLLECTOR', 'Кабинет редкостей', () => (Save.data.specimens || []).length >= 25],
+    ['ACH_OCEAN_MAP', 'Где четвёртое крыло?', () => Maps.has('ocean')],
     ['ACH_PROFESSIONAL', 'Профессионал своего дела', pro],
   ];
   const sent = new Set(), queue = []; let first = true, shownAt = 0;

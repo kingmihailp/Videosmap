@@ -121,6 +121,17 @@
     ]
   },
   {
+    "api": "ACH_OCEAN_MAP",
+    "ru": [
+      "Где четвёртое крыло?",
+      "Получи карту океана."
+    ],
+    "en": [
+      "Where's the Fourth Wing?",
+      "Get the ocean map."
+    ]
+  },
+  {
     "api": "ACH_PROFESSIONAL",
     "ru": [
       "Профессионал своего дела",
