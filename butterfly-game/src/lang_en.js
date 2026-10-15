@@ -4112,6 +4112,7 @@ const LANG_EN = {
 "Налобный фонарь":"Headlamp",
 "Надевается на голову: луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.":"Worn on the head: the beam goes where you look and your hands are free for the net. The beam is narrower and shorter than the torch beam.",
 "фонари":"lamps",
+"запас ×":"stock ×",
 "Махаон":"Old World swallowtail",
 "Павлиний глаз":"European peacock",
 "Лимонница":"Common brimstone",

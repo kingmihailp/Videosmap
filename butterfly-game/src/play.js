@@ -72,7 +72,7 @@ class Fly {
     this.id = opts.id || play.nextFid++; this.puppet = !!opts.puppet; this.netPos = new THREE.Vector3(); this.netYaw = 0; this.hid = false; this.seen = performance.now(); this.baseScale = this.kind === 'timothy' ? 0.55 : 1;
     if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
     if (!this.puppet) this.place(nearPlayer);
-    if (play.world.night && sp.moth) this.mesh.visible = false;       // a moth is not seen until a lamp lights it (play.js update)
+    if (play.world.night && sp.moth) { this.mesh.visible = false; this._gh = true; }       // a moth is not seen until a lamp lights it (play.js update)
     this.play.world.scene.add(this.mesh);
     this.shadow = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT); this.shadow.rotation.x = -Math.PI / 2; this.play.world.scene.add(this.shadow);
     if (!this.puppet) this.pickTarget();
@@ -268,8 +268,8 @@ class Play {
     const sx = at ? at.x : 0, sz = at ? at.z : 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y; if (at) this.player.yaw = at.yaw;     // coming back out of a house: stand in front of its door
     this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
     if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
-    else if (this.world.night) { Lamps.attach(this); }       // a night location: the lamps of the player (see lamps.js)
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false, extT: 1 }; Gear.init(this);
+    if (!this.world.hasFlash && this.world.night) Lamps.attach(this);       // a night location: the lamps of the player (see lamps.js; the net's own lamp needs the net's stats)
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
@@ -567,7 +567,7 @@ class Play {
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; }
       if (this.sectors && !f.kind && !f.puppet && f.state !== CAUGHT && f.pos.distanceToSquared(P.pos) > 9000 && !(this.mp && this.others().length)) { f._acc = (f._acc || 0) + dt; f._skip = (f._skip || 0) + 1; if (f._skip % 3) { if (nightW && f.sp.moth) f.mesh.visible = false; continue; } dt2 = f._acc; f._acc = 0; f.update(dt2, this.t); f._far = true; f.mesh.visible = f.pos.distanceToSquared(P.pos) < 16900 && !(nightW && f.sp.moth); continue; }       // (and a butterfly lost in the fog is not drawn at all)
       if (f._far) { f._far = false; f.mesh.visible = true; }       // far away on the big map: a butterfly nobody sees is simulated every third frame
-      f.update(dt, this.t); if ((ghosts || (nightW && f.sp.moth)) && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > (ghosts ? 5 : 1.1) && !this.lit(f.pos)) { f.mesh.visible = false; f.shadow.visible = false; f._gh = true; } }       // night: a moth is seen only in the beam of a lamp (or from a hand's breadth)
+      f.update(dt, this.t); if ((ghosts || (nightW && f.sp.moth)) && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > (ghosts ? 5 : 0.5) && !this.lit(f.pos)) { f.mesh.visible = false; f.shadow.visible = false; f._gh = true; } }       // night: a moth is seen only in the beam of a lamp (or from the touch of a hand)
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
     for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, Aberr.roll(r.sp), false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?

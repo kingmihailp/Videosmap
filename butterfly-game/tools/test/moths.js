@@ -16,7 +16,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
     const cmp = bid => { const m = by(bid, true, 1), d = by(bid, false, 1); const base = BIOME_BY_ID[bid]; return m && d ? { bid, moth: raw(m.id), day: raw(d.id), mb: Econ.info({ sp: m.id, q: null }).base, db: Econ.info({ sp: d.id, q: null }).base, ml: Econ.info({ sp: m.id, q: null }).loc, dl: Econ.info({ sp: d.id, q: null }).loc } : null; };
     out.price = ['russia', 'alps', 'bog', 'papua', 'chihuahua'].map(cmp);
     // the night chance
-    let n = 0; const N = 4000; for (let i = 0; i < N; i++) if (Night.is('russia', 'seed' + i)) n++; out.share = n / N; out.same = Night.is('alps', 'abc') === Night.is('alps', 'abc'); out.ocean = [...Array(200).keys()].some(i => Night.is('ocean', 'x' + i));
+    let n = 0; const N = 4000; for (let i = 0; i < N; i++) if (Night.raw('russia', 'seed' + i)) n++; out.share = n / N; out.same = Night.raw('alps', 'abc') === Night.raw('alps', 'abc'); out.ocean = [...Array(200).keys()].some(i => Night.raw('ocean', 'x' + i));
     out.partial = ['russia', 'borneo', 'kenya', 'chihuahua'].map(b => [Night.is(b, 'S1'), Night.is(b, 'S2'), Night.is(b, 'S3'), Night.is(b, 'S4'), Night.is(b, 'S5')]);
     out.aber = (() => { try { const s = BIOME_BY_ID.russia.moths[0]; const a = Aberr.make(s, 'ABCDE'); return !!a && !!a.ab && a.moth === undefined ? 'no-moth-flag' : !!a; } catch (e) { return 'err ' + e.message; } })();
     return out; });

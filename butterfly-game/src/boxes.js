@@ -167,7 +167,7 @@ const Boxes = (() => {
         { id: 'take', label: 'Разобрать', x: 210, y: 248, w: 72, h: 16, disabled: isNew || !cur.uid || !!cur.cannon },
       ];
       // the attachments of the selected net (up to three): a click puts one on from the stash or takes it off
-      this.gbtns = []; if (!isNew && cur.uid) Object.keys(NetParts.GADGETS).forEach((id, k) => this.gbtns.push({ id: 'gad_' + id, gid: id, x: 164 + (k % 3) * 51, y: 152 + Math.floor(k / 3) * 20, w: 48, h: 19 }));
+      this.gbtns = []; if (!isNew && cur.uid) Object.keys(NetParts.GADGETS).forEach((id, k) => this.gbtns.push({ id: 'gad_' + id, gid: id, x: 164 + k * 39, y: 152, w: 37, h: 19 }));
     },
     draw(ctx, t, m, dt) {
       this.layout(); this.msgT = Math.max(0, this.msgT - 1 / 60); const L = this.list(), cur = this.cfg(), isNew = this.isNew(), eqU = Save.data.netEq || 0;
@@ -186,7 +186,7 @@ const Boxes = (() => {
       if (this.gbtns.length) {
         T.draw(ctx, 'Приспособления', 164, 142, { size: 8, color: c.dim }); const SH2 = { g_map: 'Карта', g_ir: 'ИК-скан', g_auto: 'Авто', g_torch: 'Фонарик' };
         this.gbtns.forEach(b => { const on = (cur.g || []).includes(b.gid), have = Save.gadCount(b.gid), hv = UIK.hit(b, m.x, m.y); UIK.panel(ctx, b.x, b.y, b.w, b.h, { fill: on ? '#2a5a46' : hv && (have || on) ? '#244a3c' : '#16281f', border: on ? c.gold : have ? c.line : '#2a3a32', shadow: false });
-          T.draw(ctx, SH2[b.gid], b.x + b.w / 2, b.y + 2, { size: 8, align: 'c', color: on ? '#fff' : have ? c.text : '#5a7a68' }); T.draw(ctx, on ? 'надето' : have ? `в запасе ×${have}` : 'нет', b.x + b.w / 2, b.y + 10, { size: 8, align: 'c', color: on ? c.gold : have ? c.green : '#4a6a58' }); });
+          T.draw(ctx, SH2[b.gid], b.x + b.w / 2, b.y + 2, { size: 8, align: 'c', color: on ? '#fff' : have ? c.text : '#5a7a68' }); T.draw(ctx, on ? 'надето' : have ? `запас ×${have}` : 'нет', b.x + b.w / 2, b.y + 10, { size: 8, align: 'c', color: on ? c.gold : have ? c.green : '#4a6a58' }); });
       }
       { const y0 = this.gbtns.length ? 176 : 172; let sl = NetParts.statLines(cur); if (y0 + sl.length * 11 > 238) sl = sl.filter(s => !/обычн/.test(s)); sl.slice(0, Math.floor((238 - y0) / 11)).forEach((s, k) => T.draw(ctx, fitStr(s, 154), 164, y0 + k * 11, { size: 8, color: /обычн/.test(s) ? c.dim : c.green })); }
       // right: the parts
