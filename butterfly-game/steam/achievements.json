@@ -1,13 +1,134 @@
 [
-  { "api": "ACH_FIRST_CATCH",        "ru": ["Первая бабочка", "Поймай свою первую бабочку."],            "en": ["First Catch", "Catch your first butterfly."] },
-  { "api": "ACH_TEN_SPECIES",        "ru": ["Начинающий коллекционер", "Собери 10 разных видов."],        "en": ["Budding Collector", "Collect 10 different species."] },
-  { "api": "ACH_FIFTY_SPECIES",      "ru": ["Опытный энтомолог", "Собери 50 разных видов."],              "en": ["Seasoned Entomologist", "Collect 50 different species."] },
-  { "api": "ACH_HUNDRED_SPECIES",    "ru": ["Хранитель коллекции", "Собери 100 разных видов."],           "en": ["Keeper of the Collection", "Collect 100 different species."] },
-  { "api": "ACH_RARE",               "ru": ["Красная книга", "Поймай редчайшую бабочку."],                 "en": ["Red Data Book", "Catch one of the rarest butterflies."] },
-  { "api": "ACH_ALL_RARE",           "ru": ["Охотник за легендами", "Поймай всех редчайших бабочек."],    "en": ["Legend Hunter", "Catch every one of the rarest butterflies."] },
-  { "api": "ACH_LOCATION_COMPLETE",  "ru": ["Полный набор", "Собери всех бабочек одной локации."],        "en": ["Full Set", "Catch every species of one location."] },
-  { "api": "ACH_FIVE_LOCATIONS",     "ru": ["Кругосветка", "Полностью собери пять локаций."],             "en": ["Around the World", "Complete five locations."] },
-  { "api": "ACH_DESERT",             "ru": ["Песок и крылья", "Поймай бабочку в Чиуауанской пустыне."],   "en": ["Sand and Wings", "Catch a butterfly in the Chihuahuan Desert."] },
-  { "api": "ACH_RICH",               "ru": ["Богатый энтомолог", "Накопи 100 000 монет."],                 "en": ["Rich Entomologist", "Save up 100,000 coins."] },
-  { "api": "ACH_COLLECTOR",          "ru": ["Кабинет редкостей", "Держи в кабинете 25 экземпляров."],     "en": ["Cabinet of Curiosities", "Keep 25 specimens in your cabinet."] }
+  {
+    "api": "ACH_FIRST_CATCH",
+    "ru": [
+      "Первая бабочка",
+      "Поймай свою первую бабочку."
+    ],
+    "en": [
+      "First Catch",
+      "Catch your first butterfly."
+    ]
+  },
+  {
+    "api": "ACH_TEN_SPECIES",
+    "ru": [
+      "Начинающий коллекционер",
+      "Собери 10 разных видов."
+    ],
+    "en": [
+      "Budding Collector",
+      "Collect 10 different species."
+    ]
+  },
+  {
+    "api": "ACH_FIFTY_SPECIES",
+    "ru": [
+      "Опытный энтомолог",
+      "Собери 50 разных видов."
+    ],
+    "en": [
+      "Seasoned Entomologist",
+      "Collect 50 different species."
+    ]
+  },
+  {
+    "api": "ACH_HUNDRED_SPECIES",
+    "ru": [
+      "Хранитель коллекции",
+      "Собери 100 разных видов."
+    ],
+    "en": [
+      "Keeper of the Collection",
+      "Collect 100 different species."
+    ]
+  },
+  {
+    "api": "ACH_RARE",
+    "ru": [
+      "Красная книга",
+      "Поймай редчайшую бабочку."
+    ],
+    "en": [
+      "Red Data Book",
+      "Catch one of the rarest butterflies."
+    ]
+  },
+  {
+    "api": "ACH_ALL_RARE",
+    "ru": [
+      "Охотник за легендами",
+      "Поймай всех редчайших бабочек."
+    ],
+    "en": [
+      "Legend Hunter",
+      "Catch every one of the rarest butterflies."
+    ]
+  },
+  {
+    "api": "ACH_LOCATION_COMPLETE",
+    "ru": [
+      "Полный набор",
+      "Собери всех бабочек одной локации."
+    ],
+    "en": [
+      "Full Set",
+      "Catch every species of one location."
+    ]
+  },
+  {
+    "api": "ACH_FIVE_LOCATIONS",
+    "ru": [
+      "Кругосветка",
+      "Полностью собери пять локаций."
+    ],
+    "en": [
+      "Around the World",
+      "Complete five locations."
+    ]
+  },
+  {
+    "api": "ACH_DESERT",
+    "ru": [
+      "Песок и крылья",
+      "Поймай бабочку в Чиуауанской пустыне."
+    ],
+    "en": [
+      "Sand and Wings",
+      "Catch a butterfly in the Chihuahuan Desert."
+    ]
+  },
+  {
+    "api": "ACH_RICH",
+    "ru": [
+      "Богатый энтомолог",
+      "Накопи 100 000 монет."
+    ],
+    "en": [
+      "Rich Entomologist",
+      "Save up 100,000 coins."
+    ]
+  },
+  {
+    "api": "ACH_COLLECTOR",
+    "ru": [
+      "Кабинет редкостей",
+      "Держи в кабинете 25 экземпляров."
+    ],
+    "en": [
+      "Cabinet of Curiosities",
+      "Keep 25 specimens in your cabinet."
+    ]
+  },
+  {
+    "api": "ACH_PROFESSIONAL",
+    "ru": [
+      "Профессионал своего дела",
+      "Собери большую рамку, целиком состоящую из аберрантов птицекрылки королевы Александры, расправленных на 100%."
+    ],
+    "en": [
+      "True Professional",
+      "Fill a large frame entirely with Queen Alexandra's birdwing aberrants, every one spread to 100%."
+    ]
+  }
 ]

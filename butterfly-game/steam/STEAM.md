@@ -36,9 +36,9 @@
 * Клиентская иконка `.ico`: `desktop/build/icon.ico`. Нужен ещё **трейлер** (видео): тизер лежит в `../../teaser`, но он для Flora0world HUB — запиши отдельный ролик геймплея 30–60 с (OBS).
 * Пересоздать графику: `node tools/test/steam_art_src.js` → `python3 tools/make_steam_art.py`; скриншоты: `node tools/test/steam_shots.js`.
 
-## 3. Достижения (11 штук)
+## 3. Достижения (12 штук)
 Игра сама сообщает о них (`src/steam.js` + `desktop/preload.js`). Заведи в Steamworks → Stats & Achievements ровно эти **API Name** (тексты RU/EN — в `achievements.json`; иконки 256×256 (в цвете и серые) нужно нарисовать — можно взять изображения бабочек из журнала):
-`ACH_FIRST_CATCH, ACH_TEN_SPECIES, ACH_FIFTY_SPECIES, ACH_HUNDRED_SPECIES, ACH_RARE, ACH_ALL_RARE, ACH_LOCATION_COMPLETE, ACH_FIVE_LOCATIONS, ACH_DESERT, ACH_RICH, ACH_COLLECTOR`. Опубликуй изменения («Publish») — без этого достижения в игре не сработают.
+`ACH_FIRST_CATCH, ACH_TEN_SPECIES, ACH_FIFTY_SPECIES, ACH_HUNDRED_SPECIES, ACH_RARE, ACH_ALL_RARE, ACH_LOCATION_COMPLETE, ACH_FIVE_LOCATIONS, ACH_DESERT, ACH_RICH, ACH_COLLECTOR, ACH_PROFESSIONAL`. Опубликуй изменения («Publish») — без этого достижения в игре не сработают.
 
 ## 4. Облачные сохранения (Steam Auto-Cloud)
 Сохранение пишется настоящим файлом `saves/save.json` (+ `save.json.bak`) в папке данных приложения. В Steamworks → Application → Cloud включи **Steam Auto-Cloud** и добавь правило:
