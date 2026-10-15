@@ -76,5 +76,12 @@
  "Налобный фонарь": "Headlamp",
  "Надевается на голову: луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.": "Worn on the head: the beam goes where you look and your hands are free for the net. The beam is narrower and shorter than the torch beam.",
  "фонари": "lamps",
- "запас ×": "stock ×"
+ "запас ×": "stock ×",
+ "У вас нет налобного фонаря: его продаёт торговец ловушками": "You have no headlamp: the trapper sells them",
+ "Налобный фонарь снят (L — надеть)": "Headlamp taken off (L - put on)",
+ "Налобный фонарь надет (L — снять)": "Headlamp put on (L - take off)",
+ "Нет фонаря: торговец ловушками продаёт фонарики и налобные фонари": "No lamp: the trapper sells torches and headlamps",
+ "В океане без фонаря ничего не видно — его продаёт торговец ловушками на рынке": "You cannot see anything in the ocean without a lamp: the trapper at the market sells them",
+ "ФОНАРЬ: НЕТ": "LIGHT: NONE",
+ "Надевается на голову (L — надеть или снять): луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.": "Worn on the head (L - put on or take off): the beam goes where you look and your hands are free for the net. The beam is narrower and shorter than the torch beam."
 }

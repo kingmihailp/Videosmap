@@ -47,7 +47,7 @@ const Traps = (() => {
   // lamps for the night locations (sold by the trapper): the beam shows the moths; I = intensity, dist = reach (m), ang = half-width of the cone (rad); hands: held in the hand, so the net cannot be swung while it burns
   const LAMPS = [
     { id: 'torch', ru: 'Фонарик', price: 1800, I: 2.8, dist: 44, ang: 0.46, hands: true, col: '#ffe9a0', desc: 'Обычный ручной фонарь, как в океане: широкий яркий луч далеко вперёд. Руки заняты фонарём: пока он горит, сачком не взмахнуть (F — выключить).' },
-    { id: 'head', ru: 'Налобный фонарь', price: 4200, I: 2.2, dist: 32, ang: 0.38, hands: false, col: '#d8f0ff', desc: 'Надевается на голову: луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.' },
+    { id: 'head', ru: 'Налобный фонарь', price: 4200, I: 2.2, dist: 32, ang: 0.38, hands: false, col: '#d8f0ff', desc: 'Надевается на голову (L — надеть или снять): луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.' },
   ];
   const LP = Object.fromEntries(LAMPS.map(l => [l.id, l]));
   const FL = Object.fromEntries(FLOWERS.map(f => [f.id, f])), HN = Object.fromEntries(HONEYS.map(h => [h.id, h]));

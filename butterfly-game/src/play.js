@@ -267,9 +267,9 @@ class Play {
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
     const sx = at ? at.x : 0, sz = at ? at.z : 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y; if (at) this.player.yaw = at.yaw;     // coming back out of a house: stand in front of its door
     this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
-    if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
+    // (no lamp by default: in the ocean as well as in a night location the player needs a lamp of his own, see lamps.js)
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false, extT: 1 }; Gear.init(this);
-    if (!this.world.hasFlash && this.world.night) Lamps.attach(this);       // a night location: the lamps of the player (see lamps.js; the net's own lamp needs the net's stats)
+    if (this.world.hasFlash || this.world.night) Lamps.attach(this);       // a night location: the lamps of the player (see lamps.js; the net's own lamp needs the net's stats)
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
     // spawn the herd
@@ -281,12 +281,12 @@ class Play {
     this.helperT = 40;
     this.traps = new Traps.Sys(this); if (mp && mp.traps) for (const t of mp.traps) if (t.owner !== Net.id) this.traps.mk(t, false);
     if (mp && Net.on) { const w = this.world; let h = 0; for (let x = -60; x <= 60; x += 4) for (let z = -60; z <= 60; z += 4) h = (h * 31 + Math.round(w.heightAt(x, z) * 100)) | 0; setTimeout(() => { if (this.traps) Net.send('sig', { seed: String(this.seed), h }); }, 800); }       // the others compare it: the same seed must give the same ground
-    if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
+    if (mp) { this.remotes = new Remotes(this.scene, { flash: this.world.hasFlash || this.world.night }); this.hookNet(); if (mp.mod) this.applyMod(mp.mod.id); if (mp.bridges && this.world.setBridge) for (const i in mp.bridges) this.world.setBridge(+i, mp.bridges[i], true); }
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
     this.applyQuality(); this.perfT = 0; this.perfN = 0; this.tier = 0;
     Snd.startAmbient(this.world.env.amb, this.world.night);
-    this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (this.world.night) setTimeout(() => { if (this.traps) this.toast(this.lamp ? 'Ночь! Мотыльки видны только в луче фонаря: F — включить и выключить, Shift+F — сменить фонарь' : 'Ночь! Мотыльков не видно без фонаря — его продаёт торговец ловушками, а приспособление «Фонарик» для сачка — энтузиаст', 7); }, 4400);
+    this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (this.world.night || this.world.hasFlash) setTimeout(() => { if (this.traps) this.toast(this.world.hasFlash && !this.lamp ? 'В океане без фонаря ничего не видно — его продаёт торговец ловушками на рынке' : this.lamp ? 'Ночь! Мотыльки видны только в луче фонаря: F — включить и выключить, Shift+F — сменить фонарь' : 'Ночь! Мотыльков не видно без фонаря — его продаёт торговец ловушками, а приспособление «Фонарик» для сачка — энтузиаст', 7); }, 4400);
     if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
   regenLeft() { return (this.regenAt - performance.now()) / 1000; }
@@ -352,7 +352,7 @@ class Play {
   }
   litAny(pos) {
     if (this.lit(pos)) return true; if (!this.mp) return false;
-    for (const r of this.others()) { if (!r.flashOn || !this.world.hasFlash) continue; _v2.copy(pos).sub(r.pos); const d = _v2.length(); if (d < 34 && (d < 0.5 || _v2.normalize().dot(r.fwd) > 0.93)) return true; }
+    for (const r of this.others()) { if (!r.flashOn || !(this.world.hasFlash || this.world.night)) continue; _v2.copy(pos).sub(r.pos); const d = _v2.length(); if (d < 34 && (d < 0.5 || _v2.normalize().dot(r.fwd) > 0.93)) return true; }
     return false;
   }
   lookedAny(pos, cos) {
@@ -642,8 +642,8 @@ class Play {
     // flashlight, modifier, reveal markers, sense arrows
     if (this.flash) {
       UIK.panel(ctx, 6, SH - 48, 92, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ [F]', 11, SH - 44, { size: 8, color: c.dim }); ctx.fillStyle = this.flashOn ? '#ffe9a0' : '#3a3a3a'; ctx.fillRect(80, SH - 43, 12, 8); ctx.fillStyle = this.flashOn ? '#fff8d8' : '#1a1a1a'; ctx.fillRect(81, SH - 42, 10, 3);
-      if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
-    }
+    } else if (this.world.hasFlash || this.world.night) { UIK.panel(ctx, 6, SH - 48, 104, 18, { fill: 'rgba(16,32,28,0.82)' }); T.draw(ctx, 'ФОНАРЬ: НЕТ', 11, SH - 44, { size: 8, color: '#c88a7a' }); }
+    if (this.world.flash > 0.4) { ctx.fillStyle = `rgba(230,240,255,${(this.world.flash - 0.4) * 0.35})`; ctx.fillRect(0, 0, SW, SH); }
     { const wi = this.world.stormInfo; if (wi && (this.world.storm || 0) > 0.3) { const tx = `Песчаная буря · ${Math.max(0, Math.ceil((wi.end - Date.now()) / 1000))} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 54, w2, 16, { fill: 'rgba(70,46,20,0.9)' }); T.draw(ctx, tx, SW / 2 - w2 / 2 + 7, 58, { size: 8, color: '#f0c880' }); } }
     if (this.mod) { const tx = `${this.mod.name} · ${Math.ceil(this.mod.t)} с`, w2 = T.width(tx, 8) + 14; UIK.panel(ctx, SW / 2 - w2 / 2, 34, w2, 16, { fill: this.mod.good ? 'rgba(16,48,28,0.9)' : 'rgba(56,16,20,0.9)', border: this.mod.good ? '#7ee08a' : '#ff6a6a' }); T.draw(ctx, tx, SW / 2, 38, { size: 8, align: 'c', color: this.mod.good ? '#c8ffd0' : '#ffc8c8' }); }
     if (this.revealT > 0) this.flies.forEach(f => { if (f.state === CAUGHT) return; const q = f.pos.clone().project(this.camera); if (q.z > 1) return; const sx = (q.x * 0.5 + 0.5) * SW, sy = (-q.y * 0.5 + 0.5) * SH; if (sx < 4 || sx > SW - 4 || sy < 4 || sy > SH - 4) return; ctx.fillStyle = `rgba(255,190,80,${0.5 + 0.5 * Math.sin(this.t * 6)})`; ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 9, 3, 3); ctx.fillRect(Math.round(sx), Math.round(sy) - 6, 1, 3); });
