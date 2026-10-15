@@ -1,0 +1,1530 @@
+[
+{
+"la": "Argema mimosae",
+"ru": "Африканская лунная бабочка",
+"en": "African moon moth",
+"fam": "Павлиноглазки",
+"lo": 90,
+"hi": 120,
+"rar": 3,
+"beh": "giant",
+"shape": "comet",
+"tail": "long",
+"f": [
+"#a8d8a0",
+"#88c890"
+],
+"h": [
+"#a8d8a0",
+"#88c890"
+],
+"opts": {
+"edge": [
+"#8a4a5a",
+1
+],
+"eye": [
+[
+"f",
+0.55,
+0.5,
+3,
+"#6a3a4a",
+"#e8f0d0"
+],
+[
+"h",
+0.4,
+0.5,
+3,
+"#6a3a4a",
+"#e8f0d0"
+]
+],
+"band": [
+"f",
+0.0,
+0.08,
+"#8a4a5a"
+]
+},
+"hab": "Акациевая саванна, речные заросли",
+"hab_en": "Acacia savanna, riverine thickets",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "акации, сумах, Ximenia",
+"host_en": "acacias, sumac, Ximenia",
+"fact": "Хвосты задних крыльев сбивают с толку летучих мышей: они хватают их вместо тела.",
+"fact_en": "The hindwing tails confuse bats, which strike the tails instead of the body."
+},
+{
+"la": "Bunaea alcinoe",
+"ru": "Павлиноглазка алкиной",
+"en": "Cabbage tree emperor",
+"fam": "Павлиноглазки",
+"lo": 100,
+"hi": 130,
+"rar": 1,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#a07850",
+"#7a5a3a"
+],
+"h": [
+"#c89060",
+"#a06a40"
+],
+"opts": {
+"edge": [
+"#4a3020",
+1
+],
+"eye": [
+[
+"f",
+0.5,
+0.6,
+3,
+"#2a1a10",
+"#f0e8d0"
+],
+[
+"h",
+0.5,
+0.5,
+5,
+"#1a1010",
+"#f0f0e0"
+]
+],
+"zz": [
+"#5a4028",
+2,
+"f"
+],
+"dots": "#e8d8b8"
+},
+"hab": "Саванна, редколесье, сады",
+"hab_en": "Savanna, open woodland, gardens",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "капустное дерево, дикая слива, манго",
+"host_en": "cabbage tree, wild plum, mango",
+"fact": "Яркие глазки на задних крыльях пугают птиц, а гусениц едят местные жители.",
+"fact_en": "Bright hindwing eyes startle birds, and the caterpillars are eaten by local people."
+},
+{
+"la": "Epiphora bauhiniae",
+"ru": "Павлиноглазка бауэнии",
+"en": "Bauhinia emperor moth",
+"fam": "Павлиноглазки",
+"lo": 90,
+"hi": 115,
+"rar": 2,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#c8a068",
+"#a07a48"
+],
+"h": [
+"#d8b078",
+"#b88a58"
+],
+"opts": {
+"edge": [
+"#6a4a2a",
+1
+],
+"eye": [
+[
+"f",
+0.5,
+0.55,
+3,
+"#4a3020",
+"#f0f0e8"
+],
+[
+"h",
+0.5,
+0.5,
+4,
+"#4a3020",
+"#f0f0e8"
+]
+],
+"zz": [
+"#7a5a38",
+2,
+"fh"
+]
+},
+"hab": "Саванна и колючее редколесье",
+"hab_en": "Savanna and thorn scrub",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "бауния, акации, Combretum",
+"host_en": "Bauhinia, acacias, Combretum",
+"fact": "Полупрозрачные пятна в центре крыльев напоминают окошки.",
+"fact_en": "Translucent windows mark the centre of each wing."
+},
+{
+"la": "Heniocha dyops",
+"ru": "Павлиноглазка ‘глаз-пятно’",
+"en": "Maroon-spotted emperor",
+"fam": "Павлиноглазки",
+"lo": 70,
+"hi": 95,
+"rar": 2,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#b89868",
+"#907048"
+],
+"h": [
+"#c8a878",
+"#a08058"
+],
+"opts": {
+"edge": [
+"#5a3a20",
+1
+],
+"eye": [
+[
+"f",
+0.5,
+0.55,
+3,
+"#5a1a14",
+"#f0e0c0"
+],
+[
+"h",
+0.5,
+0.5,
+4,
+"#5a1a14",
+"#f0e0c0"
+]
+],
+"zz": [
+"#6a4a2a",
+2,
+"f"
+],
+"noise": [
+"#7a5a38",
+0.1
+]
+},
+"hab": "Акациевая саванна",
+"hab_en": "Acacia savanna",
+"range": "Тропическая и Южная Африка",
+"range_en": "Tropical and Southern Africa",
+"host": "акации, Albizia",
+"host_en": "acacias, Albizia",
+"fact": "Крупные глазки с красным ободком заметно выделяются на сером фоне.",
+"fact_en": "Large red-ringed eyespots stand out sharply on the pale background."
+},
+{
+"la": "Gynanisa maja",
+"ru": "Гинаниза майя",
+"en": "Maja emperor",
+"fam": "Павлиноглазки",
+"lo": 100,
+"hi": 140,
+"rar": 2,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#a89888",
+"#807060"
+],
+"h": [
+"#c8a888",
+"#a07858"
+],
+"opts": {
+"edge": [
+"#4a3a2a",
+1
+],
+"eye": [
+[
+"h",
+0.5,
+0.5,
+6,
+"#1a1210",
+"#e8e0d0"
+]
+],
+"zz": [
+"#5a4a3a",
+3,
+"f"
+],
+"noise": [
+"#6a5a48",
+0.12
+]
+},
+"hab": "Сухая саванна, редколесье",
+"hab_en": "Dry savanna, woodland",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "акации, Brachystegia",
+"host_en": "acacias, Brachystegia",
+"fact": "Днём прячется на коре, а при тревоге раскрывает огромные глаза на задних крыльях.",
+"fact_en": "By day it hides on bark; when alarmed it flashes huge hindwing eyes."
+},
+{
+"la": "Lobobunaea phaedusa",
+"ru": "Лобобунея федуза",
+"en": "Phaedusa emperor",
+"fam": "Павлиноглазки",
+"lo": 110,
+"hi": 150,
+"rar": 3,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#b09a78",
+"#8a7050"
+],
+"h": [
+"#c0a080",
+"#9a7a58"
+],
+"opts": {
+"edge": [
+"#4a3420",
+1
+],
+"eye": [
+[
+"f",
+0.5,
+0.55,
+3,
+"#3a2418",
+"#f0e8d8"
+],
+[
+"h",
+0.5,
+0.5,
+5,
+"#3a2418",
+"#f0e8d8"
+]
+],
+"band": [
+"fh",
+0.62,
+0.7,
+"#6a4a30"
+],
+"zz": [
+"#5a4228",
+2,
+"f"
+]
+},
+"hab": "Влажные лесные галереи у рек",
+"hab_en": "Moist riverine forest belts",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "спатодея, рицинодендрон, кола",
+"host_en": "Spathodea, Ricinodendron, Cola",
+"fact": "Крупная ночная бабочка летит на свет в десятках километров от леса.",
+"fact_en": "This large moth flies to lights far from its forest home."
+},
+{
+"la": "Pseudobunaea irius",
+"ru": "Павлиноглазка ирий",
+"en": "Irius emperor",
+"fam": "Павлиноглазки",
+"lo": 100,
+"hi": 130,
+"rar": 2,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#c0a888",
+"#907858"
+],
+"h": [
+"#d0b898",
+"#a08868"
+],
+"opts": {
+"edge": [
+"#5a4028",
+1
+],
+"eye": [
+[
+"f",
+0.5,
+0.55,
+3,
+"#3a2a1c",
+"#f8f0e0"
+],
+[
+"h",
+0.5,
+0.5,
+5,
+"#3a2a1c",
+"#f8f0e0"
+]
+],
+"noise": [
+"#a08868",
+0.12
+],
+"zz": [
+"#6a5038",
+2,
+"fh"
+]
+},
+"hab": "Саванна, редколесья, плантации",
+"hab_en": "Savanna, woodland, plantations",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "манго, Ficus, Bridelia",
+"host_en": "mango, Ficus, Bridelia",
+"fact": "Самки откладывают кучки яиц на деревья, и гусеницы кормятся гурьбой.",
+"fact_en": "Females lay egg clusters and the caterpillars feed in groups."
+},
+{
+"la": "Nudaurelia dione",
+"ru": "Нудаурелия дионе",
+"en": "Dione emperor",
+"fam": "Павлиноглазки",
+"lo": 70,
+"hi": 100,
+"rar": 1,
+"beh": "giant",
+"shape": "saturn",
+"tail": "none",
+"f": [
+"#a8805a",
+"#8a6040"
+],
+"h": [
+"#d8a860",
+"#c08838"
+],
+"opts": {
+"edge": [
+"#5a3a20",
+1
+],
+"eye": [
+[
+"h",
+0.5,
+0.5,
+4,
+"#3a2014",
+"#f0e8d0"
+]
+],
+"zz": [
+"#6a4a30",
+2,
+"f"
+],
+"patch": [
+"f",
+0.45,
+0.45,
+2,
+"#f0e8d0"
+]
+},
+"hab": "Редколесье и саванна",
+"hab_en": "Woodland and savanna",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "акации, Combretum, Pappea",
+"host_en": "acacias, Combretum, Pappea",
+"fact": "Гусеницы покрыты ветвистыми шипами и сильно жгут при касании.",
+"fact_en": "Caterpillars carry branched spines that sting when touched."
+},
+{
+"la": "Xanthopan morganii",
+"ru": "Бражник Моргана",
+"en": "Morgan's sphinx",
+"fam": "Бражники",
+"lo": 100,
+"hi": 120,
+"rar": 3,
+"beh": "hawkm",
+"shape": "hawk",
+"tail": "none",
+"f": [
+"#7a6a50",
+"#5a4c38"
+],
+"h": [
+"#e8a838",
+"#c88020"
+],
+"opts": {
+"edge": [
+"#3a2e20",
+1
+],
+"zz": [
+"#3a2e20",
+3,
+"f"
+],
+"bars": [
+"#b8a888",
+2
+],
+"noise": [
+"#4a3c28",
+0.08
+]
+},
+"hab": "Влажные леса, галерейные заросли",
+"hab_en": "Moist forest, riverine belts",
+"range": "Африка, Мадагаскар",
+"range_en": "Africa, Madagascar",
+"host": "аннонные",
+"host_en": "Annonaceae",
+"fact": "Дарвин предсказал эту бабочку по длине шпоры орхидеи, найденной за 40 лет до неё.",
+"fact_en": "Darwin predicted this moth from an orchid’s spur decades before it was found."
+},
+{
+"la": "Nephele comma",
+"ru": "Бражник-запятая",
+"en": "Comma hawk-moth",
+"fam": "Бражники",
+"lo": 70,
+"hi": 90,
+"rar": 1,
+"beh": "hawkm",
+"shape": "hawk",
+"tail": "none",
+"f": [
+"#8a7a58",
+"#6a5a3c"
+],
+"h": [
+"#c07a3a",
+"#9a5a28"
+],
+"opts": {
+"edge": [
+"#3a2c1c",
+1
+],
+"wedges": [
+"#3a2c1c",
+2
+],
+"sp": [
+[
+"f",
+0.5,
+0.4,
+2,
+"#f0e8c8"
+]
+],
+"zz": [
+"#4a3a28",
+2,
+"f"
+]
+},
+"hab": "Саванна, сады, кустарники",
+"hab_en": "Savanna, gardens, scrub",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "карисса, ландольфия, раувольфия",
+"host_en": "Carissa, Landolphia, Rauvolfia",
+"fact": "Белое пятнышко-запятая на переднем крыле отличает его от родичей.",
+"fact_en": "A white comma-shaped mark on the forewing identifies it."
+},
+{
+"la": "Basiothia schenki",
+"ru": "Бражник Шенка",
+"en": "Schenk's hawk-moth",
+"fam": "Бражники",
+"lo": 60,
+"hi": 75,
+"rar": 2,
+"beh": "hawkm",
+"shape": "hawk",
+"tail": "none",
+"f": [
+"#9a8a68",
+"#7a6a48"
+],
+"h": [
+"#d8c088",
+"#c0a060"
+],
+"opts": {
+"edge": [
+"#4a3c28",
+1
+],
+"bars": [
+"#5a4a30",
+2
+],
+"band": [
+"f",
+0.55,
+0.65,
+"#e8e0c0"
+]
+},
+"hab": "Сухая саванна, полупустыня",
+"hab_en": "Dry savanna, semi-desert",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "вахлия, пентанисия",
+"host_en": "Vahlia, Pentanisia",
+"fact": "Зависает у цветков в сумерки и пьёт нектар на лету.",
+"fact_en": "It hovers at flowers at dusk and sips nectar on the wing."
+},
+{
+"la": "Lophostethus dumolinii",
+"ru": "Бражник Думолена",
+"en": "Dumolin's hawk-moth",
+"fam": "Бражники",
+"lo": 100,
+"hi": 120,
+"rar": 2,
+"beh": "hawkm",
+"shape": "hawkb",
+"tail": "none",
+"f": [
+"#8a7050",
+"#6a5438"
+],
+"h": [
+"#d8a050",
+"#b87830"
+],
+"opts": {
+"edge": [
+"#3a2a1a",
+1
+],
+"zz": [
+"#3a2a1a",
+3,
+"f"
+],
+"noise": [
+"#4a3820",
+0.1
+],
+"tip": [
+"#4a3a28",
+0.8
+]
+},
+"hab": "Саванна, кустарники, сады",
+"hab_en": "Savanna, scrub, gardens",
+"range": "Африка к югу от Сахары",
+"range_en": "Sub-Saharan Africa",
+"host": "домбея, гревия, сумах",
+"host_en": "Dombeya, Grewia, Rhus",
+"fact": "Мощная бабочка с угловатым краем крыльев, гусеница при угрозе сильно раздувает голову.",
+"fact_en": "A robust moth with angular wings; the caterpillar puffs out when threatened."
+},
+{
+"la": "Platysphinx stigmatica",
+"ru": "Бражник-стигматика",
+"en": "Spotted ash hawk-moth",
+"fam": "Бражники",
+"lo": 90,
+"hi": 110,
+"rar": 2,
+"beh": "hawkm",
+"shape": "hawkb",
+"tail": "none",
+"f": [
+"#8a8a70",
+"#6a6a52"
+],
+"h": [
+"#d8a898",
+"#b88878"
+],
+"opts": {
+"edge": [
+"#4a4a38",
+1
+],
+"zz": [
+"#4a4a38",
+3,
+"f"
+],
+"noise": [
+"#5a5a46",
+0.1
+],
+"sp": [
+[
+"f",
+0.55,
+0.45,
+2,
+"#f0e8d0"
+]
+]
+},
+"hab": "Лесные галереи, саванна",
+"hab_en": "Gallery forest, savanna",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "экебергия, трихилия",
+"host_en": "Ekebergia, Trichilia",
+"fact": "Лишайниковая окраска делает его почти невидимым на коре.",
+"fact_en": "Its lichen-like colours make it nearly invisible on bark."
+},
+{
+"la": "Eudocima materna",
+"ru": "Плодовая совка материнская",
+"en": "African fruit-piercing moth",
+"fam": "Эребиды",
+"lo": 90,
+"hi": 100,
+"rar": 3,
+"beh": "moth",
+"shape": "underwing",
+"tail": "none",
+"f": [
+"#8a7050",
+"#6a5438"
+],
+"h": [
+"#e8a838",
+"#c87820"
+],
+"opts": {
+"edge": [
+"#3a2a1a",
+1
+],
+"band": [
+"h",
+0.55,
+0.7,
+"#2a1a10"
+],
+"zz": [
+"#4a3a28",
+2,
+"f"
+],
+"noise": [
+"#5a4a30",
+0.1
+]
+},
+"hab": "Сады, плантации, саванна",
+"hab_en": "Gardens, plantations, savanna",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "лианы Menispermaceae",
+"host_en": "Menispermaceae vines",
+"fact": "Хоботок пронзает кожуру плодов и пьёт сок, наносит урон фруктам.",
+"fact_en": "Its proboscis pierces fruit skin to drink the juice and damages crops."
+},
+{
+"la": "Cyligramma latona",
+"ru": "Совка латона",
+"en": "Cream-striped owl",
+"fam": "Эребиды",
+"lo": 70,
+"hi": 90,
+"rar": 1,
+"beh": "moth",
+"shape": "underwing",
+"tail": "none",
+"f": [
+"#6a5a40",
+"#4a3c2a"
+],
+"h": [
+"#8a7050",
+"#6a5438"
+],
+"opts": {
+"edge": [
+"#2a2018",
+1
+],
+"bars": [
+"#e8d8a8",
+2
+],
+"band": [
+"f",
+0.4,
+0.5,
+"#e8d8a8"
+],
+"zz": [
+"#3a2e20",
+2,
+"h"
+]
+},
+"hab": "Саванна, парки, кустарники",
+"hab_en": "Savanna, parks, scrub",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "акации, Albizia",
+"host_en": "acacias, Albizia",
+"fact": "Светлая полоса на тёмном крыле делает её узнаваемой даже в полёте.",
+"fact_en": "A pale stripe on the dark wing makes it recognisable even in flight."
+},
+{
+"la": "Achaea catella",
+"ru": "Совка ахея",
+"en": "Catella owl moth",
+"fam": "Эребиды",
+"lo": 50,
+"hi": 65,
+"rar": 1,
+"beh": "moth",
+"shape": "underwing",
+"tail": "none",
+"f": [
+"#8a7a68",
+"#6a5a48"
+],
+"h": [
+"#c04830",
+"#a02818"
+],
+"opts": {
+"edge": [
+"#2a1a14",
+1
+],
+"band": [
+"h",
+0.5,
+0.65,
+"#1a1010"
+],
+"zz": [
+"#4a3a2c",
+3,
+"f"
+],
+"noise": [
+"#4a3a2c",
+0.1
+]
+},
+"hab": "Саванна, кустарники",
+"hab_en": "Savanna, scrub",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "клещевина, акации",
+"host_en": "castor bean, acacias",
+"fact": "При испуге показывает красные задние крылья с чёрной каймой.",
+"fact_en": "When startled it flashes red hindwings edged in black."
+},
+{
+"la": "Busseola fusca",
+"ru": "Африканская стеблевая совка",
+"en": "African maize stalk borer",
+"fam": "Совки",
+"lo": 25,
+"hi": 35,
+"rar": 1,
+"beh": "moth",
+"shape": "noctuid",
+"tail": "none",
+"f": [
+"#a8885a",
+"#8a6c42"
+],
+"h": [
+"#e8e0d0",
+"#c8c0b0"
+],
+"opts": {
+"edge": [
+"#5a4428",
+1
+],
+"zz": [
+"#6a5030",
+2,
+"f"
+],
+"sp": [
+[
+"f",
+0.45,
+0.4,
+1,
+"#f0e8d0"
+]
+]
+},
+"hab": "Поля кукурузы, злаковая саванна",
+"hab_en": "Maize fields, grass savanna",
+"range": "Африка к югу от Сахары",
+"range_en": "Sub-Saharan Africa",
+"host": "кукуруза, сорго, дикие злаки",
+"host_en": "maize, sorghum, wild grasses",
+"fact": "Гусеницы вгрызаются в стебли и в сухой сезон впадают в диапаузу.",
+"fact_en": "Caterpillars bore into stems and go dormant through the dry season."
+},
+{
+"la": "Sesamia calamistis",
+"ru": "Розовая стеблевая совка",
+"en": "African pink stem borer",
+"fam": "Совки",
+"lo": 25,
+"hi": 35,
+"rar": 1,
+"beh": "moth",
+"shape": "noctuid",
+"tail": "none",
+"f": [
+"#d8c098",
+"#b89c70"
+],
+"h": [
+"#f0ead8",
+"#d8d0b8"
+],
+"opts": {
+"edge": [
+"#8a7048",
+1
+],
+"sp": [
+[
+"f",
+0.5,
+0.4,
+1,
+"#5a4028"
+]
+],
+"veins": "#a08860"
+},
+"hab": "Злаковая саванна, поля",
+"hab_en": "Grass savanna, fields",
+"range": "Африка к югу от Сахары",
+"range_en": "Sub-Saharan Africa",
+"host": "кукуруза, сорго, сахарный тростник",
+"host_en": "maize, sorghum, sugarcane",
+"fact": "Соломенная окраска сливается с сухими стеблями злаков.",
+"fact_en": "Its straw colour blends with dry grass stems."
+},
+{
+"la": "Polydesma boarmoides",
+"ru": "Полидесма",
+"en": "Polydesma owl",
+"fam": "Совки",
+"lo": 35,
+"hi": 45,
+"rar": 1,
+"beh": "moth",
+"shape": "noctuid",
+"tail": "none",
+"f": [
+"#8a7050",
+"#6a5438"
+],
+"h": [
+"#7a6a52",
+"#5a4c38"
+],
+"opts": {
+"edge": [
+"#3a2a1a",
+1
+],
+"zz": [
+"#3a2c1c",
+3,
+"f"
+],
+"noise": [
+"#5a4a30",
+0.12
+],
+"sp": [
+[
+"f",
+0.4,
+0.4,
+1,
+"#d8c8a0"
+]
+]
+},
+"hab": "Саванна, кустарники, сады",
+"hab_en": "Savanna, scrub, gardens",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "акации, бобовые",
+"host_en": "acacias, legumes",
+"fact": "Часто прилетает на огни ночью и днём сидит на коре.",
+"fact_en": "It often comes to lights and rests on bark by day."
+},
+{
+"la": "Ascotis reciprocaria",
+"ru": "Пяденица ассоцис",
+"en": "Common grey looper",
+"fam": "Пяденицы",
+"lo": 35,
+"hi": 48,
+"rar": 1,
+"beh": "rester",
+"shape": "geometer",
+"tail": "none",
+"f": [
+"#b8b098",
+"#988f78"
+],
+"h": [
+"#c8c0a8",
+"#a8a088"
+],
+"opts": {
+"edge": [
+"#5a5240",
+1
+],
+"zz": [
+"#5a5240",
+3,
+"fh"
+],
+"noise": [
+"#6a6250",
+0.1
+]
+},
+"hab": "Саванна, сады, лесные опушки",
+"hab_en": "Savanna, gardens, forest edges",
+"range": "Африка к югу от Сахары",
+"range_en": "Sub-Saharan Africa",
+"host": "акации, бобовые, кустарники",
+"host_en": "acacias, legumes, shrubs",
+"fact": "Гусеница-палочка замирает на ветке, как сучок.",
+"fact_en": "The twig-like caterpillar freezes on a branch like a stick."
+},
+{
+"la": "Chiasmia streniata",
+"ru": "Пяденица хиазмия",
+"en": "Chiasmia looper",
+"fam": "Пяденицы",
+"lo": 25,
+"hi": 35,
+"rar": 1,
+"beh": "rester",
+"shape": "geometer",
+"tail": "none",
+"f": [
+"#c8a860",
+"#a88840"
+],
+"h": [
+"#d8b878",
+"#b89850"
+],
+"opts": {
+"edge": [
+"#6a5028",
+1
+],
+"zz": [
+"#6a5028",
+2,
+"fh"
+],
+"sp": [
+[
+"f",
+0.55,
+0.35,
+1,
+"#3a2a18"
+]
+]
+},
+"hab": "Акациевая саванна",
+"hab_en": "Acacia savanna",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "акации",
+"host_en": "acacias",
+"fact": "Сидит с раскинутыми крыльями, подобно сухому листу акации.",
+"fact_en": "It rests with outspread wings like a dry acacia leaf."
+},
+{
+"la": "Amerila bubo",
+"ru": "Медведица-бубо",
+"en": "Large white-and-black tiger moth",
+"fam": "Медведицы",
+"lo": 50,
+"hi": 65,
+"rar": 2,
+"beh": "moth",
+"shape": "tiger",
+"tail": "none",
+"f": [
+"#f0ece0",
+"#d8d0c0"
+],
+"h": [
+"#f0d8c8",
+"#e0b0a0"
+],
+"opts": {
+"edge": [
+"#4a3a30",
+1
+],
+"sp": [
+[
+"f",
+0.5,
+0.5,
+2,
+"#3a2a20"
+],
+[
+"f",
+0.7,
+0.6,
+2,
+"#3a2a20"
+]
+],
+"sheen": [
+"#ffffff",
+0.3
+]
+},
+"hab": "Саванна, кустарники",
+"hab_en": "Savanna, scrub",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "молочаи, Ficus, кустарники",
+"host_en": "euphorbias, Ficus, shrubs",
+"fact": "Белая бабочка выделяет при угрозе пену со слабым запахом.",
+"fact_en": "This white moth foams a scented liquid when threatened."
+},
+{
+"la": "Metarctia lateritia",
+"ru": "Мохнатая медведица",
+"en": "Red-banded furry tiger moth",
+"fam": "Медведицы",
+"lo": 30,
+"hi": 45,
+"rar": 1,
+"beh": "moth",
+"shape": "tiger",
+"tail": "none",
+"f": [
+"#d87838",
+"#b85a20"
+],
+"h": [
+"#e89850",
+"#c87430"
+],
+"opts": {
+"edge": [
+"#6a3418",
+1
+],
+"band": [
+"f",
+0.4,
+0.55,
+"#f0b070"
+],
+"veins": "#a05020"
+},
+"hab": "Саванна, кустарники",
+"hab_en": "Savanna, scrub",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "злаки, травы",
+"host_en": "grasses, herbs",
+"fact": "Оранжевая окраска предупреждает хищников о несъедобности.",
+"fact_en": "Its orange colour warns predators that it tastes bad."
+},
+{
+"la": "Gonometa postica",
+"ru": "Африканский дикий шелкопряд",
+"en": "African wild silk moth",
+"fam": "Коконопряды",
+"lo": 55,
+"hi": 80,
+"rar": 3,
+"beh": "moth",
+"shape": "eggar",
+"tail": "none",
+"f": [
+"#b8a888",
+"#988868"
+],
+"h": [
+"#c8b898",
+"#a89878"
+],
+"opts": {
+"edge": [
+"#5a4a30",
+1
+],
+"zz": [
+"#6a5a3c",
+2,
+"f"
+],
+"sp": [
+[
+"f",
+0.5,
+0.4,
+2,
+"#f0f0e0"
+]
+],
+"noise": [
+"#7a6a4c",
+0.08
+]
+},
+"hab": "Акациевая саванна, сухое редколесье",
+"hab_en": "Acacia savanna, dry woodland",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "акации, Brachystegia",
+"host_en": "acacias, Brachystegia",
+"fact": "Из коконов в Кении получают шёлк, Gonometa — местный дикий шёлк.",
+"fact_en": "Its cocoons yield wild silk harvested in Kenya."
+},
+{
+"la": "Knappetra fasciata",
+"ru": "Волнянка кнаппетра",
+"en": "Banded tussock moth",
+"fam": "Волнянки",
+"lo": 30,
+"hi": 45,
+"rar": 1,
+"beh": "moth",
+"shape": "eggar",
+"tail": "none",
+"f": [
+"#d8c8a0",
+"#b8a478"
+],
+"h": [
+"#e8dcc0",
+"#c8b890"
+],
+"opts": {
+"edge": [
+"#6a5a38",
+1
+],
+"bars": [
+"#6a5a38",
+2
+],
+"noise": [
+"#8a7a58",
+0.08
+]
+},
+"hab": "Саванна, кустарники",
+"hab_en": "Savanna, scrub",
+"range": "Африка к югу от Сахары",
+"range_en": "Sub-Saharan Africa",
+"host": "акации, кустарники",
+"host_en": "acacias, shrubs",
+"fact": "Волосатые гусеницы вызывают у людей зуд.",
+"fact_en": "Hairy caterpillars cause itching in people."
+},
+{
+"la": "Anaphe panda",
+"ru": "Африканский шелкопряд анафе",
+"en": "African silk moth",
+"fam": "Хохлатки",
+"lo": 35,
+"hi": 50,
+"rar": 3,
+"beh": "moth",
+"shape": "silk",
+"tail": "none",
+"f": [
+"#e8d8b8",
+"#d0bc94"
+],
+"h": [
+"#f0e4c8",
+"#dccaa4"
+],
+"opts": {
+"edge": [
+"#8a7448",
+1
+],
+"zz": [
+"#a08c60",
+2,
+"f"
+],
+"sheen": [
+"#ffffff",
+0.3
+]
+},
+"hab": "Леса, галерейные заросли",
+"hab_en": "Forest, riverine belts",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "бриделия, уапака",
+"host_en": "Bridelia, Uapaca",
+"fact": "Гусеницы живут колонией и плетут общий шелковый кокон.",
+"fact_en": "Caterpillars live in colonies and spin a shared silk cocoon."
+},
+{
+"la": "Antheua simplex",
+"ru": "Хохлатка-антеа",
+"en": "Simple prominent",
+"fam": "Хохлатки",
+"lo": 35,
+"hi": 45,
+"rar": 1,
+"beh": "rester",
+"shape": "prominent",
+"tail": "none",
+"f": [
+"#9a8a70",
+"#7a6c54"
+],
+"h": [
+"#a89880",
+"#887860"
+],
+"opts": {
+"edge": [
+"#4a3e2c",
+1
+],
+"zz": [
+"#4a3e2c",
+2,
+"f"
+],
+"noise": [
+"#5a4c38",
+0.1
+]
+},
+"hab": "Саванна, леса, кустарники",
+"hab_en": "Savanna, woodland, scrub",
+"range": "Тропическая Африка",
+"range_en": "Tropical Africa",
+"host": "акации, бобовые",
+"host_en": "acacias, legumes",
+"fact": "Крылья складывает крышей и замирает, подобно куску коры.",
+"fact_en": "It folds its wings roof-like and freezes like a bark scrap."
+},
+{
+"la": "Negera natalensis",
+"ru": "Серпокрылка натальская",
+"en": "Natal hooktip",
+"fam": "Серпокрылки",
+"lo": 30,
+"hi": 40,
+"rar": 3,
+"beh": "rester",
+"shape": "falcate",
+"tail": "none",
+"f": [
+"#b8a888",
+"#98886a"
+],
+"h": [
+"#c8b898",
+"#a89878"
+],
+"opts": {
+"edge": [
+"#5a4a30",
+1
+],
+"zz": [
+"#6a5a3c",
+2,
+"fh"
+],
+"tip": [
+"#6a5a3c",
+0.8
+]
+},
+"hab": "Лесные опушки, галереи",
+"hab_en": "Forest edges, gallery forest",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "лиановые кустарники",
+"host_en": "woody vines",
+"fact": "Серповидный кончик переднего крыла напоминает увядший лист.",
+"fact_en": "The hooked wing tip mimics a withered leaf."
+},
+{
+"la": "Pterophorus candidalis",
+"ru": "Пальцекрылка снежная",
+"en": "White plume moth",
+"fam": "Пальцекрылки",
+"lo": 18,
+"hi": 25,
+"rar": 1,
+"beh": "moth",
+"shape": "plume",
+"tail": "none",
+"f": [
+"#f4f0e8",
+"#e0dcd0"
+],
+"h": [
+"#f0ece0",
+"#d8d4c8"
+],
+"opts": {
+"edge": [
+"#a8a090",
+1
+],
+"sheen": [
+"#ffffff",
+0.3
+]
+},
+"hab": "Луга, поляны, берега рек",
+"hab_en": "Meadows, glades, riverbanks",
+"range": "Африка, Азия",
+"range_en": "Africa, Asia",
+"host": "вьюнковые, бобовые",
+"host_en": "morning glories, legumes",
+"fact": "Крылья рассечены на пёрышки, подобно белым пушинкам.",
+"fact_en": "The wings are split into feathers, like white fluff."
+},
+{
+"la": "Azygophleps scalaris",
+"ru": "Древоточец-лестничный",
+"en": "Ladder goat moth",
+"fam": "Древоточцы",
+"lo": 50,
+"hi": 80,
+"rar": 3,
+"beh": "moth",
+"shape": "ghost",
+"tail": "none",
+"f": [
+"#b8a888",
+"#908064"
+],
+"h": [
+"#c8baa0",
+"#a09478"
+],
+"opts": {
+"edge": [
+"#4a3e2c",
+1
+],
+"bars": [
+"#4a3e2c",
+5
+],
+"noise": [
+"#5a4c38",
+0.12
+]
+},
+"hab": "Саванна, акации",
+"hab_en": "Savanna, acacias",
+"range": "Восточная и Южная Африка",
+"range_en": "East and Southern Africa",
+"host": "акации",
+"host_en": "acacias",
+"fact": "Гусеница точит стволы акаций, а бабочка прилетает на свет.",
+"fact_en": "The caterpillar bores acacia trunks and the moth comes to light."
+},
+{
+"la": "Marasmia trapezalis",
+"ru": "Огнёвка-марасмия",
+"en": "Maize leaf roller",
+"fam": "Огнёвки",
+"lo": 15,
+"hi": 22,
+"rar": 1,
+"beh": "moth",
+"shape": "delta",
+"tail": "none",
+"f": [
+"#e0c078",
+"#c0a058"
+],
+"h": [
+"#e8d098",
+"#c8b070"
+],
+"opts": {
+"edge": [
+"#8a6a30",
+1
+],
+"zz": [
+"#8a6a30",
+2,
+"fh"
+]
+},
+"hab": "Злаковая саванна, поля",
+"hab_en": "Grass savanna, fields",
+"range": "Тропики Африки и Азии",
+"range_en": "Tropical Africa and Asia",
+"host": "кукуруза, сорго, злаки",
+"host_en": "maize, sorghum, grasses",
+"fact": "Гусеница сворачивает лист трубочкой и питается внутри.",
+"fact_en": "The caterpillar rolls a leaf into a tube and feeds inside."
+}
+]

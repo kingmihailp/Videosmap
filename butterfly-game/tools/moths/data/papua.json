@@ -1,0 +1,1491 @@
+[
+ {
+  "la": "Coscinocera hercules",
+  "ru": "Геркулес (павлиноглазка)",
+  "en": "Hercules moth",
+  "fam": "Павлиноглазки",
+  "lo": 140,
+  "hi": 270,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "atlas",
+  "tail": "none",
+  "f": [
+   "#a0603a",
+   "#7a3a28"
+  ],
+  "h": [
+   "#b0683e",
+   "#8a4a30"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2418",
+    1
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.45,
+    3,
+    "#f0e4d0"
+   ],
+   "eye": [
+    [
+     "h",
+     0.4,
+     0.5,
+     4,
+     "#3a2018",
+     "#f0e4d0"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.7,
+    0.76,
+    "#3a2018"
+   ],
+   "dots": "#e8d8c0"
+  },
+  "hab": "Горные и равнинные тропические леса",
+  "hab_en": "Mountain and lowland tropical forest",
+  "range": "Новая Гвинея, север Австралии",
+  "range_en": "New Guinea, northern Australia",
+  "host": "полисциас, эводия, дизоксилум",
+  "host_en": "Polyscias, Evodia, Dysoxylum",
+  "fact": "Самка — одна из крупнейших бабочек мира, размах крыльев до 27 см; у самца хвосты задних крыльев длиной до 15 см.",
+  "fact_en": "The female is among the largest moths in the world, up to 27 cm across; the male has hindwing tails up to 15 cm long."
+ },
+ {
+  "la": "Syntherata janetta",
+  "ru": "Синтерата Джанетта",
+  "en": "Janet's emperor moth",
+  "fam": "Павлиноглазки",
+  "lo": 90,
+  "hi": 125,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#c88a48",
+   "#a8602c"
+  ],
+  "h": [
+   "#d89a58",
+   "#b8703a"
+  ],
+  "opts": {
+   "edge": [
+    "#6a3a1c",
+    1
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.4,
+    3,
+    "#f4ecd8"
+   ],
+   "eye": [
+    [
+     "h",
+     0.45,
+     0.45,
+     3,
+     "#4a2a14",
+     "#f4ecd8"
+    ]
+   ],
+   "zz": [
+    "#7a4a24",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Влажные леса и опушки",
+  "hab_en": "Rainforest and forest edges",
+  "range": "Новая Гвинея, Квинсленд",
+  "range_en": "New Guinea, Queensland",
+  "host": "дизоксилум, полисциас, сизигиум",
+  "host_en": "Dysoxylum, Polyscias, Syzygium",
+  "fact": "Прозрачные «окошки» на каждом крыле придают бабочке сходство с засохшим листом.",
+  "fact_en": "Translucent windows on each wing give the moth a dead-leaf look."
+ },
+ {
+  "la": "Neodiphthera sciron",
+  "ru": "Неодифтера склерон",
+  "en": "Papuan emperor moth",
+  "fam": "Павлиноглазки",
+  "lo": 85,
+  "hi": 110,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#b89a68",
+   "#8a6a40"
+  ],
+  "h": [
+   "#c8a874",
+   "#9a7848"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4024",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#3a2a18",
+     "#f0e8d0"
+    ],
+    [
+     "h",
+     0.45,
+     0.5,
+     4,
+     "#2a1a10",
+     "#f0e8d0"
+    ]
+   ],
+   "zz": [
+    "#6a4e2c",
+    2,
+    "fh"
+   ],
+   "dots": "#e8dcc0"
+  },
+  "hab": "Нижнегорные дождевые леса",
+  "hab_en": "Lower montane rainforest",
+  "range": "Новая Гвинея, северо-восток Австралии",
+  "range_en": "New Guinea, northeast Australia",
+  "host": "эводия, шеффлера",
+  "host_en": "Euodia, Schefflera",
+  "fact": "Крупные глазки на задних крыльях пугают птиц, а гусеницы живут группами.",
+  "fact_en": "Big hindwing eyespots startle birds, and the caterpillars live in groups."
+ },
+ {
+  "la": "Opodiphthera astrophela",
+  "ru": "Опоодифтера звёздчатая",
+  "en": "Starry emperor moth",
+  "fam": "Павлиноглазки",
+  "lo": 70,
+  "hi": 95,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#b8885a",
+   "#8a5a38"
+  ],
+  "h": [
+   "#c89868",
+   "#9a6a40"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3a22",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#3a2418",
+     "#f0e4d0"
+    ],
+    [
+     "h",
+     0.45,
+     0.5,
+     3,
+     "#3a2418",
+     "#f0e4d0"
+    ]
+   ],
+   "zz": [
+    "#6a4a2c",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Нижнегорные леса и опушки",
+  "hab_en": "Lower montane forest and edges",
+  "range": "Новая Гвинея, северо-восток Австралии",
+  "range_en": "New Guinea, northeast Australia",
+  "host": "эвкалипты, перечные деревья",
+  "host_en": "eucalypts, pepper trees",
+  "fact": "Глазчатые пятна на крыльях пугают птиц, а самцы находят самок по запаху за километры.",
+  "fact_en": "Eyespots startle birds, and males find females by scent from kilometres away."
+ },
+ {
+  "la": "Angonyx papuana",
+  "ru": "Бражник папуасский",
+  "en": "Papuan hawk-moth",
+  "fam": "Бражники",
+  "lo": 65,
+  "hi": 85,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#6a7a48",
+   "#3a4a2a"
+  ],
+  "h": [
+   "#c88a38",
+   "#8a5a20"
+  ],
+  "opts": {
+   "edge": [
+    "#2a3418",
+    1
+   ],
+   "bars": [
+    "#2a3418",
+    3
+   ],
+   "dots": "#d8d0a0"
+  },
+  "hab": "Горные дождевые леса",
+  "hab_en": "Montane rainforest",
+  "range": "Новая Гвинея",
+  "range_en": "New Guinea",
+  "host": "лианы семейства кутровых",
+  "host_en": "apocynaceous vines",
+  "fact": "Эндемик Новой Гвинеи: на ночных цветках зависает, как колибри, и пьёт нектар длинным хоботком.",
+  "fact_en": "A New Guinea endemic that hovers like a hummingbird at night flowers, sipping with a long proboscis."
+ },
+ {
+  "la": "Daphnis placida",
+  "ru": "Дафнис мирный",
+  "en": "Placid hawk-moth",
+  "fam": "Бражники",
+  "lo": 70,
+  "hi": 90,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a8a58",
+   "#4a5a38"
+  ],
+  "h": [
+   "#e8c8a0",
+   "#c89878"
+  ],
+  "opts": {
+   "edge": [
+    "#3a4228",
+    1
+   ],
+   "bars": [
+    "#3a4a28",
+    2
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#f0ecd0"
+    ]
+   ]
+  },
+  "hab": "Леса, плантации, сады",
+  "hab_en": "Forests, plantations, gardens",
+  "range": "Новая Гвинея, Австралия, острова Меланезии",
+  "range_en": "New Guinea, Australia, Melanesia",
+  "host": "кутровые (Alyxia, Parsonsia)",
+  "host_en": "dogbanes (Alyxia, Parsonsia)",
+  "fact": "Гусеницы кутровых имеют глазчатые пятна и при тревоге раздувают грудь, как змея.",
+  "fact_en": "Dogbane caterpillars show eye-like spots and puff up the thorax like a snake when alarmed."
+ },
+ {
+  "la": "Gnathothlibus erotus",
+  "ru": "Бражник эротус",
+  "en": "Erotus hawk-moth",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 80,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#a89860",
+   "#786838"
+  ],
+  "h": [
+   "#d8a860",
+   "#a87838"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c1c",
+    1
+   ],
+   "bars": [
+    "#5a4a28",
+    2
+   ],
+   "band": [
+    "f",
+    0.55,
+    0.62,
+    "#e8dca8"
+   ]
+  },
+  "hab": "Леса, сады, поселения",
+  "hab_en": "Forests, gardens, villages",
+  "range": "Новая Гвинея, Австралия, Меланезия",
+  "range_en": "New Guinea, Australia, Melanesia",
+  "host": "аликсия, циссус, ипомея",
+  "host_en": "Alyxia, Cissus, Ipomoea",
+  "fact": "Сумеречный любитель цветков имбирных и вьюнковых; тянется к садовым лампам.",
+  "fact_en": "A dusk visitor of ginger and morning-glory flowers, drawn to garden lamps."
+ },
+ {
+  "la": "Cizara ardeniae",
+  "ru": "Бражник цизара",
+  "en": "Ardenia hawk-moth",
+  "fam": "Бражники",
+  "lo": 65,
+  "hi": 85,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#a09870",
+   "#605840"
+  ],
+  "h": [
+   "#d8c8a0",
+   "#a89870"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3420",
+    1
+   ],
+   "bars": [
+    "#4a4228",
+    3
+   ],
+   "wedges": [
+    "#3a3420",
+    2
+   ],
+   "dots": "#e0d8b8"
+  },
+  "hab": "Лесная подстилка и опушки",
+  "hab_en": "Forest floor and edges",
+  "range": "Новая Гвинея, Квинсленд",
+  "range_en": "New Guinea, Queensland",
+  "host": "Psychotria, Timonius (мареновые)",
+  "host_en": "Psychotria, Timonius (madder family)",
+  "fact": "Серо-бурые крылья неотличимы от опавших веток; ночью бабочка охотно кормится у цветков.",
+  "fact_en": "Grey-brown wings blend with fallen twigs; at night the moth feeds eagerly at flowers."
+ },
+ {
+  "la": "Psilogramma menephron",
+  "ru": "Бражник менефрон",
+  "en": "Privet hawk-moth (Asian)",
+  "fam": "Бражники",
+  "lo": 100,
+  "hi": 140,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#8a8680",
+   "#5a5652"
+  ],
+  "h": [
+   "#9a8a7a",
+   "#6a5a50"
+  ],
+  "opts": {
+   "edge": [
+    "#2e2a28",
+    1
+   ],
+   "noise": [
+    "#3a3634",
+    0.14
+   ],
+   "zz": [
+    "#3a3634",
+    3,
+    "f"
+   ],
+   "wedges": [
+    "#222",
+    2
+   ]
+  },
+  "hab": "Сады, окраины лесов, плантации",
+  "hab_en": "Gardens, forest margins, plantations",
+  "range": "Азия, Новая Гвинея, Австралия",
+  "range_en": "Asia, New Guinea, Australia",
+  "host": "жасмин, лигуструм, тик",
+  "host_en": "jasmine, privet, teak",
+  "fact": "Одна из самых крупных бражниц региона, с визгом выпускает воздух из хоботка.",
+  "fact_en": "One of the biggest hawk-moths of the region; it squeaks when disturbed."
+ },
+ {
+  "la": "Ophyx crinipes",
+  "ru": "Серпокрылая совка крипес",
+  "en": "Hook-tip owlet",
+  "fam": "Эребиды",
+  "lo": 35,
+  "hi": 48,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#a08060",
+   "#6a4a30"
+  ],
+  "h": [
+   "#8a7058",
+   "#6a5040"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a1c",
+    1
+   ],
+   "zz": [
+    "#4a3624",
+    2,
+    "fh"
+   ],
+   "tip": [
+    "#4a3624",
+    0.82
+   ]
+  },
+  "hab": "Дождевые леса, опушки",
+  "hab_en": "Rainforest and edges",
+  "range": "Новая Гвинея, Австралия",
+  "range_en": "New Guinea, Australia",
+  "host": "лианы и древесные растения",
+  "host_en": "vines and woody plants",
+  "fact": "Крючковатые концы передних крыльев делают её похожей на сухой лист.",
+  "fact_en": "The hooked forewing tips make it look like a dry leaf."
+ },
+ {
+  "la": "Lyssa menoetius",
+  "ru": "Лисса менетий",
+  "en": "New Guinea swallowtail moth",
+  "fam": "Урании",
+  "lo": 100,
+  "hi": 140,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "urania",
+  "tail": "long",
+  "f": [
+   "#2a2420",
+   "#15100e"
+  ],
+  "h": [
+   "#2a2420",
+   "#15100e"
+  ],
+  "opts": {
+   "edge": [
+    "#0c0808",
+    1
+   ],
+   "band": [
+    "fh",
+    0.35,
+    0.5,
+    "#f4f0e0"
+   ],
+   "sheen": [
+    "#e8d8a0",
+    0.2
+   ],
+   "dots": "#e0d8c0"
+  },
+  "hab": "Нижнегорные дождевые леса",
+  "hab_en": "Lower montane rainforest",
+  "range": "Новая Гвинея и соседние острова",
+  "range_en": "New Guinea and neighbouring islands",
+  "host": "Endospermum (молочайные)",
+  "host_en": "Endospermum (spurge family)",
+  "fact": "Ночная уранида с длинными хвостами; выглядит как тёмный «ласточкохвост» с белой перевязью.",
+  "fact_en": "A night-flying uraniid with long tails, like a dark swallowtail with a pale band."
+ },
+ {
+  "la": "Nyctalemon patroclus",
+  "ru": "Никталемон патрокл",
+  "en": "Patroclus swallowtail moth",
+  "fam": "Урании",
+  "lo": 95,
+  "hi": 125,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "urania",
+  "tail": "two",
+  "f": [
+   "#3a3430",
+   "#241e1a"
+  ],
+  "h": [
+   "#3a3430",
+   "#241e1a"
+  ],
+  "opts": {
+   "edge": [
+    "#14100e",
+    1
+   ],
+   "zz": [
+    "#e8e0c8",
+    4,
+    "fh"
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.62,
+    "#d8d0b8"
+   ]
+  },
+  "hab": "Влажные леса на равнине и в предгорьях",
+  "hab_en": "Lowland and foothill rainforest",
+  "range": "Индо-Малайский регион, Новая Гвинея",
+  "range_en": "Indo-Malay region, New Guinea",
+  "host": "эндоспермум, омфалея",
+  "host_en": "Endospermum, Omphalea",
+  "fact": "Тонкие белые штрихи на тёмных крыльях делают её похожей на ночной вариант парусника.",
+  "fact_en": "Fine white lines on dark wings make it a night-time version of a swallowtail."
+ },
+ {
+  "la": "Thalassodes quadraria",
+  "ru": "Изумрудная пяденица квадрария",
+  "en": "Emerald geometer",
+  "fam": "Пяденицы",
+  "lo": 25,
+  "hi": 35,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#78c8a0",
+   "#58a888"
+  ],
+  "h": [
+   "#80ccb0",
+   "#60b090"
+  ],
+  "opts": {
+   "edge": [
+    "#e8e0c0",
+    1
+   ],
+   "zz": [
+    "#e8f0e0",
+    2,
+    "fh"
+   ],
+   "dots": "#f0f0e0"
+  },
+  "hab": "Лесные опушки и сады",
+  "hab_en": "Forest edges and gardens",
+  "range": "Азия, Новая Гвинея, Австралия",
+  "range_en": "Asia, New Guinea, Australia",
+  "host": "мирт, акации",
+  "host_en": "myrtle family, acacias",
+  "fact": "Бирюзово-зелёные крылья прекрасно скрывают бабочку среди свежей листвы.",
+  "fact_en": "Pale blue-green wings hide the moth among fresh foliage."
+ },
+ {
+  "la": "Cleora injectaria",
+  "ru": "Пяденица инъектария",
+  "en": "Injected looper",
+  "fam": "Пяденицы",
+  "lo": 30,
+  "hi": 42,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8a090",
+   "#6a6458"
+  ],
+  "h": [
+   "#b0a898",
+   "#7a7468"
+  ],
+  "opts": {
+   "edge": [
+    "#3a362e",
+    1
+   ],
+   "zz": [
+    "#3a362e",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#4a463c",
+    0.14
+   ]
+  },
+  "hab": "Леса, плантации, сады",
+  "hab_en": "Forests, plantations, gardens",
+  "range": "Новая Гвинея, Австралия, Океания",
+  "range_en": "New Guinea, Australia, Oceania",
+  "host": "акации, манго, какао",
+  "host_en": "acacias, mango, cocoa",
+  "fact": "Серая «кора» на крыльях делает её невидимой на стволе.",
+  "fact_en": "Grey bark-like wings make it invisible on a tree trunk."
+ },
+ {
+  "la": "Dysphania numana",
+  "ru": "Дисфания нумана",
+  "en": "Numana geometer",
+  "fam": "Пяденицы",
+  "lo": 50,
+  "hi": 70,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#2a3a58",
+   "#1a2438"
+  ],
+  "h": [
+   "#e89828",
+   "#c86a14"
+  ],
+  "opts": {
+   "edge": [
+    "#14181e",
+    1
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.5,
+    "#f4f0e0"
+   ],
+   "sp": [
+    [
+     "h",
+     0.55,
+     0.4,
+     2,
+     "#201a14"
+    ],
+    [
+     "h",
+     0.7,
+     0.55,
+     2,
+     "#201a14"
+    ]
+   ],
+   "sheen": [
+    "#58a8c8",
+    0.3
+   ]
+  },
+  "hab": "Опушки, ночью у ламп",
+  "hab_en": "Forest edges, at lights by night",
+  "range": "Новая Гвинея, Австралия, Юго-Восточная Азия",
+  "range_en": "New Guinea, Australia, Southeast Asia",
+  "host": "каралия, соннерация",
+  "host_en": "Carallia, Sonneratia",
+  "fact": "Яркая окраска предупреждает хищников, что бабочка несъедобна.",
+  "fact_en": "The bright colouring warns predators that the moth is toxic."
+ },
+ {
+  "la": "Sphingomorpha chlorea",
+  "ru": "Совка хлореа",
+  "en": "Sundowner moth",
+  "fam": "Эребиды",
+  "lo": 65,
+  "hi": 80,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#9a9068",
+   "#6a6040"
+  ],
+  "h": [
+   "#d8a838",
+   "#b88620"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3420",
+    1
+   ],
+   "band": [
+    "h",
+    0.55,
+    0.7,
+    "#2a2014"
+   ],
+   "zz": [
+    "#4a4228",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#5a5030",
+    0.1
+   ]
+  },
+  "hab": "Леса, кустарники",
+  "hab_en": "Forest and scrub",
+  "range": "Новая Гвинея, Австралия, Африка",
+  "range_en": "New Guinea, Australia, Africa",
+  "host": "акации, бобовые",
+  "host_en": "acacias, legumes",
+  "fact": "Бурые передние крылья скрывают жёлтые задние, которые вспыхивают при тревоге.",
+  "fact_en": "Brown forewings hide yellow hindwings that flash when alarmed."
+ },
+ {
+  "la": "Serrodes partita",
+  "ru": "Серродес разделённый",
+  "en": "Partitioned owlet",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a5a40",
+   "#5a3624"
+  ],
+  "h": [
+   "#c8903c",
+   "#a0682a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2214",
+    1
+   ],
+   "zz": [
+    "#3a2214",
+    3,
+    "f"
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.65,
+    "#3a2214"
+   ],
+   "noise": [
+    "#4a2c1c",
+    0.1
+   ]
+  },
+  "hab": "Леса, кустарники, плантации",
+  "hab_en": "Forests, scrub, plantations",
+  "range": "Африка, Азия, Новая Гвинея, Австралия",
+  "range_en": "Africa, Asia, New Guinea, Australia",
+  "host": "бобовые, Ricinus",
+  "host_en": "legumes, Ricinus",
+  "fact": "Бурые передние крылья скрывают яркие задние — вспышка сбивает птицу с толку.",
+  "fact_en": "Brown forewings hide the bright hindwings; the flash confuses a bird."
+ },
+ {
+  "la": "Digama marmorea",
+  "ru": "Совка мраморная дигама",
+  "en": "Marbled digama",
+  "fam": "Эребиды",
+  "lo": 45,
+  "hi": 60,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#7a6a50"
+  ],
+  "h": [
+   "#a89878",
+   "#7a6a4c"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3020",
+    1
+   ],
+   "zz": [
+    "#4a3c28",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#5a4a30",
+    0.12
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.45,
+     2,
+     "#2a2018",
+     "#e8dcc0"
+    ]
+   ]
+  },
+  "hab": "Леса и опушки",
+  "hab_en": "Forests and edges",
+  "range": "Новая Гвинея, Австралия",
+  "range_en": "New Guinea, Australia",
+  "host": "лесные растения",
+  "host_en": "forest plants",
+  "fact": "Мраморный рисунок на крыльях скрывает бабочку на мху и коре.",
+  "fact_en": "Marbled wings hide the moth on moss and bark."
+ },
+ {
+  "la": "Cosmodes elegans",
+  "ru": "Совка изящная зелёная",
+  "en": "Green blotched moth",
+  "fam": "Совки",
+  "lo": 30,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#78a848",
+   "#4a7a2c"
+  ],
+  "h": [
+   "#a8a068",
+   "#787040"
+  ],
+  "opts": {
+   "edge": [
+    "#2a4818",
+    1
+   ],
+   "zz": [
+    "#e0e8c0",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.5,
+    3,
+    "#e8f0c0"
+   ],
+   "dots": "#e0e8c8"
+  },
+  "hab": "Леса и сады",
+  "hab_en": "Forests and gardens",
+  "range": "Новая Гвинея, Австралия, Океания",
+  "range_en": "New Guinea, Australia, Oceania",
+  "host": "цитрусовые, бобовые",
+  "host_en": "citrus, legumes",
+  "fact": "Зелёные передние крылья похожи на покрытый лишайником лист.",
+  "fact_en": "The green forewings look like a lichen-covered leaf."
+ },
+ {
+  "la": "Achaea janata",
+  "ru": "Совка джаната",
+  "en": "Castor semi-looper",
+  "fam": "Эребиды",
+  "lo": 50,
+  "hi": 65,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8a7a68",
+   "#5a4c3c"
+  ],
+  "h": [
+   "#4a3a30",
+   "#2a1e18"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2018",
+    1
+   ],
+   "zz": [
+    "#3a3028",
+    3,
+    "f"
+   ],
+   "band": [
+    "h",
+    0.6,
+    0.7,
+    "#e8e0d0"
+   ],
+   "noise": [
+    "#3a3028",
+    0.1
+   ]
+  },
+  "hab": "Плантации, леса, сады",
+  "hab_en": "Plantations, forests, gardens",
+  "range": "Азия, Австралазия",
+  "range_en": "Asia, Australasia",
+  "host": "клещевина, цитрусовые, манго",
+  "host_en": "castor, citrus, mango",
+  "fact": "Гусеницы вредят клещевине и другим культурам; у бабочки белое пятно на тёмных задних крыльях.",
+  "fact_en": "Caterpillars are crop pests; the moth has a white mark on dark hindwings."
+ },
+ {
+  "la": "Nyctemera baulus",
+  "ru": "Медведица баулус",
+  "en": "Baulus tiger moth",
+  "fam": "Медведицы",
+  "lo": 35,
+  "hi": 45,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#2a2a30",
+   "#18181c"
+  ],
+  "h": [
+   "#f4f0e8",
+   "#d8d4c8"
+  ],
+  "opts": {
+   "edge": [
+    "#101014",
+    1
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.55,
+    "#f4f0e0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.7,
+     0.4,
+     2,
+     "#f4f0e0"
+    ]
+   ]
+  },
+  "hab": "Леса, поляны, сады",
+  "hab_en": "Forests, clearings, gardens",
+  "range": "Новая Гвинея, Австралия",
+  "range_en": "New Guinea, Australia",
+  "host": "крестовник и другие сложноцветные",
+  "host_en": "ragwort and other daisies",
+  "fact": "Яркий контраст чёрного и белого предупреждает, что бабочка ядовита.",
+  "fact_en": "Black and white contrast warns that the moth is toxic."
+ },
+ {
+  "la": "Asota egens",
+  "ru": "Медведица астота",
+  "en": "Orange tiger-moth",
+  "fam": "Медведицы",
+  "lo": 55,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#8a6a4a",
+   "#6a4a30"
+  ],
+  "h": [
+   "#f0a038",
+   "#d86a20"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2418",
+    1
+   ],
+   "band": [
+    "f",
+    0.5,
+    0.6,
+    "#f4e8d0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.4,
+     2,
+     "#f4e8d0"
+    ],
+    [
+     "h",
+     0.6,
+     0.45,
+     2,
+     "#2a2018"
+    ]
+   ]
+  },
+  "hab": "Леса, опушки, плантации",
+  "hab_en": "Forests, edges, plantations",
+  "range": "Новая Гвинея, Австралия, Юго-Восточная Азия",
+  "range_en": "New Guinea, Australia, Southeast Asia",
+  "host": "фикусы",
+  "host_en": "figs",
+  "fact": "Бабочки собираются на гнилых плодах и ярко-оранжевые задние крылья видны при взлёте.",
+  "fact_en": "Moths gather on fermenting fruit and flash bright orange hindwings on take-off."
+ },
+ {
+  "la": "Aganais speciosa",
+  "ru": "Медведица специя",
+  "en": "Speciose tiger-moth",
+  "fam": "Медведицы",
+  "lo": 55,
+  "hi": 70,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#6a4a38",
+   "#4a3024"
+  ],
+  "h": [
+   "#e8982c",
+   "#c87818"
+  ],
+  "opts": {
+   "edge": [
+    "#2a1a10",
+    1
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.5,
+    "#f4ecd8"
+   ],
+   "sp": [
+    [
+     "h",
+     0.6,
+     0.45,
+     2,
+     "#2a1a10"
+    ]
+   ]
+  },
+  "hab": "Леса и опушки",
+  "hab_en": "Forests and edges",
+  "range": "Новая Гвинея, Австралия, Малайский архипелаг",
+  "range_en": "New Guinea, Australia, Malay Archipelago",
+  "host": "древесные лианы",
+  "host_en": "woody vines",
+  "fact": "Оранжевые задние крылья вспыхивают, когда бабочку тревожат.",
+  "fact_en": "Orange hindwings flash when the moth is disturbed."
+ },
+ {
+  "la": "Destolmia lineata",
+  "ru": "Хохлатка линейная",
+  "en": "Lined notodontid",
+  "fam": "Хохлатки",
+  "lo": 35,
+  "hi": 48,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a89878",
+   "#786a50"
+  ],
+  "h": [
+   "#c8b898",
+   "#9a8a68"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3220",
+    1
+   ],
+   "bars": [
+    "#4a4030",
+    3
+   ],
+   "wedges": [
+    "#3a3020",
+    2
+   ],
+   "noise": [
+    "#5a4c34",
+    0.1
+   ]
+  },
+  "hab": "Подлесок дождевых лесов",
+  "hab_en": "Rainforest understory",
+  "range": "Новая Гвинея, Австралия",
+  "range_en": "New Guinea, Australia",
+  "host": "древесные растения",
+  "host_en": "woody plants",
+  "fact": "Сидит на коре, вытянув тело, и становится неотличима от обломанной веточки.",
+  "fact_en": "It rests stretched out on bark and looks just like a broken twig."
+ },
+ {
+  "la": "Orgyia postica",
+  "ru": "Коконопряд восточный",
+  "en": "Cocoa tussock moth",
+  "fam": "Волнянки",
+  "lo": 25,
+  "hi": 38,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a08060",
+   "#785838"
+  ],
+  "h": [
+   "#a88868",
+   "#8a6840"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3420",
+    1
+   ],
+   "zz": [
+    "#5a3c24",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.6,
+     0.5,
+     1,
+     "#f0e8d0"
+    ]
+   ]
+  },
+  "hab": "Леса, плантации, сады",
+  "hab_en": "Forests, plantations, gardens",
+  "range": "Тропики Старого Света, Новая Гвинея",
+  "range_en": "Old World tropics, New Guinea",
+  "host": "какао, кофе, цитрусовые",
+  "host_en": "cocoa, coffee, citrus",
+  "fact": "Самки почти бескрылые и откладывают яйца прямо на свой кокон.",
+  "fact_en": "Females are almost wingless and lay eggs on their own cocoon."
+ },
+ {
+  "la": "Lymantria ampla",
+  "ru": "Непарник ампла",
+  "en": "Large tussock moth",
+  "fam": "Волнянки",
+  "lo": 45,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#e8e0d0",
+   "#b8a890"
+  ],
+  "h": [
+   "#d8c8b0",
+   "#a89878"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a38",
+    1
+   ],
+   "zz": [
+    "#4a3c2c",
+    4,
+    "f"
+   ],
+   "noise": [
+    "#6a5a44",
+    0.08
+   ]
+  },
+  "hab": "Горные леса",
+  "hab_en": "Montane forest",
+  "range": "Новая Гвинея, Молуккские острова",
+  "range_en": "New Guinea, Moluccas",
+  "host": "лесные деревья",
+  "host_en": "forest trees",
+  "fact": "Мохнатая гусеница с пучками щетинок покрыта жгучими волосками.",
+  "fact_en": "The hairy caterpillar with bristle tufts has irritating hairs."
+ },
+ {
+  "la": "Exelastis atomosa",
+  "ru": "Пальцекрылка атомоза",
+  "en": "Atomosa plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 15,
+  "hi": 22,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#d8c8a0",
+   "#b8a078"
+  ],
+  "h": [
+   "#d0c098",
+   "#b0987a"
+  ],
+  "opts": {
+   "edge": [
+    "#7a6a4c",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#5a4a30"
+    ]
+   ]
+  },
+  "hab": "Опушки, огороды, дороги",
+  "hab_en": "Forest edges, gardens, roadsides",
+  "range": "Тропики Старого Света",
+  "range_en": "Old World tropics",
+  "host": "бобовые, голубиный горох",
+  "host_en": "legumes, pigeon pea",
+  "fact": "Крылья расщеплены на перья; на свету бабочка складывает их в «Т».",
+  "fact_en": "Wings are split into feathers; at rest the moth holds them in a T shape."
+ },
+ {
+  "la": "Aenetus ligniveren",
+  "ru": "Тонкопряд-древогрыз",
+  "en": "Wood-boring ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 70,
+  "hi": 110,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#8a9a78",
+   "#5a6a48"
+  ],
+  "h": [
+   "#9aa888",
+   "#6a7858"
+  ],
+  "opts": {
+   "edge": [
+    "#3a4228",
+    1
+   ],
+   "zz": [
+    "#3a4228",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a5438",
+    0.12
+   ]
+  },
+  "hab": "Леса, нижний ярус",
+  "hab_en": "Forest understory",
+  "range": "Новая Гвинея, Австралия",
+  "range_en": "New Guinea, Australia",
+  "host": "стволы деревьев",
+  "host_en": "tree trunks",
+  "fact": "Гусеница прогрызает ход в стволе и выходит ночью поедать кору у входа.",
+  "fact_en": "The caterpillar bores into trunks and comes out at night to graze bark at the tunnel mouth."
+ },
+ {
+  "la": "Endoxyla cinereus",
+  "ru": "Древоточец серый",
+  "en": "Grey wood-moth",
+  "fam": "Древоточцы",
+  "lo": 100,
+  "hi": 140,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#a8a098",
+   "#78706a"
+  ],
+  "h": [
+   "#b0a8a0",
+   "#807870"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3430",
+    1
+   ],
+   "noise": [
+    "#4a423c",
+    0.14
+   ],
+   "zz": [
+    "#4a423c",
+    3,
+    "fh"
+   ]
+  },
+  "hab": "Дождевые леса",
+  "hab_en": "Rainforest",
+  "range": "Новая Гвинея, северная Австралия",
+  "range_en": "New Guinea, northern Australia",
+  "host": "древесина лесных деревьев",
+  "host_en": "timber of forest trees",
+  "fact": "Крупная гусеница живёт в стволе годами и считается лакомством у местных жителей.",
+  "fact_en": "The large caterpillar lives in trunks for years and is a local delicacy."
+ },
+ {
+  "la": "Cirrhochrista brizoalis",
+  "ru": "Огнёвка бризоалис",
+  "en": "White-lined pyralid",
+  "fam": "Огнёвки",
+  "lo": 22,
+  "hi": 30,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f0ece4",
+   "#d8d0c0"
+  ],
+  "h": [
+   "#f0ece4",
+   "#dcd4c4"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7a54",
+    1
+   ],
+   "zz": [
+    "#c8b078",
+    2,
+    "fh"
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.4,
+     1,
+     "#c8a850"
+    ]
+   ]
+  },
+  "hab": "Подлесок и сады",
+  "hab_en": "Understory and gardens",
+  "range": "Новая Гвинея, Австралия, Океания",
+  "range_en": "New Guinea, Australia, Oceania",
+  "host": "фикусы, лианы",
+  "host_en": "figs, vines",
+  "fact": "Белая огнёвка с золотистыми поперечными линиями, залетающая в дома на свет.",
+  "fact_en": "A white pyralid with golden cross-lines that comes into houses to lights."
+ },
+ {
+  "la": "Agathodes ostentalis",
+  "ru": "Огнёвка остенталис",
+  "en": "Coral-bush borer moth",
+  "fam": "Огнёвки",
+  "lo": 25,
+  "hi": 35,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#c8883c",
+   "#a86020"
+  ],
+  "h": [
+   "#d89848",
+   "#b87028"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2c10",
+    1
+   ],
+   "band": [
+    "fh",
+    0.45,
+    0.55,
+    "#f4e4a8"
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.4,
+     1,
+     "#4a2c10"
+    ]
+   ]
+  },
+  "hab": "Подлесок дождевых лесов",
+  "hab_en": "Rainforest understory",
+  "range": "Индо-Малайский регион, Новая Гвинея, Австралия",
+  "range_en": "Indo-Malay region, New Guinea, Australia",
+  "host": "эритрина (коралловое дерево)",
+  "host_en": "Erythrina (coral tree)",
+  "fact": "Гусеницы питаются в побегах эритрины и живут внутри стебля.",
+  "fact_en": "Caterpillars feed inside Erythrina shoots, living within the stem."
+ }
+]

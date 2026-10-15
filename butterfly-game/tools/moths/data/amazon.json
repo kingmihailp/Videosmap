@@ -1,0 +1,1455 @@
+[
+ {
+  "la": "Cocytius antaeus",
+  "ru": "Гигантский бражник-антей",
+  "en": "Giant sphinx",
+  "fam": "Бражники",
+  "lo": 110,
+  "hi": 150,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#6a6258",
+   "#4a443e"
+  ],
+  "h": [
+   "#b89a5a",
+   "#8a7040"
+  ],
+  "opts": {
+   "zz": [
+    "#3a342e",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#3a342e",
+    0.1
+   ],
+   "edge": [
+    "#3a342e",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "анноновые (гуанабана)",
+  "host_en": "custard apples (Annonaceae)",
+  "fact": "Хоботок бражника достигает 15 см и дотягивается до дна самых глубоких цветков.",
+  "fact_en": "Its proboscis reaches up to 15 cm and probes the deepest flowers."
+ },
+ {
+  "la": "Pseudosphinx tetrio",
+  "ru": "Бражник тетрио",
+  "en": "Tetrio sphinx",
+  "fam": "Бражники",
+  "lo": 100,
+  "hi": 130,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#6a6866",
+   "#4a4846"
+  ],
+  "h": [
+   "#3a3836",
+   "#2a2828"
+  ],
+  "opts": {
+   "band": [
+    "h",
+    0.3,
+    0.5,
+    "#e8e4d8"
+   ],
+   "zz": [
+    "#e8e4d8",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#2a2828",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "плюмерия, олеандр",
+  "host_en": "frangipani (Plumeria)",
+  "fact": "Гусеница чёрная с жёлтыми и красными полосами и ярко заметна, а ядовитый млечный сок защищает её.",
+  "fact_en": "The black caterpillar with yellow and red bands is conspicuous, protected by toxic latex."
+ },
+ {
+  "la": "Xylophanes chiron",
+  "ru": "Бражник-хирон",
+  "en": "Nechus sphinx",
+  "fam": "Бражники",
+  "lo": 80,
+  "hi": 100,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a7a4a",
+   "#a8a060"
+  ],
+  "h": [
+   "#b08a58",
+   "#d8a870"
+  ],
+  "opts": {
+   "bars": [
+    "#5a5a30",
+    3
+   ],
+   "edge": [
+    "#5a5a30",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "мареноевые, Psychotria",
+  "host_en": "madder family, Psychotria",
+  "fact": "Один из самых обычных амазонских бражников, прилетающий ко всякому свету.",
+  "fact_en": "One of the commonest Amazonian hawk-moths, coming to any light."
+ },
+ {
+  "la": "Callionima parce",
+  "ru": "Бражник парка",
+  "en": "Parce sphinx",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 75,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#8a6a48",
+   "#b89868"
+  ],
+  "h": [
+   "#e0a048",
+   "#c07a30"
+  ],
+  "opts": {
+   "bars": [
+    "#5a4028",
+    2
+   ],
+   "tip": [
+    "#6a4a30",
+    0.8
+   ],
+   "edge": [
+    "#5a4028",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "маслинные, жасминовые",
+  "host_en": "olive family",
+  "fact": "Задние крылья оранжевые, но в покое скрыты под серо-бурыми передними.",
+  "fact_en": "Orange hindwings are hidden under grey-brown forewings at rest."
+ },
+ {
+  "la": "Protambulyx strigilis",
+  "ru": "Бражник-стригилис",
+  "en": "Streaked sphinx",
+  "fam": "Бражники",
+  "lo": 70,
+  "hi": 95,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#8a8a5a",
+   "#6a6a40"
+  ],
+  "h": [
+   "#d89a68",
+   "#b87a48"
+  ],
+  "opts": {
+   "zz": [
+    "#4a4a28",
+    3,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.55,
+    0.4,
+    3,
+    "#c8c890"
+   ],
+   "edge": [
+    "#4a4a28",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "анакардиевые (Spondias)",
+  "host_en": "cashew family (Spondias)",
+  "fact": "Крылья с зубчатым краем и узором из волнистых линий делают его похожим на сухой лист.",
+  "fact_en": "Scalloped wings with wavy lines make it look like a dead leaf."
+ },
+ {
+  "la": "Pachylia ficus",
+  "ru": "Фиговый бражник",
+  "en": "Fig sphinx",
+  "fam": "Бражники",
+  "lo": 95,
+  "hi": 120,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#7a6a58",
+   "#5a4a3a"
+  ],
+  "h": [
+   "#c8884a",
+   "#a06a38"
+  ],
+  "opts": {
+   "noise": [
+    "#3a2a20",
+    0.12
+   ],
+   "zz": [
+    "#3a2a20",
+    3,
+    "f"
+   ],
+   "edge": [
+    "#3a2a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "инжир, ficus",
+  "host_en": "figs (Ficus)",
+  "fact": "Гусеница питается фикусами и при тревоге надувает передний отдел тела, пугая птиц.",
+  "fact_en": "The caterpillar feeds on figs and puffs up its front end to scare birds."
+ },
+ {
+  "la": "Hemeroplanes triptolemus",
+  "ru": "Змеиный бражник",
+  "en": "Snake caterpillar hawk-moth",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 75,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#9a8a68",
+   "#6a5a40"
+  ],
+  "h": [
+   "#c89868",
+   "#8a6a40"
+  ],
+  "opts": {
+   "zz": [
+    "#4a3a28",
+    2,
+    "f"
+   ],
+   "tip": [
+    "#4a3a28",
+    0.8
+   ],
+   "edge": [
+    "#4a3a28",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, Dalechampia",
+  "host_en": "legumes",
+  "fact": "Гусеница показывает «глаза» и надутую голову и неотличима от маленькой ямкоголовой змеи.",
+  "fact_en": "The caterpillar shows eyes and a swollen head, mimicking a small pit viper."
+ },
+ {
+  "la": "Arsenura armida",
+  "ru": "Арсенура армида",
+  "en": "Armida silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 130,
+  "hi": 190,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#8a6a48",
+   "#6a4a30"
+  ],
+  "h": [
+   "#8a6a48",
+   "#a07a58"
+  ],
+  "opts": {
+   "eye": [
+    [
+     "f",
+     0.65,
+     0.45,
+     2,
+     "#2a1a10",
+     "#f0e0b0"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.65,
+    "#d8c8a0"
+   ],
+   "zz": [
+    "#4a3020",
+    2,
+    "fh"
+   ],
+   "edge": [
+    "#4a3020",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "пальмы, анноновые",
+  "host_en": "palms, Annonaceae",
+  "fact": "Одна из самых крупных павлиноглазок мира, часто залетает на свет ночью.",
+  "fact_en": "One of the largest saturniids in the world, regularly arriving at lights."
+ },
+ {
+  "la": "Rothschildia aurota",
+  "ru": "Ротшильдия золотистая",
+  "en": "Aurota silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 140,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#a8704a",
+   "#8a4a30"
+  ],
+  "h": [
+   "#a8704a",
+   "#8a4a30"
+  ],
+  "opts": {
+   "patch": [
+    "f",
+    0.5,
+    0.5,
+    5,
+    "#f4ecd8"
+   ],
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.5,
+     4,
+     "#f4ecd8",
+     "#c8a078"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.75,
+    0.82,
+    "#e8dcc0"
+   ],
+   "edge": [
+    "#4a2a1c",
+    1
+   ],
+   "dots": "#f0e8d0"
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "кофе, ятрофа, бобовые",
+  "host_en": "coffee, legumes",
+  "fact": "Прозрачные «окошки» на крыльях, похожие на слюду, видны с обеих сторон.",
+  "fact_en": "Translucent mica-like windows on the wings show on both sides."
+ },
+ {
+  "la": "Automeris liberia",
+  "ru": "Автомерис либерия",
+  "en": "Liberia bullseye moth",
+  "fam": "Павлиноглазки",
+  "lo": 55,
+  "hi": 75,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#b89a58",
+   "#8a7038"
+  ],
+  "h": [
+   "#e8b838",
+   "#c8881c"
+  ],
+  "opts": {
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.5,
+     5,
+     "#2a2a30",
+     "#f0f0f0"
+    ]
+   ],
+   "zz": [
+    "#6a4a20",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#6a4a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, мальпигиевые",
+  "host_en": "legumes, Malpighiaceae",
+  "fact": "Раскрыв крылья, показывает глазки; щетинки гусеницы сильно жалят.",
+  "fact_en": "Flashes eyespots when startled; the caterpillar bristles sting badly."
+ },
+ {
+  "la": "Citheronia laocoon",
+  "ru": "Цитерония лаокоон",
+  "en": "Laocoon royal moth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 130,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#7a8a58",
+   "#5a6a3a"
+  ],
+  "h": [
+   "#c8742c",
+   "#a85420"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.3,
+     2,
+     "#f0e8c0"
+    ],
+    [
+     "f",
+     0.6,
+     0.5,
+     2,
+     "#f0e8c0"
+    ]
+   ],
+   "band": [
+    "h",
+    0.4,
+    0.5,
+    "#e8c888"
+   ],
+   "edge": [
+    "#4a3a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, анакардиевые",
+  "host_en": "legumes, cashew family",
+  "fact": "Гусеница-«рогач» с длинными шипами на голове превращается в массивного ночного мотылька.",
+  "fact_en": "The horned caterpillar with long spines becomes a bulky night moth."
+ },
+ {
+  "la": "Syssphinx molina",
+  "ru": "Сисфинкс молина",
+  "en": "Molina sphinx-silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 65,
+  "hi": 90,
+  "rar": 1,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#a88a68",
+   "#8a6a48"
+  ],
+  "h": [
+   "#c89a58",
+   "#a07038"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.45,
+     2,
+     "#f4f0e0"
+    ]
+   ],
+   "zz": [
+    "#6a4a30",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#6a4a30",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые (Inga и др.)",
+  "host_en": "legumes (Inga)",
+  "fact": "Взрослые бабочки не питаются: у них нет рабочего хоботка, и живут они всего несколько дней.",
+  "fact_en": "Adults do not feed; they lack a working proboscis and live only days."
+ },
+ {
+  "la": "Copiopteryx semiramis",
+  "ru": "Лунный комета-мотылёк",
+  "en": "Peruvian long-tailed silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 120,
+  "hi": 190,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "comet",
+  "tail": "long",
+  "f": [
+   "#d8b868",
+   "#b8985a"
+  ],
+  "h": [
+   "#e0c070",
+   "#c8a050"
+  ],
+  "opts": {
+   "eye": [
+    [
+     "h",
+     0.35,
+     0.45,
+     3,
+     "#7a4a28",
+     "#f8f0d8"
+    ]
+   ],
+   "edge": [
+    "#7a5a30",
+    1
+   ],
+   "zz": [
+    "#8a6a38",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "неизвестны (лесные деревья)",
+  "host_en": "forest trees, little known",
+  "fact": "Задние крылья заканчиваются хвостами, вдвое длиннее тела; самцы часто залетают на свет.",
+  "fact_en": "Hindwing tails are far longer than the body; males come to light."
+ },
+ {
+  "la": "Sematura lunus",
+  "ru": "Сематура лунная",
+  "en": "Lunus swallowtail moth",
+  "fam": "Сематуриды",
+  "lo": 70,
+  "hi": 100,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "urania",
+  "tail": "two",
+  "f": [
+   "#6a5848",
+   "#4a3a2c"
+  ],
+  "h": [
+   "#585048",
+   "#3a3430"
+  ],
+  "opts": {
+   "band": [
+    "fh",
+    0.35,
+    0.5,
+    "#e0d4b0"
+   ],
+   "sheen": [
+    "#7a8ac8",
+    0.4
+   ],
+   "edge": [
+    "#2a2420",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "лианы (вероятно)",
+  "host_en": "lianas (probably)",
+  "fact": "Ночной родственник урании, похожий на ласточкохвоста, залетает на свет в лесу.",
+  "fact_en": "A night-flying relative of the uraniids that resembles a swallowtail."
+ },
+ {
+  "la": "Thysania agrippina",
+  "ru": "Белая ведьма",
+  "en": "White witch",
+  "fam": "Эребиды",
+  "lo": 250,
+  "hi": 300,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#e8e4d8",
+   "#c8c4b8"
+  ],
+  "h": [
+   "#e8e4d8",
+   "#d0ccc0"
+  ],
+  "opts": {
+   "zz": [
+    "#4a443c",
+    5,
+    "fh"
+   ],
+   "edge": [
+    "#4a443c",
+    1
+   ],
+   "noise": [
+    "#8a8478",
+    0.06
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, кассия",
+  "host_en": "legumes, Senna",
+  "fact": "Крупнейшая по размаху крыльев бабочка мира: известны экземпляры до 30 см.",
+  "fact_en": "Largest moth by wingspan; specimens reach about 30 cm."
+ },
+ {
+  "la": "Erebus odora",
+  "ru": "Чёрная ведьма",
+  "en": "Black witch",
+  "fam": "Эребиды",
+  "lo": 100,
+  "hi": 130,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#4a3c34",
+   "#2a2220"
+  ],
+  "h": [
+   "#3a2e28",
+   "#2a2220"
+  ],
+  "opts": {
+   "zz": [
+    "#8a7a6a",
+    3,
+    "fh"
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.6,
+    "#b0a090"
+   ],
+   "edge": [
+    "#1a1614",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, кассия",
+  "host_en": "legumes, Senna",
+  "fact": "Крупный ночной мотылёк с тёмным рисунком, любит укрываться днём в тени навесов.",
+  "fact_en": "A big dark moth that hides in shaded corners by day."
+ },
+ {
+  "la": "Eulepidotis alabastraria",
+  "ru": "Совка алебастровая",
+  "en": "Alabaster owlet",
+  "fam": "Эребиды",
+  "lo": 30,
+  "hi": 38,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a8a89a",
+   "#8a8a7a"
+  ],
+  "h": [
+   "#8a8a7a",
+   "#6a6a5c"
+  ],
+  "opts": {
+   "patch": [
+    "f",
+    0.7,
+    0.5,
+    3,
+    "#4a4a3a"
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.42,
+    "#e0e0d0"
+   ],
+   "sheen": [
+    "#c8d8d0",
+    0.3
+   ],
+   "edge": [
+    "#3a3a2c",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые (предп.)",
+  "host_en": "legumes (probably)",
+  "fact": "Совки рода Eulepidotis блестят перламутровыми чешуйками и очень многочисленны в тропиках.",
+  "fact_en": "Eulepidotis owlets shimmer with silvery scales and are abundant in the tropics."
+ },
+ {
+  "la": "Gonodonta nutrix",
+  "ru": "Плодовая совка гонодонта",
+  "en": "Fruit-piercing owlet",
+  "fam": "Эребиды",
+  "lo": 38,
+  "hi": 46,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a89a68",
+   "#8a7a48"
+  ],
+  "h": [
+   "#d89838",
+   "#b87820"
+  ],
+  "opts": {
+   "zz": [
+    "#5a4a28",
+    3,
+    "f"
+   ],
+   "band": [
+    "h",
+    0.6,
+    0.7,
+    "#4a3a20"
+   ],
+   "edge": [
+    "#4a3a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "анноновые, мускатные",
+  "host_en": "Annonaceae, nutmeg family",
+  "fact": "Хоботком прокалывает кожуру спелых плодов, чтобы пить сок.",
+  "fact_en": "Pierces the skin of ripe fruit with its proboscis to drink juice."
+ },
+ {
+  "la": "Oxydia vesulia",
+  "ru": "Пяденица оксидия",
+  "en": "Neotropical looper",
+  "fam": "Пяденицы",
+  "lo": 35,
+  "hi": 50,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8885a",
+   "#8a6a40"
+  ],
+  "h": [
+   "#b89a68",
+   "#9a7a4a"
+  ],
+  "opts": {
+   "zz": [
+    "#5a3a20",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#5a3a20",
+    0.1
+   ],
+   "edge": [
+    "#5a3a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "хвойные, лавровые",
+  "host_en": "conifers, laurels",
+  "fact": "Замирает днём на ветке, вытянувшись как сучок.",
+  "fact_en": "By day freezes on a twig, stretched out like a stub."
+ },
+ {
+  "la": "Pantherodes pardalaria",
+  "ru": "Пантеровая пяденица",
+  "en": "Leopard geometer",
+  "fam": "Пяденицы",
+  "lo": 60,
+  "hi": 80,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#e8c85a",
+   "#d8a838"
+  ],
+  "h": [
+   "#e8c85a",
+   "#d8a838"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.7,
+     0.3,
+     2,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.4,
+     0.5,
+     2,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.65,
+     0.4,
+     2,
+     "#2a2018"
+    ]
+   ],
+   "edge": [
+    "#6a4a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "перечные, бобовые",
+  "host_en": "pepper family, legumes",
+  "fact": "Жёлтые крылья в чёрных пятнах напоминают шкуру ягуара.",
+  "fact_en": "Yellow wings with black rosettes resemble a jaguar pelt."
+ },
+ {
+  "la": "Hypercompe icasia",
+  "ru": "Медведица икасия",
+  "en": "Icasia tiger moth",
+  "fam": "Медведицы",
+  "lo": 50,
+  "hi": 65,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0dccc"
+  ],
+  "h": [
+   "#f0ece0",
+   "#e8e4d4"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.7,
+     0.3,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.4,
+     0.7,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "h",
+     0.5,
+     0.4,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "h",
+     0.7,
+     0.6,
+     2,
+     "#1a2a4a"
+    ]
+   ],
+   "edge": [
+    "#3a3a3a",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "травы, лианы",
+  "host_en": "herbs, vines",
+  "fact": "Белые крылья в синевато-чёрных пятнах предупреждают хищников о несъедобности.",
+  "fact_en": "White wings with blue-black spots warn predators it is unpalatable."
+ },
+ {
+  "la": "Idalus herois",
+  "ru": "Медведица-идалюс",
+  "en": "Heroic tiger moth",
+  "fam": "Медведицы",
+  "lo": 32,
+  "hi": 42,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0e0d0",
+   "#e0a8a0"
+  ],
+  "h": [
+   "#f4ecdc",
+   "#e0c0b0"
+  ],
+  "opts": {
+   "bars": [
+    "#c8584a",
+    2
+   ],
+   "edge": [
+    "#a8483c",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.2,
+     0.2,
+     1,
+     "#2a2a2a"
+    ]
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "лишайники, водоросли",
+  "host_en": "lichens, algae",
+  "fact": "Окраска розово-белая, а гусеницы питаются лишайниками на коре.",
+  "fact_en": "Pinkish-white wings; the caterpillars graze lichens on bark."
+ },
+ {
+  "la": "Eloria noyesi",
+  "ru": "Кокаиновая волнянка",
+  "en": "Coca tussock moth",
+  "fam": "Волнянки",
+  "lo": 25,
+  "hi": 38,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#e8e0d0",
+   "#c8bca0"
+  ],
+  "h": [
+   "#f0e8d8",
+   "#d8ccb0"
+  ],
+  "opts": {
+   "zz": [
+    "#8a7a58",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#8a7a58",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "кока (Erythroxylum)",
+  "host_en": "coca (Erythroxylum)",
+  "fact": "Гусеницы объедают кусты коки, поэтому вид изучали как возможное биосредство.",
+  "fact_en": "The caterpillars strip coca bushes, so the species was studied as a biocontrol."
+ },
+ {
+  "la": "Hylesia metabus",
+  "ru": "Гилезия метабус",
+  "en": "Metabus urticating moth",
+  "fam": "Павлиноглазки",
+  "lo": 35,
+  "hi": 50,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#b89868",
+   "#8a6a40"
+  ],
+  "h": [
+   "#c8a878",
+   "#9a7a50"
+  ],
+  "opts": {
+   "zz": [
+    "#5a3a20",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.52,
+    "#5a3a20"
+   ],
+   "edge": [
+    "#5a3a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "мангры, лесные деревья",
+  "host_en": "mangroves, forest trees",
+  "fact": "Самки покрыты жгучими волосками, вызывающими у людей сильную сыпь.",
+  "fact_en": "Females carry stinging hairs that cause a severe rash in humans."
+ },
+ {
+  "la": "Nystalea nyseus",
+  "ru": "Хохлатка нисей",
+  "en": "Nyseus prominent",
+  "fam": "Хохлатки",
+  "lo": 40,
+  "hi": 50,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a89a88",
+   "#7a6a58"
+  ],
+  "h": [
+   "#c8b8a0",
+   "#a89880"
+  ],
+  "opts": {
+   "noise": [
+    "#4a3a2c",
+    0.15
+   ],
+   "zz": [
+    "#4a3a2c",
+    3,
+    "f"
+   ],
+   "edge": [
+    "#4a3a2c",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые",
+  "host_en": "legumes",
+  "fact": "Сидит днём на коре с приподнятыми крыльями и гладкой «крышей», мало заметна.",
+  "fact_en": "Sits on bark by day with roof-like folded wings, hard to spot."
+ },
+ {
+  "la": "Mimallo amilia",
+  "ru": "Мималло амилия",
+  "en": "Dead-leaf moth",
+  "fam": "Мималлониды",
+  "lo": 40,
+  "hi": 55,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#8a5a3a",
+   "#6a3a22"
+  ],
+  "h": [
+   "#9a6a42",
+   "#7a4a2c"
+  ],
+  "opts": {
+   "band": [
+    "f",
+    0.4,
+    0.5,
+    "#c8a070"
+   ],
+   "tip": [
+    "#4a2a18",
+    0.75
+   ],
+   "edge": [
+    "#4a2a18",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "мирты, рассветник",
+  "host_en": "Myrtaceae, Combretaceae",
+  "fact": "Серповидные крылья с жилками делают бабочку похожей на сухой лист.",
+  "fact_en": "Sickle wings with veins make it look like a dead leaf."
+ },
+ {
+  "la": "Stenoptilodes brevipennis",
+  "ru": "Пальцекрылка короткокрылая",
+  "en": "Short-winged plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 15,
+  "hi": 22,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#9a8a68"
+  ],
+  "h": [
+   "#a89878",
+   "#8a7a5a"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a3a",
+    1
+   ],
+   "dots": "#e8e0cc"
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "подорожниковые, норичниковые",
+  "host_en": "plantain family",
+  "fact": "Крылья расщеплены на перистые лопасти; в покое сложены в тонкую букву Т.",
+  "fact_en": "Wings split into feathery lobes and fold into a slim T at rest."
+ },
+ {
+  "la": "Xyleutes strix",
+  "ru": "Древоточец стрикс",
+  "en": "Strix carpenter moth",
+  "fam": "Древоточцы",
+  "lo": 75,
+  "hi": 120,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#9a9288",
+   "#7a726a"
+  ],
+  "h": [
+   "#8a8278",
+   "#6a625a"
+  ],
+  "opts": {
+   "noise": [
+    "#4a423a",
+    0.15
+   ],
+   "zz": [
+    "#3a342c",
+    3,
+    "f"
+   ],
+   "edge": [
+    "#3a342c",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "ствол лесных деревьев",
+  "host_en": "trunks of forest trees",
+  "fact": "Гусеницы прорывают ходы в древесине живых деревьев.",
+  "fact_en": "Caterpillars bore tunnels into the wood of living trees."
+ },
+ {
+  "la": "Cossula magnifica",
+  "ru": "Древоточец великолепный",
+  "en": "Magnificent carpenter moth",
+  "fam": "Древоточцы",
+  "lo": 35,
+  "hi": 50,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#c8c0a8",
+   "#a89e84"
+  ],
+  "h": [
+   "#b0a88e",
+   "#8e866c"
+  ],
+  "opts": {
+   "noise": [
+    "#5a523a",
+    0.1
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.5,
+    "#8a8268"
+   ],
+   "edge": [
+    "#5a523a",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "лианы, кусты",
+  "host_en": "vines, shrubs",
+  "fact": "Редкий вид; гусеницы живут в стеблях лиан.",
+  "fact_en": "A rare species; caterpillars live in liana stems."
+ },
+ {
+  "la": "Diaphania hyalinata",
+  "ru": "Огнёвка тыквенная",
+  "en": "Melonworm moth",
+  "fam": "Огнёвки",
+  "lo": 25,
+  "hi": 30,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f4f2ea",
+   "#e0dccc"
+  ],
+  "h": [
+   "#f4f2ea",
+   "#e8e4d8"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2218",
+    2
+   ],
+   "sheen": [
+    "#a8c8e0",
+    0.5
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "тыквенные, огурцы",
+  "host_en": "gourds, cucumbers",
+  "fact": "Перламутровые белые крылья с чёрной каймой, гусеницы вредят тыквенным культурам.",
+  "fact_en": "Pearly white wings with a black border; caterpillars harm gourd crops."
+ },
+ {
+  "la": "Salbia haemorrhoidalis",
+  "ru": "Огнёвка кроваво-полосатая",
+  "en": "Red-banded pyralid",
+  "fam": "Огнёвки",
+  "lo": 20,
+  "hi": 28,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#d8c068",
+   "#b89a48"
+  ],
+  "h": [
+   "#e8d078",
+   "#c8aa58"
+  ],
+  "opts": {
+   "band": [
+    "fh",
+    0.35,
+    0.5,
+    "#8a4a28"
+   ],
+   "edge": [
+    "#6a4a20",
+    1
+   ]
+  },
+  "hab": "Низинный дождевой лес, опушки, огни лагерей",
+  "hab_en": "Lowland rainforest, edges, camp lights",
+  "range": "Амазонская низменность, Неотропика",
+  "range_en": "Amazon basin, Neotropics",
+  "host": "бобовые, шелковица",
+  "host_en": "legumes, mulberry family",
+  "fact": "Крошечная ночная огнёвка, летящая на свет у воды.",
+  "fact_en": "A tiny night pyralid arriving at lights near water."
+ }
+]

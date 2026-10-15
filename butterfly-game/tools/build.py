@@ -2,7 +2,7 @@
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-ORDER = ["assets_gen.js", "data.js", "species_more.js", "species_ocean.js", "util.js", "batch.js", "lang_en.js", "i18n.js", "font.js", "keys.js", "art.js", "aberr.js", "econ.js", "nets.js", "secret.js", "maps.js", "collection.js", "traps.js", "sounds_gen.js", "audio.js", "chalet.js", "world.js", "ocean.js", "net.js", "remotes.js", "play.js", "sectors.js", "panorama.js", "screens.js", "chat.js", "console.js", "spreaders.js", "spread.js", "boxes.js", "cabinet.js", "museum.js", "portrait.js", "gear.js", "market.js", "room.js", "secretroom.js", "main.js", "touch.js", "steam.js"]
+ORDER = ["assets_gen.js", "data.js", "species_more.js", "species_ocean.js", "moths_data.js", "moths.js", "util.js", "night.js", "batch.js", "lang_en.js", "i18n.js", "font.js", "keys.js", "art.js", "aberr.js", "econ.js", "nets.js", "secret.js", "maps.js", "collection.js", "traps.js", "sounds_gen.js", "audio.js", "chalet.js", "world.js", "ocean.js", "net.js", "remotes.js", "lamps.js", "play.js", "sectors.js", "panorama.js", "screens.js", "chat.js", "console.js", "spreaders.js", "spread.js", "boxes.js", "cabinet.js", "museum.js", "portrait.js", "gear.js", "market.js", "room.js", "secretroom.js", "main.js", "touch.js", "steam.js"]
 src = os.path.join(ROOT, "src")
 parts = []
 for name in ORDER:

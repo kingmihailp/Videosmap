@@ -1,0 +1,1520 @@
+[
+ {
+  "la": "Hyalophora cecropia",
+  "ru": "Цекропия",
+  "en": "Cecropia moth",
+  "fam": "Павлиноглазки",
+  "lo": 110,
+  "hi": 150,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#7a3a2a",
+   "#a8503a"
+  ],
+  "h": [
+   "#8a3a2c",
+   "#b85a40"
+  ],
+  "opts": {
+   "edge": [
+    "#d8c8b0",
+    2
+   ],
+   "band": [
+    "fh",
+    0.5,
+    0.58,
+    "#f0e8e0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.5,
+     2,
+     "#f0e8e0"
+    ]
+   ],
+   "eye": [
+    [
+     "f",
+     0.85,
+     0.12,
+     3,
+     "#2a2a40",
+     "#a8b8d8"
+    ]
+   ],
+   "tip": [
+    "#6a3020",
+    0.85
+   ]
+  },
+  "hab": "Опушки, речные рощи, сады",
+  "hab_en": "Woodland edges, creek groves, gardens",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "клён, вишня, ива, берёза",
+  "host_en": "maple, cherry, willow, birch",
+  "fact": "Крупнейший шелкопряд Северной Америки; взрослые бабочки не питаются.",
+  "fact_en": "North America's largest native moth; adults do not feed."
+ },
+ {
+  "la": "Antheraea polyphemus",
+  "ru": "Полифем",
+  "en": "Polyphemus moth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 150,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#b88a52",
+   "#9a6a3a"
+  ],
+  "h": [
+   "#c89a5a",
+   "#a87848"
+  ],
+  "opts": {
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.45,
+     6,
+     "#2a2a30",
+     "#c8d8e8"
+    ],
+    [
+     "f",
+     0.5,
+     0.5,
+     3,
+     "#2a2a30",
+     "#e8e0c8"
+    ]
+   ],
+   "band": [
+    "f",
+    0.7,
+    0.78,
+    "#6a4a30"
+   ],
+   "edge": [
+    "#c8a0a0",
+    2
+   ],
+   "noise": [
+    "#8a6a40",
+    0.08
+   ]
+  },
+  "hab": "Широколиственные рощи по ручьям",
+  "hab_en": "Broadleaf groves along creeks",
+  "range": "Почти вся Северная Америка",
+  "range_en": "Most of North America",
+  "host": "дуб, ива, тополь, вяз",
+  "host_en": "oak, willow, poplar, elm",
+  "fact": "Огромные глазки на задних крыльях отпугивают птиц, как совиные глаза.",
+  "fact_en": "Huge eyespots on the hindwings scare off birds like owl eyes."
+ },
+ {
+  "la": "Actias luna",
+  "ru": "Луна американская",
+  "en": "Luna moth",
+  "fam": "Павлиноглазки",
+  "lo": 80,
+  "hi": 115,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "luna",
+  "tail": "long",
+  "f": [
+   "#a8d8a0",
+   "#98d098"
+  ],
+  "h": [
+   "#b0e0a8",
+   "#a0d8a0"
+  ],
+  "opts": {
+   "edge": [
+    "#8a4a6a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.5,
+     3,
+     "#6a4a7a",
+     "#e8f0c8"
+    ],
+    [
+     "h",
+     0.5,
+     0.45,
+     3,
+     "#6a4a7a",
+     "#e8f0c8"
+    ]
+   ],
+   "sheen": [
+    "#e8ffe8",
+    0.3
+   ]
+  },
+  "hab": "Лесистые поймы и рощи",
+  "hab_en": "Wooded bottomlands and groves",
+  "range": "Восток Северной Америки до Великих равнин",
+  "range_en": "Eastern North America to the Great Plains",
+  "host": "орех, сумах, берёза, сладкая камедь",
+  "host_en": "walnut, sumac, birch, sweetgum",
+  "fact": "У взрослой луны нет рта: она живёт около недели, только чтобы размножаться.",
+  "fact_en": "The adult luna has no mouth and lives about a week only to breed."
+ },
+ {
+  "la": "Automeris io",
+  "ru": "Ио",
+  "en": "Io moth",
+  "fam": "Павлиноглазки",
+  "lo": 50,
+  "hi": 75,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#d8b848",
+   "#c8a038"
+  ],
+  "h": [
+   "#e8c850",
+   "#d8a830"
+  ],
+  "opts": {
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.5,
+     5,
+     "#1a1a2a",
+     "#3a4a8a"
+    ]
+   ],
+   "edge": [
+    "#a07a30",
+    1
+   ],
+   "zz": [
+    "#a07a30",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Опушки, сады, лесистые долины",
+  "hab_en": "Edges, gardens, wooded valleys",
+  "range": "Восток и центр США, юг Канады",
+  "range_en": "Eastern and central US, southern Canada",
+  "host": "кукуруза, ива, клён, дуб",
+  "host_en": "corn, willow, maple, oak",
+  "fact": "Гусеница покрыта жгучими шипами, а синие глазки бабочки блефуют при угрозе.",
+  "fact_en": "The caterpillar has stinging spines, and the moth bluffs with blue eyespots."
+ },
+ {
+  "la": "Callosamia promethea",
+  "ru": "Прометея",
+  "en": "Promethea silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 75,
+  "hi": 95,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#6a3a3a",
+   "#8a4a40"
+  ],
+  "h": [
+   "#7a3a3a",
+   "#9a5048"
+  ],
+  "opts": {
+   "edge": [
+    "#d8c0a0",
+    1
+   ],
+   "band": [
+    "fh",
+    0.62,
+    0.7,
+    "#c8a090"
+   ],
+   "eye": [
+    [
+     "f",
+     0.88,
+     0.1,
+     2,
+     "#2a2a40",
+     "#d0d8e8"
+    ]
+   ]
+  },
+  "hab": "Лесистые ручьи и речные рощи",
+  "hab_en": "Wooded creeks and river groves",
+  "range": "Восток США до Канзаса",
+  "range_en": "Eastern US to Kansas",
+  "host": "сассафрас, вишня, лириодендрон",
+  "host_en": "sassafras, wild cherry, tulip tree",
+  "fact": "Самцы летают днём и в сумерках, самки только ночью; самец похож на тёмную осу.",
+  "fact_en": "Males fly at dusk and resemble dark wasps; females fly only at night."
+ },
+ {
+  "la": "Eacles imperialis",
+  "ru": "Императорская бабочка",
+  "en": "Imperial moth",
+  "fam": "Павлиноглазки",
+  "lo": 80,
+  "hi": 175,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#e8c040",
+   "#d8a838"
+  ],
+  "h": [
+   "#e8c848",
+   "#d8b040"
+  ],
+  "opts": {
+   "noise": [
+    "#8a4a30",
+    0.18
+   ],
+   "band": [
+    "fh",
+    0.45,
+    0.52,
+    "#a05a38"
+   ],
+   "edge": [
+    "#a05a38",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.4,
+     2,
+     "#8a3a2a"
+    ]
+   ]
+  },
+  "hab": "Лиственные леса и рощи у воды",
+  "hab_en": "Deciduous woods and groves near water",
+  "range": "Восток США, редко на юге Великих равнин",
+  "range_en": "Eastern US, rare on the southern Plains",
+  "host": "дуб, сосна, клён, сассафрас",
+  "host_en": "oak, pine, maple, sassafras",
+  "fact": "Лимонно-жёлтая бабочка с лиловыми пятнами; в последние десятилетия сильно исчезла.",
+  "fact_en": "A lemon-yellow moth with purple blotches; much declined in recent decades."
+ },
+ {
+  "la": "Citheronia regalis",
+  "ru": "Королевская ореховая бабочка",
+  "en": "Regal moth",
+  "fam": "Павлиноглазки",
+  "lo": 95,
+  "hi": 155,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#8a9a8a",
+   "#b8a888"
+  ],
+  "h": [
+   "#d8683a",
+   "#e08a50"
+  ],
+  "opts": {
+   "veins": "#e8a050",
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.3,
+     2,
+     "#f0e8c8"
+    ],
+    [
+     "f",
+     0.6,
+     0.5,
+     2,
+     "#f0e8c8"
+    ]
+   ],
+   "edge": [
+    "#d8a850",
+    1
+   ]
+  },
+  "hab": "Лесистые холмы и рощи",
+  "hab_en": "Wooded hills and groves",
+  "range": "Восток США до восточного Канзаса",
+  "range_en": "Eastern US to eastern Kansas",
+  "host": "орех, сумах, сладкая камедь",
+  "host_en": "walnut, sumac, sweetgum",
+  "fact": "Её огромная гусеница зовётся «чёртов конёк» из-за рогов, но совершенно безвредна.",
+  "fact_en": "Its giant caterpillar, the hickory horned devil, looks fearsome but is harmless."
+ },
+ {
+  "la": "Dryocampa rubicunda",
+  "ru": "Розовая кленовая бабочка",
+  "en": "Rosy maple moth",
+  "fam": "Павлиноглазки",
+  "lo": 32,
+  "hi": 50,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#f0e078",
+   "#e8c8d0"
+  ],
+  "h": [
+   "#f0e078",
+   "#f0b8c8"
+  ],
+  "opts": {
+   "band": [
+    "f",
+    0.3,
+    0.7,
+    "#f0b0c0"
+   ],
+   "edge": [
+    "#e8a0b8",
+    1
+   ]
+  },
+  "hab": "Рощи клёнов, пригороды",
+  "hab_en": "Maple groves, suburbs",
+  "range": "Восток Северной Америки",
+  "range_en": "Eastern North America",
+  "host": "клён, особенно ясенелистный",
+  "host_en": "maples, especially box elder",
+  "fact": "Розово-жёлтая пушистая бабочка выглядит как кусочек конфеты.",
+  "fact_en": "A fluffy pink and yellow moth that looks like a piece of candy."
+ },
+ {
+  "la": "Paonias excaecatus",
+  "ru": "Слепая бражница",
+  "en": "Blinded sphinx",
+  "fam": "Бражники",
+  "lo": 50,
+  "hi": 75,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a88868",
+   "#8a6a58"
+  ],
+  "h": [
+   "#d87a8a",
+   "#c85a6a"
+  ],
+  "opts": {
+   "zz": [
+    "#5a4a40",
+    2,
+    "f"
+   ],
+   "eye": [
+    [
+     "h",
+     0.55,
+     0.6,
+     3,
+     "#1a1a2a",
+     "#4a5a8a"
+    ]
+   ],
+   "noise": [
+    "#6a5a48",
+    0.1
+   ]
+  },
+  "hab": "Лиственные рощи, сады",
+  "hab_en": "Deciduous groves, gardens",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "вишня, тополь, ива, берёза",
+  "host_en": "cherry, poplar, willow, birch",
+  "fact": "Днём прячет розовые задние крылья, а при тревоге показывает синий глазок.",
+  "fact_en": "At rest hides its pink hindwings, and when alarmed shows a blue eyespot."
+ },
+ {
+  "la": "Smerinthus jamaicensis",
+  "ru": "Двупятнистая бражница",
+  "en": "Twin-spotted sphinx",
+  "fam": "Бражники",
+  "lo": 50,
+  "hi": 75,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a8885a",
+   "#8a7050"
+  ],
+  "h": [
+   "#d8a090",
+   "#c88878"
+  ],
+  "opts": {
+   "zz": [
+    "#5a4a38",
+    2,
+    "f"
+   ],
+   "eye": [
+    [
+     "h",
+     0.55,
+     0.55,
+     4,
+     "#1a1a2a",
+     "#4a6aa0"
+    ]
+   ],
+   "edge": [
+    "#6a5038",
+    1
+   ]
+  },
+  "hab": "Рощи, сады, речные леса",
+  "hab_en": "Groves, gardens, riparian woods",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "ива, тополь, яблоня, вишня",
+  "host_en": "willow, poplar, apple, cherry",
+  "fact": "Два синих глазка на задних крыльях вспыхивают, когда бабочку тревожат.",
+  "fact_en": "Two blue eyespots on the hindwings flash when the moth is disturbed."
+ },
+ {
+  "la": "Pachysphinx modesta",
+  "ru": "Большая тополёвая бражница",
+  "en": "Big poplar sphinx",
+  "fam": "Бражники",
+  "lo": 90,
+  "hi": 120,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a8a098",
+   "#908880"
+  ],
+  "h": [
+   "#d89a8a",
+   "#c07868"
+  ],
+  "opts": {
+   "patch": [
+    "f",
+    0.5,
+    0.6,
+    3,
+    "#6a4a3a"
+   ],
+   "zz": [
+    "#6a6058",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#6a6058",
+    1
+   ]
+  },
+  "hab": "Прибрежные рощи тополя и ивы",
+  "hab_en": "Cottonwood and willow groves along streams",
+  "range": "Почти вся Северная Америка",
+  "range_en": "Most of North America",
+  "host": "тополь, осина, ива",
+  "host_en": "cottonwood, aspen, willow",
+  "fact": "Один из самых крупных бражников США; гусеница питается листьями тополя.",
+  "fact_en": "One of the largest US hawk-moths; its caterpillar eats cottonwood leaves."
+ },
+ {
+  "la": "Manduca quinquemaculata",
+  "ru": "Пятнистая бражница, томатный червь",
+  "en": "Five-spotted hawk moth",
+  "fam": "Бражники",
+  "lo": 90,
+  "hi": 120,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a7468",
+   "#5a5650"
+  ],
+  "h": [
+   "#8a8478",
+   "#6a6660"
+  ],
+  "opts": {
+   "zz": [
+    "#2a2a2a",
+    3,
+    "fh"
+   ],
+   "sp": [
+    [
+     "h",
+     0.5,
+     0.4,
+     2,
+     "#e8b838"
+    ]
+   ],
+   "dots": "#e8e0d0"
+  },
+  "hab": "Огороды, поля, сады, луга",
+  "hab_en": "Gardens, fields, meadows",
+  "range": "Северная Америка до Центральной",
+  "range_en": "North America to Central America",
+  "host": "томат, картофель, табак",
+  "host_en": "tomato, potato, tobacco",
+  "fact": "Гусеница называется томатным червём и объедает помидоры; бабочка зависает у цветов.",
+  "fact_en": "Its caterpillar is the tomato hornworm; the moth hovers at flowers at dusk."
+ },
+ {
+  "la": "Sphinx chersis",
+  "ru": "Большая ясеневая бражница",
+  "en": "Great ash sphinx",
+  "fam": "Бражники",
+  "lo": 90,
+  "hi": 120,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#a8a8a0",
+   "#8a8a84"
+  ],
+  "h": [
+   "#9a9890",
+   "#706e68"
+  ],
+  "opts": {
+   "wedges": [
+    "#2a2a2a",
+    3
+   ],
+   "zz": [
+    "#4a4a48",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#3a3a38",
+    1
+   ]
+  },
+  "hab": "Рощи, поймы, сады",
+  "hab_en": "Groves, floodplains, gardens",
+  "range": "Северная Америка",
+  "range_en": "North America",
+  "host": "ясень, сирень, ива",
+  "host_en": "ash, lilac, willow",
+  "fact": "Серая окраска прекрасно скрывает бражника на коре ясеня.",
+  "fact_en": "Its grey colour hides the moth well on ash bark."
+ },
+ {
+  "la": "Ceratomia catalpae",
+  "ru": "Катальповая бражница",
+  "en": "Catalpa sphinx",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 80,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#9a9488",
+   "#7a766c"
+  ],
+  "h": [
+   "#8a8478",
+   "#6a665c"
+  ],
+  "opts": {
+   "zz": [
+    "#4a4640",
+    2,
+    "f"
+   ],
+   "bars": [
+    "#5a564e",
+    2
+   ],
+   "edge": [
+    "#4a4640",
+    1
+   ]
+  },
+  "hab": "Города, парки, рощи с катальпой",
+  "hab_en": "Towns, parks, groves with catalpa",
+  "range": "Центр и восток США",
+  "range_en": "Central and eastern US",
+  "host": "катальпа",
+  "host_en": "catalpa",
+  "fact": "Гусеницы полностью обгладывают катальпы, а рыбаки используют их как наживку.",
+  "fact_en": "Caterpillars strip catalpa trees bare and are prized as fishing bait."
+ },
+ {
+  "la": "Catocala ilia",
+  "ru": "Орденская лента Илия",
+  "en": "Ilia underwing",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 80,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#a8a49c",
+   "#7a7870"
+  ],
+  "h": [
+   "#e07a28",
+   "#d86018"
+  ],
+  "opts": {
+   "band": [
+    "h",
+    0.45,
+    0.6,
+    "#1a1a1a"
+   ],
+   "zz": [
+    "#2a2a2a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4a48",
+    0.12
+   ],
+   "edge": [
+    "#1a1a1a",
+    1
+   ],
+   "dots": "#d8d0c0"
+  },
+  "hab": "Дубравы, рощи по ручьям",
+  "hab_en": "Oak woods, creek groves",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "дуб",
+  "host_en": "oak",
+  "fact": "Серые передние крылья на коре невидимы, а оранжевые задние пугают хищников.",
+  "fact_en": "Grey forewings vanish on bark, while orange hindwings startle predators."
+ },
+ {
+  "la": "Catocala relicta",
+  "ru": "Белая орденская лента",
+  "en": "White underwing",
+  "fam": "Эребиды",
+  "lo": 70,
+  "hi": 90,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#d8d8d4",
+   "#a8a8a4"
+  ],
+  "h": [
+   "#f0f0ec",
+   "#d0d0cc"
+  ],
+  "opts": {
+   "band": [
+    "h",
+    0.45,
+    0.6,
+    "#2a2a2c"
+   ],
+   "edge": [
+    "#2a2a2c",
+    2
+   ],
+   "zz": [
+    "#3a3a3a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a6a68",
+    0.1
+   ]
+  },
+  "hab": "Тополёвые и ивовые рощи",
+  "hab_en": "Poplar and willow groves",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "тополь, ива",
+  "host_en": "poplar, willow",
+  "fact": "Редкая орденская лента с белыми задними крыльями и чёрной полосой.",
+  "fact_en": "A scarce underwing with white hindwings and a black band."
+ },
+ {
+  "la": "Euparthenos nubilis",
+  "ru": "Локустовая орденская лента",
+  "en": "Locust underwing",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 80,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#7a6a58",
+   "#5a4c40"
+  ],
+  "h": [
+   "#2a2a30",
+   "#1a1a20"
+  ],
+  "opts": {
+   "band": [
+    "h",
+    0.4,
+    0.6,
+    "#c8c4b8"
+   ],
+   "zz": [
+    "#2a2018",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a3c30",
+    0.12
+   ],
+   "edge": [
+    "#1a1a1a",
+    1
+   ]
+  },
+  "hab": "Рощи и поймы с белой акацией",
+  "hab_en": "Groves and bottomlands with locust",
+  "range": "Восток и центр США",
+  "range_en": "Eastern and central US",
+  "host": "робиния (белая акация), аморфа",
+  "host_en": "black locust, false indigo",
+  "fact": "Задние крылья тёмные с белой полосой; днём бабочка неподвижна на коре.",
+  "fact_en": "Dark hindwings with a white band; by day it sits motionless on bark."
+ },
+ {
+  "la": "Hypercompe scribonia",
+  "ru": "Гигантская леопардовая медведица",
+  "en": "Giant leopard moth",
+  "fam": "Эребиды",
+  "lo": 55,
+  "hi": 90,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0f0ec",
+   "#e8e8e4"
+  ],
+  "h": [
+   "#e8e8e4",
+   "#d8d8d4"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.2,
+     0.3,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.4,
+     0.55,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.55,
+     0.3,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.75,
+     0.5,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.85,
+     0.25,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "h",
+     0.4,
+     0.4,
+     2,
+     "#1a2a4a"
+    ],
+    [
+     "h",
+     0.7,
+     0.55,
+     2,
+     "#1a2a4a"
+    ]
+   ],
+   "edge": [
+    "#1a2a4a",
+    1
+   ]
+  },
+  "hab": "Поля, опушки, сады",
+  "hab_en": "Fields, edges, gardens",
+  "range": "Восток и центр США, Мексика",
+  "range_en": "Eastern and central US, Mexico",
+  "host": "одуванчик, подорожник, клён",
+  "host_en": "dandelion, plantain, maple",
+  "fact": "Белая с синими кольцами бабочка при опасности выделяет жёлтую жидкость.",
+  "fact_en": "White with blue-black rings; when threatened it oozes yellow fluid."
+ },
+ {
+  "la": "Estigmene acrea",
+  "ru": "Солончаковая медведица",
+  "en": "Salt marsh moth",
+  "fam": "Эребиды",
+  "lo": 45,
+  "hi": 68,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e8e0d0"
+  ],
+  "h": [
+   "#f0b838",
+   "#e8a828"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     1,
+     "#3a2a20"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     1,
+     "#3a2a20"
+    ],
+    [
+     "f",
+     0.75,
+     0.35,
+     1,
+     "#3a2a20"
+    ],
+    [
+     "h",
+     0.5,
+     0.45,
+     1,
+     "#2a2a2a"
+    ]
+   ],
+   "edge": [
+    "#a08060",
+    1
+   ]
+  },
+  "hab": "Поля, огороды, влажные луга",
+  "hab_en": "Fields, gardens, moist meadows",
+  "range": "Северная и Центральная Америка",
+  "range_en": "North and Central America",
+  "host": "сорные травы, кукуруза, соя",
+  "host_en": "weeds, corn, soybean",
+  "fact": "Самцы выдвигают оранжевые пучки волосков, выделяя феромон.",
+  "fact_en": "Males extrude orange hair-pencils to release pheromone."
+ },
+ {
+  "la": "Grammia virgo",
+  "ru": "Девственная медведица",
+  "en": "Virgin tiger moth",
+  "fam": "Эребиды",
+  "lo": 40,
+  "hi": 55,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#2a2420",
+   "#3a3028"
+  ],
+  "h": [
+   "#e86a58",
+   "#d85048"
+  ],
+  "opts": {
+   "bars": [
+    "#f0e8c8",
+    3
+   ],
+   "sp": [
+    [
+     "h",
+     0.5,
+     0.35,
+     2,
+     "#1a1a1a"
+    ],
+    [
+     "h",
+     0.7,
+     0.6,
+     2,
+     "#1a1a1a"
+    ]
+   ],
+   "edge": [
+    "#1a1a1a",
+    1
+   ]
+  },
+  "hab": "Луга и опушки",
+  "hab_en": "Meadows and edges",
+  "range": "Центр и восток Северной Америки",
+  "range_en": "Central and eastern North America",
+  "host": "травянистые растения, подорожник",
+  "host_en": "herbs, plantain",
+  "fact": "Чёрные крылья с кремовыми полосами и красные задние крылья.",
+  "fact_en": "Black wings with cream stripes and red hindwings."
+ },
+ {
+  "la": "Euchaetes egle",
+  "ru": "Молочайная медведица",
+  "en": "Milkweed tussock moth",
+  "fam": "Эребиды",
+  "lo": 28,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#a8a090",
+   "#908878"
+  ],
+  "h": [
+   "#b8b0a0",
+   "#a09888"
+  ],
+  "opts": {
+   "edge": [
+    "#7a7468",
+    1
+   ],
+   "noise": [
+    "#7a7468",
+    0.08
+   ]
+  },
+  "hab": "Луга, обочины, прерии",
+  "hab_en": "Meadows, roadsides, prairie",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "ваточник (Asclepias)",
+  "host_en": "milkweed (Asclepias)",
+  "fact": "Гусеница питается ваточником, как и монарх, и становится ядовитой для птиц.",
+  "fact_en": "The caterpillar eats milkweed like the monarch and becomes toxic to birds."
+ },
+ {
+  "la": "Malacosoma americanum",
+  "ru": "Американский палаточный шелкопряд",
+  "en": "Eastern tent caterpillar moth",
+  "fam": "Коконопряды",
+  "lo": 25,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#b88858",
+   "#a07848"
+  ],
+  "h": [
+   "#b08050",
+   "#9a7040"
+  ],
+  "opts": {
+   "bars": [
+    "#e8d8b8",
+    2
+   ],
+   "edge": [
+    "#7a5a38",
+    1
+   ]
+  },
+  "hab": "Опушки, сады, рощи",
+  "hab_en": "Edges, orchards, groves",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "вишня, яблоня, слива",
+  "host_en": "cherry, apple, plum",
+  "fact": "Гусеницы весной вместе плетут шёлковые палатки на ветвях.",
+  "fact_en": "In spring the caterpillars weave communal silk tents on branches."
+ },
+ {
+  "la": "Datana ministra",
+  "ru": "Жёлтошеий прыгун",
+  "en": "Yellownecked caterpillar moth",
+  "fam": "Хохлатки",
+  "lo": 35,
+  "hi": 50,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a87858",
+   "#8a5a40"
+  ],
+  "h": [
+   "#c8b098",
+   "#b09880"
+  ],
+  "opts": {
+   "bars": [
+    "#6a4030",
+    3
+   ],
+   "edge": [
+    "#6a4030",
+    1
+   ]
+  },
+  "hab": "Лиственные рощи",
+  "hab_en": "Deciduous groves",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "яблоня, берёза, клён",
+  "host_en": "apple, birch, maple",
+  "fact": "Гусеницы группой поднимают оба конца тела, имитируя угрозу.",
+  "fact_en": "Caterpillars in groups raise both body ends in a defensive pose."
+ },
+ {
+  "la": "Eutrapela clemataria",
+  "ru": "Изогнуто-зубчатая пяденица",
+  "en": "Curve-toothed geometer",
+  "fam": "Пяденицы",
+  "lo": 30,
+  "hi": 55,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#c8a868",
+   "#a88848"
+  ],
+  "h": [
+   "#c8a868",
+   "#a88848"
+  ],
+  "opts": {
+   "zz": [
+    "#6a4a30",
+    2,
+    "fh"
+   ],
+   "noise": [
+    "#7a5a38",
+    0.1
+   ],
+   "edge": [
+    "#6a4a30",
+    1
+   ]
+  },
+  "hab": "Лиственные леса, поймы",
+  "hab_en": "Deciduous woods, bottomlands",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "клён, дуб, вишня",
+  "host_en": "maple, oak, cherry",
+  "fact": "Гусеница-«сучок» полностью повторяет веточку.",
+  "fact_en": "The twig-like caterpillar mimics a small branch perfectly."
+ },
+ {
+  "la": "Prochoerodes lineola",
+  "ru": "Большая кленовая пяденица",
+  "en": "Large maple spanworm",
+  "fam": "Пяденицы",
+  "lo": 35,
+  "hi": 48,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#c8b098",
+   "#a88868"
+  ],
+  "h": [
+   "#c8b098",
+   "#a88868"
+  ],
+  "opts": {
+   "zz": [
+    "#7a5a48",
+    2,
+    "fh"
+   ],
+   "edge": [
+    "#7a5a48",
+    1
+   ],
+   "noise": [
+    "#8a6a58",
+    0.08
+   ]
+  },
+  "hab": "Рощи, поймы, парки",
+  "hab_en": "Groves, bottomlands, parks",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "клён, берёза, ива",
+  "host_en": "maple, birch, willow",
+  "fact": "Крыло с пурпурной тенью и лёгким изгибом напоминает сухой лист.",
+  "fact_en": "Its purplish-tinged, slightly angled wing mimics a dead leaf."
+ },
+ {
+  "la": "Pseudothyatira cymatophoroides",
+  "ru": "Хохлатая серпокрылка",
+  "en": "Tufted thyatirid",
+  "fam": "Серпокрылки",
+  "lo": 30,
+  "hi": 38,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#a89878",
+   "#8a7a60"
+  ],
+  "h": [
+   "#a89878",
+   "#8a7a60"
+  ],
+  "opts": {
+   "zz": [
+    "#5a4a38",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#5a4a38",
+    1
+   ]
+  },
+  "hab": "Лиственные рощи",
+  "hab_en": "Deciduous groves",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "дуб, берёза, клён",
+  "host_en": "oak, birch, maple",
+  "fact": "Бабочка имитирует сухой лист, склонив крылья в виде кровли.",
+  "fact_en": "The moth mimics a dead leaf with roof-like folded wings."
+ },
+ {
+  "la": "Prionoxystus robiniae",
+  "ru": "Древесница робиниевая",
+  "en": "Carpenterworm moth",
+  "fam": "Древоточцы",
+  "lo": 45,
+  "hi": 85,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#9a9a98",
+   "#7a7a78"
+  ],
+  "h": [
+   "#c8c0a8",
+   "#a8a088"
+  ],
+  "opts": {
+   "noise": [
+    "#4a4a4a",
+    0.2
+   ],
+   "zz": [
+    "#3a3a3a",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#4a4a48",
+    1
+   ]
+  },
+  "hab": "Тополёвые и дубовые рощи",
+  "hab_en": "Cottonwood and oak groves",
+  "range": "Северная Америка",
+  "range_en": "North America",
+  "host": "дуб, тополь, ясень, робиния",
+  "host_en": "oak, cottonwood, ash, locust",
+  "fact": "Гусеницы живут в стволах деревьев до трёх лет и прогрызают галереи.",
+  "fact_en": "Larvae bore tunnels in tree trunks for up to three years."
+ },
+ {
+  "la": "Geina periscelidactylus",
+  "ru": "Виноградная пальцекрылка",
+  "en": "Grape plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 15,
+  "hi": 20,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#b8a078",
+   "#a08860"
+  ],
+  "h": [
+   "#a89068",
+   "#907850"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5030",
+    1
+   ],
+   "dots": "#e8e0c8"
+  },
+  "hab": "Заросли дикого винограда",
+  "hab_en": "Wild grape thickets",
+  "range": "Восток и центр США",
+  "range_en": "Eastern and central US",
+  "host": "дикий виноград",
+  "host_en": "wild grape",
+  "fact": "Крылья расщеплены на перистые лопасти, как крошечные пёрышки.",
+  "fact_en": "The wings are split into feathery lobes like tiny feathers."
+ },
+ {
+  "la": "Desmia funeralis",
+  "ru": "Виноградный листовёрт",
+  "en": "Grape leaffolder",
+  "fam": "Огнёвки",
+  "lo": 20,
+  "hi": 25,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#1a1a1c",
+   "#2a2a2c"
+  ],
+  "h": [
+   "#1a1a1c",
+   "#2a2a2c"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.45,
+     3,
+     "#f8f8f4"
+    ],
+    [
+     "h",
+     0.5,
+     0.45,
+     3,
+     "#f8f8f4"
+    ]
+   ],
+   "edge": [
+    "#f0f0ec",
+    1
+   ]
+  },
+  "hab": "Виноградники, дикий виноград",
+  "hab_en": "Vineyards, wild grapevines",
+  "range": "Северная и Центральная Америка",
+  "range_en": "North and Central America",
+  "host": "виноград",
+  "host_en": "grape",
+  "fact": "Чёрная бабочка с белыми пятнами; самцы отличаются белыми пятнами на усиках.",
+  "fact_en": "A black moth with white spots; males have a white mark on the antenna."
+ },
+ {
+  "la": "Papaipema nebris",
+  "ru": "Совка-стеблеточец",
+  "en": "Stalk borer",
+  "fam": "Совки",
+  "lo": 25,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a8704a",
+   "#8a5a3a"
+  ],
+  "h": [
+   "#c8b8a0",
+   "#a89880"
+  ],
+  "opts": {
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.4,
+     1,
+     "#f0e0c0"
+    ],
+    [
+     "f",
+     0.55,
+     0.35,
+     1,
+     "#f0e0c0"
+    ]
+   ],
+   "zz": [
+    "#5a3a28",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Поля, прерии, огороды",
+  "hab_en": "Fields, prairie, gardens",
+  "range": "Восток и центр Северной Америки",
+  "range_en": "Eastern and central North America",
+  "host": "амброзия, кукуруза, георгины",
+  "host_en": "ragweed, corn, dahlia",
+  "fact": "Гусеница бурава сидит в стеблях, а взрослые летят к свету осенью.",
+  "fact_en": "The caterpillar bores in stems, and adults come to light in autumn."
+ },
+ {
+  "la": "Anagrapha falcifera",
+  "ru": "Серебристая совка",
+  "en": "Celery looper",
+  "fam": "Совки",
+  "lo": 32,
+  "hi": 42,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8a6a58",
+   "#6a5040"
+  ],
+  "h": [
+   "#9a8070",
+   "#7a6050"
+  ],
+  "opts": {
+   "patch": [
+    "f",
+    0.45,
+    0.45,
+    3,
+    "#d8d0c0"
+   ],
+   "zz": [
+    "#4a3a30",
+    2,
+    "f"
+   ],
+   "edge": [
+    "#4a3a30",
+    1
+   ],
+   "sheen": [
+    "#c8c0b0",
+    0.15
+   ]
+  },
+  "hab": "Огороды, луга, поля",
+  "hab_en": "Gardens, meadows, fields",
+  "range": "Северная Америка",
+  "range_en": "North America",
+  "host": "сельдерей, капуста, клевер",
+  "host_en": "celery, cabbage, clover",
+  "fact": "Блестящее серебристое пятно на переднем крыле похоже на серп.",
+  "fact_en": "A shiny silvery sickle-shaped mark decorates the forewing."
+ }
+]

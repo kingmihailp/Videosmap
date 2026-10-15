@@ -21,6 +21,7 @@ Flora0world: Butterflies — спокойная, но азартная игра 
 * **Охота с характером**: бабочки пугаются шума, любят свои цветы и время суток. Ползи, крадись, используй нюх и фонарь.
 * **Снаряжение**: десятки сачков и их деталей, ловушки, самоходная ловушка, которой ты сам задаёшь маршрут, карта, ИК-сканер, феромонные сетки, пушка-сачок.
 * **Кабинет энтомолога**: расправляй бабочек на расправилке, собирай коробки, выставляй их в витринах и на стенах, торгуй на рынке.
+* **Ночная ловля мотыльков**: иногда локация создаётся ночной — вместо бабочек летают быстрые мотыльки (по 31 настоящему виду на каждую локацию, всего 372), их не видно в темноте и нужен фонарь: ручной, налобный или приспособление для сачка. Ночью играет другая музыка, а мотыльки стоят вдвое дороже.
 * **Опасности и приключения**: зыбучие пески и песчаные бури в пустыне, заброшенный дом в Альпах, тайные места с легендарными бабочками.
 * **Мультиплеер**: общий кабинет и лов вместе с друзьями на своём сервере (запускается из папки `server/`).
 * **Пиксельная графика и звуки**, тихая музыка, меняющиеся панорамы в главном меню — бабочки в нём разлетаются от курсора.
@@ -36,6 +37,7 @@ Flora0world: Butterflies is a calm yet compulsive game about collecting butterfl
 * **Hunting with character**: butterflies shy away from noise and keep to their flowers and hours. Crouch, sneak, use scent and a torch.
 * **Gear**: dozens of nets and net parts, traps, a self-driving trap you route by hand, a map module, an IR scanner, pheromone nets, a net cannon.
 * **The entomologist's cabinet**: spread butterflies on a spreading board, build boxes, show them in display cases and on the walls, trade at the market.
+* **Night moth catching**: some locations are generated at night — fast moths (31 real species per location, 372 in all) replace the butterflies; you cannot see them in the dark, so you need a lamp: a handheld torch, a headlamp or a net gadget. Night has its own music and moths sell for twice as much.
 * **Danger and adventure**: quicksand and sandstorms in the desert, an abandoned chalet in the Alps, secret places with legendary butterflies.
 * **Multiplayer**: a shared cabinet and co-op catching on your own server (run from the `server/` folder).
 * **Pixel art and sound**, quiet music, a different panorama on the main menu each time — its butterflies flutter away from your cursor.

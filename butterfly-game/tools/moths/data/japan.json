@@ -1,0 +1,1505 @@
+[
+ {
+  "la": "Actias gnoma",
+  "ru": "Лунная павлиноглазка Гнома",
+  "en": "Japanese moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 90,
+  "hi": 120,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "luna",
+  "tail": "long",
+  "f": [
+   "#b8d8a0",
+   "#98c888"
+  ],
+  "h": [
+   "#b8d8a0",
+   "#98c888"
+  ],
+  "opts": {
+   "edge": [
+    "#a05a48",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.45,
+     0.5,
+     3,
+     "#6a3a48",
+     "#e8e0c8"
+    ],
+    [
+     "h",
+     0.4,
+     0.5,
+     3,
+     "#6a3a48",
+     "#e8e0c8"
+    ]
+   ],
+   "sheen": [
+    "#e8f0d0",
+    0.4
+   ]
+  },
+  "hab": "Горные широколиственные леса",
+  "hab_en": "Mountain broadleaf forests",
+  "range": "Япония, Корея, Приморье",
+  "range_en": "Japan, Korea, Russian Far East",
+  "host": "берёза, ольха, рябина",
+  "host_en": "birch, alder, rowan",
+  "fact": "Взрослые бабочки не питаются: у них нет рта, и живут они около недели.",
+  "fact_en": "Adults have no mouth and cannot feed; they live about a week."
+ },
+ {
+  "la": "Caligula japonica",
+  "ru": "Японская павлиноглазка",
+  "en": "Japanese giant silk moth",
+  "fam": "Павлиноглазки",
+  "lo": 85,
+  "hi": 125,
+  "rar": 1,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#a08060",
+   "#7a5a40"
+  ],
+  "h": [
+   "#b89068",
+   "#8a6848"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4030",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.55,
+     0.45,
+     3,
+     "#2a2018",
+     "#e8e0d0"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     4,
+     "#2a2018",
+     "#d8c8b0"
+    ]
+   ],
+   "zz": [
+    "#5a4030",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#6a5038",
+    0.1
+   ],
+   "dots": "#d8c8a8"
+  },
+  "hab": "Опушки и садовые деревья",
+  "hab_en": "Forest edges and orchard trees",
+  "range": "Япония, Корея, Китай, Дальний Восток",
+  "range_en": "Japan, Korea, China, Far East",
+  "host": "дуб, клён, вишня, груша",
+  "host_en": "oak, maple, cherry, pear",
+  "fact": "Осенью самки откладывают яйца кучками, и гусеницы зимуют в яйцах.",
+  "fact_en": "Eggs overwinter, and caterpillars hatch the next spring."
+ },
+ {
+  "la": "Antheraea yamamai",
+  "ru": "Дубовый шелкопряд ямамай",
+  "en": "Japanese oak silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 120,
+  "hi": 150,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#d8a850",
+   "#b87a30"
+  ],
+  "h": [
+   "#d8a850",
+   "#b87a30"
+  ],
+  "opts": {
+   "edge": [
+    "#7a4a20",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.5,
+     5,
+     "#4a2a20",
+     "#e8e0c0"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     5,
+     "#4a2a20",
+     "#e8e0c0"
+    ]
+   ],
+   "zz": [
+    "#8a5a2a",
+    2,
+    "fh"
+   ],
+   "sheen": [
+    "#f0d890",
+    0.3
+   ]
+  },
+  "hab": "Дубовые леса сатояма",
+  "hab_en": "Satoyama oak forests",
+  "range": "Япония, Корея, Приморье",
+  "range_en": "Japan, Korea, Russian Far East",
+  "host": "дуб монгольский, конопчатый",
+  "host_en": "oaks (Quercus)",
+  "fact": "Из его зелёных коконов в Японии издавна получают редкий шёлк тэнсан.",
+  "fact_en": "Its green cocoons have long been used in Japan for rare tensan silk."
+ },
+ {
+  "la": "Rhodinia fugax",
+  "ru": "Родиния быстрая",
+  "en": "Japanese rhodinia silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 65,
+  "hi": 85,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#c88a50",
+   "#a86a38"
+  ],
+  "h": [
+   "#d09860",
+   "#b07840"
+  ],
+  "opts": {
+   "edge": [
+    "#704028",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#f0e8d0"
+    ]
+   ],
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.5,
+     3,
+     "#5a3020",
+     "#f0e8d0"
+    ]
+   ],
+   "band": [
+    "f",
+    0.6,
+    0.68,
+    "#e8d8b8"
+   ]
+  },
+  "hab": "Горные леса с клёном и дубом",
+  "hab_en": "Mountain forests with maple and oak",
+  "range": "Япония, Приморье, Корея",
+  "range_en": "Japan, Primorye, Korea",
+  "host": "клён, дуб, ольха",
+  "host_en": "maple, oak, alder",
+  "fact": "Это одна из немногих бабочек, чьи гусеницы окукливаются в светлом коконе на ветке.",
+  "fact_en": "Its pale cocoon hangs on a twig through the autumn."
+ },
+ {
+  "la": "Theretra japonica",
+  "ru": "Бражник японский виноградный",
+  "en": "Japanese grapevine hawk-moth",
+  "fam": "Бражники",
+  "lo": 65,
+  "hi": 80,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#8a8a50",
+   "#6a7040"
+  ],
+  "h": [
+   "#c08a58",
+   "#a06a40"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a28",
+    1
+   ],
+   "bars": [
+    "#e8d8a8",
+    3
+   ],
+   "dots": "#e8e0c0"
+  },
+  "hab": "Сады, опушки, лесные тропы",
+  "hab_en": "Gardens, edges, forest paths",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "виноград, плющ, вьюнок",
+  "host_en": "grape, ivy, Virginia creeper",
+  "fact": "В сумерках зависает у цветков, как колибри.",
+  "fact_en": "At dusk it hovers at flowers like a hummingbird."
+ },
+ {
+  "la": "Marumba sperchius",
+  "ru": "Бражник ильмовый японский",
+  "en": "Chinese oak hawk-moth",
+  "fam": "Бражники",
+  "lo": 90,
+  "hi": 115,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a8885a",
+   "#7a6040"
+  ],
+  "h": [
+   "#d09068",
+   "#a86a48"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4028",
+    1
+   ],
+   "zz": [
+    "#5a4028",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a5038",
+    0.1
+   ]
+  },
+  "hab": "Широколиственные леса, лесные опушки",
+  "hab_en": "Broadleaf forests and edges",
+  "range": "Япония, Китай, Дальний Восток",
+  "range_en": "Japan, China, Far East",
+  "host": "дуб, ясень, вяз",
+  "host_en": "oak, ash, elm",
+  "fact": "Толстая гусеница зелёная с косыми полосками, как лист.",
+  "fact_en": "The plump caterpillar is leaf green with oblique stripes."
+ },
+ {
+  "la": "Callambulyx tatarinovii",
+  "ru": "Бражник татаринова",
+  "en": "Tatarinov's hawk-moth",
+  "fam": "Бражники",
+  "lo": 75,
+  "hi": 100,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#7a9a58",
+   "#587a40"
+  ],
+  "h": [
+   "#e0a0a0",
+   "#c07878"
+  ],
+  "opts": {
+   "edge": [
+    "#3a5a28",
+    1
+   ],
+   "zz": [
+    "#3a5a28",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.5,
+    3,
+    "#d8e8b8"
+   ]
+  },
+  "hab": "Горные леса, берега ручьёв",
+  "hab_en": "Mountain forests, stream sides",
+  "range": "Япония, Китай, Корея, Дальний Восток",
+  "range_en": "Japan, China, Korea, Far East",
+  "host": "ильм, вяз, ива",
+  "host_en": "elm, willow",
+  "fact": "Зелёные передние крылья сливаются с листвой, а розовые задние видны лишь в полёте.",
+  "fact_en": "Green forewings hide in foliage; the pink hindwings show only in flight."
+ },
+ {
+  "la": "Ambulyx japonica",
+  "ru": "Бражник японский",
+  "en": "Japanese hawk-moth",
+  "fam": "Бражники",
+  "lo": 85,
+  "hi": 105,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#c0a870",
+   "#908050"
+  ],
+  "h": [
+   "#d8b070",
+   "#b08850"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a28",
+    1
+   ],
+   "bars": [
+    "#706038",
+    2
+   ],
+   "zz": [
+    "#5a4a28",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Лиственные леса Хонсю",
+  "hab_en": "Deciduous forests of Honshu",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "орех, дуб, клён",
+  "host_en": "walnut, oak, maple",
+  "fact": "Гусеница кормится на листьях японского грецкого ореха, который растёт вдоль горных ручьёв.",
+  "fact_en": "The caterpillar feeds on walnut leaves growing along mountain streams."
+ },
+ {
+  "la": "Glyphodes pyloalis",
+  "ru": "Огнёвка тутовая",
+  "en": "Mulberry pyralid",
+  "fam": "Огнёвки",
+  "lo": 18,
+  "hi": 24,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#e8e0c8",
+   "#d8d0b0"
+  ],
+  "h": [
+   "#f0ead8",
+   "#e0d8c0"
+  ],
+  "opts": {
+   "edge": [
+    "#7a6a48",
+    1
+   ],
+   "band": [
+    "fh",
+    0.45,
+    0.55,
+    "#c8b890"
+   ],
+   "dots": "#f0ead8"
+  },
+  "hab": "Шелковичные сады, опушки",
+  "hab_en": "Mulberry groves, edges",
+  "range": "Восточная Азия",
+  "range_en": "East Asia",
+  "host": "шелковица",
+  "host_en": "mulberry",
+  "fact": "Её гусеницы сворачивают листья шелковицы в трубки и могут вредить шелководству.",
+  "fact_en": "Caterpillars roll mulberry leaves into tubes and can harm silk farms."
+ },
+ {
+  "la": "Bombyx mandarina",
+  "ru": "Дикий тутовый шелкопряд",
+  "en": "Wild silkworm moth",
+  "fam": "Шелкопряды",
+  "lo": 35,
+  "hi": 45,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#b0a090",
+   "#8a7a68"
+  ],
+  "h": [
+   "#c0b4a4",
+   "#a09484"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a48",
+    1
+   ],
+   "bars": [
+    "#706050",
+    2
+   ],
+   "noise": [
+    "#8a7a68",
+    0.08
+   ]
+  },
+  "hab": "Шелковичники и лесные опушки",
+  "hab_en": "Mulberry thickets and edges",
+  "range": "Япония, Китай, Корея, Дальний Восток",
+  "range_en": "Japan, China, Korea, Far East",
+  "host": "шелковица",
+  "host_en": "mulberry",
+  "fact": "Это дикий предок домашнего шелкопряда, и в отличие от него он летает.",
+  "fact_en": "This is the wild ancestor of the domestic silkworm and, unlike it, flies."
+ },
+ {
+  "la": "Nordstromia japonica",
+  "ru": "Серпокрылка японская",
+  "en": "Japanese hooktip",
+  "fam": "Серпокрылки",
+  "lo": 28,
+  "hi": 38,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#c8b078",
+   "#a89058"
+  ],
+  "h": [
+   "#d8c490",
+   "#b8a068"
+  ],
+  "opts": {
+   "edge": [
+    "#7a6038",
+    1
+   ],
+   "arc": [
+    "h",
+    "#8a7048"
+   ],
+   "tip": [
+    "#8a6838",
+    0.8
+   ],
+   "bars": [
+    "#8a7048",
+    2
+   ]
+  },
+  "hab": "Лесные опушки, ручьи",
+  "hab_en": "Forest edges and streams",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "берёза, ольха",
+  "host_en": "birch, alder",
+  "fact": "Загнутые крылья позволяют ей маскироваться под сухой лист.",
+  "fact_en": "Hooked wing tips help it pass for a dry leaf."
+ },
+ {
+  "la": "Macrocilix mysticata",
+  "ru": "Серпокрылка птичий помёт",
+  "en": "Bird-dropping moth",
+  "fam": "Серпокрылки",
+  "lo": 22,
+  "hi": 30,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0dccc"
+  ],
+  "h": [
+   "#f0ece0",
+   "#e0dccc"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3028",
+    1
+   ],
+   "patch": [
+    "f",
+    0.55,
+    0.5,
+    4,
+    "#4a3a30"
+   ],
+   "zz": [
+    "#5a4a38",
+    2,
+    "fh"
+   ],
+   "tip": [
+    "#6a5a48",
+    0.8
+   ]
+  },
+  "hab": "Подлесок у рек",
+  "hab_en": "Understory near streams",
+  "range": "Япония, Корея, Китай, Гималаи",
+  "range_en": "Japan, Korea, China, Himalaya",
+  "host": "бузина, берёза, лещина",
+  "host_en": "elder, birch, hazel",
+  "fact": "Узор из пары бабочек выглядит как птичий помёт и отпугивает хищников.",
+  "fact_en": "Its wing pattern mimics a bird dropping and deters predators."
+ },
+ {
+  "la": "Eudocima tyrannus",
+  "ru": "Плодовая совка-тиранн",
+  "en": "Fruit-piercing tyrant moth",
+  "fam": "Эребиды",
+  "lo": 95,
+  "hi": 105,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#907058",
+   "#6a5040"
+  ],
+  "h": [
+   "#e8a838",
+   "#d88020"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a20",
+    1
+   ],
+   "band": [
+    "h",
+    0.6,
+    0.78,
+    "#2a2018"
+   ],
+   "noise": [
+    "#5a4030",
+    0.12
+   ],
+   "zz": [
+    "#4a3828",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Леса, сады, виноградники",
+  "hab_en": "Forests, orchards, vineyards",
+  "range": "Восточная Азия, летом на Хонсю",
+  "range_en": "East Asia, Honshu in summer",
+  "host": "луносемянник, лианы",
+  "host_en": "moonseed vines",
+  "fact": "Хоботок прокалывает кожуру спелых плодов, и бабочка пьёт их сок.",
+  "fact_en": "Its proboscis pierces ripe fruit skins to drink the juice."
+ },
+ {
+  "la": "Catocala dula",
+  "ru": "Орденская лента Дула",
+  "en": "Dula underwing",
+  "fam": "Эребиды",
+  "lo": 50,
+  "hi": 60,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8070",
+   "#605848"
+  ],
+  "h": [
+   "#e8c040",
+   "#d8a020"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2218",
+    1
+   ],
+   "band": [
+    "h",
+    0.55,
+    0.7,
+    "#1a1410"
+   ],
+   "zz": [
+    "#2a2218",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#3a3228",
+    0.12
+   ]
+  },
+  "hab": "Дубовые леса сатояма",
+  "hab_en": "Satoyama oak forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "дуб",
+  "host_en": "oak",
+  "fact": "Жёлтые задние крылья вспыхивают при испуге и сбивают птиц с толку.",
+  "fact_en": "Yellow hindwings flash when startled and confuse birds."
+ },
+ {
+  "la": "Catocala columbina",
+  "ru": "Орденская лента голубка",
+  "en": "Dove underwing",
+  "fam": "Эребиды",
+  "lo": 55,
+  "hi": 65,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#9a9a98",
+   "#706e6c"
+  ],
+  "h": [
+   "#e87848",
+   "#c85428"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2a2a",
+    1
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.65,
+    "#2a1a18"
+   ],
+   "zz": [
+    "#3a3a3a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4a4a",
+    0.1
+   ]
+  },
+  "hab": "Опушки горных лесов",
+  "hab_en": "Edges of mountain forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "ива, ольха",
+  "host_en": "willow, alder",
+  "fact": "Днём прячется на коре и неподвижна, но вечером летит на свет.",
+  "fact_en": "By day it sits motionless on bark, but it comes to lights in the evening."
+ },
+ {
+  "la": "Acronicta major",
+  "ru": "Совка-зубчатка большая",
+  "en": "Great dagger moth",
+  "fam": "Совки",
+  "lo": 40,
+  "hi": 52,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#b8b8b0",
+   "#8a8a84"
+  ],
+  "h": [
+   "#c8c4bc",
+   "#a8a4a0"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3a38",
+    1
+   ],
+   "wedges": [
+    "#2a2a28",
+    3
+   ],
+   "zz": [
+    "#4a4a48",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Лиственные леса",
+  "hab_en": "Deciduous forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "вишня, слива, берёза",
+  "host_en": "cherry, plum, birch",
+  "fact": "Тёмные стрелки на светлых крыльях напоминают пятна лишайника.",
+  "fact_en": "Dark dagger marks on pale wings resemble lichen."
+ },
+ {
+  "la": "Orthosia carnipennis",
+  "ru": "Совка весенняя японская",
+  "en": "Japanese spring owlet",
+  "fam": "Совки",
+  "lo": 32,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#b87858",
+   "#8a5440"
+  ],
+  "h": [
+   "#a08068",
+   "#806048"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3a28",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.4,
+     2,
+     "#e8c8a0"
+    ],
+    [
+     "f",
+     0.6,
+     0.55,
+     2,
+     "#e8c8a0"
+    ]
+   ],
+   "zz": [
+    "#6a4030",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Леса, ранней весной у ручьёв",
+  "hab_en": "Forests in early spring near streams",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "дуб, клён, ива",
+  "host_en": "oak, maple, willow",
+  "fact": "Летит рано весной, когда лежит снег, и приходит на цветущие вербы.",
+  "fact_en": "Flies early in spring while snow lingers and visits blooming willows."
+ },
+ {
+  "la": "Sinna extrema",
+  "ru": "Совка-нолида золотистая",
+  "en": "Golden-edged nolid",
+  "fam": "Совки",
+  "lo": 30,
+  "hi": 38,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#f0f0e8",
+   "#e0d870"
+  ],
+  "h": [
+   "#d8d4c0",
+   "#bab498"
+  ],
+  "opts": {
+   "edge": [
+    "#b8a838",
+    1
+   ],
+   "patch": [
+    "f",
+    0.4,
+    0.4,
+    4,
+    "#e8d850"
+   ],
+   "zz": [
+    "#c8b840",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Широколиственные леса",
+  "hab_en": "Broadleaf forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "орех, лещина",
+  "host_en": "walnut, hazel",
+  "fact": "Передние крылья белые с золотой каймой, и бабочка заметна на тёмных стволах.",
+  "fact_en": "White forewings with gold edging stand out against dark trunks."
+ },
+ {
+  "la": "Ourapteryx nivea",
+  "ru": "Пяденица хвостатая белая",
+  "en": "White swallow-tailed geometer",
+  "fam": "Пяденицы",
+  "lo": 42,
+  "hi": 55,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#f8f6f0",
+   "#e8e4d8"
+  ],
+  "h": [
+   "#f8f6f0",
+   "#e8e4d8"
+  ],
+  "opts": {
+   "edge": [
+    "#c8c0a8",
+    1
+   ],
+   "zz": [
+    "#b8b098",
+    2,
+    "fh"
+   ],
+   "dots": "#fffcf0"
+  },
+  "hab": "Опушки и ручьи",
+  "hab_en": "Edges and stream sides",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "лианы, сакура",
+  "host_en": "vines, cherry",
+  "fact": "Совсем белая, как лепесток, и тихо летит в сумерках.",
+  "fact_en": "Pure white like a petal, it flies softly at dusk."
+ },
+ {
+  "la": "Biston robustus",
+  "ru": "Пяденица коренастая",
+  "en": "Robust peppered geometer",
+  "fam": "Пяденицы",
+  "lo": 55,
+  "hi": 70,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#c0bcb0",
+   "#8a8680"
+  ],
+  "h": [
+   "#d0ccc0",
+   "#a09c90"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3830",
+    1
+   ],
+   "noise": [
+    "#3a3830",
+    0.2
+   ],
+   "zz": [
+    "#2a2820",
+    3,
+    "fh"
+   ],
+   "dots": "#e8e4d8"
+  },
+  "hab": "Лиственные леса и сады",
+  "hab_en": "Deciduous forests and gardens",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "вишня, ива, берёза",
+  "host_en": "cherry, willow, birch",
+  "fact": "Самки почти бескрылые, самцы летят на свет, а гусеницы похожи на веточки.",
+  "fact_en": "Females have shortened wings; the caterpillars mimic twigs."
+ },
+ {
+  "la": "Abraxas miranda",
+  "ru": "Пяденица удивительная",
+  "en": "Japanese magpie geometer",
+  "fam": "Пяденицы",
+  "lo": 35,
+  "hi": 45,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0dcd0"
+  ],
+  "h": [
+   "#f0ece0",
+   "#e0dcd0"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2a28",
+    1
+   ],
+   "checker": [
+    "#2a2a28",
+    "#f0ece0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#2a2a28"
+    ],
+    [
+     "f",
+     0.6,
+     0.4,
+     2,
+     "#2a2a28"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     2,
+     "#2a2a28"
+    ]
+   ],
+   "band": [
+    "f",
+    0.65,
+    0.75,
+    "#d8a838"
+   ]
+  },
+  "hab": "Лесные поляны, склоны",
+  "hab_en": "Forest clearings and slopes",
+  "range": "Япония, Китай, Корея",
+  "range_en": "Japan, China, Korea",
+  "host": "бересклет",
+  "host_en": "spindle",
+  "fact": "Чёрно-белая пестрота и жёлтая полоса отпугивают птиц.",
+  "fact_en": "Black-and-white spots with a yellow band warn birds off."
+ },
+ {
+  "la": "Phthonandria atrilineata",
+  "ru": "Пяденица тутовая",
+  "en": "Mulberry looper",
+  "fam": "Пяденицы",
+  "lo": 30,
+  "hi": 40,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#c8b898",
+   "#a89878"
+  ],
+  "h": [
+   "#d0c4a8",
+   "#b0a488"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a40",
+    1
+   ],
+   "zz": [
+    "#6a5a40",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#8a7a5a",
+    0.1
+   ]
+  },
+  "hab": "Сады и опушки с тутом",
+  "hab_en": "Mulberry gardens and edges",
+  "range": "Япония, Китай, Корея",
+  "range_en": "Japan, China, Korea",
+  "host": "шелковица",
+  "host_en": "mulberry",
+  "fact": "Гусеница-землемер замирает на ветке, вытянувшись как сучок.",
+  "fact_en": "The looper caterpillar freezes on a twig, stretched like a stub."
+ },
+ {
+  "la": "Chionarctia nivea",
+  "ru": "Медведица снежная",
+  "en": "Snow tiger moth",
+  "fam": "Медведицы",
+  "lo": 42,
+  "hi": 56,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#fcfaf4",
+   "#f0ece0"
+  ],
+  "h": [
+   "#fcfaf4",
+   "#f0ece0"
+  ],
+  "opts": {
+   "edge": [
+    "#e0d8c0",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.5,
+     1,
+     "#a89878"
+    ]
+   ],
+   "sheen": [
+    "#ffffff",
+    0.4
+   ]
+  },
+  "hab": "Луга и лесные опушки",
+  "hab_en": "Meadows and forest edges",
+  "range": "Япония, Корея, Китай, Приморье",
+  "range_en": "Japan, Korea, China, Primorye",
+  "host": "злаки, мелкие травы",
+  "host_en": "grasses, herbs",
+  "fact": "Белая бабочка почти без рисунка, а гусеницы всеядны.",
+  "fact_en": "A nearly unmarked white moth with omnivorous caterpillars."
+ },
+ {
+  "la": "Lemyra imparilis",
+  "ru": "Медведица неравная",
+  "en": "Uneven tiger moth",
+  "fam": "Медведицы",
+  "lo": 30,
+  "hi": 45,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0e8d0",
+   "#d8c8a0"
+  ],
+  "h": [
+   "#f8f0e0",
+   "#e8d8b8"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7848",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.35,
+     2,
+     "#4a3a28"
+    ],
+    [
+     "f",
+     0.55,
+     0.55,
+     2,
+     "#4a3a28"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     2,
+     "#4a3a28"
+    ]
+   ],
+   "zz": [
+    "#8a7848",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Лес и луга",
+  "hab_en": "Forest and meadows",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "злаки, лопух, подорожник",
+  "host_en": "grasses, burdock, plantain",
+  "fact": "Бабочка летает у светлых окон хижин и привлекается ярким светом.",
+  "fact_en": "Often found around the lit windows of mountain huts."
+ },
+ {
+  "la": "Phalera flavescens",
+  "ru": "Хохлатка жёлтоватая",
+  "en": "Japanese maple prominent",
+  "fam": "Хохлатки",
+  "lo": 42,
+  "hi": 55,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#d8d0b0",
+   "#a8a078"
+  ],
+  "h": [
+   "#e8e0c8",
+   "#c8c0a0"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5030",
+    1
+   ],
+   "patch": [
+    "f",
+    0.88,
+    0.5,
+    4,
+    "#e8c868"
+   ],
+   "zz": [
+    "#6a6038",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Леса и сады",
+  "hab_en": "Forests and gardens",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "клён, дуб, вишня",
+  "host_en": "maple, oak, cherry",
+  "fact": "Сложенные крылья похожи на обломанную веточку берёзы.",
+  "fact_en": "Folded wings look like a broken birch twig."
+ },
+ {
+  "la": "Syntypistis punctatella",
+  "ru": "Хохлатка точечная",
+  "en": "Spotted prominent",
+  "fam": "Хохлатки",
+  "lo": 30,
+  "hi": 40,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#98b078",
+   "#6a8858"
+  ],
+  "h": [
+   "#c8c8a8",
+   "#a8a888"
+  ],
+  "opts": {
+   "edge": [
+    "#3a4a28",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.4,
+     2,
+     "#f0f0d0"
+    ]
+   ],
+   "zz": [
+    "#3a4a28",
+    2,
+    "f"
+   ],
+   "sheen": [
+    "#e0f0c0",
+    0.3
+   ]
+  },
+  "hab": "Горные лиственные леса",
+  "hab_en": "Mountain deciduous forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "дуб, граб",
+  "host_en": "oak, hornbeam",
+  "fact": "Зелёный мох на крыльях маскирует бабочку на коре в тени деревьев.",
+  "fact_en": "Mossy green wings camouflage it on shaded bark."
+ },
+ {
+  "la": "Dendrolimus spectabilis",
+  "ru": "Сосновый коконопряд японский",
+  "en": "Japanese pine caterpillar moth",
+  "fam": "Коконопряды",
+  "lo": 50,
+  "hi": 85,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a09080",
+   "#6a5a4c"
+  ],
+  "h": [
+   "#8a7868",
+   "#6a5a4a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3028",
+    1
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.5,
+    "#e8e0d0"
+   ],
+   "zz": [
+    "#3a3028",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#4a3c30",
+    0.1
+   ]
+  },
+  "hab": "Сосновые леса",
+  "hab_en": "Pine forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "сосна, лиственница",
+  "host_en": "pine, larch",
+  "fact": "Гусеницы опасны для сосен и зимуют в подстилке.",
+  "fact_en": "Caterpillars defoliate pines and overwinter in the litter."
+ },
+ {
+  "la": "Kunugia undans",
+  "ru": "Коконопряд волнистый",
+  "en": "Wavy lappet moth",
+  "fam": "Коконопряды",
+  "lo": 60,
+  "hi": 95,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c08848",
+   "#8a5a30"
+  ],
+  "h": [
+   "#c8985c",
+   "#a07040"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3a20",
+    1
+   ],
+   "arc": [
+    "h",
+    "#6a4a28"
+   ],
+   "zz": [
+    "#6a4a28",
+    2,
+    "f"
+   ],
+   "sheen": [
+    "#e8c890",
+    0.2
+   ]
+  },
+  "hab": "Широколиственные леса",
+  "hab_en": "Broadleaf forests",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "дуб, ива, груша",
+  "host_en": "oak, willow, pear",
+  "fact": "Складчатые крылья и красно-бурый цвет делают её похожей на сухой лист.",
+  "fact_en": "Ruffled reddish wings resemble a dead leaf."
+ },
+ {
+  "la": "Ivela auripes",
+  "ru": "Волнянка золотоногая",
+  "en": "Golden-legged tussock moth",
+  "fam": "Волнянки",
+  "lo": 25,
+  "hi": 38,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#fcf8f0",
+   "#f0eadc"
+  ],
+  "h": [
+   "#fcf8f0",
+   "#f0eadc"
+  ],
+  "opts": {
+   "edge": [
+    "#d8c898",
+    1
+   ],
+   "sheen": [
+    "#ffffff",
+    0.3
+   ],
+   "dots": "#f8f0d0"
+  },
+  "hab": "Леса и склоны",
+  "hab_en": "Forests and slopes",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "клён, дуб",
+  "host_en": "maple, oak",
+  "fact": "Белая бабочка с золотистыми ножками; её волоски раздражают кожу.",
+  "fact_en": "A white moth with golden legs; its hairs irritate skin."
+ },
+ {
+  "la": "Endoclita excrescens",
+  "ru": "Тонкопряд бородавчатый",
+  "en": "Japanese ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 60,
+  "hi": 85,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#a89878",
+   "#807050"
+  ],
+  "h": [
+   "#a89878",
+   "#807050"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a30",
+    1
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.55,
+    "#e8dcb8"
+   ],
+   "noise": [
+    "#6a5a3a",
+    0.12
+   ],
+   "veins": "#6a5a3a"
+  },
+  "hab": "Лесные просеки",
+  "hab_en": "Forest glades",
+  "range": "Япония, Корея, Китай",
+  "range_en": "Japan, Korea, China",
+  "host": "бамбук, лопух, папоротник",
+  "host_en": "bamboo, burdock, fern",
+  "fact": "Гусеницы живут внутри стеблей и древесины, а бабочки разбрасывают яйца на лету.",
+  "fact_en": "Caterpillars live inside stems; adults scatter eggs in flight."
+ },
+ {
+  "la": "Nippoptilia vitis",
+  "ru": "Пальцекрылка виноградная",
+  "en": "Japanese grape plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 12,
+  "hi": 18,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#c8b080",
+   "#a89060"
+  ],
+  "h": [
+   "#d8c498",
+   "#b8a478"
+  ],
+  "opts": {
+   "edge": [
+    "#7a6a40",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.3,
+     1,
+     "#4a3a28"
+    ]
+   ]
+  },
+  "hab": "Опушки, виноградники",
+  "hab_en": "Edges, vineyards",
+  "range": "Япония, Корея",
+  "range_en": "Japan, Korea",
+  "host": "виноград",
+  "host_en": "grape",
+  "fact": "Крылья разделены на перья, как у крошечного пёрышка.",
+  "fact_en": "Wings are split into feather-like lobes."
+ }
+]

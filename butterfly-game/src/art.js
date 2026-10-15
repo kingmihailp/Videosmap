@@ -67,6 +67,29 @@ const Art = (() => {
     ringlet:  { f: [[0, 18], [3, 9], [14, 5], [27, 6], [33, 12], [30, 18], [18, 21], [6, 21]], h: [[0, 20], [12, 21], [24, 22], [30, 27], [28, 33], [20, 36], [10, 35], [3, 30]] },
     dryad:    { f: [[0, 18], [3, 8], [14, 3], [28, 3], [36, 6], [38, 10], [33, 12], [32, 18], [20, 21], [8, 21]], h: [[0, 20], [12, 21], [26, 22], [31, 27], [30, 32], [33, 38], [24, 35], [14, 36], [5, 33], [2, 27]] },
     skipper:  { f: [[0, 18], [3, 10], [16, 5], [30, 6], [37, 10], [33, 16], [22, 19], [8, 20]], h: [[0, 20], [10, 20], [20, 21], [24, 26], [20, 31], [10, 31], [3, 27]] },
+    // ---- moths (Heterocera): forms by family; the data rows name one of these in art.t
+    hawk:     { f: [[0, 18], [2, 13], [14, 6], [30, 3], [39, 2.5], [37, 6], [28, 13], [18, 19], [8, 21]], h: [[0, 20], [8, 21], [18, 22], [24, 25], [22, 29], [14, 31], [5, 29], [1, 25]] },
+    hawkb:    { f: [[0, 18], [3, 10], [14, 4], [28, 4], [36, 8], [33, 13], [24, 17], [14, 21], [5, 21]], h: [[0, 20], [10, 21], [22, 22], [29, 26], [28, 31], [20, 34], [10, 33], [3, 28]] },
+    saturn:   { f: [[0, 18], [3, 8], [15, 2.5], [30, 3.5], [38, 9], [37, 16], [28, 20], [14, 21], [5, 21]], h: [[0, 20], [14, 21], [28, 23], [36, 28], [35, 34], [26, 38], [14, 38], [5, 34], [2, 27]] },
+    atlas:    { f: [[0, 18], [3, 8], [16, 2.5], [32, 1.5], [39, 1], [38, 5], [33, 7], [36, 12], [30, 19], [14, 21], [5, 21]], h: [[0, 20], [14, 21], [28, 23], [35, 28], [34, 34], [26, 38], [14, 38], [5, 34], [2, 27]] },
+    falcate:  { f: [[0, 18], [4, 9], [16, 4], [30, 3], [38, 2], [36, 6], [31, 9], [33, 15], [22, 20], [8, 21]], h: [[0, 20], [12, 21], [24, 23], [28, 28], [22, 32], [12, 32], [4, 28]] },
+    luna:     { f: [[0, 18], [3, 9], [15, 3.5], [30, 3], [37, 5], [36, 10], [30, 15], [20, 20], [6, 21]], h: [[0, 20], [14, 21], [26, 23], [31, 27], [30, 31], [24, 33], [12, 33], [5, 30], [2, 26]],
+                tail: [[23, 31], [28, 30], [31, 37], [28, 38]], longTail: [[23, 31], [29, 30], [36, 39.5], [31, 39.5]] },
+    comet:    { f: [[0, 18], [3, 8], [14, 2.5], [28, 3], [35, 7], [34, 14], [26, 20], [12, 21]], h: [[0, 20], [14, 21], [24, 23], [28, 27], [26, 31], [18, 33], [8, 32], [2, 27]],
+                tail: [[20, 31], [24, 30], [30, 38], [26, 39]], longTail: [[19, 31], [24, 30], [39, 39.5], [32, 39.5]] },
+    noctuid:  { f: [[0, 18], [3, 10], [16, 5], [30, 4], [37, 8], [35, 13], [28, 17], [14, 21], [5, 21]], h: [[0, 20], [12, 21], [24, 23], [29, 27], [26, 31], [16, 32], [6, 29], [2, 25]] },
+    underwing: { f: [[0, 18], [3, 10], [16, 5], [30, 4], [37, 8], [35, 13], [28, 17], [14, 21], [5, 21]], h: [[0, 20], [14, 21], [28, 23], [34, 28], [32, 34], [24, 37], [12, 36], [4, 31], [2, 26]] },
+    geometer: { f: [[0, 18], [3, 8], [14, 3.5], [28, 4], [35, 9], [34, 15], [26, 20], [12, 21]], h: [[0, 20], [12, 21], [26, 22], [33, 27], [30, 29], [32, 33], [24, 34], [22, 37], [12, 35], [3, 30]] },
+    tiger:    { f: [[0, 18], [3, 9], [15, 4], [28, 5], [35, 10], [33, 16], [24, 20], [10, 21]], h: [[0, 20], [12, 21], [24, 22], [30, 26], [28, 31], [18, 34], [8, 32], [3, 27]] },
+    eggar:    { f: [[0, 17], [2, 9], [14, 3], [28, 4], [36, 10], [34, 17], [24, 21], [8, 21]], h: [[0, 20], [12, 22], [26, 24], [33, 29], [30, 35], [20, 38], [8, 36], [2, 30]] },
+    prominent: { f: [[0, 18], [3, 11], [16, 6], [30, 5], [38, 7], [34, 12], [26, 17], [12, 21]], h: [[0, 20], [10, 21], [20, 23], [22, 28], [14, 30], [4, 27]] },
+    urania:   { f: [[0, 18], [4, 8], [18, 3], [32, 5], [37, 9], [33, 15], [22, 20], [8, 21]], h: [[0, 20], [12, 21], [24, 23], [28, 27], [24, 31], [15, 32], [6, 30], [2, 26]],
+                tail: [[22, 30], [26, 29], [29, 37], [26.5, 38]], longTail: [[22, 30], [26, 29], [31, 39.5], [28, 39.5]], twoTail: [[[19, 31], [22, 30], [23, 38], [21, 38.5]], [[25, 29], [28, 28], [31, 38], [28.5, 38.5]]] },
+    plume:    { f: [[[0, 18], [4, 12], [24, 6], [39, 4], [28, 11], [10, 19]], [[6, 19], [24, 14], [39, 15], [26, 19], [10, 22]]], h: [[[0, 21], [14, 24], [32, 33], [16, 28]], [[2, 23], [18, 29], [30, 38], [12, 32]]] },
+    ghost:    { f: [[0, 18], [2, 12], [20, 7], [39, 6], [39, 11], [24, 16], [10, 20]], h: [[0, 20], [14, 21], [30, 22], [36, 25], [34, 29], [20, 29], [6, 27]] },
+    delta:    { f: [[0, 19], [4, 10], [16, 6], [30, 8], [37, 13], [30, 19], [10, 21]], h: [[0, 20], [10, 21], [20, 24], [22, 29], [12, 31], [3, 27]] },
+    silk:     { f: [[0, 17], [3, 8], [15, 4], [28, 6], [34, 11], [30, 15], [32, 18], [22, 21], [6, 21]], h: [[0, 20], [12, 22], [24, 24], [28, 29], [22, 33], [10, 33], [3, 28]] },
+    burnet:   { f: [[0, 18], [4, 11], [18, 6], [32, 7], [37, 12], [30, 18], [14, 21]], h: [[0, 20], [10, 21], [20, 23], [22, 28], [12, 30], [3, 27]] },
   };
 
   // The form of each species' wings (by genus, then by species): the shape table above is chosen by biology, not by the old coarse shape of the data rows
@@ -151,7 +174,7 @@ const Art = (() => {
     const a = sp.art; const sh = SHAPES[formOf(sp)] || SHAPES[a.t] || SHAPES.std;
     const fM = maskOf(sh.f), hM = maskOf(sh.h);
     let tM = null;
-    const tmode = TAIL_OF[baseLa(sp)] || (a.tail !== undefined && a.tail !== false ? (a.longTail ? 'long' : 'short') : 'none'), tpoly = tmode === 'none' ? null : tailPoly(sh, tmode);
+    const tmode = a.tailMode || TAIL_OF[baseLa(sp)] || (a.tail !== undefined && a.tail !== false ? (a.longTail ? 'long' : 'short') : 'none'), tpoly = tmode === 'none' ? null : tailPoly(sh, tmode);
     if (tpoly) tM = maskOf(tpoly);
     const fD = distMap(fM), hD = distMap(hM), tD = tM ? distMap(tM) : null;
     const fB = bbox(fM), hB = bbox(hM);
@@ -186,6 +209,8 @@ const Art = (() => {
           if ((rx * rx) / 18 + (ry * ry) / 3.2 <= 1) c = C(a.wedges[0]);
         }
       }
+      if (a.noise) { const hv = ((x * 73856093) ^ (y * 19349663) ^ (strSeed(sp.id) * 83492791)) >>> 0; if (hv % 100 < a.noise[1] * 100 && d > 0) c = mixc(c, C(a.noise[0]), 0.65); }
+      if (a.zz && (a.zz[2] || 'fh').includes(wing)) { for (let k = 0; k < a.zz[1]; k++) { const uu = (k + 1) / (a.zz[1] + 1) * 0.86 + 0.08 + Math.sin(v * 9 + k * 1.7) * 0.025 + (v - 0.5) * 0.06; if (Math.abs(u - uu) < 0.022 && d > 0) c = C(a.zz[0]); } }
       if (a.patch && a.patch[0] === wing) { const q = circ(x, y, wing, u, v, B, a.patch[1], a.patch[2], a.patch[3]); if (q >= 0) c = C(a.patch[4]); }
       if (a.sp) for (const s of a.sp) { if (s[0].includes(wing) || s[0] === 'fh') { const q = circ(x, y, wing, u, v, B, s[1], s[2], s[3]); if (q >= 0) c = C(s[4]); } }
       if (a.eye) for (const e of a.eye) {
@@ -226,9 +251,15 @@ const Art = (() => {
   const RAW = { rf: { a: -0.85, s: 0.62 }, lf: { a: -0.85, s: 0.62 }, rh: { a: -1.4, s: 0.6 }, lh: { a: -1.4, s: 0.6 } };
   const IDEAL = { rf: { a: 0, s: 1 }, lf: { a: 0, s: 1 }, rh: { a: 0, s: 1 }, lh: { a: 0, s: 1 } };
   function wingParts(sp) { wingCanvas(sp); return partsCache[sp.id]; }
-  function drawBody(ctx, cx, cy, sc, silhouette) {
+  function drawBody(ctx, cx, cy, sc, silhouette, moth) {
     const r = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(cx + x * sc), Math.round(cy + (y - 20) * sc), Math.round(w * sc), Math.round(h * sc)); };
     const bc = silhouette ? '#000' : '#1e1612';
+    if (moth) {      // a moth: a stout furry thorax, a thick tapering abdomen, short feathery antennae
+      const fur = silhouette ? '#000' : '#3a2c22';
+      r(-2, 9, 4, 3, bc); r(-3, 12, 6, 5, fur); r(-2, 17, 4, 11, bc); r(-1, 28, 2, 2, bc); r(-2, 13, 1, 1, silhouette ? '#000' : '#6a5a48'); r(1, 15, 1, 1, silhouette ? '#000' : '#6a5a48');
+      r(-3, 6, 1, 3, bc); r(2, 6, 1, 3, bc); r(-4, 4, 1, 2, bc); r(3, 4, 1, 2, bc); r(-5, 3, 1, 1, bc); r(4, 3, 1, 1, bc);
+      return;
+    }
     r(-1, 11, 2, 19, bc); r(-1, 8, 2, 3, bc); r(-2, 12, 4, 4, bc); r(-1, 29, 2, 2, bc); r(-2, 14, 1, 1, silhouette ? '#000' : '#4a3a30');
     r(-2, 6, 1, 2, bc); r(1, 6, 1, 2, bc); r(-3, 4, 1, 2, bc); r(2, 4, 1, 2, bc);
   }
@@ -239,7 +270,7 @@ const Art = (() => {
       const w = pose[k]; if (!w) continue; const piv = PIV[part];
       ctx.save(); ctx.translate(cx, cy + (piv - 20) * sc); ctx.scale(m * sc, sc); ctx.rotate(w.a); ctx.scale(w.s, 1); ctx.drawImage(P[part], 0, -piv); ctx.restore();
     }
-    drawBody(ctx, cx, cy, sc, false);
+    drawBody(ctx, cx, cy, sc, false, sp.moth);
     ctx.globalAlpha = 1;
   }
   // tip of a wing (relative to its root, in wing units) for a given pose entry
@@ -254,10 +285,12 @@ const Art = (() => {
     x.save(); x.translate(N, 0); x.scale(-1, 1); x.drawImage(w, 0, 0); x.restore();
     // body
     const bc = silhouette ? '#000' : '#1e1612';
+    if (sp.moth) { x.save(); x.translate(N, 20); drawBody(x, 0, 0, 1, silhouette, true); x.restore(); }
+    else {
     x.fillStyle = bc; x.fillRect(N - 1, 11, 2, 19); x.fillRect(N - 1, 8, 2, 3); x.fillRect(N - 2, 12, 4, 4);
     x.fillRect(N - 1, 29, 2, 2);
     x.fillStyle = silhouette ? '#000' : '#4a3a30'; x.fillRect(N - 2, 14, 1, 1);
-    x.fillStyle = bc; x.fillRect(N - 2, 6, 1, 2); x.fillRect(N + 1, 6, 1, 2); x.fillRect(N - 3, 4, 1, 2); x.fillRect(N + 2, 4, 1, 2);
+    x.fillStyle = bc; x.fillRect(N - 2, 6, 1, 2); x.fillRect(N + 1, 6, 1, 2); x.fillRect(N - 3, 4, 1, 2); x.fillRect(N + 2, 4, 1, 2); }
     if (silhouette) {
       const d = x.getImageData(0, 0, cv.width, cv.height); for (let i = 0; i < d.data.length; i += 4) { if (d.data[i + 3]) { const tc = hex2rgb(tint || '#221c18'); d.data[i] = tc[0]; d.data[i + 1] = tc[1]; d.data[i + 2] = tc[2]; d.data[i + 3] = 255; } }
       x.putImageData(d, 0, 0);
@@ -289,8 +322,9 @@ const Art = (() => {
     wr.position.z = -half * 0.04; wl.position.z = -half * 0.04;
     R.add(wr); L.add(wl); g.add(L, R);
     const bl = span * 0.5;
-    const th = new THREE.Mesh(new THREE.BoxGeometry(span * 0.07, span * 0.07, span * 0.14), bodyMat); th.position.z = -bl * 0.05;
-    const ab = new THREE.Mesh(new THREE.BoxGeometry(span * 0.05, span * 0.05, span * 0.34), bodyMat); ab.position.z = bl * 0.36;
+    const mk = sp.moth ? 1.6 : 1;      // moths are stout
+    const th = new THREE.Mesh(new THREE.BoxGeometry(span * 0.07 * mk, span * 0.07 * mk, span * 0.14), bodyMat); th.position.z = -bl * 0.05;
+    const ab = new THREE.Mesh(new THREE.BoxGeometry(span * 0.05 * mk, span * 0.05 * mk, span * 0.34), bodyMat); ab.position.z = bl * 0.36;
     const hd = new THREE.Mesh(new THREE.BoxGeometry(span * 0.06, span * 0.06, span * 0.06), headMat); hd.position.z = -bl * 0.22;
     g.add(th, ab, hd);
     for (const s of [-1, 1]) {                       // antennae start at the front of the head and spread outwards / upwards in a V, with a tiny club at the tip

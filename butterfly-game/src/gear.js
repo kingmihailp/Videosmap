@@ -9,7 +9,7 @@ const Gear = (() => {
     { n: 2, kind: 'gad', id: 'g_map' }, { n: 3, kind: 'gad', id: 'g_ir' },
     { n: 4, kind: 'part', id: 'r_shock' }, { n: 5, kind: 'part', id: 'h_mech' }, { n: 6, kind: 'part', id: 'm_pher' }, { n: 7, kind: 'part', id: 'h_piston' },
     { n: 8, kind: 'gad', id: 'g_auto' }, { n: 9, kind: 'part', id: 'm_tung' }, { n: 10, kind: 'part', id: 'r_tung' }, { n: 11, kind: 'part', id: 'h_tung' },
-    { n: 12, kind: 'tr', id: 'drv' }, { n: 13, kind: 'fl', id: 'synth' },
+    { n: 12, kind: 'tr', id: 'drv' }, { n: 13, kind: 'fl', id: 'synth' }, { n: 14, kind: 'gad', id: 'g_torch' },
   ];
   const item = it => it.kind === 'part' ? P(it.id) : it.kind === 'gad' ? G(it.id) : it.kind === 'tr' ? Traps.TYPES[it.id] : it.kind === 'fl' ? Traps.FL[it.id] : NetParts.CANNON;
   const price = it => item(it).price, name = it => item(it).ru;
@@ -342,7 +342,7 @@ const Gear = (() => {
   function shopDraw(mk, ctx, t, m, dt) {
     const G = mk.gr, L = shopLayout(mk), it = ITEMS[G.sel], c = UIK.col; G.msgT = Math.max(0, G.msgT - dt); G.flash = Math.max(0, G.flash - dt);
     ctx.fillStyle = '#10181c'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#16222a' : '#131e24'; ctx.fillRect(i, 0, 3, SH); }
-    T.draw(ctx, 'Энтомолог-энтузиаст: оборудование', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите товар и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim }); T.draw(ctx, 'Тринадцать необычных вещей', 8, 32, { size: 8, color: c.dim });
+    T.draw(ctx, 'Энтомолог-энтузиаст: оборудование', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите товар и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim }); T.draw(ctx, 'Четырнадцать необычных вещей', 8, 32, { size: 8, color: c.dim });
     mk.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
     UIK.panel(ctx, 6, 42, 230, 212, { fill: '#1c2a30', border: '#3a5460', shadow: false });
     L.rows.forEach(r => { const q = ITEMS[r.i], on = r.i === G.sel, hv = UIK.hit(r, m.x, m.y), own = owned(q); ctx.fillStyle = on ? 'rgba(120,220,255,0.26)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = '#7ad8ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }

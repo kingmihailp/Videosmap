@@ -1,0 +1,1614 @@
+[
+ {
+  "la": "Actias rhodopneuma",
+  "ru": "Актиас розоватый",
+  "en": "Pink Indo-Chinese moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 130,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "luna",
+  "tail": "long",
+  "f": [
+   "#9ac88a",
+   "#b8d89a"
+  ],
+  "h": [
+   "#a8d098",
+   "#c8e0a8"
+  ],
+  "opts": {
+   "edge": [
+    "#c0507a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.5,
+     0.4,
+     3,
+     "#8a3050",
+     "#f0e8c8"
+    ],
+    [
+     "h",
+     0.45,
+     0.4,
+     3,
+     "#8a3050",
+     "#f0e8c8"
+    ]
+   ],
+   "sheen": [
+    "#e8f0d0",
+    0.3
+   ]
+  },
+  "hab": "Влажные горные леса 1500–2500 м",
+  "hab_en": "Humid montane forest, 1500–2500 m",
+  "range": "Гималаи, юг Китая, север Вьетнама",
+  "range_en": "Himalaya, S China, N Vietnam",
+  "host": "ольха, ива, берёза",
+  "host_en": "alder, willow, birch",
+  "fact": "Взрослые бабочки не питаются: у них нет рабочего хоботка, и живут они всего несколько дней.",
+  "fact_en": "Adults do not feed: they have no functional mouthparts and live only a few days."
+ },
+ {
+  "la": "Archaeoattacus edwardsii",
+  "ru": "Археоаттакус Эдвардса",
+  "en": "Edwards’s atlas moth",
+  "fam": "Павлиноглазки",
+  "lo": 200,
+  "hi": 250,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "atlas",
+  "tail": "none",
+  "f": [
+   "#a86a3a",
+   "#7a4a2c"
+  ],
+  "h": [
+   "#a86a3a",
+   "#7a4a2c"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2a1a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.55,
+     0.35,
+     4,
+     "#2a1a12",
+     "#f0e8d8"
+    ],
+    [
+     "h",
+     0.5,
+     0.4,
+     4,
+     "#2a1a12",
+     "#f0e8d8"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.62,
+    0.7,
+    "#e8d0b0"
+   ],
+   "zz": [
+    "#4a2a1a",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Туманные леса на склонах хребтов",
+  "hab_en": "Misty ridge forests",
+  "range": "Гималаи, Юньнань, Вьетнам, Таиланд",
+  "range_en": "Himalaya, Yunnan, Vietnam, Thailand",
+  "host": "лавровые, барбарис, ольха",
+  "host_en": "laurels, barberry, alder",
+  "fact": "Один из самых крупных мотыльков мира: размах крыльев достигает четверти метра.",
+  "fact_en": "One of the largest moths in the world, with a wingspan up to a quarter of a metre."
+ },
+ {
+  "la": "Brahmaea hearseyi",
+  "ru": "Брахмея Хёрси",
+  "en": "Hearsey’s owl moth",
+  "fam": "Брахмеиды",
+  "lo": 100,
+  "hi": 130,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#6a4a30",
+   "#4a3020"
+  ],
+  "h": [
+   "#8a6040",
+   "#5a3a24"
+  ],
+  "opts": {
+   "edge": [
+    "#2a1a10",
+    1
+   ],
+   "zz": [
+    "#e8d8b8",
+    4,
+    "fh"
+   ],
+   "band": [
+    "f",
+    0.7,
+    0.76,
+    "#e8d8b8"
+   ],
+   "eye": [
+    [
+     "f",
+     0.3,
+     0.5,
+     2,
+     "#2a1a10",
+     "#e8d8b8"
+    ]
+   ]
+  },
+  "hab": "Горные леса, 1000–2000 м",
+  "hab_en": "Montane forests, 1000–2000 m",
+  "range": "Гималаи, юг Китая, Индокитай",
+  "range_en": "Himalaya, S China, Indochina",
+  "host": "бирючина, сирень, ясень",
+  "host_en": "privet, lilac, ash",
+  "fact": "Волнистый рисунок из светлых и тёмных линий делает крылья похожими на древесную кору.",
+  "fact_en": "The wavy pattern of pale and dark lines makes the wings look like tree bark."
+ },
+ {
+  "la": "Loepa katinka",
+  "ru": "Лоэпа катинка",
+  "en": "Indian moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 85,
+  "hi": 110,
+  "rar": 1,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#e8c040",
+   "#d89a30"
+  ],
+  "h": [
+   "#e8c850",
+   "#e0a840"
+  ],
+  "opts": {
+   "edge": [
+    "#b05a2a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.4,
+     0.45,
+     3,
+     "#3a2018",
+     "#f0e0c0"
+    ],
+    [
+     "h",
+     0.4,
+     0.45,
+     3,
+     "#3a2018",
+     "#f0e0c0"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.7,
+    0.76,
+    "#c05a3a"
+   ],
+   "tip": [
+    "#b86a30",
+    0.85
+   ]
+  },
+  "hab": "Лесные опушки, ночной свет",
+  "hab_en": "Forest edges, light traps",
+  "range": "Индия, Индокитай, Тайвань",
+  "range_en": "India, Indochina, Taiwan",
+  "host": "сумах, манго, лавровые",
+  "host_en": "sumac, mango, laurels",
+  "fact": "Яркая жёлтая окраска с красной полосой сильно выделяет её среди ночных гостей лампы.",
+  "fact_en": "Its bright yellow wings with a red band stand out among the night visitors to a lamp."
+ },
+ {
+  "la": "Salassa thespis",
+  "ru": "Салясса теспис",
+  "en": "Chinese windowed silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 120,
+  "hi": 150,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#8a6a48",
+   "#6a4a30"
+  ],
+  "h": [
+   "#8a6a48",
+   "#6a4a30"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a1a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.45,
+     0.4,
+     5,
+     "#2a1a10",
+     "#f0f0e0"
+    ],
+    [
+     "h",
+     0.4,
+     0.45,
+     5,
+     "#2a1a10",
+     "#f0f0e0"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.68,
+    0.74,
+    "#d8c8a8"
+   ],
+   "zz": [
+    "#4a3a28",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Влажные горные леса, 1500+ м",
+  "hab_en": "Humid montane forests above 1500 m",
+  "range": "Юг Китая, север Вьетнама, Лаос",
+  "range_en": "S China, N Vietnam, Laos",
+  "host": "лавровые, ольха",
+  "host_en": "laurels, alder",
+  "fact": "Прозрачные «окна» на крыльях делают её одной из самых необычных павлиноглазок региона.",
+  "fact_en": "Clear window-like spots in the wings make it one of the most unusual silk moths of the region."
+ },
+ {
+  "la": "Eriogyna pyretorum",
+  "ru": "Эриогина пиреторум",
+  "en": "Camphor silkmoth",
+  "fam": "Павлиноглазки",
+  "lo": 90,
+  "hi": 125,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#8a7a60"
+  ],
+  "h": [
+   "#d8c8a0",
+   "#b8a078"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a38",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.45,
+     0.45,
+     4,
+     "#2a2018",
+     "#e8e0d0"
+    ],
+    [
+     "h",
+     0.45,
+     0.45,
+     4,
+     "#2a2018",
+     "#e8e0d0"
+    ]
+   ],
+   "zz": [
+    "#5a4a38",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.78,
+    0.84,
+    "#e8e0d0"
+   ]
+  },
+  "hab": "Субтропические леса и садовые склоны",
+  "hab_en": "Subtropical forests and gardens",
+  "range": "Юг Китая, Вьетнам, Тайвань",
+  "range_en": "S China, Vietnam, Taiwan",
+  "host": "камфорное дерево, лиги",
+  "host_en": "camphor tree, Liquidambar",
+  "fact": "Гусеницы собирают огромные стаи на камфорных деревьях и плетут золотистые коконы.",
+  "fact_en": "Caterpillars form large groups on camphor trees and spin golden cocoons."
+ },
+ {
+  "la": "Rhodoprasina floralis",
+  "ru": "Родопразина цветочная",
+  "en": "Floral hawk-moth",
+  "fam": "Бражники",
+  "lo": 75,
+  "hi": 95,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a8a58",
+   "#5a6a3a"
+  ],
+  "h": [
+   "#c8b868",
+   "#a89048"
+  ],
+  "opts": {
+   "edge": [
+    "#3a4a28",
+    1
+   ],
+   "bars": [
+    "#3a4a28",
+    3
+   ],
+   "wedges": [
+    "#2a3a1a",
+    2
+   ],
+   "dots": "#e8e0b0"
+  },
+  "hab": "Горные леса Хоангльеншона",
+  "hab_en": "Hoang Lien Son montane forests",
+  "range": "Гималаи, Юньнань, север Вьетнама",
+  "range_en": "Himalaya, Yunnan, N Vietnam",
+  "host": "рододендрон, лавровые",
+  "host_en": "rhododendron, laurels",
+  "fact": "Гусеницы этого бражника кормятся на рододендронах высокогорий.",
+  "fact_en": "Its caterpillars feed on mountain rhododendrons."
+ },
+ {
+  "la": "Cechenena helops",
+  "ru": "Бражник цехенена",
+  "en": "Streaked hawk-moth",
+  "fam": "Бражники",
+  "lo": 85,
+  "hi": 105,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a7a48",
+   "#a8a068"
+  ],
+  "h": [
+   "#d8885a",
+   "#c85a3a"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a28",
+    1
+   ],
+   "bars": [
+    "#e8e0c0",
+    3
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.42,
+    "#4a4a28"
+   ],
+   "dots": "#f0e8d0"
+  },
+  "hab": "Леса и опушки среднего пояса гор",
+  "hab_en": "Mid-elevation forests and edges",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "виноград, акантовые",
+  "host_en": "grape family, acanthus",
+  "fact": "Резкие полосы на узких передних крыльях помогают при полёте на скорости зависать у цветков.",
+  "fact_en": "Sharp stripes on the narrow forewings; it hovers at flowers during fast night flight."
+ },
+ {
+  "la": "Rhagastis olivacea",
+  "ru": "Оливковый бражник",
+  "en": "Olive hawk-moth",
+  "fam": "Бражники",
+  "lo": 55,
+  "hi": 70,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#6a7a38",
+   "#8a9a50"
+  ],
+  "h": [
+   "#d89a58",
+   "#c8783a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a4a20",
+    1
+   ],
+   "bars": [
+    "#c8d090",
+    2
+   ],
+   "dots": "#e8e8c0"
+  },
+  "hab": "Лесные поляны, сады, свет ламп",
+  "hab_en": "Forest clearings, gardens, lights",
+  "range": "Гималаи, Индокитай, Китай",
+  "range_en": "Himalaya, Indochina, China",
+  "host": "таро, виноград, бальзамин",
+  "host_en": "taro, grape, balsam",
+  "fact": "Оливковая окраска делает её малозаметной среди листвы дней и невидимой ночью.",
+  "fact_en": "The olive colour hides it among foliage when it rests by day."
+ },
+ {
+  "la": "Langia zenzeroides",
+  "ru": "Лангия имбирная",
+  "en": "Giant ginger hawk-moth",
+  "fam": "Бражники",
+  "lo": 120,
+  "hi": 160,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#8a7a68",
+   "#5a4a3a"
+  ],
+  "h": [
+   "#a87a5a",
+   "#7a5238"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a20",
+    2
+   ],
+   "zz": [
+    "#3a2a20",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a3a2a",
+    0.15
+   ],
+   "sheen": [
+    "#c8b898",
+    0.2
+   ]
+  },
+  "hab": "Предгорные и горные леса",
+  "hab_en": "Foothill and montane forests",
+  "range": "Гималаи, Индокитай, юг Китая",
+  "range_en": "Himalaya, Indochina, S China",
+  "host": "персик, слива, миндаль",
+  "host_en": "peach, plum, almond",
+  "fact": "Один из самых крупных азиатских бражников, массивный и мощный в полёте.",
+  "fact_en": "One of the largest Asian hawk-moths, heavy-bodied and powerful in flight."
+ },
+ {
+  "la": "Callambulyx rubricosa",
+  "ru": "Красноватый бражник",
+  "en": "Rusty hawk-moth",
+  "fam": "Бражники",
+  "lo": 80,
+  "hi": 105,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a8a058",
+   "#8a7a3a"
+  ],
+  "h": [
+   "#d8883a",
+   "#c85a28"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a28",
+    1
+   ],
+   "zz": [
+    "#5a4a28",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.55,
+     0.35,
+     2,
+     "#e8e0b0"
+    ]
+   ],
+   "dots": "#e8d8b0"
+  },
+  "hab": "Горные леса и опушки",
+  "hab_en": "Montane forests and edges",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "орех, ольха, слива",
+  "host_en": "walnut, alder, plum",
+  "fact": "Ржавые задние крылья вспыхивают, когда бражник вспугнут с коры.",
+  "fact_en": "The rusty hindwings flash when the moth is startled from bark."
+ },
+ {
+  "la": "Ambulyx sericeipennis",
+  "ru": "Бражник шелкокрылый",
+  "en": "Silky hawk-moth",
+  "fam": "Бражники",
+  "lo": 100,
+  "hi": 130,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#8a7a5a"
+  ],
+  "h": [
+   "#c8a068",
+   "#a87a48"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "zz": [
+    "#4a3a28",
+    3,
+    "f"
+   ],
+   "sheen": [
+    "#e8e0c8",
+    0.35
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.5,
+    3,
+    "#6a5a40"
+   ]
+  },
+  "hab": "Дождевые леса и опушки",
+  "hab_en": "Rainforests and edges",
+  "range": "Гималаи, Индокитай, юг Китая",
+  "range_en": "Himalaya, Indochina, S China",
+  "host": "ореховые, анакардиевые",
+  "host_en": "walnut family, cashew family",
+  "fact": "Шелковистый блеск крыльев хорошо виден в свете фонаря.",
+  "fact_en": "The silky sheen of the wings is clearly visible in lamplight."
+ },
+ {
+  "la": "Macrauzata maxima",
+  "ru": "Серпокрылка большая",
+  "en": "Great hooktip",
+  "fam": "Серпокрылки",
+  "lo": 40,
+  "hi": 52,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#8a7a60"
+  ],
+  "h": [
+   "#c0b090",
+   "#a09070"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a38",
+    1
+   ],
+   "zz": [
+    "#6a5a40",
+    2,
+    "fh"
+   ],
+   "noise": [
+    "#7a6a50",
+    0.1
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.4,
+    3,
+    "#e8e0c8"
+   ]
+  },
+  "hab": "Горные леса Хоангльеншона",
+  "hab_en": "Hoang Lien Son montane forests",
+  "range": "Юг Китая, Вьетнам",
+  "range_en": "S China, Vietnam",
+  "host": "дуб, каштан",
+  "host_en": "oak, chestnut",
+  "fact": "Выступ на конце переднего крыла делает силуэт похожим на сухой лист.",
+  "fact_en": "The hooked forewing tip makes the silhouette resemble a dry leaf."
+ },
+ {
+  "la": "Callidrepana patrana",
+  "ru": "Серпокрылка патрана",
+  "en": "Patrana hooktip",
+  "fam": "Серпокрылки",
+  "lo": 28,
+  "hi": 36,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#e8d098",
+   "#d8b068"
+  ],
+  "h": [
+   "#e8d098",
+   "#d8b868"
+  ],
+  "opts": {
+   "edge": [
+    "#a07838",
+    1
+   ],
+   "arc": [
+    "h",
+    "#a07838"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.5,
+     1,
+     "#7a5a30"
+    ]
+   ],
+   "dots": "#f0e8c8"
+  },
+  "hab": "Лесные опушки и поляны",
+  "hab_en": "Forest edges and clearings",
+  "range": "Гималаи, Индокитай, Китай",
+  "range_en": "Himalaya, Indochina, China",
+  "host": "дуб, лавровые",
+  "host_en": "oak, laurels",
+  "fact": "Золотисто-жёлтые крылья бабочки с серповидным кончиком напоминают осенний лист.",
+  "fact_en": "Golden hook-tipped wings resemble an autumn leaf."
+ },
+ {
+  "la": "Ourapteryx clara",
+  "ru": "Хвостатая пяденица светлая",
+  "en": "Pale swallowtail moth",
+  "fam": "Пяденицы",
+  "lo": 50,
+  "hi": 65,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0d8c0"
+  ],
+  "h": [
+   "#f4f0e4",
+   "#e8e0cc"
+  ],
+  "opts": {
+   "edge": [
+    "#c8b890",
+    1
+   ],
+   "zz": [
+    "#c8b890",
+    2,
+    "fh"
+   ],
+   "sp": [
+    [
+     "h",
+     0.55,
+     0.8,
+     1,
+     "#c85a3a"
+    ]
+   ],
+   "dots": "#d8c8a0"
+  },
+  "hab": "Леса и густой подлесок",
+  "hab_en": "Forests and dense understorey",
+  "range": "Гималаи, Индокитай, Китай",
+  "range_en": "Himalaya, Indochina, China",
+  "host": "жимолость, бузина",
+  "host_en": "honeysuckle, elder",
+  "fact": "Белые крылья с коротким хвостиком почти светятся при свете луны.",
+  "fact_en": "White wings with a small tail seem to glow in moonlight."
+ },
+ {
+  "la": "Agathia carissima",
+  "ru": "Изумрудная пяденица",
+  "en": "Emerald geometer",
+  "fam": "Пяденицы",
+  "lo": 25,
+  "hi": 35,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#58b078",
+   "#80c898"
+  ],
+  "h": [
+   "#58b078",
+   "#80c898"
+  ],
+  "opts": {
+   "edge": [
+    "#d8e8d0",
+    1
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.6,
+    "#e8f0e0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.4,
+     1,
+     "#c8e8c8"
+    ]
+   ],
+   "dots": "#e0f0d8"
+  },
+  "hab": "Влажные леса, опушки",
+  "hab_en": "Humid forests, edges",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "жасмин, лианы",
+  "host_en": "jasmine, lianas",
+  "fact": "Нежно-зелёная окраска маскирует бабочку на папоротниках.",
+  "fact_en": "The delicate green blends with ferns."
+ },
+ {
+  "la": "Pericallia ricini",
+  "ru": "Медведица клещевинная",
+  "en": "Castor tiger moth",
+  "fam": "Медведицы",
+  "lo": 60,
+  "hi": 80,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#e8a050",
+   "#d8803a"
+  ],
+  "h": [
+   "#d8281c",
+   "#a81814"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a1a",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.4,
+     2,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.55,
+     0.55,
+     2,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.45,
+     0.5,
+     2,
+     "#1a1214"
+    ]
+   ],
+   "band": [
+    "h",
+    0.7,
+    0.8,
+    "#1a1214"
+   ]
+  },
+  "hab": "Опушки, сады, ночью у света",
+  "hab_en": "Edges, gardens, light",
+  "range": "Индия, Индокитай, Китай",
+  "range_en": "India, Indochina, China",
+  "host": "клещевина, разные травы",
+  "host_en": "castor, various herbs",
+  "fact": "При вспугивании показывает ярко-красные задние крылья и брюшко.",
+  "fact_en": "When startled it shows a bright red hindwing and abdomen."
+ },
+ {
+  "la": "Areas galactina",
+  "ru": "Медведица молочная",
+  "en": "Milky tiger moth",
+  "fam": "Медведицы",
+  "lo": 55,
+  "hi": 75,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#d8c898"
+  ],
+  "h": [
+   "#f0e8d0",
+   "#e8d8b0"
+  ],
+  "opts": {
+   "edge": [
+    "#2a1a10",
+    1
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.35,
+    4,
+    "#2a1a10"
+   ],
+   "sp": [
+    [
+     "f",
+     0.65,
+     0.65,
+     2,
+     "#6a5a40"
+    ]
+   ],
+   "tip": [
+    "#6a5a40",
+    0.8
+   ]
+  },
+  "hab": "Кустарники, опушки, окраины полей",
+  "hab_en": "Shrubland, edges, field margins",
+  "range": "Индия, Юго-Восточная Азия, Китай",
+  "range_en": "India, SE Asia, China",
+  "host": "много кустарников и трав",
+  "host_en": "many shrubs and herbs",
+  "fact": "Гусеницы ядовиты и густо покрыты волосками.",
+  "fact_en": "The caterpillars are heavily hairy and unpalatable."
+ },
+ {
+  "la": "Spilarctia robusta",
+  "ru": "Медведица крепкая",
+  "en": "Robust tiger moth",
+  "fam": "Медведицы",
+  "lo": 40,
+  "hi": 58,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0e0b0",
+   "#e0c888"
+  ],
+  "h": [
+   "#f4e8c8",
+   "#e8d8a8"
+  ],
+  "opts": {
+   "edge": [
+    "#8a6a38",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.4,
+     1,
+     "#3a2a18"
+    ],
+    [
+     "f",
+     0.65,
+     0.6,
+     1,
+     "#3a2a18"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     2,
+     "#3a2a18"
+    ]
+   ],
+   "dots": "#f0e8c8"
+  },
+  "hab": "Леса, опушки, поля",
+  "hab_en": "Forests, edges, fields",
+  "range": "Гималаи, Китай, Индокитай",
+  "range_en": "Himalaya, China, Indochina",
+  "host": "разные травы и кустарники",
+  "host_en": "various herbs and shrubs",
+  "fact": "Охристая бабочка с тёмными точками охотно летит на свет ламп.",
+  "fact_en": "This ochre moth with dark dots readily comes to lamps."
+ },
+ {
+  "la": "Thyas honesta",
+  "ru": "Орденская лента честная",
+  "en": "Honest underwing",
+  "fam": "Эребиды",
+  "lo": 75,
+  "hi": 95,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a7a68",
+   "#5a4a3a"
+  ],
+  "h": [
+   "#d8b858",
+   "#b88a30"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2018",
+    1
+   ],
+   "zz": [
+    "#2a2018",
+    3,
+    "f"
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.65,
+    "#1a1410"
+   ],
+   "noise": [
+    "#4a3a2a",
+    0.12
+   ]
+  },
+  "hab": "Леса и кустарники в предгорьях",
+  "hab_en": "Forests and shrubland in foothills",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "манго, гарциния, лавровые",
+  "host_en": "mango, garcinia, laurels",
+  "fact": "Днём сливается с корой, а ночью раскрывает жёлтые задние крылья.",
+  "fact_en": "By day it blends into bark; at night it opens yellow hindwings."
+ },
+ {
+  "la": "Daseochaeta viridis",
+  "ru": "Совка зелёная",
+  "en": "Green owlet",
+  "fam": "Совки",
+  "lo": 38,
+  "hi": 48,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#78b058",
+   "#58883a"
+  ],
+  "h": [
+   "#a8a888",
+   "#888868"
+  ],
+  "opts": {
+   "edge": [
+    "#385828",
+    1
+   ],
+   "zz": [
+    "#2a4018",
+    2,
+    "f"
+   ],
+   "wedges": [
+    "#385828",
+    3
+   ],
+   "dots": "#d8e8c0"
+  },
+  "hab": "Влажные леса и подлесок",
+  "hab_en": "Humid forests and understorey",
+  "range": "Гималаи, Индокитай, юг Китая",
+  "range_en": "Himalaya, Indochina, S China",
+  "host": "неизвестны точно",
+  "host_en": "poorly known",
+  "fact": "Редкая для совок ярко-зелёная окраска передних крыльев.",
+  "fact_en": "Bright green forewings are unusual for owlet moths."
+ },
+ {
+  "la": "Phalera grotei",
+  "ru": "Хохлатка Гроте",
+  "en": "Grote’s buff-tip",
+  "fam": "Хохлатки",
+  "lo": 50,
+  "hi": 65,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#c8c0b0",
+   "#a8a090"
+  ],
+  "h": [
+   "#d8d0c0",
+   "#b8b0a0"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a48",
+    1
+   ],
+   "patch": [
+    "f",
+    0.9,
+    0.5,
+    4,
+    "#e8dcb0"
+   ],
+   "zz": [
+    "#6a5a48",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#8a7a68",
+    0.1
+   ]
+  },
+  "hab": "Горные леса и сады",
+  "hab_en": "Montane forests and gardens",
+  "range": "Гималаи, Индокитай, Китай",
+  "range_en": "Himalaya, Indochina, China",
+  "host": "дуб, каштан, груша",
+  "host_en": "oak, chestnut, pear",
+  "fact": "В покое складывает крылья так, что похожа на обломок берёзовой ветки.",
+  "fact_en": "At rest it folds the wings to resemble a broken birch twig."
+ },
+ {
+  "la": "Gangarides dharma",
+  "ru": "Хохлатка дхарма",
+  "en": "Dharma prominent",
+  "fam": "Хохлатки",
+  "lo": 50,
+  "hi": 65,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#c8b898",
+   "#8a7860"
+  ],
+  "h": [
+   "#d0c0a0",
+   "#a89878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "zz": [
+    "#4a3a28",
+    3,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.45,
+    3,
+    "#e8d8b0"
+   ],
+   "noise": [
+    "#6a5a40",
+    0.1
+   ]
+  },
+  "hab": "Горные леса Хоангльеншона",
+  "hab_en": "Hoang Lien Son montane forests",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "лавровые, лианы",
+  "host_en": "laurels, lianas",
+  "fact": "Днём бабочка сидит неподвижно и похожа на сухой кусок коры.",
+  "fact_en": "By day it sits motionless and looks like a dry piece of bark."
+ },
+ {
+  "la": "Dendrolimus punctatus",
+  "ru": "Коконопряд точечный",
+  "en": "Masson pine moth",
+  "fam": "Коконопряды",
+  "lo": 45,
+  "hi": 75,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a89078",
+   "#7a6048"
+  ],
+  "h": [
+   "#b8a088",
+   "#907858"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "bars": [
+    "#5a4a38",
+    2
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.45,
+     1,
+     "#f0e8d8"
+    ]
+   ],
+   "band": [
+    "f",
+    0.65,
+    0.72,
+    "#e0d0b8"
+   ]
+  },
+  "hab": "Сосновые леса среднего пояса",
+  "hab_en": "Mid-elevation pine forests",
+  "range": "Юг Китая, Вьетнам, Тайвань",
+  "range_en": "S China, Vietnam, Taiwan",
+  "host": "сосна Массона, кедр",
+  "host_en": "Masson pine, cedar",
+  "fact": "Массовые вспышки гусениц могут полностью объедать хвою сосновых лесов.",
+  "fact_en": "Outbreaks of caterpillars can strip pine forests of their needles."
+ },
+ {
+  "la": "Trabala vishnou",
+  "ru": "Коконопряд вишну",
+  "en": "Rose-myrtle lappet",
+  "fam": "Коконопряды",
+  "lo": 60,
+  "hi": 95,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c8d078",
+   "#a8b050"
+  ],
+  "h": [
+   "#d0d888",
+   "#b0b860"
+  ],
+  "opts": {
+   "edge": [
+    "#6a7030",
+    1
+   ],
+   "bars": [
+    "#8a9040",
+    2
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.5,
+     2,
+     "#e8e8b8"
+    ]
+   ],
+   "dots": "#e8ecc0"
+  },
+  "hab": "Леса, кустарники, сады",
+  "hab_en": "Forests, shrubs, gardens",
+  "range": "Индия, Индокитай, Китай",
+  "range_en": "India, Indochina, China",
+  "host": "розы, ива, миндаль",
+  "host_en": "rose, willow, almond",
+  "fact": "Самки намного крупнее самцов, у самцов окраска зеленоватая.",
+  "fact_en": "Females are much larger than males; males are greenish."
+ },
+ {
+  "la": "Calliteara horsfieldii",
+  "ru": "Волнянка Хорсфилда",
+  "en": "Horsfield’s tussock moth",
+  "fam": "Волнянки",
+  "lo": 40,
+  "hi": 55,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a89888",
+   "#7a6a58"
+  ],
+  "h": [
+   "#b8a898",
+   "#988878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a2a",
+    1
+   ],
+   "zz": [
+    "#4a3a2a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a5a48",
+    0.1
+   ]
+  },
+  "hab": "Леса и кустарники",
+  "hab_en": "Forests and shrubland",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "дуб, лавровые",
+  "host_en": "oak, laurels",
+  "fact": "Гусеницы пёстрые, с пучками щетинок, опасными для кожи.",
+  "fact_en": "Caterpillars are tufted and their hairs can irritate skin."
+ },
+ {
+  "la": "Epicopeia hainesii",
+  "ru": "Эпикопея Хейнса",
+  "en": "Haines’s swallowtail moth",
+  "fam": "Эпикопеиды",
+  "lo": 55,
+  "hi": 70,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "urania",
+  "tail": "short",
+  "f": [
+   "#2a2428",
+   "#3a3438"
+  ],
+  "h": [
+   "#2a2428",
+   "#403a3e"
+  ],
+  "opts": {
+   "edge": [
+    "#1a1418",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#c8c0b8"
+    ],
+    [
+     "h",
+     0.4,
+     0.5,
+     2,
+     "#c8c0b8"
+    ]
+   ],
+   "sheen": [
+    "#8a8090",
+    0.25
+   ]
+  },
+  "hab": "Горные леса и опушки",
+  "hab_en": "Montane forests and edges",
+  "range": "Юго-Восток Китая, север Вьетнама",
+  "range_en": "SE China, N Vietnam",
+  "host": "не вполне известны",
+  "host_en": "poorly known",
+  "fact": "Тёмная бабочка с хвостиками копирует несъедобных парусников и обманывает птиц.",
+  "fact_en": "This dark tailed moth mimics unpalatable swallowtail butterflies and fools birds."
+ },
+ {
+  "la": "Endoclita sericeus",
+  "ru": "Тонкопряд шелковистый",
+  "en": "Silky ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 70,
+  "hi": 100,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#a8b868",
+   "#7a8a48"
+  ],
+  "h": [
+   "#a8b068",
+   "#788048"
+  ],
+  "opts": {
+   "edge": [
+    "#4a5a28",
+    1
+   ],
+   "bars": [
+    "#e8f0c8",
+    3
+   ],
+   "veins": "#5a6a38"
+  },
+  "hab": "Горные леса и опушки",
+  "hab_en": "Montane forests and edges",
+  "range": "Индия, Индокитай, юг Китая",
+  "range_en": "India, Indochina, S China",
+  "host": "чай, кофе, многие деревья",
+  "host_en": "tea, coffee, many trees",
+  "fact": "Гусеницы прогрызают ходы внутри стволов и ветвей.",
+  "fact_en": "Caterpillars tunnel inside trunks and branches."
+ },
+ {
+  "la": "Zeuzera multistrigata",
+  "ru": "Древоточец многополосый",
+  "en": "Many-lined leopard moth",
+  "fam": "Древоточцы",
+  "lo": 45,
+  "hi": 70,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#f0ece4",
+   "#d8d4c8"
+  ],
+  "h": [
+   "#f0ece4",
+   "#d8d4c8"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a4a",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     1,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.5,
+     0.5,
+     1,
+     "#1a2a4a"
+    ],
+    [
+     "f",
+     0.7,
+     0.35,
+     1,
+     "#1a2a4a"
+    ]
+   ],
+   "veins": "#a8a8a0"
+  },
+  "hab": "Леса, сады, опушки",
+  "hab_en": "Forests, gardens, edges",
+  "range": "Юго-Восточная Азия, юг Китая",
+  "range_en": "SE Asia, S China",
+  "host": "чай, кофе, разные деревья",
+  "host_en": "tea, coffee, various trees",
+  "fact": "Гусеницы живут внутри ветвей, а взрослая белая бабочка усыпана сине-чёрными точками.",
+  "fact_en": "Caterpillars live inside branches; the white adult is spotted with blue-black dots."
+ },
+ {
+  "la": "Pycnarmon cribrata",
+  "ru": "Огнёвка решётчатая",
+  "en": "Sieve-patterned grass moth",
+  "fam": "Огнёвки",
+  "lo": 22,
+  "hi": 30,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f4e8c0",
+   "#e8d498"
+  ],
+  "h": [
+   "#f4ecc8",
+   "#e8dca8"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a20",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.35,
+     1,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     1,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.75,
+     0.35,
+     1,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.4,
+     0.5,
+     1,
+     "#2a2018"
+    ]
+   ],
+   "dots": "#f0e8c8"
+  },
+  "hab": "Опушки, поляны, кустарники",
+  "hab_en": "Edges, clearings, shrubland",
+  "range": "Индия, Юго-Восточная Азия, Китай",
+  "range_en": "India, SE Asia, China",
+  "host": "лианы, кустарники",
+  "host_en": "lianas, shrubs",
+  "fact": "Жёлтые крылья с чёрными точками напоминают дырчатый узор решета.",
+  "fact_en": "Yellow wings dotted with black give a sieve-like pattern."
+ },
+ {
+  "la": "Mustilia sphingiformis",
+  "ru": "Шелкопряд сфингоидный",
+  "en": "Sphinx-like bombycid",
+  "fam": "Шелкопряды",
+  "lo": 45,
+  "hi": 60,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#8a7a60"
+  ],
+  "h": [
+   "#c8b898",
+   "#a89878"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a38",
+    1
+   ],
+   "zz": [
+    "#5a4a38",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.4,
+     2,
+     "#3a2a18"
+    ]
+   ],
+   "noise": [
+    "#7a6a58",
+    0.1
+   ]
+  },
+  "hab": "Предгорья и горные леса",
+  "hab_en": "Foothills and montane forests",
+  "range": "Гималаи, Китай, Индокитай",
+  "range_en": "Himalaya, China, Indochina",
+  "host": "шелковица, лавровые",
+  "host_en": "mulberry, laurels",
+  "fact": "Плотное тело и серповидные крылья напоминают миниатюрного бражника.",
+  "fact_en": "The stout body and falcate wings resemble a miniature hawk-moth."
+ }
+]

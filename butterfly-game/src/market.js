@@ -697,7 +697,7 @@ const Market = (() => {
       if (!ov) { if (e.code === 'KeyE') this.interact(); else if (e.code === 'Tab') { Snd.sfx.page(); this.open('journal'); } else if (e.code === 'KeyP' || e.code === 'Escape') { this.ov = 'pause'; this.hooks.unlock(); } return; }
       if (ov === 'help') { this.closeHelp(); return; }
       if (ov === 'pause') { if (e.code === 'Escape') { this.ov = null; this.hooks.lock(); } return; }
-      if (ov === 'journal') { const J = Screens.journal, nb = visibleBiomes().length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
+      if (ov === 'journal') { const J = Screens.journal, nb = Screens.journal.list().length; if (e.code === 'Escape' && J.escape()) { /* back from the aberrants list */ } else if (e.code === 'Escape' || e.code === 'Tab') { Snd.sfx.page(); this.close(); } else if (e.code === 'ArrowLeft') { J.tab = (J.tab + nb - 1) % nb; J.sel = 0; } else if (e.code === 'ArrowRight') { J.tab = (J.tab + 1) % nb; J.sel = 0; } else if (e.code === 'ArrowUp') J.turn(-1); else if (e.code === 'ArrowDown') J.turn(1); return; }
       if (ov === 'code') { if (e.code === 'Escape') this.close(); else if (Secret.lock.key(e) === 'ok') this.codeCloseT = 1.5; return; }
       if (ov === 'talk') { if (e.code === 'Escape') this.close(); else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') this.talkNext(); return; }
       if (ov === 'shop') { if (e.code === 'Escape' || e.code === 'KeyE') this.close(); else if (e.code === 'ArrowUp') this.shopMove(-1); else if (e.code === 'ArrowDown') this.shopMove(1); else if (e.code === 'Enter' || e.code === 'Space') this.shopBuy(); else if (e.code === 'Tab') this.shopTab(this.shop.tab + 1); else if (e.code === 'ArrowLeft') this.shopTab(this.shop.tab - 1); else if (e.code === 'ArrowRight') this.shopTab(this.shop.tab + 1); return; }
@@ -919,11 +919,11 @@ const Market = (() => {
       const L = { fl: 'Цветочница', hn: 'Медовщик', tr: 'Торговец ловушками' }, M0 = { fl: 'Свежие цветы с полей! Чем сильнее запах, тем больше бабочек прилетит в ловушку.', hn: 'Мёд разных сортов. Чем он ценнее, тем более редкие гости слетаются на запах.', tr: 'Ловушки для дневных бабочек. Ставьте их в экспедиции (G), кладите приманку, забирайте улов (E) — до того, как ловушка сломается или вы уйдёте с локации: улов пропадает вместе с ловушкой.' };
       this.gd = { kind, sel: 0, scroll: 0, msg: M0[kind], msgT: 6, flash: 0, last: 0, who: L[kind], t0: 0 };
     }
-    goodsList() { return Traps.KINDS[this.gd.kind].list.filter(x => !x.secret && !x.gear); }
+    goodsList() { const K = this.gd.kind, l = Traps.KINDS[K].list.filter(x => !x.secret && !x.gear); return K === 'tr' ? l.concat(Traps.LAMPS.map(x => Object.assign({}, x, { lamp: true }))) : l; }       // the trapper also sells the lamps for the night locations
     goodsMove(d) { const G = this.gd, n = this.goodsList().length; G.sel = clamp(G.sel + d, 0, n - 1); if (G.sel < G.scroll) G.scroll = G.sel; if (G.sel >= G.scroll + 6) G.scroll = G.sel - 5; Snd.sfx.page(); }
     goodsBuy() {
-      const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(G.kind, it.id);
-      if (got) { G.msg = G.kind === 'tr' ? 'Хороший выбор! Не забудьте приманку.' : ['Свежайшее!', 'Берите, не пожалеете.', 'Отличный выбор для приманки.'][(Math.random() * 3) | 0]; G.last = -got; G.flash = 0.8; Snd.sfx.coin(); }
+      const G = this.gd, it = this.goodsList()[G.sel]; if (!it) return; const got = Traps.buy(it.lamp ? 'lp' : G.kind, it.id);
+      if (got) { G.msg = it.lamp ? 'Ночью без света мотыльков не найти. Хороший выбор!' : G.kind === 'tr' ? 'Хороший выбор! Не забудьте приманку.' : ['Свежайшее!', 'Берите, не пожалеете.', 'Отличный выбор для приманки.'][(Math.random() * 3) | 0]; G.last = -got; G.flash = 0.8; Snd.sfx.coin(); }
       else { G.msg = 'Не хватает монет. Продайте бабочек или рамку коллекционеру.'; Snd.sfx.deny(); } G.msgT = 5;
     }
     goodsLayout() {
@@ -935,31 +935,32 @@ const Market = (() => {
       const r = L.rows.find(r => UIK.hit(r, x, y)); if (r) { if (G.sel !== r.i) { G.sel = r.i; Snd.sfx.click(); } else this.goodsBuy(); return; }
       if (UIK.hit(L.buy, x, y)) this.goodsBuy(); else if (UIK.hit(L.up, x, y)) this.goodsMove(-1); else if (UIK.hit(L.dn, x, y)) this.goodsMove(1);
     }
-    goodsIcon(ctx, kind, it, x, y, k) { if (kind !== 'tr') { const cv = Traps.closeup(kind, it.id); if (cv) { ctx.imageSmoothingEnabled = false; const h = Math.round(k * 17), w = Math.round(h * 0.667); ctx.drawImage(cv, x + Math.round(((k > 2 ? 62 : 32) - w) / 2) - (k > 2 ? 0 : 0), y - (k > 2 ? 4 : 0), w, h); return; } } if (kind === 'fl') Traps.drawFlower(ctx, x, y, it, k); else if (kind === 'hn') Traps.drawJar(ctx, x, y, it, k); else { if (!this.trapThumb) this.trapThumb = {}; const g = this.trapThumb[it.id] || (this.trapThumb[it.id] = Traps.model(it.id, {})); Traps.UI.preview(ctx, { group: g }, this.t * 0.7, x, y, Math.round(k * 0.67), k); } }
+    goodsIcon(ctx, kind, it, x, y, k) { if (kind === 'lp') { const u = Math.max(1, Math.floor(k / 16)); x += k > 40 ? 7 : 8; y += k > 40 ? 6 : 7; ctx.fillStyle = '#16100c'; const R = (a, b, w, h, c2) => { ctx.fillStyle = c2; ctx.fillRect(x + a * u, y + b * u, w * u, h * u); }; if (it.id === 'head') { R(2, 6, 12, 2, '#3a3a40'); R(5, 4, 6, 5, '#4a4a54'); R(6, 5, 4, 3, it.col); R(5, 4, 6, 1, '#7a7a86'); R(1, 7, 2, 2, '#2a2a30'); R(13, 7, 2, 2, '#2a2a30'); } else { R(3, 3, 9, 4, '#4a4a54'); R(2, 2, 2, 6, '#7a7a86'); R(3, 3, 9, 1, '#8a8a96'); R(11, 3, 2, 4, it.col); R(5, 7, 4, 6, '#3a2a1a'); R(5, 7, 1, 6, '#5a3a22'); R(6, 8, 2, 1, '#c8a040'); } return; } if (kind !== 'tr') { const cv = Traps.closeup(kind, it.id); if (cv) { ctx.imageSmoothingEnabled = false; const h = Math.round(k * 17), w = Math.round(h * 0.667); ctx.drawImage(cv, x + Math.round(((k > 2 ? 62 : 32) - w) / 2) - (k > 2 ? 0 : 0), y - (k > 2 ? 4 : 0), w, h); return; } } if (kind === 'fl') Traps.drawFlower(ctx, x, y, it, k); else if (kind === 'hn') Traps.drawJar(ctx, x, y, it, k); else { if (!this.trapThumb) this.trapThumb = {}; const g = this.trapThumb[it.id] || (this.trapThumb[it.id] = Traps.model(it.id, {})); Traps.UI.preview(ctx, { group: g }, this.t * 0.7, x, y, Math.round(k * 0.67), k); } }
     drawGoods(ctx, t, m, dt) {
       const G = this.gd, K = G.kind, list = this.goodsList(), L = this.goodsLayout(), it = list[G.sel]; G.msgT = Math.max(0, G.msgT - dt); G.flash = Math.max(0, G.flash - dt);
-      const title = { fl: 'Цветы', hn: 'Мёд', tr: 'Ловушки для бабочек' }[K], por = { fl: 'florist', hn: 'beekeeper', tr: 'trapper' }[K];
+      const title = { fl: 'Цветы', hn: 'Мёд', tr: 'Ловушки и фонари' }[K], por = { fl: 'florist', hn: 'beekeeper', tr: 'trapper' }[K];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
       T.draw(ctx, title, 8, 6, { size: 10, color: c.gold }); T.draw(ctx, 'Выберите товар и нажмите «Купить» (или щёлкните дважды)', 8, 20, { size: 8, color: c.dim }); T.draw(ctx, G.who, 8, 32, { size: 8, color: c.dim });
       this.drawCoins(ctx, SW - 92, 24, true); UIK.btn(ctx, L.closeBtn, UIK.hit(L.closeBtn, m.x, m.y));
       UIK.panel(ctx, 6, 42, 230, 212, { fill: '#2a2018', border: '#5a4430', shadow: false });
-      L.rows.forEach(r => { const q = list[r.i], on = r.i === G.sel, hv = UIK.hit(r, m.x, m.y), own = Traps.count(K, q.id); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        ctx.fillStyle = '#16100c'; ctx.fillRect(r.x + 2, r.y + 2, 32, 29); this.goodsIcon(ctx, K, q, r.x + (K === 'tr' ? 8 : 4), r.y + (K === 'tr' ? 2 : 5), K === 'tr' ? 29 : 1.8);
-        T.draw(ctx, fitTxt(q.ru, 150), r.x + 38, r.y + 4, { size: 8, color: '#f0e8d0' }); const sub = K === 'fl' ? `запах: ${Traps.SCENT[q.scent]}` : K === 'hn' ? `качество: ${Traps.QUAL[q.q]}` : `служит ${Traps.mmss(q.life)} · вмещает ${q.cap}`; T.draw(ctx, fitTxt(sub, 150), r.x + 38, r.y + 15, { size: 8, color: '#9ac88a' });
+      L.rows.forEach(r => { const q = list[r.i], on = r.i === G.sel, hv = UIK.hit(r, m.x, m.y), own = Traps.count(q.lamp ? 'lp' : K, q.id); ctx.fillStyle = on ? 'rgba(240,200,90,0.28)' : hv ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (on) { ctx.strokeStyle = c.gold; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        ctx.fillStyle = '#16100c'; ctx.fillRect(r.x + 2, r.y + 2, 32, 29); this.goodsIcon(ctx, q.lamp ? 'lp' : K, q, r.x + (K === 'tr' ? 8 : 4), r.y + (K === 'tr' ? 2 : 5), K === 'tr' ? 29 : 1.8);
+        T.draw(ctx, fitTxt(q.ru, 150), r.x + 38, r.y + 4, { size: 8, color: '#f0e8d0' }); const sub = q.lamp ? `луч ${q.dist} м · ${q.hands ? 'в руке' : 'на голове'}` : K === 'fl' ? `запах: ${Traps.SCENT[q.scent]}` : K === 'hn' ? `качество: ${Traps.QUAL[q.q]}` : `служит ${Traps.mmss(q.life)} · вмещает ${q.cap}`; T.draw(ctx, fitTxt(sub, 150), r.x + 38, r.y + 15, { size: 8, color: '#9ac88a' });
         if (own) T.draw(ctx, `есть: ${own}`, r.x + 38, r.y + 24, { size: 8, color: c.dim }); this.drawCoin(ctx, r.x + r.w - 16 - T.width(String(q.price), 8), r.y + 4); T.draw(ctx, String(q.price), r.x + r.w - 6, r.y + 4, { size: 8, align: 'r', color: c.gold }); });
       if (list.length > 6) { UIK.btn(ctx, L.up, UIK.hit(L.up, m.x, m.y)); UIK.btn(ctx, L.dn, UIK.hit(L.dn, m.x, m.y)); T.draw(ctx, `${G.sel + 1}/${list.length}`, 12, 255, { size: 8, color: c.dim }); }
       UIK.panel(ctx, 240, 40, 234, 54, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false }); Portrait.draw(ctx, por, 247, 43, t, G.msgT > 0); T.para(ctx, G.msg, 294, 44, 176, { size: 8, color: '#2a1a0c', lh: 9 });
       UIK.panel(ctx, 240, 98, 234, 130, { fill: '#e8dcb4', border: '#5a3a1c', shadow: false });
       if (it) {
-        ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 62, 62); this.goodsIcon(ctx, K, it, K === 'tr' ? 255 : 250, K === 'tr' ? 103 : 108, K === 'tr' ? 60 : 3.4);
+        ctx.fillStyle = '#c8a870'; ctx.fillRect(244, 102, 62, 62); this.goodsIcon(ctx, it.lamp ? 'lp' : K, it, K === 'tr' ? 255 : 250, K === 'tr' ? 103 : 108, K === 'tr' ? 60 : 3.4);
         T.draw(ctx, fitTxt(it.ru, 160), 312, 103, { size: 8, color: '#2a1a0c' }); T.draw(ctx, fitTxt(it.la || it.real || '', 160), 312, 114, { size: 8, color: '#8a2a1a' });
         if (K === 'fl') { T.draw(ctx, `Запах: ${it.scent} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `≈ ${(1.1 * it.scent).toFixed(1)} бабочек/мин`, 312, 137, { size: 8, color: '#4a3a20' }); }
         else if (K === 'hn') { T.draw(ctx, `Качество: ${it.q} из 5`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `редкие гости до ×${Traps.rarK(it.id, 3).toFixed(1)}`, 312, 137, { size: 8, color: '#4a3a20' }); }
+        else if (it.lamp) { T.draw(ctx, `Луч: ${it.dist} м`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, it.hands ? 'Занимает руку' : 'Руки свободны', 312, 137, { size: 8, color: '#4a3a20' }); }
         else { T.draw(ctx, `Служит ${Traps.mmss(it.life)}`, 312, 126, { size: 8, color: '#2a6a1a' }); T.draw(ctx, `Вмещает ${it.cap} бабочек`, 312, 137, { size: 8, color: '#4a3a20' }); }
         T.para(ctx, it.desc, 248, 170, 222, { size: 8, color: '#4a3a20', lh: 9 });
         ctx.fillStyle = '#a8946a'; ctx.fillRect(246, 212, 222, 1); T.draw(ctx, 'Цена', 248, 215, { size: 8, color: '#2a1a0c' }); this.drawCoin(ctx, 424, 216); T.draw(ctx, String(it.price), 466, 215, { size: 8, align: 'r', color: '#8a5a10' });
       }
-      UIK.btn(ctx, L.buy, UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, it ? `у вас: ${Traps.count(K, it.id)}` : '', 372, 237, { size: 8, color: c.dim });
+      UIK.btn(ctx, L.buy, UIK.hit(L.buy, m.x, m.y)); T.draw(ctx, it ? `у вас: ${Traps.count(it.lamp ? 'lp' : K, it.id)}` : '', 372, 237, { size: 8, color: c.dim });
       if (G.flash > 0) { ctx.globalAlpha = Math.min(1, G.flash * 2); T.draw(ctx, String(G.last), SW - 8, 40 - (0.8 - G.flash) * 8, { size: 10, align: 'r', color: '#ff9070', shadow: '#000' }); ctx.globalAlpha = 1; }
     }
     // ------------------------------------------------------------ the net seller: parts for nets

@@ -1,0 +1,1527 @@
+[
+ {
+  "la": "Saturnia pyri",
+  "ru": "Большой ночной павлиноглазок",
+  "en": "Giant peacock moth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 150,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#6a5444",
+   "#8a7058"
+  ],
+  "h": [
+   "#7a6050",
+   "#a08868"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3828",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.6,
+     0.5,
+     4,
+     "#2a2018",
+     "#d8c8a0"
+    ],
+    [
+     "h",
+     0.55,
+     0.5,
+     6,
+     "#2a2018",
+     "#e0d0a8"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.3,
+    0.38,
+    "#e8dcc0"
+   ],
+   "dots": "#e8dcc0",
+   "zz": [
+    "#3a2c20",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Оливковые рощи, сады, лесистые склоны",
+  "hab_en": "Olive groves, orchards, wooded slopes",
+  "range": "Южная Европа, Балканы",
+  "range_en": "Southern Europe, Balkans",
+  "host": "миндаль, олива, фиговое дерево",
+  "host_en": "almond, olive, fig",
+  "fact": "Крупнейшая бабочка Европы; самцы находят самку по запаху за километры.",
+  "fact_en": "The largest moth of Europe; males find a female by scent over several kilometres."
+ },
+ {
+  "la": "Perisomena caecigena",
+  "ru": "Осенний павлиноглазок",
+  "en": "Spanish moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 55,
+  "hi": 70,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#9a8a78",
+   "#b0a090"
+  ],
+  "h": [
+   "#a89880",
+   "#c8b8a0"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a48",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.55,
+     0.45,
+     3,
+     "#3a3028",
+     "#e8e0d0"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     4,
+     "#3a3028",
+     "#e8e0d0"
+    ]
+   ],
+   "zz": [
+    "#6a5a48",
+    2,
+    "fh"
+   ],
+   "noise": [
+    "#7a6a58",
+    0.08
+   ]
+  },
+  "hab": "Дубовые рощи, кустарниковые склоны",
+  "hab_en": "Oak woods, scrubby slopes",
+  "range": "Балканы, Малая Азия, Юго-Запад Европы",
+  "range_en": "Balkans, Asia Minor, SW Europe",
+  "host": "дуб, груша, боярышник",
+  "host_en": "oak, pear, hawthorn",
+  "fact": "Летает поздней осенью, когда большинство павлиноглазок уже давно отлетали.",
+  "fact_en": "Flies in late autumn, long after most other saturniids are gone."
+ },
+ {
+  "la": "Hyles nicaea",
+  "ru": "Молочайный бражник никейский",
+  "en": "Greater spurge hawk-moth",
+  "fam": "Бражники",
+  "lo": 80,
+  "hi": 105,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#9a9078",
+   "#7a7060"
+  ],
+  "h": [
+   "#d8806a",
+   "#b04a40"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4038",
+    1
+   ],
+   "bars": [
+    "#5a5040",
+    3
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.7,
+    "#2a2020"
+   ],
+   "dots": "#e8e0d0"
+  },
+  "hab": "Сухие склоны, кустарники, обочины",
+  "hab_en": "Dry slopes, scrub, roadsides",
+  "range": "Южная Европа, Балканы, Ближний Восток",
+  "range_en": "Southern Europe, Balkans, Middle East",
+  "host": "молочай древовидный и лозный",
+  "host_en": "tree and Mediterranean spurge",
+  "fact": "Яркая гусеница с красными пятнами питается ядовитым молочаем и сама несъедобна.",
+  "fact_en": "The bright spotted caterpillar eats toxic spurge and is itself distasteful."
+ },
+ {
+  "la": "Marumba quercus",
+  "ru": "Дубовый бражник",
+  "en": "Oak hawk-moth",
+  "fam": "Бражники",
+  "lo": 80,
+  "hi": 100,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#c89a58",
+   "#a8783c"
+  ],
+  "h": [
+   "#d8a860",
+   "#b88848"
+  ],
+  "opts": {
+   "edge": [
+    "#6a4a28",
+    1
+   ],
+   "zz": [
+    "#7a5a30",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.4,
+    0.45,
+    3,
+    "#e0c080"
+   ],
+   "dots": "#e8d8b0"
+  },
+  "hab": "Дубовые рощи, кустарниковый маквис",
+  "hab_en": "Oak woods, maquis scrub",
+  "range": "Южная Европа, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "дуб кермесовый, пробковый",
+  "host_en": "kermes and cork oak",
+  "fact": "Вылетает в жаркие июньские ночи; хоботок короткий, и бабочка почти не питается.",
+  "fact_en": "Flies on hot June nights; its tongue is short and it hardly feeds."
+ },
+ {
+  "la": "Proserpinus proserpina",
+  "ru": "Бражник прозерпина",
+  "en": "Willowherb hawk-moth",
+  "fam": "Бражники",
+  "lo": 40,
+  "hi": 55,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#8a9a58",
+   "#6a7a40"
+  ],
+  "h": [
+   "#e8a050",
+   "#c87830"
+  ],
+  "opts": {
+   "edge": [
+    "#4a5a28",
+    1
+   ],
+   "bars": [
+    "#5a6a30",
+    2
+   ],
+   "dots": "#d8d8a0"
+  },
+  "hab": "Влажные овраги, русла пересыхающих ручьёв",
+  "hab_en": "Damp ravines, dry stream beds",
+  "range": "Южная и Центральная Европа",
+  "range_en": "Southern and Central Europe",
+  "host": "кипрей, примула ночная",
+  "host_en": "willowherb, evening primrose",
+  "fact": "Один из немногих бражников с зубчатым краем крыльев; гусеница похожа на змею.",
+  "fact_en": "Its wing edge is scalloped, unusual for a hawk-moth; the caterpillar looks like a snake."
+ },
+ {
+  "la": "Catocala nymphagoga",
+  "ru": "Орденская лента дубовая",
+  "en": "Oak yellow underwing",
+  "fam": "Эребиды",
+  "lo": 50,
+  "hi": 60,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8070",
+   "#6a6258"
+  ],
+  "h": [
+   "#e8c040",
+   "#d89820"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2420",
+    1
+   ],
+   "zz": [
+    "#3a3428",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4438",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.65,
+    "#1a1612"
+   ],
+   "dots": "#d8d0b8"
+  },
+  "hab": "Дубовые и пробковые рощи",
+  "hab_en": "Oak and cork oak woods",
+  "range": "Средиземноморье, Балканы",
+  "range_en": "Mediterranean, Balkans",
+  "host": "дуб пушистый, каменный",
+  "host_en": "downy and holm oak",
+  "fact": "Днём сидит на коре, слившись с ней, а жёлтые крылья открывает лишь в тревоге.",
+  "fact_en": "Hides on bark by day and shows its yellow hindwings only when alarmed."
+ },
+ {
+  "la": "Catocala conversa",
+  "ru": "Орденская лента серая",
+  "en": "Conversa underwing",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 75,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8888",
+   "#68686a"
+  ],
+  "h": [
+   "#c8503a",
+   "#a02c20"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2828",
+    1
+   ],
+   "zz": [
+    "#3a3a3c",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4a4c",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.45,
+    0.6,
+    "#1c1414"
+   ],
+   "dots": "#d8d4cc"
+  },
+  "hab": "Дубовые рощи, сады, маквис",
+  "hab_en": "Oak woods, orchards, maquis",
+  "range": "Средиземноморье",
+  "range_en": "Mediterranean region",
+  "host": "дуб каменный, кермесовый",
+  "host_en": "holm and kermes oak",
+  "fact": "Красные задние крылья служат вспышкой, отпугивающей птиц и ящериц.",
+  "fact_en": "The red hindwings act as a flash that startles birds and lizards."
+ },
+ {
+  "la": "Dysgonia algira",
+  "ru": "Совка-пассажир",
+  "en": "The Passenger",
+  "fam": "Эребиды",
+  "lo": 35,
+  "hi": 45,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#a89078",
+   "#7a6450"
+  ],
+  "h": [
+   "#b08a68",
+   "#7a5a40"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a2a",
+    1
+   ],
+   "zz": [
+    "#4a3a2a",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.55,
+    0.65,
+    "#d8c8a8"
+   ],
+   "patch": [
+    "f",
+    0.3,
+    0.4,
+    2,
+    "#4a3a2a"
+   ]
+  },
+  "hab": "Сухие склоны, оливковые сады, скалы",
+  "hab_en": "Dry slopes, olive groves, rocks",
+  "range": "Средиземноморье, Африка, Ближний Восток",
+  "range_en": "Mediterranean, Africa, Middle East",
+  "host": "клевер, бобовые, вика",
+  "host_en": "clover, legumes, vetch",
+  "fact": "Часто прилетает ночью на свет и на перезрелые инжир и виноград.",
+  "fact_en": "Often comes at night to lights and to overripe figs and grapes."
+ },
+ {
+  "la": "Ophiusa tirhaca",
+  "ru": "Совка оливковая",
+  "en": "Olive tree looper",
+  "fam": "Эребиды",
+  "lo": 45,
+  "hi": 60,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#9a8860",
+   "#786648"
+  ],
+  "h": [
+   "#a07858",
+   "#785840"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "zz": [
+    "#4a3c28",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.6,
+    0.7,
+    "#d0c090"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.45,
+     2,
+     "#d8c898"
+    ]
+   ],
+   "tip": [
+    "#6a5a3c",
+    0.8
+   ]
+  },
+  "hab": "Оливковые рощи, фисташки, маквис",
+  "hab_en": "Olive groves, pistachio, maquis",
+  "range": "Средиземноморье, Северная Африка",
+  "range_en": "Mediterranean, North Africa",
+  "host": "олива, фисташка, тамариск",
+  "host_en": "olive, pistachio, tamarisk",
+  "fact": "Гусеница ест листья оливы и держится на ветке, как сучок.",
+  "fact_en": "The caterpillar feeds on olive leaves and mimics a twig."
+ },
+ {
+  "la": "Mormo maura",
+  "ru": "Совка-старуха",
+  "en": "Old lady",
+  "fam": "Совки",
+  "lo": 60,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#58503e",
+   "#3e382a"
+  ],
+  "h": [
+   "#7a6c54",
+   "#5a4e3c"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2418",
+    1
+   ],
+   "zz": [
+    "#2a2418",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a6048",
+    0.15
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.42,
+    "#7a6c54"
+   ]
+  },
+  "hab": "Каменные стены, гроты, заброшенные дворы",
+  "hab_en": "Stone walls, grottoes, abandoned yards",
+  "range": "Южная и Западная Европа",
+  "range_en": "Southern and Western Europe",
+  "host": "щавель, подорожник, куманика",
+  "host_en": "dock, plantain, bramble",
+  "fact": "Днём прячется в пещерах и старых зданиях, а ночью пьёт сок спелых плодов.",
+  "fact_en": "Hides by day in caves and old buildings and drinks ripe fruit juice at night."
+ },
+ {
+  "la": "Cucullia calendulae",
+  "ru": "Капюшонница календуловая",
+  "en": "Marigold shark",
+  "fam": "Совки",
+  "lo": 42,
+  "hi": 50,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#b0a890",
+   "#8a8268"
+  ],
+  "h": [
+   "#d8d0c0",
+   "#a8a090"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5240",
+    1
+   ],
+   "veins": "#6a6250",
+   "wedges": [
+    "#4a4232",
+    2
+   ],
+   "sheen": [
+    "#e0d8c0",
+    0.2
+   ]
+  },
+  "hab": "Каменистые луга, обочины, поля",
+  "hab_en": "Rocky meadows, roadsides, fields",
+  "range": "Юг Европы, Балканы",
+  "range_en": "Southern Europe, Balkans",
+  "host": "ноготки, астровые",
+  "host_en": "marigold, asters",
+  "fact": "Узкие крылья свёрнуты в трубочку, и сидящая бабочка похожа на сухой стебель.",
+  "fact_en": "Wings rolled tight, the resting moth looks like a dry stem."
+ },
+ {
+  "la": "Polyphaenis sericata",
+  "ru": "Совка шелковистая",
+  "en": "Guernsey underwing",
+  "fam": "Совки",
+  "lo": 38,
+  "hi": 46,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8aa058",
+   "#68803c"
+  ],
+  "h": [
+   "#a89878",
+   "#8a7a5a"
+  ],
+  "opts": {
+   "edge": [
+    "#4a5a28",
+    1
+   ],
+   "zz": [
+    "#3a4a1c",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#c8d898"
+    ]
+   ],
+   "noise": [
+    "#a8c070",
+    0.1
+   ]
+  },
+  "hab": "Кустарники, лесные опушки",
+  "hab_en": "Scrub, woodland edges",
+  "range": "Юг и запад Европы, Балканы",
+  "range_en": "S and W Europe, Balkans",
+  "host": "жимолость, ладанник, плющ",
+  "host_en": "honeysuckle, rock-rose, ivy",
+  "fact": "Зелёная окраска делает бабочку невидимой на мхах и лишайниках.",
+  "fact_en": "The green colour hides the moth on moss and lichen."
+ },
+ {
+  "la": "Agrotis spinifera",
+  "ru": "Совка-землянка шиповатая",
+  "en": "Gold spot dart",
+  "fam": "Совки",
+  "lo": 34,
+  "hi": 42,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a07850",
+   "#7a583a"
+  ],
+  "h": [
+   "#d8c8a8",
+   "#a89878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "zz": [
+    "#4a382a",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.4,
+     2,
+     "#e0b070"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#e0b070"
+    ]
+   ],
+   "noise": [
+    "#5a4630",
+    0.1
+   ]
+  },
+  "hab": "Сухие равнины, поля, обочины",
+  "hab_en": "Dry plains, fields, roadsides",
+  "range": "Средиземноморье, Передняя Азия",
+  "range_en": "Mediterranean, Western Asia",
+  "host": "травы, полынь, злаки",
+  "host_en": "grasses, mugwort, cereals",
+  "fact": "Гусеницы днём прячутся в земле и выходят грызть корни после заката.",
+  "fact_en": "The caterpillars hide in soil by day and gnaw roots after dusk."
+ },
+ {
+  "la": "Pseudoterpna coronillaria",
+  "ru": "Пяденица зелёная коронилловая",
+  "en": "Mediterranean grass emerald",
+  "fam": "Пяденицы",
+  "lo": 34,
+  "hi": 40,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8d098",
+   "#88b878"
+  ],
+  "h": [
+   "#d8e8c8",
+   "#b8d0a0"
+  ],
+  "opts": {
+   "edge": [
+    "#78a068",
+    1
+   ],
+   "zz": [
+    "#e8f0d8",
+    2,
+    "fh"
+   ],
+   "dots": "#e8f0d0"
+  },
+  "hab": "Кустарниковые склоны, ракитник",
+  "hab_en": "Scrubby slopes, broom thickets",
+  "range": "Юг Европы, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "ракитник, дрок",
+  "host_en": "broom, gorse",
+  "fact": "Зелёные крылья быстро выцветают, и старые бабочки становятся серыми.",
+  "fact_en": "The green fades quickly and old moths turn grey."
+ },
+ {
+  "la": "Rhodostrophia calabra",
+  "ru": "Пяденица калабрийская",
+  "en": "Calabrian wave",
+  "fam": "Пяденицы",
+  "lo": 24,
+  "hi": 30,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#e8d8a0",
+   "#d0c080"
+  ],
+  "h": [
+   "#e8dcb0",
+   "#d8c890"
+  ],
+  "opts": {
+   "edge": [
+    "#a07858",
+    1
+   ],
+   "band": [
+    "fh",
+    0.45,
+    0.58,
+    "#c85a48"
+   ],
+   "dots": "#f0e8c0",
+   "zz": [
+    "#c8a870",
+    1,
+    "fh"
+   ]
+  },
+  "hab": "Каменистые луга, скалы",
+  "hab_en": "Rocky meadows, cliffs",
+  "range": "Юг Европы, Балканы",
+  "range_en": "Southern Europe, Balkans",
+  "host": "низкие травы и кустарнички",
+  "host_en": "low herbs and dwarf shrubs",
+  "fact": "Красная полоса на светлых крыльях выдаёт эту маленькую пяденицу на свету фонаря.",
+  "fact_en": "The red band on pale wings makes this small geometer easy to spot at lamps."
+ },
+ {
+  "la": "Campaea honoraria",
+  "ru": "Пяденица зелёная дубовая",
+  "en": "Mediterranean lime-green",
+  "fam": "Пяденицы",
+  "lo": 40,
+  "hi": 50,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#b8d098",
+   "#98b878"
+  ],
+  "h": [
+   "#c8dca8",
+   "#a8c488"
+  ],
+  "opts": {
+   "edge": [
+    "#88a068",
+    1
+   ],
+   "zz": [
+    "#e8f0d0",
+    2,
+    "fh"
+   ],
+   "dots": "#f0f4e0",
+   "sheen": [
+    "#e0f0c8",
+    0.3
+   ]
+  },
+  "hab": "Дубовые рощи, лесистые склоны",
+  "hab_en": "Oak woods, wooded slopes",
+  "range": "Средиземноморье, Балканы",
+  "range_en": "Mediterranean, Balkans",
+  "host": "дуб, кустарники",
+  "host_en": "oak, shrubs",
+  "fact": "Тонкие крылья напоминают лист и почти прозрачны на просвет.",
+  "fact_en": "Thin wings resemble a leaf and are almost translucent in the light."
+ },
+ {
+  "la": "Tephronia sepiaria",
+  "ru": "Пяденица лишайниковая",
+  "en": "Dusky carpet",
+  "fam": "Пяденицы",
+  "lo": 28,
+  "hi": 34,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8a090",
+   "#807868"
+  ],
+  "h": [
+   "#b8b0a0",
+   "#908878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4438",
+    1
+   ],
+   "zz": [
+    "#3a3428",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#5a5448",
+    0.18
+   ],
+   "dots": "#d8d0c0"
+  },
+  "hab": "Скалы, каменные стены, сухие склоны",
+  "hab_en": "Rocks, stone walls, dry slopes",
+  "range": "Южная Европа, Малая Азия",
+  "range_en": "Southern Europe, Asia Minor",
+  "host": "лишайники на скалах",
+  "host_en": "rock lichens",
+  "fact": "Окраска повторяет лишайник на камнях, где она проводит весь день.",
+  "fact_en": "Its pattern copies the lichen on stones where it spends the day."
+ },
+ {
+  "la": "Cymbalophora pudica",
+  "ru": "Медведица скромная",
+  "en": "Mediterranean tiger",
+  "fam": "Медведицы",
+  "lo": 36,
+  "hi": 44,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0e8d8",
+   "#e0d4b8"
+  ],
+  "h": [
+   "#f0dcc0",
+   "#e0c8a0"
+  ],
+  "opts": {
+   "edge": [
+    "#a09070",
+    1
+   ],
+   "sp": [
+    [
+     "h",
+     0.4,
+     0.4,
+     2,
+     "#3a3028"
+    ],
+    [
+     "h",
+     0.6,
+     0.55,
+     2,
+     "#3a3028"
+    ],
+    [
+     "f",
+     0.55,
+     0.45,
+     1,
+     "#8a7a60"
+    ]
+   ],
+   "dots": "#f8f0e0"
+  },
+  "hab": "Сухие луга и кустарники",
+  "hab_en": "Dry meadows and scrub",
+  "range": "Юг Европы, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "травы, подорожник",
+  "host_en": "grasses, plantain",
+  "fact": "Белая бабочка с чёрными точками на задних крыльях летает на свет ночью.",
+  "fact_en": "A white moth with black dots on the hindwings comes to lights at night."
+ },
+ {
+  "la": "Arctia villica",
+  "ru": "Медведица-госпожа",
+  "en": "Cream-spot tiger",
+  "fam": "Медведицы",
+  "lo": 45,
+  "hi": 55,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#2a2420",
+   "#1a1614"
+  ],
+  "h": [
+   "#e8c040",
+   "#d8a020"
+  ],
+  "opts": {
+   "edge": [
+    "#e8dcc0",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#f0e8d0"
+    ],
+    [
+     "f",
+     0.5,
+     0.5,
+     3,
+     "#f0e8d0"
+    ],
+    [
+     "f",
+     0.7,
+     0.3,
+     2,
+     "#f0e8d0"
+    ],
+    [
+     "h",
+     0.6,
+     0.5,
+     3,
+     "#1a1614"
+    ],
+    [
+     "h",
+     0.4,
+     0.7,
+     2,
+     "#1a1614"
+    ]
+   ]
+  },
+  "hab": "Опушки, сады, оливковые рощи",
+  "hab_en": "Edges, gardens, olive groves",
+  "range": "Европа, Северная Африка",
+  "range_en": "Europe, North Africa",
+  "host": "подорожник, крапива, одуванчик",
+  "host_en": "plantain, nettle, dandelion",
+  "fact": "Пятна на тёмных крыльях предупреждают хищников о ядовитости бабочки.",
+  "fact_en": "The spots on the dark wings warn predators that the moth is toxic."
+ },
+ {
+  "la": "Pachypasa otus",
+  "ru": "Коконопряд кипарисовый",
+  "en": "Cypress eggar",
+  "fam": "Коконопряды",
+  "lo": 60,
+  "hi": 90,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#b8a080",
+   "#8a7458"
+  ],
+  "h": [
+   "#c8b090",
+   "#a08868"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4630",
+    1
+   ],
+   "zz": [
+    "#5a4630",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.48,
+    "#d8c8a8"
+   ],
+   "noise": [
+    "#6a5438",
+    0.1
+   ],
+   "dots": "#e0d4b8"
+  },
+  "hab": "Кипарисовые и оливковые рощи",
+  "hab_en": "Cypress and olive groves",
+  "range": "Средиземноморье, Балканы",
+  "range_en": "Mediterranean, Balkans",
+  "host": "кипарис, олива, можжевельник",
+  "host_en": "cypress, olive, juniper",
+  "fact": "Гусеницы вредят кипарисам; самка почти не летает и ждёт самца на ветках.",
+  "fact_en": "The caterpillars damage cypresses; the heavy female barely flies and waits for males."
+ },
+ {
+  "la": "Lasiocampa grandis",
+  "ru": "Коконопряд большой",
+  "en": "Giant eggar",
+  "fam": "Коконопряды",
+  "lo": 65,
+  "hi": 80,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c8a070",
+   "#a07848"
+  ],
+  "h": [
+   "#c09060",
+   "#9a6c40"
+  ],
+  "opts": {
+   "edge": [
+    "#6a4a28",
+    1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.52,
+    "#e8d8b0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.55,
+     0.45,
+     2,
+     "#f0e8d0"
+    ]
+   ],
+   "dots": "#e8d8b0",
+   "sheen": [
+    "#e0c090",
+    0.2
+   ]
+  },
+  "hab": "Сухие луга, скалы, склоны",
+  "hab_en": "Dry grasslands, rocks, slopes",
+  "range": "Балканы, Малая Азия",
+  "range_en": "Balkans, Asia Minor",
+  "host": "злаки, вереск",
+  "host_en": "grasses, heather",
+  "fact": "Осенью самцы мечутся над склонами, разыскивая самок, а гусеницы зимуют в траве.",
+  "fact_en": "In autumn males patrol hillsides looking for females; caterpillars overwinter in grass."
+ },
+ {
+  "la": "Ocneria rubea",
+  "ru": "Волнянка красноватая",
+  "en": "Red tussock",
+  "fam": "Волнянки",
+  "lo": 30,
+  "hi": 38,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c89870",
+   "#a87850"
+  ],
+  "h": [
+   "#d0a880",
+   "#b08860"
+  ],
+  "opts": {
+   "edge": [
+    "#6a4a2a",
+    1
+   ],
+   "zz": [
+    "#6a4a2a",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.5,
+    0.58,
+    "#e0c8a0"
+   ],
+   "dots": "#e8d8b8"
+  },
+  "hab": "Дубовые рощи, маквис",
+  "hab_en": "Oak woods, maquis",
+  "range": "Юг Европы, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "дуб каменный, пробковый",
+  "host_en": "holm and cork oak",
+  "fact": "Осенью гусеницы выходят на листву, а самцы летят на свет ночью.",
+  "fact_en": "Adults emerge in late summer and males fly in at night to lights."
+ },
+ {
+  "la": "Phalera bucephaloides",
+  "ru": "Хохлатка-серебрянка средиземноморская",
+  "en": "Mediterranean buff-tip",
+  "fam": "Хохлатки",
+  "lo": 55,
+  "hi": 65,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#c8c0a8",
+   "#a89e84"
+  ],
+  "h": [
+   "#d8d0b8",
+   "#b8b098"
+  ],
+  "opts": {
+   "edge": [
+    "#6a6048",
+    1
+   ],
+   "zz": [
+    "#7a7058",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.9,
+    0.5,
+    3,
+    "#e8c860"
+   ],
+   "sheen": [
+    "#f0ecd8",
+    0.3
+   ]
+  },
+  "hab": "Дубовые рощи и кустарники",
+  "hab_en": "Oak woods and scrub",
+  "range": "Юг Европы, Малая Азия",
+  "range_en": "Southern Europe, Asia Minor",
+  "host": "дуб каменный и пробковый",
+  "host_en": "holm and cork oak",
+  "fact": "Сидя, крылья свёрнуты в трубку, и бабочка похожа на обломок берёзовой ветки.",
+  "fact_en": "At rest, wings rolled up, the moth looks like a broken twig."
+ },
+ {
+  "la": "Thaumetopoea pityocampa",
+  "ru": "Сосновый походный шелкопряд",
+  "en": "Pine processionary",
+  "fam": "Хохлатки",
+  "lo": 30,
+  "hi": 45,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a8a8a8",
+   "#808084"
+  ],
+  "h": [
+   "#e8e8e4",
+   "#c8c8c4"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5a5c",
+    1
+   ],
+   "bars": [
+    "#4a4a4c",
+    2
+   ],
+   "zz": [
+    "#3a3a3c",
+    2,
+    "f"
+   ],
+   "dots": "#f0f0ec"
+  },
+  "hab": "Сосновые леса и посадки",
+  "hab_en": "Pine woods and plantations",
+  "range": "Южная Европа, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "сосна, кедр",
+  "host_en": "pine, cedar",
+  "fact": "Гусеницы ходят цепочкой за вожаком и вызывают ожог ядовитыми волосками.",
+  "fact_en": "The caterpillars march in a chain nose-to-tail and sting with toxic hairs."
+ },
+ {
+  "la": "Watsonalla uncinula",
+  "ru": "Серпокрылка дубовая юго-восточная",
+  "en": "Southern oak hooktip",
+  "fam": "Серпокрылки",
+  "lo": 24,
+  "hi": 30,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#e8d4a0",
+   "#d4b878"
+  ],
+  "h": [
+   "#e0d0a8",
+   "#c8b080"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7040",
+    1
+   ],
+   "zz": [
+    "#a08848",
+    1,
+    "f"
+   ],
+   "dots": "#f0e4c0",
+   "tip": [
+    "#c8a860",
+    0.85
+   ]
+  },
+  "hab": "Дубовые рощи, лесистые склоны",
+  "hab_en": "Oak woods, wooded slopes",
+  "range": "Юг Европы, Балканы",
+  "range_en": "Southern Europe, Balkans",
+  "host": "дуб, преимущественно пушистый",
+  "host_en": "oaks, mostly downy oak",
+  "fact": "Заострённая вершина переднего крыла делает бабочку похожей на сухой листок.",
+  "fact_en": "The hooked forewing tip makes the moth look like a dry leaf."
+ },
+ {
+  "la": "Agdistis tamaricis",
+  "ru": "Пальцекрылка тамарисковая",
+  "en": "Tamarisk plume",
+  "fam": "Пальцекрылки",
+  "lo": 18,
+  "hi": 24,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#d8d4c4",
+   "#b8b4a0"
+  ],
+  "h": [
+   "#c8c4b0",
+   "#a8a490"
+  ],
+  "opts": {
+   "edge": [
+    "#8a8670",
+    1
+   ],
+   "veins": "#8a8670",
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.5,
+     1,
+     "#5a5648"
+    ]
+   ]
+  },
+  "hab": "Солончаки, берега, тамариски у моря",
+  "hab_en": "Salt marshes, shores, coastal tamarisk",
+  "range": "Средиземноморье, Северная Африка",
+  "range_en": "Mediterranean, North Africa",
+  "host": "тамариск, лох",
+  "host_en": "tamarisk, sea lavender",
+  "fact": "Крылья рассечены на узкие перья, а сидящая бабочка похожа на крестик.",
+  "fact_en": "The wings are split into narrow feathers and the resting moth looks like a tiny cross."
+ },
+ {
+  "la": "Paropta paradoxus",
+  "ru": "Древоточец парадоксальный",
+  "en": "Mediterranean carpenter moth",
+  "fam": "Древоточцы",
+  "lo": 45,
+  "hi": 70,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#a8a090",
+   "#807868"
+  ],
+  "h": [
+   "#c0b8a8",
+   "#a09888"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4438",
+    1
+   ],
+   "noise": [
+    "#4a4438",
+    0.2
+   ],
+   "zz": [
+    "#4a4438",
+    2,
+    "f"
+   ],
+   "veins": "#5a5448"
+  },
+  "hab": "Скалы, сухие склоны, лозы и каперсы",
+  "hab_en": "Rocks, dry slopes, vines and capers",
+  "range": "Юг Европы, Балканы, Ближний Восток",
+  "range_en": "Southern Europe, Balkans, Middle East",
+  "host": "каперсы, виноград, инжир",
+  "host_en": "caper, grape, fig",
+  "fact": "Гусеницы годами прокладывают ходы в стеблях и корнях каперсов.",
+  "fact_en": "The caterpillars bore for years inside caper stems and roots."
+ },
+ {
+  "la": "Dyspessa ulula",
+  "ru": "Древоточец луковый",
+  "en": "Onion goat moth",
+  "fam": "Древоточцы",
+  "lo": 20,
+  "hi": 30,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#c8b898",
+   "#a89878"
+  ],
+  "h": [
+   "#d0c0a0",
+   "#b0a080"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a40",
+    1
+   ],
+   "noise": [
+    "#6a5a40",
+    0.1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.55,
+    "#e0d4b8"
+   ]
+  },
+  "hab": "Сухие склоны, поля, обочины",
+  "hab_en": "Dry slopes, fields, roadsides",
+  "range": "Средиземноморье, Балканы, Азия",
+  "range_en": "Mediterranean, Balkans, Asia",
+  "host": "луковичные и лук",
+  "host_en": "bulbs and onion",
+  "fact": "Гусеница живёт внутри луковицы, а бабочка летит вечером на свет.",
+  "fact_en": "The caterpillar lives inside bulbs and the moth flies to lights in the evening."
+ },
+ {
+  "la": "Palpita unionalis",
+  "ru": "Огнёвка оливковая",
+  "en": "Olive-tree pearl",
+  "fam": "Огнёвки",
+  "lo": 30,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f4f0e4",
+   "#e8e4d4"
+  ],
+  "h": [
+   "#f6f4ec",
+   "#ece8dc"
+  ],
+  "opts": {
+   "edge": [
+    "#b8a878",
+    1
+   ],
+   "sheen": [
+    "#ffffff",
+    0.5
+   ],
+   "veins": "#d8d0b8",
+   "dots": "#fffaf0"
+  },
+  "hab": "Оливковые рощи, сады, жасмин",
+  "hab_en": "Olive groves, gardens, jasmine",
+  "range": "Средиземноморье, Азия",
+  "range_en": "Mediterranean, Asia",
+  "host": "олива, жасмин, лигуструм",
+  "host_en": "olive, jasmine, privet",
+  "fact": "Белоснежные крылья с перламутровым блеском; гусеница портит молодые побеги оливы.",
+  "fact_en": "Snow-white pearly wings; the caterpillar damages young olive shoots."
+ },
+ {
+  "la": "Euzophera pinguis",
+  "ru": "Огнёвка оливковая стволовая",
+  "en": "Olive bark borer",
+  "fam": "Огнёвки",
+  "lo": 20,
+  "hi": 26,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#9a9890",
+   "#787670"
+  ],
+  "h": [
+   "#d0cec4",
+   "#b0aea4"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4842",
+    1
+   ],
+   "zz": [
+    "#2a2824",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#5a5850",
+    0.12
+   ],
+   "dots": "#d8d6cc"
+  },
+  "hab": "Оливковые рощи, старые стволы",
+  "hab_en": "Olive groves, old trunks",
+  "range": "Юг Европы, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "олива, ясень, сирень",
+  "host_en": "olive, ash, lilac",
+  "fact": "Серые крылья неотличимы от старой коры, под которой развивается гусеница.",
+  "fact_en": "Grey wings blend into old bark, under which the caterpillar develops."
+ },
+ {
+  "la": "Hypena obsitalis",
+  "ru": "Совка-хоботница средиземноморская",
+  "en": "Bloxworth snout",
+  "fam": "Совки",
+  "lo": 28,
+  "hi": 34,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#a89078",
+   "#806a52"
+  ],
+  "h": [
+   "#b8a088",
+   "#907a62"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a2a",
+    1
+   ],
+   "zz": [
+    "#4a3a2a",
+    2,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.6,
+    0.68,
+    "#d8c8a8"
+   ],
+   "tip": [
+    "#6a5440",
+    0.8
+   ]
+  },
+  "hab": "Скалы, каменные стены, пещеры",
+  "hab_en": "Rocks, stone walls, caves",
+  "range": "Юг Европы, Северная Африка",
+  "range_en": "Southern Europe, North Africa",
+  "host": "крапива стенная",
+  "host_en": "pellitory-of-the-wall",
+  "fact": "Длинные щупики выступают вперёд, как носик; зимует взрослой в пещерах.",
+  "fact_en": "Long palps project like a snout; adults overwinter in caves."
+ }
+]

@@ -314,6 +314,11 @@ const BEH = {
   jeff:    { speed: 1.8, flap: 6.5, glide: 0.3, erratic: 0.2, h: [0.6, 2.0], wary: 4.2, perch: 0.5 },
   guiding: { speed: 2.3, flap: 7, glide: 0.2, erratic: 0.08, h: [1.2, 2.4], wary: 0, perch: 0, special: 'guiding', light: '#7fd3f5' },
   curious: { speed: 2.4, flap: 8, glide: 0.2, erratic: 0.2, h: [0.6, 2.0], wary: 0, perch: 0, special: 'curious', light: '#ffe58e' },
+  // --- moths (night locations): much faster than the butterflies; invisible outside the beam of a lamp (see Fly / Play in play.js)
+  moth:    { speed: 6.2, flap: 17, glide: 0.1, erratic: 0.6, h: [0.5, 3.6], wary: 6.5, perch: 0.25 },
+  hawkm:   { speed: 7.8, flap: 28, glide: 0.0, erratic: 0.35, h: [0.4, 2.6], wary: 6.5, perch: 0.1 },
+  giant:   { speed: 4.6, flap: 6.5, glide: 0.4, erratic: 0.3, h: [1.2, 5.0], wary: 5.5, perch: 0.35 },
+  rester:  { speed: 5.6, flap: 15, glide: 0.1, erratic: 0.5, h: [0.4, 2.4], wary: 6, perch: 0.6 },
   modifier:{ speed: 2.6, flap: 10, glide: 0.1, erratic: 0.5, h: [0.6, 2.4], wary: 5, perch: 0.1, special: 'modifier', light: '#ff7272' },
 };
 
@@ -321,6 +326,6 @@ let SPECIES_BY_ID = {};
 const BIOME_BY_ID = {};
 function rebuildSpeciesIndex() {
   SPECIES.forEach(s => { SPECIES_BY_ID[s.id] = s; });
-  BIOMES.forEach(b => { BIOME_BY_ID[b.id] = b; b.species = SPECIES.filter(s => s.biome === b.id); });
+  BIOMES.forEach(b => { BIOME_BY_ID[b.id] = b; b.species = SPECIES.filter(s => s.biome === b.id && !s.moth); b.moths = SPECIES.filter(s => s.biome === b.id && s.moth); b.nightB = Object.assign(Object.create(b), { species: b.moths, night: true, name: b.name + ' · ночь' }); });
 }
 rebuildSpeciesIndex();

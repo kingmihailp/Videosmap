@@ -972,17 +972,18 @@ const World = (() => {
 
     // ---- per-visit variation (time of day, weather, relief)
     const OC = !!env.overcast;      // a grey, overcast day (the bog): no golden hour, no sun disc, soft light
-    const golden = OC ? 0 : (rng.chance(0.3) ? rng.range(0.35, 1) : 0), hazy = OC ? rng.range(0.2, 0.45) : (rng.chance(0.3) ? rng.range(0.3, 0.9) : 0);
+    const NIGHT = biome.id !== 'ocean' && Night.is(biome.id, seedStr);      // a night generation (see night.js): moonlight instead of sun, the moths fly
+    const golden = (OC || NIGHT) ? 0 : (rng.chance(0.3) ? rng.range(0.35, 1) : 0), hazy = NIGHT ? 0 : OC ? rng.range(0.2, 0.45) : (rng.chance(0.3) ? rng.range(0.3, 0.9) : 0);
     const az = rng.range(0, 6.283), elev = golden ? rng.range(0.42, 0.66) : rng.range(0.85, 1.3);
     const sunDir = new V3(Math.cos(elev) * Math.cos(az), Math.sin(elev), Math.cos(elev) * Math.sin(az)).normalize();
     const warm = (hex, k) => mixHex(hex, '#ffb070', k * golden);
-    const skyTop = mixHex(warm(env.sky[0], 0.3), '#b8c8d0', hazy * 0.5), skyHor = mixHex(warm(env.sky[1], 0.7), '#e8ecee', hazy * 0.5);
-    const fogCol = mixHex(warm(env.fog[0], 0.6), '#d8e0e4', hazy * 0.6), fogDen = env.fog[1] * (1 + hazy * 0.8);
-    const sunCol = warm(env.sun[0], 0.9);
+    const skyTop = NIGHT ? '#040a1a' : mixHex(warm(env.sky[0], 0.3), '#b8c8d0', hazy * 0.5), skyHor = NIGHT ? '#12203e' : mixHex(warm(env.sky[1], 0.7), '#e8ecee', hazy * 0.5);
+    const fogCol = NIGHT ? '#0a1328' : mixHex(warm(env.fog[0], 0.6), '#d8e0e4', hazy * 0.6), fogDen = NIGHT ? env.fog[1] * 1.6 + 0.004 : env.fog[1] * (1 + hazy * 0.8);
+    const sunCol = NIGHT ? '#7f9be0' : warm(env.sun[0], 0.9);
     const AMP = env.amp * rng.range(0.7, 1.4), FREQ = env.freq * rng.range(0.8, 1.25);
     const scene = new THREE.Scene(); const fogC = new THREE.Color(fogCol);
     scene.background = fogC.clone(); scene.fog = new THREE.FogExp2(fogC, fogDen);
-    const world = { biome, env, scene, seedStr, flowers: [], baits: [], colliders: [], R: PLAY_R, spawn: new V3(0, 0, 0), spawnYaw: 0, updaters: [], waters: [] };
+    const world = { biome, night: NIGHT, env, scene, seedStr, flowers: [], baits: [], colliders: [], R: PLAY_R, spawn: new V3(0, 0, 0), spawnYaw: 0, updaters: [], waters: [] };
 
     // ---- a frozen lava flow (raised, rugged crust) running down from the volcano: its course first, the crust is added to the relief
     let lava = null;
@@ -1374,8 +1375,8 @@ const World = (() => {
     }
 
     // ---- lights
-    const hemi = new THREE.HemisphereLight(mixHex(env.hemi[0], '#ffd8b0', golden * 0.5), env.hemi[1], env.hemi[2] * (1 - golden * 0.12)); scene.add(hemi);
-    const sun = new THREE.DirectionalLight(sunCol, env.sunI || (OC ? 0.5 : 1.05)); sun.castShadow = true; sun.shadow.mapSize.set(1536, 1536);
+    const hemi = NIGHT ? new THREE.HemisphereLight('#26386e', '#080c18', 0.62) : new THREE.HemisphereLight(mixHex(env.hemi[0], '#ffd8b0', golden * 0.5), env.hemi[1], env.hemi[2] * (1 - golden * 0.12)); scene.add(hemi);
+    const sun = new THREE.DirectionalLight(sunCol, NIGHT ? 0.3 : env.sunI || (OC ? 0.5 : 1.05)); sun.castShadow = true; sun.shadow.mapSize.set(1536, 1536);
     const sc = sun.shadow.camera; sc.left = -34; sc.right = 34; sc.top = 34; sc.bottom = -34; sc.near = 1; sc.far = 220;
     sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.06; scene.add(sun, sun.target);
     world.sun = sun; world.sunDir = sunDir;
@@ -1384,7 +1385,7 @@ const World = (() => {
     // ---- sky dome + clouds
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { uTop: { value: new THREE.Color(skyTop) }, uHor: { value: new THREE.Color(env.mist ? fogCol : skyHor) }, uSun: { value: sunDir.clone() }, uSunCol: { value: new THREE.Color(OC ? '#101416' : sunCol) } },
+      uniforms: { uTop: { value: new THREE.Color(skyTop) }, uHor: { value: new THREE.Color(env.mist ? fogCol : skyHor) }, uSun: { value: sunDir.clone() }, uSunCol: { value: new THREE.Color(OC ? '#101416' : NIGHT ? '#dfe8ff' : sunCol) } },
       vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform vec3 uTop; uniform vec3 uHor; uniform vec3 uSun; uniform vec3 uSunCol; varying vec3 vDir;
         void main(){ float h = clamp(vDir.y, 0.0, 1.0); vec3 c = mix(uHor, uTop, pow(h, 0.55));
@@ -1400,14 +1401,19 @@ const World = (() => {
       for (let i = 0; i < w * h; i++) { const yy = Math.floor(i / w); const shade = 255 - Math.max(0, (yy - 12)) * 6; d.data[i * 4] = shade; d.data[i * 4 + 1] = shade; d.data[i * 4 + 2] = Math.min(255, shade + 8); }
       x.putImageData(d, 0, 0);
     });
-    const clouds = []; const nCl = Math.round(14 * env.clouds * (1 + hazy * 0.7));
+    const clouds = []; const nCl = NIGHT ? Math.round(5 * env.clouds) : Math.round(14 * env.clouds * (1 + hazy * 0.7));
     for (let i = 0; i < nCl; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: false, depthWrite: false, opacity: 0.92, color: OC ? 0x8f989e : golden ? 0xffd8c0 : 0xffffff }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, fog: false, depthWrite: false, opacity: NIGHT ? 0.5 : 0.92, color: NIGHT ? 0x242e52 : OC ? 0x8f989e : golden ? 0xffd8c0 : 0xffffff }));
       const a = rng.range(0, 6.28), el = rng.range(0.18, 0.7);
       sp.position.set(Math.cos(a) * 330 * Math.cos(el), 330 * Math.sin(el) + 20, Math.sin(a) * 330 * Math.cos(el)); sp.scale.set(rng.range(70, 130) * (OC ? 1.6 : 1), rng.range(26, 46) * (OC ? 1.4 : 1), 1); sp.userData.a = a; sp.userData.el = el; sp.userData.sp = rng.range(0.002, 0.006);
       scene.add(sp); clouds.push(sp);
     }
 
+    if (NIGHT) {      // stars
+      const n = 700, pos = new Float32Array(n * 3), col = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const a = rng.range(0, 6.283), el = Math.asin(rng.range(0.03, 1)), r = 400, k = rng.range(0.55, 1); pos.set([Math.cos(a) * Math.cos(el) * r, Math.sin(el) * r, Math.sin(a) * Math.cos(el) * r], i * 3); col.set([k, k, Math.min(1, k + 0.15)], i * 3); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const stars = new THREE.Points(g, new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false })); stars.renderOrder = -9; scene.add(stars);
+    }
     // ---- shafts of light that fall through the gaps of the canopy
     if (env.canopy) {
       const sTex = canvasTex(8, 64, (x, w, h) => { const d = x.createImageData(w, h); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const u = 1 - Math.abs(xx / (w - 1) * 2 - 1), v = yy / (h - 1), a = Math.pow(u, 1.4) * (0.25 + 0.75 * Math.sin(v * Math.PI)) * 255; const i = (yy * w + xx) * 4; d.data[i] = 255; d.data[i + 1] = 250; d.data[i + 2] = 200; d.data[i + 3] = a; } x.putImageData(d, 0, 0); });

@@ -1,0 +1,1507 @@
+[
+ {
+  "la": "Archaeoattacus staudingeri",
+  "ru": "Павлиноглазка Штаудингера",
+  "en": "Staudinger’s giant silk moth",
+  "fam": "Павлиноглазки",
+  "lo": 200,
+  "hi": 250,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "atlas",
+  "tail": "none",
+  "f": [
+   "#8a5a34",
+   "#6a3a22"
+  ],
+  "h": [
+   "#8a5a34",
+   "#b07a48"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2a18",
+    2
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.5,
+    5,
+    "#f0e4d0"
+   ],
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.45,
+     5,
+     "#3a2216",
+     "#f0e4d0"
+    ]
+   ],
+   "band": [
+    "fh",
+    0.7,
+    0.78,
+    "#d8c0a0"
+   ],
+   "dots": "#e8d8c0"
+  },
+  "hab": "Первичный низинный лес",
+  "hab_en": "Primary lowland forest",
+  "range": "Борнео, Суматра, Малайя",
+  "range_en": "Borneo, Sumatra, Malaya",
+  "host": "деревья семейства лавровых",
+  "host_en": "laurel-family trees",
+  "fact": "Один из крупнейших мотыльков мира; у взрослых нет рта, они живут за счёт запасов гусеницы.",
+  "fact_en": "One of the largest moths; adults have no mouth and live on the caterpillar’s reserves."
+ },
+ {
+  "la": "Actias maenas",
+  "ru": "Лунная павлиноглазка Менада",
+  "en": "Malaysian moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 100,
+  "hi": 130,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "luna",
+  "tail": "long",
+  "f": [
+   "#b4d49a",
+   "#9ac484"
+  ],
+  "h": [
+   "#b4d49a",
+   "#cce0a8"
+  ],
+  "opts": {
+   "edge": [
+    "#c8a040",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.4,
+     0.5,
+     3,
+     "#8a4a30",
+     "#f0f0d0"
+    ],
+    [
+     "h",
+     0.4,
+     0.5,
+     3,
+     "#8a4a30",
+     "#f0f0d0"
+    ]
+   ],
+   "sheen": [
+    "#e8f0c0",
+    0.3
+   ]
+  },
+  "hab": "Горные и низинные леса",
+  "hab_en": "Montane and lowland forests",
+  "range": "Юго-Восточная Азия, Борнео",
+  "range_en": "Southeast Asia, Borneo",
+  "host": "лавровые, кизил",
+  "host_en": "laurels, dogwood",
+  "fact": "Длинные хвосты задних крыльев сбивают с толку летучих мышей.",
+  "fact_en": "The long hindwing tails confuse hunting bats."
+ },
+ {
+  "la": "Antheraea frithi",
+  "ru": "Тусовая шелкопряд-глазчатка Фрита",
+  "en": "Frith’s silk moth",
+  "fam": "Павлиноглазки",
+  "lo": 110,
+  "hi": 140,
+  "rar": 2,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#b8783a",
+   "#8a5228"
+  ],
+  "h": [
+   "#c8884a",
+   "#9a6030"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3418",
+    1
+   ],
+   "eye": [
+    [
+     "f",
+     0.45,
+     0.45,
+     4,
+     "#3a2416",
+     "#f0e8c8"
+    ],
+    [
+     "h",
+     0.45,
+     0.45,
+     5,
+     "#3a2416",
+     "#f0e8c8"
+    ]
+   ],
+   "zz": [
+    "#5a3418",
+    2,
+    "fh"
+   ],
+   "dots": "#e8d8b8"
+  },
+  "hab": "Низинный лес и опушки",
+  "hab_en": "Lowland forest and edges",
+  "range": "Индия, Индокитай, Борнео",
+  "range_en": "India, Indochina, Borneo",
+  "host": "дерево бодхи, лавровые, тик",
+  "host_en": "assorted forest trees",
+  "fact": "Прозрачные «окошки» в глазках крыльев помогают пугать птиц.",
+  "fact_en": "Translucent windows in the eyespots help startle birds."
+ },
+ {
+  "la": "Lyssa zampa",
+  "ru": "Урания-лисса зампа",
+  "en": "Tailed emerald swallowtail moth",
+  "fam": "Урании",
+  "lo": 70,
+  "hi": 90,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "urania",
+  "tail": "long",
+  "f": [
+   "#e8e4d8",
+   "#bfb8a4"
+  ],
+  "h": [
+   "#f0ece0",
+   "#d8d0b8"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4234",
+    1
+   ],
+   "zz": [
+    "#8a7a5a",
+    3,
+    "fh"
+   ],
+   "band": [
+    "f",
+    0.5,
+    0.6,
+    "#6a5a3c"
+   ],
+   "sheen": [
+    "#ffffff",
+    0.3
+   ]
+  },
+  "hab": "Лес и опушки",
+  "hab_en": "Forest and its edges",
+  "range": "Индо-Малайский регион",
+  "range_en": "Indo-Malayan region",
+  "host": "эуфорбиевые",
+  "host_en": "euphorbs",
+  "fact": "Белая бабочка с длинными хвостами часто летит на свет лампы.",
+  "fact_en": "A white moth with long tails that readily comes to lamps."
+ },
+ {
+  "la": "Micronia aculeata",
+  "ru": "Микронья колючехвостая",
+  "en": "Spiny-tailed micronia",
+  "fam": "Урании",
+  "lo": 35,
+  "hi": 45,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "urania",
+  "tail": "short",
+  "f": [
+   "#f4f0e4",
+   "#e8e0cc"
+  ],
+  "h": [
+   "#f4f0e4",
+   "#e8e0cc"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7a5a",
+    1
+   ],
+   "zz": [
+    "#a89868",
+    3,
+    "fh"
+   ],
+   "sp": [
+    [
+     "h",
+     0.7,
+     0.5,
+     1,
+     "#3a3226"
+    ]
+   ]
+  },
+  "hab": "Подлесок тропического леса",
+  "hab_en": "Rainforest understorey",
+  "range": "Индия, Малайзия, Борнео",
+  "range_en": "India, Malaysia, Borneo",
+  "host": "лианы рода Endospermum",
+  "host_en": "Endospermum trees",
+  "fact": "Очень нежная белая моль с «хвостиками» похожа на ласточкохвоста в миниатюре.",
+  "fact_en": "A delicate white moth with tails, like a tiny swallowtail."
+ },
+ {
+  "la": "Daphnis hypothous",
+  "ru": "Бражник дафнис гипоту",
+  "en": "Hypothous hawk-moth",
+  "fam": "Бражники",
+  "lo": 75,
+  "hi": 95,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a8a48",
+   "#5a6a30"
+  ],
+  "h": [
+   "#c8884a",
+   "#e8b878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a5a28",
+    1
+   ],
+   "bars": [
+    "#d8d8a8",
+    2
+   ],
+   "patch": [
+    "f",
+    0.4,
+    0.4,
+    3,
+    "#c8c890"
+   ]
+  },
+  "hab": "Лес, сады",
+  "hab_en": "Forest and gardens",
+  "range": "Малайя, Борнео, Ява",
+  "range_en": "Malaya, Borneo, Java",
+  "host": "Wrightia, олеандр",
+  "host_en": "Wrightia, oleander",
+  "fact": "Бражник питается нектаром на лету, зависая над цветком.",
+  "fact_en": "It feeds on nectar on the wing, hovering at flowers."
+ },
+ {
+  "la": "Theretra silhetensis",
+  "ru": "Бражник тереттра сильхетская",
+  "en": "Theretra silhetensis",
+  "fam": "Бражники",
+  "lo": 65,
+  "hi": 85,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#9a8a50",
+   "#6a5a30"
+  ],
+  "h": [
+   "#a85a38",
+   "#c88a60"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a28",
+    1
+   ],
+   "bars": [
+    "#e8dcb0",
+    3
+   ],
+   "dots": "#e8dcb0"
+  },
+  "hab": "Лес, опушки и сады",
+  "hab_en": "Forest, edges and gardens",
+  "range": "Южная и Юго-Восточная Азия",
+  "range_en": "South and Southeast Asia",
+  "host": "ароидные, виноградные",
+  "host_en": "aroids, vines",
+  "fact": "Узкие светлые полосы на крыльях делают его похожим на засохший лист.",
+  "fact_en": "Narrow pale stripes make it resemble a dry leaf."
+ },
+ {
+  "la": "Marumba cristata",
+  "ru": "Бражник хохлатый",
+  "en": "Crested hawk-moth",
+  "fam": "Бражники",
+  "lo": 80,
+  "hi": 105,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#9a8a68",
+   "#7a6a48"
+  ],
+  "h": [
+   "#c8a07a",
+   "#a87a58"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a26",
+    1
+   ],
+   "zz": [
+    "#4a3a26",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#5a4a38",
+    0.1
+   ],
+   "tip": [
+    "#6a5a40",
+    0.8
+   ]
+  },
+  "hab": "Лес, парки",
+  "hab_en": "Forest, parks",
+  "range": "Индия, Юго-Восточная Азия, Борнео",
+  "range_en": "India, Southeast Asia, Borneo",
+  "host": "цитрусовые, манго",
+  "host_en": "citrus, mango",
+  "fact": "Гусеница иногда вредит плантациям цитрусовых.",
+  "fact_en": "The caterpillar can damage citrus plantations."
+ },
+ {
+  "la": "Meganoton nyctiphanes",
+  "ru": "Бражник мегаонтон",
+  "en": "Meganoton hawk-moth",
+  "fam": "Бражники",
+  "lo": 110,
+  "hi": 135,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#8a7a60",
+   "#6a5a48"
+  ],
+  "h": [
+   "#d8a070",
+   "#a86a48"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e22",
+    1
+   ],
+   "zz": [
+    "#3a2e22",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a3c2e",
+    0.12
+   ],
+   "bars": [
+    "#c8b898",
+    2
+   ]
+  },
+  "hab": "Первичный лес",
+  "hab_en": "Primary forest",
+  "range": "Азия и Борнео",
+  "range_en": "Asia and Borneo",
+  "host": "лавровые, ваточные",
+  "host_en": "laurel family",
+  "fact": "Один из самых крупных бражников региона, летит в сумерках.",
+  "fact_en": "One of the largest hawk-moths of the region, flying at dusk."
+ },
+ {
+  "la": "Erebus ephesperis",
+  "ru": "Совка эребус эфеспера",
+  "en": "Ephesperis black witch",
+  "fam": "Эребиды",
+  "lo": 115,
+  "hi": 140,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#5a4a40",
+   "#3a2e2a"
+  ],
+  "h": [
+   "#4a3c34",
+   "#2a201c"
+  ],
+  "opts": {
+   "edge": [
+    "#1e1614",
+    1
+   ],
+   "zz": [
+    "#a89888",
+    3,
+    "fh"
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.62,
+    "#c8b8a8"
+   ],
+   "noise": [
+    "#7a6a5a",
+    0.1
+   ],
+   "dots": "#d8c8b8"
+  },
+  "hab": "Лес и поселения",
+  "hab_en": "Forest and settlements",
+  "range": "Юго-Восточная Азия, Борнео",
+  "range_en": "Southeast Asia, Borneo",
+  "host": "бобовые",
+  "host_en": "legumes",
+  "fact": "Днём прячется в пещерах и домах, крылья скрывают мягкий лиловый отлив.",
+  "fact_en": "By day it hides in caves and houses; its wings have a soft purplish gloss."
+ },
+ {
+  "la": "Eudocima salaminia",
+  "ru": "Совка-вампир саламиния",
+  "en": "Banded fruit-piercer",
+  "fam": "Эребиды",
+  "lo": 80,
+  "hi": 100,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a7a58",
+   "#6a5a3c"
+  ],
+  "h": [
+   "#e89a28",
+   "#d88020"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e1c",
+    1
+   ],
+   "zz": [
+    "#4a3c28",
+    2,
+    "f"
+   ],
+   "patch": [
+    "h",
+    0.5,
+    0.5,
+    5,
+    "#2a2218"
+   ],
+   "band": [
+    "h",
+    0.7,
+    0.78,
+    "#2a2218"
+   ]
+  },
+  "hab": "Лес и плодовые сады",
+  "hab_en": "Forest and orchards",
+  "range": "Индо-Малайский регион",
+  "range_en": "Indo-Malayan region",
+  "host": "лианы Menispermaceae",
+  "host_en": "moonseed vines",
+  "fact": "Хоботок бабочки так крепок, что прокалывает кожуру спелых плодов.",
+  "fact_en": "Its proboscis is strong enough to pierce ripe fruit skin."
+ },
+ {
+  "la": "Spirama retorta",
+  "ru": "Совка спирама",
+  "en": "Spirama retorta",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 75,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a6a50",
+   "#6a4c38"
+  ],
+  "h": [
+   "#a8785a",
+   "#7a5038"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a20",
+    1
+   ],
+   "zz": [
+    "#3a2a20",
+    3,
+    "fh"
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.45,
+     2,
+     "#e8dcc0"
+    ],
+    [
+     "h",
+     0.4,
+     0.45,
+     2,
+     "#e8dcc0"
+    ]
+   ],
+   "noise": [
+    "#4a3a2c",
+    0.1
+   ]
+  },
+  "hab": "Лес и опушки",
+  "hab_en": "Forest and its edges",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "акации, бобовые",
+  "host_en": "acacias, legumes",
+  "fact": "В покое она похожа на сухой лист, а пятна напоминают глаза.",
+  "fact_en": "At rest it looks like a dry leaf, with eye-like spots."
+ },
+ {
+  "la": "Hypopyra vespertilio",
+  "ru": "Совка-летучая мышь",
+  "en": "Bat moth",
+  "fam": "Эребиды",
+  "lo": 60,
+  "hi": 75,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8070",
+   "#5a5044"
+  ],
+  "h": [
+   "#6a4a38",
+   "#3a2a22"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2218",
+    1
+   ],
+   "zz": [
+    "#2a2218",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4034",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.6,
+    "#c8b080"
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Индо-Австралийский регион",
+  "range_en": "Indo-Australian region",
+  "host": "акации",
+  "host_en": "acacias",
+  "fact": "Тёмные крылья с загнутым краем придают ей вид летучей мыши.",
+  "fact_en": "Dark wings with a curved edge give a bat-like look."
+ },
+ {
+  "la": "Asota plana",
+  "ru": "Медведица азота",
+  "en": "Asota plana",
+  "fam": "Медведицы",
+  "lo": 50,
+  "hi": 60,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#c8b898",
+   "#8a6a48"
+  ],
+  "h": [
+   "#e8a038",
+   "#d88020"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a1c",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.35,
+     2,
+     "#f0e0c0"
+    ],
+    [
+     "f",
+     0.6,
+     0.55,
+     2,
+     "#f0e0c0"
+    ]
+   ],
+   "band": [
+    "h",
+    0.7,
+    0.8,
+    "#2a2218"
+   ]
+  },
+  "hab": "Лес и опушки",
+  "hab_en": "Forest and edges",
+  "range": "Индо-Австралийский регион",
+  "range_en": "Indo-Australian region",
+  "host": "фикусы",
+  "host_en": "figs",
+  "fact": "Яркие гусеницы ядовиты; взрослая бабочка выглядит осой.",
+  "fact_en": "Bright caterpillars are toxic; the adult resembles a wasp."
+ },
+ {
+  "la": "Amerila astreus",
+  "ru": "Медведица америла",
+  "en": "Amerila astreus",
+  "fam": "Медведицы",
+  "lo": 55,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#d8d0bc"
+  ],
+  "h": [
+   "#f4f0e4",
+   "#e0d8c4"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7a60",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.5,
+     2,
+     "#4a3a2c"
+    ]
+   ],
+   "dots": "#f0e0c0"
+  },
+  "hab": "Лес и дикие заросли",
+  "hab_en": "Forest and scrub",
+  "range": "Азия и Борнео",
+  "range_en": "Asia and Borneo",
+  "host": "молочайные",
+  "host_en": "spurges",
+  "fact": "При испуге выпускает пенящуюся жидкость из железы на груди.",
+  "fact_en": "When disturbed it exudes frothy fluid from the thorax."
+ },
+ {
+  "la": "Creatonotos gangis",
+  "ru": "Медведица Ганга",
+  "en": "Gangis tiger moth",
+  "fam": "Медведицы",
+  "lo": 45,
+  "hi": 55,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#c8a080"
+  ],
+  "h": [
+   "#f4f0e8",
+   "#e8c8a8"
+  ],
+  "opts": {
+   "edge": [
+    "#8a6a50",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#5a4030"
+    ],
+    [
+     "f",
+     0.65,
+     0.5,
+     2,
+     "#5a4030"
+    ]
+   ],
+   "wedges": [
+    "#8a6a50",
+    3
+   ]
+  },
+  "hab": "Лес и сады",
+  "hab_en": "Forest and gardens",
+  "range": "Азия и Австралия",
+  "range_en": "Asia and Australia",
+  "host": "разные травы",
+  "host_en": "assorted herbs",
+  "fact": "Самцы выпускают из брюшка надувные пучки волосков с феромоном.",
+  "fact_en": "Males inflate coremata, bundles of hairs bearing pheromone."
+ },
+ {
+  "la": "Lebeda nobilis",
+  "ru": "Коконопряд лебеда",
+  "en": "Lebeda nobilis",
+  "fam": "Коконопряды",
+  "lo": 75,
+  "hi": 100,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a87a4a",
+   "#7a5230"
+  ],
+  "h": [
+   "#b48858",
+   "#8a6038"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3018",
+    1
+   ],
+   "bars": [
+    "#e8c898",
+    2
+   ],
+   "zz": [
+    "#5a3a1e",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Малайзия, Борнео",
+  "range_en": "Malaysia, Borneo",
+  "host": "лавровые",
+  "host_en": "laurel family",
+  "fact": "Коричневое тело с густыми волосками помогает ему сливаться с корой.",
+  "fact_en": "Dense brown hairs help it blend with bark."
+ },
+ {
+  "la": "Lymantria marginata",
+  "ru": "Волнянка окаймлённая",
+  "en": "Marginated tussock moth",
+  "fam": "Волнянки",
+  "lo": 45,
+  "hi": 60,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#c8b898"
+  ],
+  "h": [
+   "#f4f0e4",
+   "#d8c8a8"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a40",
+    1
+   ],
+   "zz": [
+    "#5a4a38",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#3a2e22"
+    ]
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Индо-Малайский регион",
+  "range_en": "Indo-Malayan region",
+  "host": "манго, лавровые",
+  "host_en": "mango, laurel family",
+  "fact": "Гусеницы покрыты волосками, которые вызывают раздражение кожи.",
+  "fact_en": "The caterpillar’s hairs irritate human skin."
+ },
+ {
+  "la": "Eumelea ludovicata",
+  "ru": "Пяденица эумелея",
+  "en": "Eumelea ludovicata",
+  "fam": "Пяденицы",
+  "lo": 30,
+  "hi": 38,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#d85a4a",
+   "#c84038"
+  ],
+  "h": [
+   "#d85a4a",
+   "#c84038"
+  ],
+  "opts": {
+   "edge": [
+    "#7a2a24",
+    1
+   ],
+   "zz": [
+    "#f0d080",
+    2,
+    "fh"
+   ],
+   "band": [
+    "fh",
+    0.55,
+    0.62,
+    "#f0d080"
+   ]
+  },
+  "hab": "Подлесок тропического леса",
+  "hab_en": "Rainforest understorey",
+  "range": "Юго-Восточная Азия",
+  "range_en": "Southeast Asia",
+  "host": "руреа (лианы)",
+  "host_en": "Rourea vines",
+  "fact": "Красные крылья с жёлтыми линиями делают её заметной даже ночью.",
+  "fact_en": "Red wings with yellow lines are striking even at night."
+ },
+ {
+  "la": "Pingasa chlora",
+  "ru": "Пяденица пингаза",
+  "en": "Pingasa chlora",
+  "fam": "Пяденицы",
+  "lo": 35,
+  "hi": 50,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#b4d4a0",
+   "#8ab478"
+  ],
+  "h": [
+   "#c0d8a8",
+   "#98c080"
+  ],
+  "opts": {
+   "edge": [
+    "#5a7a48",
+    1
+   ],
+   "zz": [
+    "#f0f0e0",
+    2,
+    "fh"
+   ],
+   "dots": "#e8f0d8"
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Индо-Австралийский регион",
+  "range_en": "Indo-Australian region",
+  "host": "разные деревья",
+  "host_en": "assorted trees",
+  "fact": "Зелёные крылья со светлыми линиями — камуфляж на листьях.",
+  "fact_en": "Green wings with pale lines camouflage it on leaves."
+ },
+ {
+  "la": "Hyposidra talaca",
+  "ru": "Пяденица талака",
+  "en": "Talaca looper",
+  "fam": "Пяденицы",
+  "lo": 45,
+  "hi": 60,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#8a7a68",
+   "#6a5a48"
+  ],
+  "h": [
+   "#9a8a78",
+   "#7a6a58"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e22",
+    1
+   ],
+   "zz": [
+    "#3a2e22",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#4a3c2e",
+    0.1
+   ]
+  },
+  "hab": "Лес и плантации",
+  "hab_en": "Forest and plantations",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "чай, какао",
+  "host_en": "tea, cocoa",
+  "fact": "Гусеницы-землемёры считаются вредителями на чайных плантациях.",
+  "fact_en": "Looper caterpillars are pests on tea plantations."
+ },
+ {
+  "la": "Stauropus alternus",
+  "ru": "Хохлатка стауропус",
+  "en": "Lobster moth relative",
+  "fam": "Хохлатки",
+  "lo": 55,
+  "hi": 70,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#9a8a68",
+   "#6a5a40"
+  ],
+  "h": [
+   "#b8a888",
+   "#8a7a5c"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e22",
+    1
+   ],
+   "zz": [
+    "#3a2e22",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#5a4a38",
+    0.1
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Юго-Восточная Азия",
+  "range_en": "Southeast Asia",
+  "host": "разные лиственные",
+  "host_en": "assorted broadleaf trees",
+  "fact": "Гусеница напоминает муравья-паука и принимает угрожающую позу.",
+  "fact_en": "The caterpillar looks like a spider-ant and strikes a menacing pose."
+ },
+ {
+  "la": "Phalera raya",
+  "ru": "Хохлатка фалера",
+  "en": "Phalera raya",
+  "fam": "Хохлатки",
+  "lo": 50,
+  "hi": 65,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a8a090",
+   "#8a8070"
+  ],
+  "h": [
+   "#c8c0b0",
+   "#a8a090"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5244",
+    1
+   ],
+   "patch": [
+    "f",
+    0.85,
+    0.5,
+    3,
+    "#e8d8a0"
+   ],
+   "zz": [
+    "#6a6254",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Борнео, Суматра",
+  "range_en": "Borneo, Sumatra",
+  "host": "разные деревья",
+  "host_en": "assorted trees",
+  "fact": "На конце крыла есть жёлтое пятно, как на сломанной ветке.",
+  "fact_en": "A yellow patch at the wing tip mimics a broken twig."
+ },
+ {
+  "la": "Oreta pulchripes",
+  "ru": "Серпокрылка орета",
+  "en": "Oreta pulchripes",
+  "fam": "Серпокрылки",
+  "lo": 25,
+  "hi": 35,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#b8885a",
+   "#8a5a34"
+  ],
+  "h": [
+   "#c8985a",
+   "#9a6a40"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3a22",
+    1
+   ],
+   "zz": [
+    "#6a4226",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.45,
+     1,
+     "#f0e0c0"
+    ]
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Юго-Восточная Азия",
+  "range_en": "Southeast Asia",
+  "host": "лавровые",
+  "host_en": "laurel family",
+  "fact": "Серповидный край крыла делает её похожей на сухой лист.",
+  "fact_en": "The sickle-shaped wing makes it look like a dry leaf."
+ },
+ {
+  "la": "Diacrotricha fasciola",
+  "ru": "Пальцекрылка",
+  "en": "Diacrotricha plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 20,
+  "hi": 28,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#e8dcc0",
+   "#c8b890"
+  ],
+  "h": [
+   "#e8dcc0",
+   "#c8b890"
+  ],
+  "opts": {
+   "edge": [
+    "#8a7a5a",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.5,
+     1,
+     "#6a5a3c"
+    ]
+   ]
+  },
+  "hab": "Подлесок",
+  "hab_en": "Understorey",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "лепизантес (деревья)",
+  "host_en": "Lepisanthes trees",
+  "fact": "Крылья разделены на «пёрышки», как у птицы.",
+  "fact_en": "Wings split into feather-like plumes."
+ },
+ {
+  "la": "Zeuzera coffeae",
+  "ru": "Древоточец кофейный",
+  "en": "Red coffee borer",
+  "fam": "Древоточцы",
+  "lo": 35,
+  "hi": 55,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#f0ece4",
+   "#d8d4c8"
+  ],
+  "h": [
+   "#f4f0e8",
+   "#d8d4c8"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a50",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#2a3a5a"
+    ],
+    [
+     "f",
+     0.55,
+     0.6,
+     2,
+     "#2a3a5a"
+    ],
+    [
+     "f",
+     0.75,
+     0.4,
+     2,
+     "#2a3a5a"
+    ]
+   ]
+  },
+  "hab": "Лес и плантации",
+  "hab_en": "Forest and plantations",
+  "range": "Азия и Австралия",
+  "range_en": "Asia and Australia",
+  "host": "кофе, какао",
+  "host_en": "coffee, cocoa",
+  "fact": "Гусеница прогрызает ходы внутри ветвей и стволов.",
+  "fact_en": "The caterpillar tunnels in stems and trunks."
+ },
+ {
+  "la": "Talanga sexpunctalis",
+  "ru": "Огнёвка таланга",
+  "en": "Talanga sexpunctalis",
+  "fam": "Огнёвки",
+  "lo": 25,
+  "hi": 30,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f0a838",
+   "#d88820"
+  ],
+  "h": [
+   "#f0a838",
+   "#d88820"
+  ],
+  "opts": {
+   "edge": [
+    "#8a4a18",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.4,
+     1,
+     "#7a3a10"
+    ],
+    [
+     "f",
+     0.55,
+     0.55,
+     1,
+     "#7a3a10"
+    ],
+    [
+     "h",
+     0.5,
+     0.5,
+     1,
+     "#7a3a10"
+    ]
+   ]
+  },
+  "hab": "Лес, сады",
+  "hab_en": "Forest, gardens",
+  "range": "Индо-Малайский регион",
+  "range_en": "Indo-Malayan region",
+  "host": "Moraceae, фикусы",
+  "host_en": "figs",
+  "fact": "Оранжево-красный окрас предупреждает хищников.",
+  "fact_en": "Orange-red colour warns predators."
+ },
+ {
+  "la": "Syngamia florella",
+  "ru": "Огнёвка красно-жёлтая",
+  "en": "Red-banded syngamia",
+  "fam": "Огнёвки",
+  "lo": 20,
+  "hi": 26,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#d86a28",
+   "#e8a038"
+  ],
+  "h": [
+   "#f0b048",
+   "#f0c870"
+  ],
+  "opts": {
+   "edge": [
+    "#5a3a18",
+    1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.55,
+    "#f0e0a0"
+   ],
+   "dots": "#f0e0a0"
+  },
+  "hab": "Лес и опушки",
+  "hab_en": "Forest and edges",
+  "range": "Индо-Австралийский регион",
+  "range_en": "Indo-Australian region",
+  "host": "бобовые",
+  "host_en": "legumes",
+  "fact": "Ярко-оранжевые крылья мелькают у фонарей в тропиках.",
+  "fact_en": "Bright orange wings flicker around tropical lamps."
+ },
+ {
+  "la": "Trilocha varians",
+  "ru": "Коконопряд трилоха",
+  "en": "Trilocha varians",
+  "fam": "Шелкопряды",
+  "lo": 35,
+  "hi": 45,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#b8a888",
+   "#8a7a5a"
+  ],
+  "h": [
+   "#c8b898",
+   "#a89878"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3e2c",
+    1
+   ],
+   "zz": [
+    "#5a4c36",
+    2,
+    "fh"
+   ],
+   "noise": [
+    "#6a5c44",
+    0.08
+   ]
+  },
+  "hab": "Лес и плантации",
+  "hab_en": "Forest and plantations",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "фикусы, хлебное дерево",
+  "host_en": "figs, jackfruit",
+  "fact": "Гусеница питается фикусами и выделяет шёлк.",
+  "fact_en": "The caterpillar feeds on figs and spins silk."
+ },
+ {
+  "la": "Eupterote undata",
+  "ru": "Эуптероте волнистая",
+  "en": "Eupterote undata",
+  "fam": "Эуптероты",
+  "lo": 70,
+  "hi": 100,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#d8b878",
+   "#b89050"
+  ],
+  "h": [
+   "#e0c088",
+   "#c8a060"
+  ],
+  "opts": {
+   "edge": [
+    "#7a5a30",
+    1
+   ],
+   "zz": [
+    "#8a6a38",
+    4,
+    "fh"
+   ],
+   "band": [
+    "f",
+    0.5,
+    0.58,
+    "#8a6a38"
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "разные деревья",
+  "host_en": "assorted trees",
+  "fact": "Гусеницы живут колониями и ходят строем, как поезд.",
+  "fact_en": "Caterpillars live in colonies and march in a line."
+ },
+ {
+  "la": "Hulodes caranea",
+  "ru": "Совка хулодес",
+  "en": "Hulodes caranea",
+  "fam": "Эребиды",
+  "lo": 55,
+  "hi": 75,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8a7a68",
+   "#6a5a48"
+  ],
+  "h": [
+   "#9a8a78",
+   "#7a6a58"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e22",
+    1
+   ],
+   "zz": [
+    "#3a2e22",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#4a3c2e",
+    0.1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#d8c8a8"
+    ]
+   ]
+  },
+  "hab": "Лес",
+  "hab_en": "Forest",
+  "range": "Индия, Юго-Восточная Азия",
+  "range_en": "India, Southeast Asia",
+  "host": "бобовые",
+  "host_en": "legumes",
+  "fact": "Серо-коричневая окраска идеальна для маскировки на коре.",
+  "fact_en": "Grey-brown colouring is ideal for bark camouflage."
+ }
+]

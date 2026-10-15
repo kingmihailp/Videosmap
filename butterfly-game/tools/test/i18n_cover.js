@@ -20,7 +20,7 @@ const { chromium } = require(process.env.PW_CORE || 'playwright-core');
   await to('journal', "F0W.screen='journal'"); for (let i = 0; i < 12; i++) await to('journal' + i, `Screens.journal.tab = ${i}; Screens.journal.sel = 0`, 250);
   // data audit: every text field of every species / location, and the derived 'look' hint, through the translator
   const au = await pg.evaluate(() => { const bad = []; const chk = (w, s) => { if (typeof s === 'string' && /[А-Яа-яЁё]/.test(s)) { const r = I18N.tr(s); if (/[А-Яа-яЁё]/.test(r)) bad.push(w + ': ' + s.slice(0, 70) + ' => ' + r.slice(0, 70)); } };
-    for (const s of SPECIES) for (const k of ['ru', 'hab', 'range', 'host', 'fact', 'look']) chk(s.id + '.' + k, s[k]);
+    for (const s of SPECIES) for (const k of ['ru', 'fam', 'hab', 'range', 'host', 'fact', 'look']) chk(s.id + '.' + k, s[k]);
     for (const b of BIOMES) for (const k of Object.keys(b)) chk(b.id + '.' + k, b[k]); return bad; });
   console.log('DATA RESIDUAL', au.length); au.slice(0, 25).forEach(x => console.log('  ', x));
   console.log('screens done');

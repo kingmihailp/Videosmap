@@ -44,8 +44,14 @@ const Traps = (() => {
     { id: 'pheromone', ru: 'Непонятные феромоны', q: 25, tag: 'неведомый', price: 3000, col: '#8a4aff', secret: true, ab: 0.1, lure: 2.0, desc: 'Запечатанный флакон без этикетки. Пахнет тем, чего не бывает. Ловушка с ним зовёт самых редких, и каждая десятая бабочка оказывается не такой, как все.' },
     { id: 'manuka', ru: 'Мёд манука', q: 5, price: 300, col: '#9a5818', desc: 'Импортный мёд из Новой Зеландии с насыщенным травяным ароматом.' },
   ];
+  // lamps for the night locations (sold by the trapper): the beam shows the moths; I = intensity, dist = reach (m), ang = half-width of the cone (rad); hands: held in the hand, so the net cannot be swung while it burns
+  const LAMPS = [
+    { id: 'torch', ru: 'Фонарик', price: 1800, I: 2.8, dist: 44, ang: 0.46, hands: true, col: '#ffe9a0', desc: 'Обычный ручной фонарь, как в океане: широкий яркий луч далеко вперёд. Руки заняты фонарём: пока он горит, сачком не взмахнуть (F — выключить).' },
+    { id: 'head', ru: 'Налобный фонарь', price: 4200, I: 2.2, dist: 32, ang: 0.38, hands: false, col: '#d8f0ff', desc: 'Надевается на голову: луч идёт туда, куда вы смотрите, а руки свободны для сачка. Луч уже и короче, чем у ручного фонаря.' },
+  ];
+  const LP = Object.fromEntries(LAMPS.map(l => [l.id, l]));
   const FL = Object.fromEntries(FLOWERS.map(f => [f.id, f])), HN = Object.fromEntries(HONEYS.map(h => [h.id, h]));
-  const KINDS = { tr: { list: Object.values(TYPES), by: TYPES, ru: 'ловушки' }, fl: { list: FLOWERS, by: FL, ru: 'цветы' }, hn: { list: HONEYS, by: HN, ru: 'мёд' } };
+  const KINDS = { tr: { list: Object.values(TYPES), by: TYPES, ru: 'ловушки' }, fl: { list: FLOWERS, by: FL, ru: 'цветы' }, hn: { list: HONEYS, by: HN, ru: 'мёд' }, lp: { list: LAMPS, by: LP, ru: 'фонари' } };
   // ---- the inventory (personal: it is part of the player's save, not of the shared cabinet)
   const inv = () => Save.data.trap || (Save.data.trap = { tr: {}, fl: {}, hn: {} });
   const count = (k, id) => (inv()[k] && inv()[k][id]) || 0;
@@ -750,5 +756,5 @@ const Traps = (() => {
   }
   // a bunch of flowers standing on a small dish, for the stalls (static, at the origin; scale it as needed)
   function bunch(id, r = 0.14) { const g = new THREE.Group(); g.add(cyl(r, r, 0.02, M('#6a4a2c'), 0, -0.01, 0, 14)); flowerBunch(g, 0, FL[id], r, 0); return g; }
-  return { allowed, accepts, closeup, bunch, animRover, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
+  return { LAMPS, LP, allowed, accepts, closeup, bunch, animRover, drawFlower, drawJar, TYPES, FLOWERS, HONEYS, FL, HN, KINDS, SCENT, QUAL, inv, count, add, owned, buy, rate, quality, rarK, lure, pick, model, setBroken, rests, Sys, UI, mmss };
 })();

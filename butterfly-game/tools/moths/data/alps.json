@@ -1,0 +1,1526 @@
+[
+ {
+  "la": "Hyles hippophaes",
+  "ru": "Бражник облепиховый",
+  "en": "Sea buckthorn hawk-moth",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 75,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#9a9a6a",
+   "#b8a878"
+  ],
+  "h": [
+   "#d8708a",
+   "#e8a8b8"
+  ],
+  "opts": {
+   "edge": [
+    "#6a6a48",
+    1
+   ],
+   "bars": [
+    "#7a7a50",
+    2
+   ],
+   "dots": "#e8e0c8"
+  },
+  "hab": "Сухие склоны и речные галечники с облепихой",
+  "hab_en": "Dry slopes and river gravels with sea buckthorn",
+  "range": "Альпийские долины (Вале), Южная Европа",
+  "range_en": "Alpine valleys (Valais), southern Europe",
+  "host": "облепиха",
+  "host_en": "sea buckthorn",
+  "fact": "Гусеницы живут только на облепихе, поэтому бабочка привязана к немногим речным долинам.",
+  "fact_en": "Caterpillars feed only on sea buckthorn, so the moth is tied to a few river valleys."
+ },
+ {
+  "la": "Hyles vespertilio",
+  "ru": "Бражник-летучая мышь",
+  "en": "Bat hawk-moth",
+  "fam": "Бражники",
+  "lo": 55,
+  "hi": 68,
+  "rar": 3,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#a89c8a",
+   "#b8a890"
+  ],
+  "h": [
+   "#e08878",
+   "#e8b0a0"
+  ],
+  "opts": {
+   "edge": [
+    "#7a6858",
+    1
+   ],
+   "bars": [
+    "#6a6a5a",
+    2
+   ],
+   "dots": "#f0e8d8"
+  },
+  "hab": "Горные русла рек с кипреем, склоны",
+  "hab_en": "Mountain riverbeds with willowherb, slopes",
+  "range": "Альпы, Пиренеи, Апеннины",
+  "range_en": "Alps, Pyrenees, Apennines",
+  "host": "кипрей Доде, иван-чай",
+  "host_en": "Dodonaeus willowherb, rosebay",
+  "fact": "Крылья серо-бежевые, а задние розовые, как у летучей мыши в полёте.",
+  "fact_en": "Grey-beige forewings and rosy hindwings give it a bat-like look in flight."
+ },
+ {
+  "la": "Deilephila porcellus",
+  "ru": "Малый винный бражник",
+  "en": "Small elephant hawk-moth",
+  "fam": "Бражники",
+  "lo": 40,
+  "hi": 50,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#d89a58",
+   "#d8788a"
+  ],
+  "h": [
+   "#d8708a",
+   "#e8a0a8"
+  ],
+  "opts": {
+   "edge": [
+    "#8a4a48",
+    1
+   ],
+   "bars": [
+    "#e8c8a0",
+    2
+   ],
+   "dots": "#f0e4d0"
+  },
+  "hab": "Сухие склоны, луга с подмаренником, опушки",
+  "hab_en": "Dry slopes, bedstraw meadows, forest edges",
+  "range": "Европа, Альпы до 2000 м",
+  "range_en": "Europe, Alps to 2000 m",
+  "host": "подмаренник, кипрей",
+  "host_en": "bedstraw, willowherb",
+  "fact": "Небольшой розовый бражник быстро зависает у цветков в сумерках.",
+  "fact_en": "A small pink hawk-moth that hovers quickly at flowers at dusk."
+ },
+ {
+  "la": "Graellsia isabellae",
+  "ru": "Испанская луна",
+  "en": "Spanish moon moth",
+  "fam": "Павлиноглазки",
+  "lo": 65,
+  "hi": 90,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "luna",
+  "tail": "long",
+  "f": [
+   "#7ac07a",
+   "#a8d89a"
+  ],
+  "h": [
+   "#8cc88a",
+   "#b8e0a0"
+  ],
+  "opts": {
+   "edge": [
+    "#7a3a4a",
+    2
+   ],
+   "eye": [
+    [
+     "f",
+     0.55,
+     0.45,
+     3,
+     "#4a2a5a",
+     "#e8d8f0"
+    ],
+    [
+     "h",
+     0.5,
+     0.45,
+     3,
+     "#4a2a5a",
+     "#e8d8f0"
+    ]
+   ],
+   "band": [
+    "f",
+    0.0,
+    0.12,
+    "#7a3a4a"
+   ]
+  },
+  "hab": "Светлые сосновые леса горных долин",
+  "hab_en": "Open pine forests in mountain valleys",
+  "range": "Вале (Швейцария), Пиренеи, Испания",
+  "range_en": "Valais (Switzerland), Pyrenees, Spain",
+  "host": "сосна обыкновенная, сосна чёрная",
+  "host_en": "Scots pine, black pine",
+  "fact": "Одна из красивейших бабочек Европы; в Швейцарии встречается лишь в нескольких долинах.",
+  "fact_en": "One of Europe's loveliest moths; in Switzerland found in just a few valleys."
+ },
+ {
+  "la": "Lasiocampa trifolii",
+  "ru": "Коконопряд клеверный",
+  "en": "Grass eggar",
+  "fam": "Коконопряды",
+  "lo": 48,
+  "hi": 68,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a87a4a",
+   "#8a5a38"
+  ],
+  "h": [
+   "#9a6a42",
+   "#7a4a30"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2e1c",
+    1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.55,
+    "#e8e0d0"
+   ],
+   "zz": [
+    "#4a2e1c",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Сухие луга, склоны, каменистые поляны",
+  "hab_en": "Dry meadows, slopes, stony glades",
+  "range": "Европа, Альпы, Средиземноморье",
+  "range_en": "Europe, Alps, Mediterranean",
+  "host": "клевер, злаки, дрок",
+  "host_en": "clover, grasses, broom",
+  "fact": "Гусеница покрыта волосками и зимует в стадии яйца.",
+  "fact_en": "The hairy caterpillar hatches from an overwintering egg."
+ },
+ {
+  "la": "Gynaephora selenitica",
+  "ru": "Волнянка лунная",
+  "en": "Alpine tussock moth",
+  "fam": "Волнянки",
+  "lo": 25,
+  "hi": 34,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#a09078",
+   "#807060"
+  ],
+  "h": [
+   "#908070",
+   "#706252"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c30",
+    1
+   ],
+   "zz": [
+    "#4a3c30",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.6,
+    0.4,
+    2,
+    "#e8e0d0"
+   ],
+   "noise": [
+    "#5a4a3a",
+    0.1
+   ]
+  },
+  "hab": "Каменистые альпийские луга и осыпи",
+  "hab_en": "Rocky alpine meadows and scree",
+  "range": "Альпы, Альпы Сибири, Алтай",
+  "range_en": "Alps, Siberian mountains",
+  "host": "бобовые, лапчатка, камнеломка",
+  "host_en": "legumes, cinquefoil, saxifrage",
+  "fact": "Гусеницы развиваются много лет из-за короткого холодного лета.",
+  "fact_en": "Caterpillars take several years to grow because of short cold summers."
+ },
+ {
+  "la": "Lymantria monacha",
+  "ru": "Монашенка",
+  "en": "Black arches",
+  "fam": "Волнянки",
+  "lo": 40,
+  "hi": 55,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#f0ece4",
+   "#d8d4cc"
+  ],
+  "h": [
+   "#c8c4bc",
+   "#a8a4a0"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3a3a",
+    1
+   ],
+   "zz": [
+    "#2a2a2a",
+    4,
+    "f"
+   ],
+   "dots": "#2a2a2a"
+  },
+  "hab": "Хвойные леса, еловые опушки",
+  "hab_en": "Conifer forests, spruce edges",
+  "range": "Европа, Сибирь, Япония",
+  "range_en": "Europe, Siberia, Japan",
+  "host": "ель, сосна, лиственница",
+  "host_en": "spruce, pine, larch",
+  "fact": "Белые крылья с чёрным зигзагом напоминают монашеское одеяние.",
+  "fact_en": "White wings with black zigzags resemble a nun's habit."
+ },
+ {
+  "la": "Arctia flavia",
+  "ru": "Медведица жёлтая",
+  "en": "Yellow tiger moth",
+  "fam": "Медведицы",
+  "lo": 42,
+  "hi": 55,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0d048",
+   "#d8b030"
+  ],
+  "h": [
+   "#e0a840",
+   "#c88830"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a20",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     2,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     3,
+     "#2a2018"
+    ],
+    [
+     "f",
+     0.75,
+     0.3,
+     2,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.6,
+     0.5,
+     3,
+     "#2a2018"
+    ],
+    [
+     "h",
+     0.35,
+     0.3,
+     2,
+     "#2a2018"
+    ]
+   ]
+  },
+  "hab": "Высокогорные склоны и осыпи",
+  "hab_en": "High mountain slopes and screes",
+  "range": "Альпы, Алтай, Центральная Азия",
+  "range_en": "Alps, Altai, Central Asia",
+  "host": "горные травы, одуванчик",
+  "host_en": "mountain herbs, dandelion",
+  "fact": "Альпийский вид: гусеницы нескольких лет питаются у снежников.",
+  "fact_en": "An alpine specialist whose caterpillars feed for years near snow fields."
+ },
+ {
+  "la": "Diaphora mendica",
+  "ru": "Медведица-мукомол",
+  "en": "Muslin moth",
+  "fam": "Медведицы",
+  "lo": 30,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#e8e0d0",
+   "#d8d0c0"
+  ],
+  "h": [
+   "#f0e8d8",
+   "#e0d8c8"
+  ],
+  "opts": {
+   "edge": [
+    "#8a8070",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.4,
+     1,
+     "#4a4038"
+    ],
+    [
+     "f",
+     0.65,
+     0.6,
+     1,
+     "#4a4038"
+    ]
+   ]
+  },
+  "hab": "Луга, опушки, сады, горные склоны",
+  "hab_en": "Meadows, edges, gardens, mountain slopes",
+  "range": "Европа, Альпы",
+  "range_en": "Europe, Alps",
+  "host": "одуванчик, подорожник, щавель",
+  "host_en": "dandelion, plantain, dock",
+  "fact": "У самок почти нет крыльев, а самцы белесые, как мука.",
+  "fact_en": "Females are almost wingless, males powdery pale as flour."
+ },
+ {
+  "la": "Standfussiana lucernea",
+  "ru": "Совка люцерновая северная",
+  "en": "Northern rustic",
+  "fam": "Совки",
+  "lo": 32,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8a8a90",
+   "#6a6a72"
+  ],
+  "h": [
+   "#7a7478",
+   "#9a9498"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3a40",
+    1
+   ],
+   "zz": [
+    "#2a2a30",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.35,
+     2,
+     "#d8d4d0"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#d8d4d0"
+    ]
+   ],
+   "noise": [
+    "#4a4a50",
+    0.1
+   ]
+  },
+  "hab": "Скалы, осыпи, щебнистые склоны",
+  "hab_en": "Rocks, screes, stony slopes",
+  "range": "Европа, горы до 2500 м",
+  "range_en": "Europe, mountains to 2500 m",
+  "host": "овсяница, злаки",
+  "host_en": "fescue, grasses",
+  "fact": "Днём прячется под камнями в осыпях.",
+  "fact_en": "By day it hides under stones in scree fields."
+ },
+ {
+  "la": "Xestia alpicola",
+  "ru": "Совка альпийская",
+  "en": "Alpine dart",
+  "fam": "Совки",
+  "lo": 32,
+  "hi": 40,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#6a5a4a",
+   "#4a3c30"
+  ],
+  "h": [
+   "#9a8a7a",
+   "#7a6a5c"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2018",
+    1
+   ],
+   "zz": [
+    "#2a2018",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.4,
+     2,
+     "#e8dcc0"
+    ]
+   ],
+   "noise": [
+    "#5a4a3a",
+    0.12
+   ]
+  },
+  "hab": "Альпийские луга, ковры хвощей и альпийских трав",
+  "hab_en": "Alpine meadows and herb carpets",
+  "range": "Альпы, Карпаты, Пиренеи",
+  "range_en": "Alps, Carpathians, Pyrenees",
+  "host": "горные травы",
+  "host_en": "mountain herbs",
+  "fact": "Живёт выше границы леса и активна в холодные ночи.",
+  "fact_en": "Lives above the tree line and flies on cold nights."
+ },
+ {
+  "la": "Xestia sincera",
+  "ru": "Совка сестра",
+  "en": "Sincere dart",
+  "fam": "Совки",
+  "lo": 34,
+  "hi": 42,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a89888",
+   "#6a5a4a"
+  ],
+  "h": [
+   "#9a9088",
+   "#7a7068"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3028",
+    1
+   ],
+   "zz": [
+    "#3a3028",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.35,
+     2,
+     "#e8dcc0"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#e8dcc0"
+    ]
+   ],
+   "band": [
+    "f",
+    0.7,
+    0.85,
+    "#4a3c30"
+   ]
+  },
+  "hab": "Скалистые луга и каменистые склоны",
+  "hab_en": "Rocky meadows and stony slopes",
+  "range": "Альпы, Скандинавия",
+  "range_en": "Alps, Scandinavia",
+  "host": "дикие травы, подорожник",
+  "host_en": "wild herbs, plantain",
+  "fact": "Типичная ночная бабочка высокогорья, прилетает на свет в хижинах.",
+  "fact_en": "A typical high mountain moth that comes to hut lights."
+ },
+ {
+  "la": "Chersotis cuprea",
+  "ru": "Совка медная",
+  "en": "Copper dart",
+  "fam": "Совки",
+  "lo": 30,
+  "hi": 38,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#9a6a48",
+   "#7a4a30"
+  ],
+  "h": [
+   "#a89888",
+   "#887868"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2418",
+    1
+   ],
+   "zz": [
+    "#3a2418",
+    2,
+    "f"
+   ],
+   "sheen": [
+    "#e8a068",
+    0.3
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#d8b898"
+    ]
+   ]
+  },
+  "hab": "Каменистые альпийские склоны и травяные площадки",
+  "hab_en": "Stony alpine slopes and grassy ledges",
+  "range": "Альпы, Пиренеи, Карпаты",
+  "range_en": "Alps, Pyrenees, Carpathians",
+  "host": "подорожник, горные травы",
+  "host_en": "plantain, mountain herbs",
+  "fact": "Медный блеск крыльев хорошо виден при свете фонаря.",
+  "fact_en": "The coppery shine of its wings shows in torchlight."
+ },
+ {
+  "la": "Agrotis fatidica",
+  "ru": "Совка вещая",
+  "en": "Fatidic dart",
+  "fam": "Совки",
+  "lo": 33,
+  "hi": 40,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a89a8a",
+   "#8a7a68"
+  ],
+  "h": [
+   "#d8d0c4",
+   "#b8ae9e"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c30",
+    1
+   ],
+   "zz": [
+    "#4a3c30",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.35,
+     2,
+     "#4a3c30"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#4a3c30"
+    ]
+   ],
+   "noise": [
+    "#6a5a48",
+    0.1
+   ]
+  },
+  "hab": "Альпийские луга, поляны выше 1800 м",
+  "hab_en": "Alpine meadows above 1800 m",
+  "range": "Альпы, Пиренеи",
+  "range_en": "Alps, Pyrenees",
+  "host": "горные злаки и травы",
+  "host_en": "mountain grasses and herbs",
+  "fact": "Гусеницы живут в земле и грызут корни трав.",
+  "fact_en": "Caterpillars live in the soil and gnaw grass roots."
+ },
+ {
+  "la": "Apamea zeta",
+  "ru": "Совка зета",
+  "en": "Northern arches",
+  "fam": "Совки",
+  "lo": 35,
+  "hi": 42,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#6a5a4a",
+   "#4a3c30"
+  ],
+  "h": [
+   "#8a7a68",
+   "#6a5a4a"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2018",
+    1
+   ],
+   "zz": [
+    "#2a2018",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#c8b898"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#c8b898"
+    ]
+   ],
+   "noise": [
+    "#5a4a3a",
+    0.1
+   ]
+  },
+  "hab": "Горные луга, скалистые склоны",
+  "hab_en": "Mountain meadows, rocky slopes",
+  "range": "Альпы, Скандинавия",
+  "range_en": "Alps, Scandinavia",
+  "host": "злаки",
+  "host_en": "grasses",
+  "fact": "На крыльях светлое пятно в форме греческой буквы дзета.",
+  "fact_en": "A pale mark on the wing looks like the Greek letter zeta."
+ },
+ {
+  "la": "Dasypolia templi",
+  "ru": "Совка храмовая",
+  "en": "Brindled ochre",
+  "fam": "Совки",
+  "lo": 40,
+  "hi": 50,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a89a68",
+   "#8a7a50"
+  ],
+  "h": [
+   "#9a8a60",
+   "#7a6a48"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c20",
+    1
+   ],
+   "zz": [
+    "#5a4a2a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a5a38",
+    0.14
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#d8cc98"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#d8cc98"
+    ]
+   ]
+  },
+  "hab": "Склоны с зонтичными, скалы, подлесок",
+  "hab_en": "Slopes with umbellifers, rocks, understory",
+  "range": "Европа, Альпы до 2000 м",
+  "range_en": "Europe, Alps up to 2000 m",
+  "host": "борщевик, дягиль",
+  "host_en": "hogweed, angelica",
+  "fact": "Летает поздней осенью и зимует как взрослая бабочка.",
+  "fact_en": "Flies in late autumn and overwinters as an adult moth."
+ },
+ {
+  "la": "Diarsia mendica",
+  "ru": "Совка вереска",
+  "en": "Ingrailed clay",
+  "fam": "Совки",
+  "lo": 30,
+  "hi": 38,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#8a5a40",
+   "#7a4a3a"
+  ],
+  "h": [
+   "#a09080",
+   "#807060"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2418",
+    1
+   ],
+   "zz": [
+    "#3a2418",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     2,
+     "#e8dcc8"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     2,
+     "#c8a888"
+    ]
+   ]
+  },
+  "hab": "Вересковые луга и опушки",
+  "hab_en": "Heather meadows and edges",
+  "range": "Европа, Северная Азия",
+  "range_en": "Europe, northern Asia",
+  "host": "вереск, черника, первоцвет",
+  "host_en": "heather, bilberry, primrose",
+  "fact": "Летом летает поздно вечером над вереском и черникой.",
+  "fact_en": "In summer it flies late evenings over heather and bilberry."
+ },
+ {
+  "la": "Cucullia lucifuga",
+  "ru": "Скосарка светоизбегающая",
+  "en": "Alpine shark",
+  "fam": "Совки",
+  "lo": 42,
+  "hi": 54,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#b8b0a0",
+   "#9a9288"
+  ],
+  "h": [
+   "#d8d0c4",
+   "#b8b0a4"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5448",
+    1
+   ],
+   "veins": "#8a8478",
+   "wedges": [
+    "#5a5448",
+    2
+   ]
+  },
+  "hab": "Альпийские луга и горные склоны с лугами",
+  "hab_en": "Alpine meadows and mountain slopes",
+  "range": "Альпы, Пиренеи, Скандинавия",
+  "range_en": "Alps, Pyrenees, Scandinavia",
+  "host": "астровые, одуванчик",
+  "host_en": "composites, dandelion",
+  "fact": "Крылья сложены трубкой, как у обломка ветки.",
+  "fact_en": "At rest it folds its wings into a tube like a twig."
+ },
+ {
+  "la": "Catocala elocata",
+  "ru": "Орденская лента вязовая",
+  "en": "French red underwing",
+  "fam": "Эребиды",
+  "lo": 65,
+  "hi": 78,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8680",
+   "#6a6864"
+  ],
+  "h": [
+   "#d85a30",
+   "#b03820"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2a2a",
+    1
+   ],
+   "zz": [
+    "#2a2a2a",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4844",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.45,
+    0.6,
+    "#1a1a1a"
+   ],
+   "dots": "#d8d4c8"
+  },
+  "hab": "Долины с ивами и тополями, склоны до 1500 м",
+  "hab_en": "Valleys with willows and poplars, slopes to 1500 m",
+  "range": "Центральная и Южная Европа",
+  "range_en": "Central and southern Europe",
+  "host": "ива, тополь",
+  "host_en": "willow, poplar",
+  "fact": "Яркие задние крылья отпугивают птиц внезапной вспышкой.",
+  "fact_en": "Bright hindwings startle birds with a sudden flash."
+ },
+ {
+  "la": "Entephria caesiata",
+  "ru": "Пяденица серо-горная",
+  "en": "Grey mountain carpet",
+  "fam": "Пяденицы",
+  "lo": 26,
+  "hi": 34,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8aeb2",
+   "#8a9298"
+  ],
+  "h": [
+   "#b8bcc0",
+   "#98a0a4"
+  ],
+  "opts": {
+   "edge": [
+    "#4a5058",
+    1
+   ],
+   "zz": [
+    "#5a6068",
+    3,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.5,
+    "#5a6068"
+   ],
+   "noise": [
+    "#7a8088",
+    0.1
+   ]
+  },
+  "hab": "Скалы, осыпи, сухие лужайки",
+  "hab_en": "Rocks, screes, dry meadows",
+  "range": "Европа, горы, Скандинавия",
+  "range_en": "Europe, mountains, Scandinavia",
+  "host": "черника, вереск, злаки",
+  "host_en": "bilberry, heather, grasses",
+  "fact": "Серый узор повторяет окраску лишайников на скалах.",
+  "fact_en": "Its grey pattern copies lichens on rocks."
+ },
+ {
+  "la": "Gnophos obfuscatus",
+  "ru": "Пяденица скальная",
+  "en": "Scotch annulet",
+  "fam": "Пяденицы",
+  "lo": 26,
+  "hi": 34,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#8a8a86",
+   "#6a6a68"
+  ],
+  "h": [
+   "#9a9894",
+   "#7a7876"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3a3a",
+    1
+   ],
+   "zz": [
+    "#3a3a3a",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#4a4a4a",
+    0.16
+   ],
+   "dots": "#d8d4c8"
+  },
+  "hab": "Скалы, осыпи, каменистые склоны",
+  "hab_en": "Rocks, screes, stony slopes",
+  "range": "Европа, горы",
+  "range_en": "Europe, mountains",
+  "host": "вереск, дрок, травы",
+  "host_en": "heather, broom, herbs",
+  "fact": "Замирает на камне и выглядит, как лишайник.",
+  "fact_en": "Freezes on stone and looks like lichen."
+ },
+ {
+  "la": "Dasycorsa modesta",
+  "ru": "Пяденица скромная",
+  "en": "Modest carpet",
+  "fam": "Пяденицы",
+  "lo": 24,
+  "hi": 30,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#a8a898",
+   "#8a8a78"
+  ],
+  "h": [
+   "#b8b8a8",
+   "#9a9a88"
+  ],
+  "opts": {
+   "edge": [
+    "#5a5a48",
+    1
+   ],
+   "zz": [
+    "#5a5a48",
+    3,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.4,
+    0.55,
+    "#6a6a58"
+   ]
+  },
+  "hab": "Скалы, осыпи выше 1800 м",
+  "hab_en": "Rocks, screes above 1800 m",
+  "range": "Альпы, Центральная Европа",
+  "range_en": "Alps, Central Europe",
+  "host": "горные травы",
+  "host_en": "mountain herbs",
+  "fact": "Редкая высокогорная пяденица с узкой областью обитания.",
+  "fact_en": "A rare high mountain geometer with a narrow range."
+ },
+ {
+  "la": "Colostygia kollariaria",
+  "ru": "Пяденица Коллара",
+  "en": "Kollar's carpet",
+  "fam": "Пяденицы",
+  "lo": 26,
+  "hi": 34,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#8aaa7a",
+   "#6a8a5c"
+  ],
+  "h": [
+   "#a8b898",
+   "#88987a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a5030",
+    1
+   ],
+   "zz": [
+    "#2a3a22",
+    3,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.6,
+    "#3a4a30"
+   ]
+  },
+  "hab": "Альпийские луга и лесные поляны",
+  "hab_en": "Alpine meadows and woodland glades",
+  "range": "Альпы, Карпаты",
+  "range_en": "Alps, Carpathians",
+  "host": "подмаренник, горные травы",
+  "host_en": "bedstraw, mountain herbs",
+  "fact": "Зелёный оттенок помогает прятаться среди мхов.",
+  "fact_en": "A green tint helps it hide among mosses."
+ },
+ {
+  "la": "Lycia alpina",
+  "ru": "Пяденица альпийская",
+  "en": "Alpine thorn-geometer",
+  "fam": "Пяденицы",
+  "lo": 26,
+  "hi": 38,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#7a7a7a",
+   "#585858"
+  ],
+  "h": [
+   "#8a8a8a",
+   "#6a6a6a"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2a2a",
+    1
+   ],
+   "zz": [
+    "#2a2a2a",
+    3,
+    "fh"
+   ],
+   "noise": [
+    "#3a3a3a",
+    0.16
+   ]
+  },
+  "hab": "Скалы и каменистые луга у кромки леса",
+  "hab_en": "Rocks and stony meadows at the tree line",
+  "range": "Альпы, Пиренеи",
+  "range_en": "Alps, Pyrenees",
+  "host": "ива, вереск, лиственница",
+  "host_en": "willow, heather, larch",
+  "fact": "Летает ранней весной, когда ещё лежит снег.",
+  "fact_en": "Flies in early spring while snow still lies."
+ },
+ {
+  "la": "Harpyia milhauseri",
+  "ru": "Хохлатка Мильхаузера",
+  "en": "Tawny prominent",
+  "fam": "Хохлатки",
+  "lo": 48,
+  "hi": 60,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#a89a88",
+   "#8a7a68"
+  ],
+  "h": [
+   "#a89c8c",
+   "#8a7e6e"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3028",
+    1
+   ],
+   "zz": [
+    "#3a3028",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.45,
+    3,
+    "#5a4a38"
+   ],
+   "bars": [
+    "#4a3c30",
+    2
+   ]
+  },
+  "hab": "Буковые и хвойные леса нижнего горного пояса",
+  "hab_en": "Beech and conifer forests of the lower mountains",
+  "range": "Центральная и Южная Европа",
+  "range_en": "Central and southern Europe",
+  "host": "дуб, бук",
+  "host_en": "oak, beech",
+  "fact": "В покое выглядит, как сухой обломанный лист.",
+  "fact_en": "At rest it looks like a dry broken leaf."
+ },
+ {
+  "la": "Notodonta dromedarius",
+  "ru": "Хохлатка-верблюд",
+  "en": "Iron prominent",
+  "fam": "Хохлатки",
+  "lo": 35,
+  "hi": 45,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#9a6a4a",
+   "#7a4a30"
+  ],
+  "h": [
+   "#a89a88",
+   "#887a68"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2418",
+    1
+   ],
+   "bars": [
+    "#4a3020",
+    2
+   ],
+   "zz": [
+    "#4a3020",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.35,
+     2,
+     "#d8b898"
+    ]
+   ]
+  },
+  "hab": "Берёзовые и ольховые леса, субальпийский пояс",
+  "hab_en": "Birch and alder forests, subalpine belt",
+  "range": "Европа, Сибирь",
+  "range_en": "Europe, Siberia",
+  "host": "берёза, ольха",
+  "host_en": "birch, alder",
+  "fact": "Гусеница похожа на верблюжий горб на сложенной ветке.",
+  "fact_en": "The caterpillar has humps like a camel on a folded twig."
+ },
+ {
+  "la": "Gazoryctra ganna",
+  "ru": "Тонкопряд альпийский",
+  "en": "Alpine ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 35,
+  "hi": 52,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#8a7a60",
+   "#6a5a42"
+  ],
+  "h": [
+   "#8a7a62",
+   "#6a5a44"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3020",
+    1
+   ],
+   "bars": [
+    "#e8dcc0",
+    2
+   ],
+   "zz": [
+    "#4a3c28",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Альпийские луга, ковры корневищ",
+  "hab_en": "Alpine meadows, rhizome turfs",
+  "range": "Альпы, Скандинавия, Сибирь",
+  "range_en": "Alps, Scandinavia, Siberia",
+  "host": "корни альпийских трав",
+  "host_en": "roots of alpine herbs",
+  "fact": "Гусеницы живут в земле до 4 лет и питаются корнями.",
+  "fact_en": "Caterpillars live underground for up to 4 years and eat roots."
+ },
+ {
+  "la": "Pharmacis carna",
+  "ru": "Тонкопряд карнский",
+  "en": "Carna ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 36,
+  "hi": 50,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#9a8a68",
+   "#7a6a4a"
+  ],
+  "h": [
+   "#9a8a6c",
+   "#7a6a50"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c24",
+    1
+   ],
+   "bars": [
+    "#f0e4c8",
+    2
+   ],
+   "zz": [
+    "#5a4a30",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Горные луга и каменистые склоны",
+  "hab_en": "Mountain meadows and stony slopes",
+  "range": "Альпы, Южная Европа",
+  "range_en": "Alps, southern Europe",
+  "host": "корни горных растений",
+  "host_en": "roots of mountain plants",
+  "fact": "Бабочки ловят закат, зависая над землёй при сумерках.",
+  "fact_en": "Moths hover just above the ground at dusk."
+ },
+ {
+  "la": "Platyptilia gonodactyla",
+  "ru": "Пальцекрылка трёхпалая",
+  "en": "Triangle plume",
+  "fam": "Пальцекрылки",
+  "lo": 18,
+  "hi": 26,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#9a8a68",
+   "#7a6a4a"
+  ],
+  "h": [
+   "#9a8a6a",
+   "#7a6a4c"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3c28",
+    1
+   ],
+   "band": [
+    "f",
+    0.5,
+    0.65,
+    "#e8dcc0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#4a3c28"
+    ]
+   ]
+  },
+  "hab": "Лесные поляны и луга с мать-и-мачехой",
+  "hab_en": "Woodland glades and meadows with coltsfoot",
+  "range": "Европа, Северная Азия",
+  "range_en": "Europe, northern Asia",
+  "host": "мать-и-мачеха, лопух",
+  "host_en": "coltsfoot, burdock",
+  "fact": "Крылья разделены на узкие перистые доли.",
+  "fact_en": "Wings split into narrow feathery lobes."
+ },
+ {
+  "la": "Catoptria permutatellus",
+  "ru": "Травяная огнёвка горная",
+  "en": "Alpine grass-veneer",
+  "fam": "Огнёвки",
+  "lo": 20,
+  "hi": 28,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "delta",
+  "tail": "none",
+  "f": [
+   "#f0e8d0",
+   "#d8d0b8"
+  ],
+  "h": [
+   "#d8d0c4",
+   "#b8b0a4"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a40",
+    1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.6,
+    "#8a7a58"
+   ],
+   "dots": "#a89a78"
+  },
+  "hab": "Альпийские луга и каменистые поляны",
+  "hab_en": "Alpine meadows and stony clearings",
+  "range": "Альпы, Пиренеи",
+  "range_en": "Alps, Pyrenees",
+  "host": "мхи и злаки",
+  "host_en": "mosses and grasses",
+  "fact": "Серебристые продольные полосы отличают её на траве.",
+  "fact_en": "Silvery stripes distinguish it on grass."
+ },
+ {
+  "la": "Falcaria lacertinaria",
+  "ru": "Серпокрылка ящерица",
+  "en": "Scalloped hook-tip",
+  "fam": "Серпокрылки",
+  "lo": 28,
+  "hi": 36,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#d8b878",
+   "#b89458"
+  ],
+  "h": [
+   "#c8a468",
+   "#a8844c"
+  ],
+  "opts": {
+   "edge": [
+    "#6a4a28",
+    1
+   ],
+   "zz": [
+    "#8a6a3c",
+    2,
+    "f"
+   ],
+   "tip": [
+    "#8a6a3c",
+    0.8
+   ],
+   "dots": "#f0e4c8"
+  },
+  "hab": "Берёзовые рощи и опушки",
+  "hab_en": "Birch groves and edges",
+  "range": "Европа, Северная Азия",
+  "range_en": "Europe, northern Asia",
+  "host": "берёза",
+  "host_en": "birch",
+  "fact": "Концы крыльев серпом выгнуты, словно крючок.",
+  "fact_en": "Wing tips are hooked like a sickle."
+ }
+]

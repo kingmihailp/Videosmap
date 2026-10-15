@@ -1,0 +1,1470 @@
+[
+ {
+  "la": "Laothoe populi",
+  "ru": "Тополёвый бражник",
+  "en": "Poplar hawk-moth",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 90,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#b0a090",
+   "#8a7a6a"
+  ],
+  "h": [
+   "#c07858",
+   "#a85c44"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a4a",
+    1
+   ],
+   "zz": [
+    "#6a5a4a",
+    2,
+    "f"
+   ],
+   "patch": [
+    "f",
+    0.55,
+    0.6,
+    2,
+    "#e8e0d0"
+   ],
+   "noise": [
+    "#7a6a5a",
+    0.08
+   ]
+  },
+  "hab": "Ивняки, тополевые аллеи, опушки",
+  "hab_en": "Willow thickets, poplar avenues, edges",
+  "range": "Европа, Сибирь, Центральная Азия",
+  "range_en": "Europe, Siberia, Central Asia",
+  "host": "тополя, ивы, осина",
+  "host_en": "poplars, willows, aspen",
+  "fact": "В покое сидит с приподнятыми задними крыльями, показывая ржавое пятно.",
+  "fact_en": "At rest it holds the hindwings forward, showing a rusty patch."
+ },
+ {
+  "la": "Mimas tiliae",
+  "ru": "Липовый бражник",
+  "en": "Lime hawk-moth",
+  "fam": "Бражники",
+  "lo": 55,
+  "hi": 75,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "hawkb",
+  "tail": "none",
+  "f": [
+   "#a8b068",
+   "#7a8040"
+  ],
+  "h": [
+   "#c0a070",
+   "#a08850"
+  ],
+  "opts": {
+   "edge": [
+    "#5a6030",
+    1
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.5,
+    3,
+    "#5a5a30"
+   ],
+   "zz": [
+    "#5a6030",
+    2,
+    "f"
+   ],
+   "dots": "#d8d0a8"
+  },
+  "hab": "Парки, липовые аллеи, лиственные леса",
+  "hab_en": "Parks, lime avenues, deciduous woods",
+  "range": "Европа, Кавказ, Западная Сибирь",
+  "range_en": "Europe, Caucasus, W Siberia",
+  "host": "липа, берёза, вяз",
+  "host_en": "lime, birch, elm",
+  "fact": "Окраска крыльев с зелёным и бурым имитирует сухой лист.",
+  "fact_en": "Its green and brown wings mimic a dead leaf."
+ },
+ {
+  "la": "Sphinx pinastri",
+  "ru": "Сосновый бражник",
+  "en": "Pine hawk-moth",
+  "fam": "Бражники",
+  "lo": 65,
+  "hi": 80,
+  "rar": 1,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#a8a8a0",
+   "#707068"
+  ],
+  "h": [
+   "#907868",
+   "#6a5a50"
+  ],
+  "opts": {
+   "edge": [
+    "#404040",
+    1
+   ],
+   "wedges": [
+    "#303030",
+    3
+   ],
+   "zz": [
+    "#505050",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#808078",
+    0.1
+   ]
+  },
+  "hab": "Сосновые боры и смешанные леса",
+  "hab_en": "Pine and mixed forests",
+  "range": "Европа, Сибирь до Дальнего Востока",
+  "range_en": "Europe, Siberia to Far East",
+  "host": "сосна, ель",
+  "host_en": "pine, spruce",
+  "fact": "Пепельно-серое крыло скрывает бабочку на коре сосны.",
+  "fact_en": "Ash-grey wings hide the moth on pine bark."
+ },
+ {
+  "la": "Hyles gallii",
+  "ru": "Подмаренниковый бражник",
+  "en": "Bedstraw hawk-moth",
+  "fam": "Бражники",
+  "lo": 60,
+  "hi": 75,
+  "rar": 2,
+  "beh": "hawkm",
+  "shape": "hawk",
+  "tail": "none",
+  "f": [
+   "#7a7040",
+   "#a08850"
+  ],
+  "h": [
+   "#c86a58",
+   "#a04838"
+  ],
+  "opts": {
+   "edge": [
+    "#e0d0b0",
+    1
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.5,
+    "#e8e0c8"
+   ],
+   "rays": [
+    "f",
+    "#e8e0c8"
+   ],
+   "dots": "#f0e8d0"
+  },
+  "hab": "Луга, опушки, лесные поляны",
+  "hab_en": "Meadows, edges, forest clearings",
+  "range": "Голарктика",
+  "range_en": "Holarctic",
+  "host": "подмаренник, иван-чай",
+  "host_en": "bedstraw, rosebay willowherb",
+  "fact": "Сумеречный летун, питается у цветков, зависая в воздухе.",
+  "fact_en": "A dusk flier that feeds at flowers while hovering."
+ },
+ {
+  "la": "Aglia tau",
+  "ru": "Павлиноглазка-тау",
+  "en": "Tau emperor",
+  "fam": "Павлиноглазки",
+  "lo": 65,
+  "hi": 85,
+  "rar": 3,
+  "beh": "giant",
+  "shape": "saturn",
+  "tail": "none",
+  "f": [
+   "#c0804a",
+   "#a86838"
+  ],
+  "h": [
+   "#c8884e",
+   "#b07040"
+  ],
+  "opts": {
+   "edge": [
+    "#704028",
+    1
+   ],
+   "eye": [
+    [
+     "h",
+     0.5,
+     0.5,
+     5,
+     "#2a2a2a",
+     "#e8e8f0"
+    ],
+    [
+     "f",
+     0.55,
+     0.5,
+     4,
+     "#2a2a2a",
+     "#e8e8f0"
+    ]
+   ],
+   "tip": [
+    "#8a5030",
+    0.8
+   ]
+  },
+  "hab": "Буковые и смешанные леса, берёзовые рощи",
+  "hab_en": "Beech and mixed woods, birch groves",
+  "range": "Европа, Сибирь, Дальний Восток",
+  "range_en": "Europe, Siberia, Far East",
+  "host": "берёза, бук, дуб",
+  "host_en": "birch, beech, oak",
+  "fact": "Рисунок на крыле напоминает греческую букву тау.",
+  "fact_en": "The wing mark resembles the Greek letter tau."
+ },
+ {
+  "la": "Endromis versicolora",
+  "ru": "Берёзовый коконопряд",
+  "en": "Kentish glory",
+  "fam": "Коконопряды",
+  "lo": 60,
+  "hi": 85,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "silk",
+  "tail": "none",
+  "f": [
+   "#a06a3c",
+   "#7a4a2a"
+  ],
+  "h": [
+   "#c88a58",
+   "#a86a3a"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2a18",
+    1
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.5,
+    "#f0e8d8"
+   ],
+   "bars": [
+    "#3a2418",
+    2
+   ],
+   "sheen": [
+    "#e0a870",
+    0.2
+   ]
+  },
+  "hab": "Берёзовые леса и опушки на торфянике",
+  "hab_en": "Birch woods and edges on peat",
+  "range": "Европа, Сибирь",
+  "range_en": "Europe, Siberia",
+  "host": "берёза, ольха",
+  "host_en": "birch, alder",
+  "fact": "Самки ранней весной выпускают запах, привлекающий самцов за километры.",
+  "fact_en": "In early spring females release a scent that draws males from afar."
+ },
+ {
+  "la": "Drepana falcataria",
+  "ru": "Серпокрылка пильчатая",
+  "en": "Pebble hook-tip",
+  "fam": "Серпокрылки",
+  "lo": 30,
+  "hi": 40,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#d8c098",
+   "#b89868"
+  ],
+  "h": [
+   "#d0b890",
+   "#b89868"
+  ],
+  "opts": {
+   "edge": [
+    "#8a6a40",
+    1
+   ],
+   "zz": [
+    "#8a6a40",
+    2,
+    "fh"
+   ],
+   "tip": [
+    "#a07848",
+    0.8
+   ],
+   "sp": [
+    [
+     "f",
+     0.5,
+     0.4,
+     1,
+     "#4a3a28"
+    ]
+   ]
+  },
+  "hab": "Берёзовые рощи, влажные леса",
+  "hab_en": "Birch groves, damp woods",
+  "range": "Европа, Сибирь, Япония",
+  "range_en": "Europe, Siberia, Japan",
+  "host": "берёза, ольха",
+  "host_en": "birch, alder",
+  "fact": "Вершина переднего крыла загнута серпом, как у других серпокрылок.",
+  "fact_en": "The forewing tip curves into a sickle, as in other hook-tips."
+ },
+ {
+  "la": "Tethea or",
+  "ru": "Совковидная серпокрылка осиновая",
+  "en": "Poplar lutestring",
+  "fam": "Серпокрылки",
+  "lo": 32,
+  "hi": 40,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "falcate",
+  "tail": "none",
+  "f": [
+   "#a8946a",
+   "#8a7850"
+  ],
+  "h": [
+   "#b0a080",
+   "#9a8a68"
+  ],
+  "opts": {
+   "edge": [
+    "#6a5a38",
+    1
+   ],
+   "band": [
+    "f",
+    0.35,
+    0.55,
+    "#d8c8a0"
+   ],
+   "sp": [
+    [
+     "f",
+     0.35,
+     0.35,
+     2,
+     "#e8dcc0"
+    ]
+   ],
+   "noise": [
+    "#7a6a48",
+    0.1
+   ]
+  },
+  "hab": "Осинники, тополевые рощи",
+  "hab_en": "Aspen woods, poplar groves",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "осина, тополя",
+  "host_en": "aspen, poplars",
+  "fact": "Узор крыла выглядит как древесная кора с белыми кольцами.",
+  "fact_en": "The wing pattern looks like bark with pale rings."
+ },
+ {
+  "la": "Catocala fraxini",
+  "ru": "Орденская лента голубая",
+  "en": "Clifden nonpareil",
+  "fam": "Эребиды",
+  "lo": 90,
+  "hi": 106,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#9a9a98",
+   "#6a6a6c"
+  ],
+  "h": [
+   "#3a3a52",
+   "#5a78b8"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2a2c",
+    1
+   ],
+   "zz": [
+    "#3a3a3c",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#505052",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.5,
+    0.65,
+    "#8ab0e0"
+   ],
+   "dots": "#e0dcd0"
+  },
+  "hab": "Старые осинники, парки и лесные опушки",
+  "hab_en": "Old aspen woods, parks and forest edges",
+  "range": "Европа, Сибирь, Дальний Восток",
+  "range_en": "Europe, Siberia, Far East",
+  "host": "осина, тополя, ясень",
+  "host_en": "aspen, poplar, ash",
+  "fact": "Самая крупная совка России; голубая лента на задних крыльях.",
+  "fact_en": "One of Russia's largest owlets, with a blue band on the hindwings."
+ },
+ {
+  "la": "Catocala electa",
+  "ru": "Орденская лента розовая",
+  "en": "Rosy underwing",
+  "fam": "Эребиды",
+  "lo": 66,
+  "hi": 78,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "underwing",
+  "tail": "none",
+  "f": [
+   "#8a8078",
+   "#60584e"
+  ],
+  "h": [
+   "#d8607a",
+   "#b04058"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2024",
+    1
+   ],
+   "zz": [
+    "#3a3030",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a4038",
+    0.1
+   ],
+   "band": [
+    "h",
+    0.45,
+    0.62,
+    "#2a1a20"
+   ]
+  },
+  "hab": "Ивняки по берегам прудов и рек",
+  "hab_en": "Willow thickets by ponds and rivers",
+  "range": "Европа, Сибирь до Дальнего Востока",
+  "range_en": "Europe, Siberia to Far East",
+  "host": "ивы",
+  "host_en": "willows",
+  "fact": "Розовые задние крылья вспыхивают при испуге.",
+  "fact_en": "Pink hindwings flash when it is startled."
+ },
+ {
+  "la": "Amphipyra pyramidea",
+  "ru": "Совка-пирамидка",
+  "en": "Copper underwing",
+  "fam": "Совки",
+  "lo": 40,
+  "hi": 48,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#7a6048",
+   "#5a4838"
+  ],
+  "h": [
+   "#c0a078",
+   "#a08058"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2a20",
+    1
+   ],
+   "zz": [
+    "#3a2a20",
+    2,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#a88868"
+    ]
+   ],
+   "sheen": [
+    "#b08858",
+    0.2
+   ]
+  },
+  "hab": "Леса, парки, сады",
+  "hab_en": "Woods, parks, gardens",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "ива, бузина, дуб",
+  "host_en": "willow, elder, oak",
+  "fact": "Бабочки приходят к наживке-патоке и пьют её всю ночь.",
+  "fact_en": "The moths come to sugar bait and drink all night."
+ },
+ {
+  "la": "Acronicta psi",
+  "ru": "Совка-пси",
+  "en": "Grey dagger",
+  "fam": "Совки",
+  "lo": 35,
+  "hi": 45,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#aaa8a4",
+   "#8a8884"
+  ],
+  "h": [
+   "#c8c4bc",
+   "#a8a49c"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a4a",
+    1
+   ],
+   "wedges": [
+    "#2a2a2a",
+    1
+   ],
+   "zz": [
+    "#4a4a4a",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Парки, сады, лесные опушки",
+  "hab_en": "Parks, gardens, forest edges",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "липа, яблоня, берёза",
+  "host_en": "lime, apple, birch",
+  "fact": "На крыле чёрная метка, похожая на кинжал.",
+  "fact_en": "A black dagger-like mark sits on each forewing."
+ },
+ {
+  "la": "Cucullia umbratica",
+  "ru": "Капюшонница тенистая",
+  "en": "Shark",
+  "fam": "Совки",
+  "lo": 48,
+  "hi": 60,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#a8a49c",
+   "#8a867e"
+  ],
+  "h": [
+   "#e8e4dc",
+   "#b8b4ac"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a46",
+    1
+   ],
+   "veins": "#6a6a64",
+   "zz": [
+    "#6a6a64",
+    1,
+    "f"
+   ]
+  },
+  "hab": "Опушки, луга с кустарником, пустыри",
+  "hab_en": "Edges, scrubby meadows, wasteland",
+  "range": "Европа, Западная Азия",
+  "range_en": "Europe, W Asia",
+  "host": "осот, цикорий, молокан",
+  "host_en": "sow-thistle, chicory",
+  "fact": "Днём сидит на заборе со сложенными крыльями, как щепка.",
+  "fact_en": "By day it sits on fences, folded like a splinter."
+ },
+ {
+  "la": "Apamea monoglypha",
+  "ru": "Совка-монолифа",
+  "en": "Dark arches",
+  "fam": "Совки",
+  "lo": 40,
+  "hi": 52,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "noctuid",
+  "tail": "none",
+  "f": [
+   "#6a5844",
+   "#483a2c"
+  ],
+  "h": [
+   "#8a7a66",
+   "#6a5a48"
+  ],
+  "opts": {
+   "edge": [
+    "#2a2218",
+    1
+   ],
+   "zz": [
+    "#2a2218",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#8a7a60",
+    0.1
+   ],
+   "sp": [
+    [
+     "f",
+     0.45,
+     0.45,
+     1,
+     "#9a8a70"
+    ]
+   ]
+  },
+  "hab": "Луга, пустыри, обочины",
+  "hab_en": "Meadows, wasteland, verges",
+  "range": "Европа, Сибирь",
+  "range_en": "Europe, Siberia",
+  "host": "злаки",
+  "host_en": "grasses",
+  "fact": "Гусеница живёт в корнях злаков и зимует там же.",
+  "fact_en": "The caterpillar lives in grass roots and overwinters there."
+ },
+ {
+  "la": "Biston betularia",
+  "ru": "Берёзовая пяденица",
+  "en": "Peppered moth",
+  "fam": "Пяденицы",
+  "lo": 45,
+  "hi": 62,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#e0dcd4",
+   "#c0bcb4"
+  ],
+  "h": [
+   "#d8d4cc",
+   "#b8b4ac"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3a3a",
+    1
+   ],
+   "noise": [
+    "#2a2a2a",
+    0.2
+   ],
+   "zz": [
+    "#4a4a4a",
+    2,
+    "fh"
+   ]
+  },
+  "hab": "Леса, парки, берёзовые рощи",
+  "hab_en": "Woods, parks, birch groves",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "берёза, ива, дуб",
+  "host_en": "birch, willow, oak",
+  "fact": "Классический пример индустриального меланизма.",
+  "fact_en": "A classic example of industrial melanism."
+ },
+ {
+  "la": "Ourapteryx sambucaria",
+  "ru": "Бузинная пяденица",
+  "en": "Swallow-tailed moth",
+  "fam": "Пяденицы",
+  "lo": 50,
+  "hi": 60,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#f0e8a8",
+   "#e0d890"
+  ],
+  "h": [
+   "#f0ecb8",
+   "#e4dc98"
+  ],
+  "opts": {
+   "edge": [
+    "#c8b868",
+    1
+   ],
+   "zz": [
+    "#b8a858",
+    2,
+    "fh"
+   ],
+   "dots": "#fffff0"
+  },
+  "hab": "Опушки, кусты, сады",
+  "hab_en": "Edges, shrubs, gardens",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "бузина, плющ, ива",
+  "host_en": "elder, ivy, willow",
+  "fact": "На задних крыльях маленький хвостик, как у ласточкина хвоста.",
+  "fact_en": "Its hindwings carry a small tail like a swallowtail."
+ },
+ {
+  "la": "Geometra papilionaria",
+  "ru": "Пяденица большая зелёная",
+  "en": "Large emerald",
+  "fam": "Пяденицы",
+  "lo": 45,
+  "hi": 60,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "geometer",
+  "tail": "none",
+  "f": [
+   "#98c898",
+   "#78b078"
+  ],
+  "h": [
+   "#a0d0a0",
+   "#80b880"
+  ],
+  "opts": {
+   "edge": [
+    "#e8e8d0",
+    1
+   ],
+   "zz": [
+    "#f0f0e0",
+    2,
+    "fh"
+   ],
+   "dots": "#f0f0e0",
+   "sheen": [
+    "#c0e8c0",
+    0.15
+   ]
+  },
+  "hab": "Берёзовые рощи, влажные леса у воды",
+  "hab_en": "Birch groves, damp woods by water",
+  "range": "Европа, Сибирь",
+  "range_en": "Europe, Siberia",
+  "host": "берёза, ольха",
+  "host_en": "birch, alder",
+  "fact": "Зелень крыльев выцветает после смерти.",
+  "fact_en": "The green fades soon after death."
+ },
+ {
+  "la": "Arctia caja",
+  "ru": "Медведица кайя",
+  "en": "Garden tiger",
+  "fam": "Медведицы",
+  "lo": 45,
+  "hi": 65,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#6a4a2c",
+   "#4a3220"
+  ],
+  "h": [
+   "#e86a28",
+   "#c84818"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2810",
+    1
+   ],
+   "patch": [
+    "f",
+    0.4,
+    0.4,
+    3,
+    "#f0e8d8"
+   ],
+   "sp": [
+    [
+     "h",
+     0.5,
+     0.4,
+     3,
+     "#1a2a58"
+    ],
+    [
+     "h",
+     0.7,
+     0.5,
+     2,
+     "#1a2a58"
+    ]
+   ],
+   "zz": [
+    "#f0e8d8",
+    2,
+    "f"
+   ]
+  },
+  "hab": "Луга, сады, опушки",
+  "hab_en": "Meadows, gardens, edges",
+  "range": "Голарктика",
+  "range_en": "Holarctic",
+  "host": "подорожник, крапива",
+  "host_en": "plantain, nettle",
+  "fact": "Яркие крылья предупреждают птиц о ядовитости.",
+  "fact_en": "Bright wings warn birds of its toxicity."
+ },
+ {
+  "la": "Spilosoma lubricipeda",
+  "ru": "Медведица пятнистая",
+  "en": "White ermine",
+  "fam": "Медведицы",
+  "lo": 35,
+  "hi": 48,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0dcd0"
+  ],
+  "h": [
+   "#f4f0e4",
+   "#e8e4d8"
+  ],
+  "opts": {
+   "edge": [
+    "#c0b8a8",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.3,
+     1,
+     "#2a2a2a"
+    ],
+    [
+     "f",
+     0.55,
+     0.45,
+     1,
+     "#2a2a2a"
+    ],
+    [
+     "f",
+     0.7,
+     0.3,
+     1,
+     "#2a2a2a"
+    ],
+    [
+     "h",
+     0.6,
+     0.5,
+     1,
+     "#2a2a2a"
+    ]
+   ]
+  },
+  "hab": "Луга, сады, обочины",
+  "hab_en": "Meadows, gardens, verges",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "подорожник, крапива, ива",
+  "host_en": "plantain, nettle, willow",
+  "fact": "Гусеница-медведка быстро ползёт по траве.",
+  "fact_en": "The hairy caterpillar crawls fast through grass."
+ },
+ {
+  "la": "Phragmatobia fuliginosa",
+  "ru": "Медведица сажистая",
+  "en": "Ruby tiger",
+  "fam": "Медведицы",
+  "lo": 30,
+  "hi": 38,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "tiger",
+  "tail": "none",
+  "f": [
+   "#8a5a3a",
+   "#6a4228"
+  ],
+  "h": [
+   "#d86858",
+   "#a84038"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2818",
+    1
+   ],
+   "sp": [
+    [
+     "f",
+     0.4,
+     0.4,
+     1,
+     "#2a1a10"
+    ]
+   ],
+   "sheen": [
+    "#c08858",
+    0.1
+   ]
+  },
+  "hab": "Луга, вересковые пустоши, поляны",
+  "hab_en": "Meadows, heaths, glades",
+  "range": "Голарктика",
+  "range_en": "Holarctic",
+  "host": "злаки, подорожник",
+  "host_en": "grasses, plantain",
+  "fact": "Летит в два поколения, весной и летом.",
+  "fact_en": "Flies in two generations, spring and summer."
+ },
+ {
+  "la": "Lasiocampa quercus",
+  "ru": "Дубовый шелкопряд",
+  "en": "Oak eggar",
+  "fam": "Коконопряды",
+  "lo": 55,
+  "hi": 80,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#8a5a30",
+   "#6a4220"
+  ],
+  "h": [
+   "#a87040",
+   "#8a5a30"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2a14",
+    1
+   ],
+   "patch": [
+    "f",
+    0.45,
+    0.4,
+    2,
+    "#f0e8d8"
+   ],
+   "band": [
+    "f",
+    0.55,
+    0.7,
+    "#e8c860"
+   ]
+  },
+  "hab": "Луга, вересковые пустоши, опушки",
+  "hab_en": "Meadows, heaths, edges",
+  "range": "Европа, Западная Азия",
+  "range_en": "Europe, W Asia",
+  "host": "вереск, ива, ежевика",
+  "host_en": "heather, willow, bramble",
+  "fact": "Самцы летят на запах самки за километры.",
+  "fact_en": "Males follow a female's scent for kilometres."
+ },
+ {
+  "la": "Dendrolimus pini",
+  "ru": "Сосновый шелкопряд",
+  "en": "Pine-tree lappet",
+  "fam": "Коконопряды",
+  "lo": 55,
+  "hi": 80,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#9a8a78",
+   "#6a5a4a"
+  ],
+  "h": [
+   "#8a7a68",
+   "#6a5a4a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a2e22",
+    1
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.6,
+    "#c8b8a0"
+   ],
+   "patch": [
+    "f",
+    0.5,
+    0.45,
+    2,
+    "#f0f0f0"
+   ],
+   "noise": [
+    "#5a4a3a",
+    0.1
+   ]
+  },
+  "hab": "Сосновые боры",
+  "hab_en": "Pine forests",
+  "range": "Евразия",
+  "range_en": "Eurasia",
+  "host": "сосна",
+  "host_en": "pine",
+  "fact": "Опасный вредитель сосновых лесов, гусеницы обгладывают хвою.",
+  "fact_en": "A dangerous forest pest; caterpillars strip pine needles."
+ },
+ {
+  "la": "Gastropacha quercifolia",
+  "ru": "Дубовый коконопряд",
+  "en": "Lappet",
+  "fam": "Коконопряды",
+  "lo": 50,
+  "hi": 90,
+  "rar": 2,
+  "beh": "rester",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#8a5a3a",
+   "#6a4228"
+  ],
+  "h": [
+   "#9a6a48",
+   "#7a5030"
+  ],
+  "opts": {
+   "edge": [
+    "#4a2a18",
+    1
+   ],
+   "veins": "#5a3820",
+   "zz": [
+    "#5a3820",
+    1,
+    "fh"
+   ],
+   "sheen": [
+    "#b08060",
+    0.2
+   ]
+  },
+  "hab": "Сады, опушки, лиственные леса",
+  "hab_en": "Gardens, edges, deciduous woods",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "яблоня, слива, терн",
+  "host_en": "apple, plum, blackthorn",
+  "fact": "В покое похожа на пучок сухих листьев.",
+  "fact_en": "At rest it looks like a bunch of dead leaves."
+ },
+ {
+  "la": "Lymantria dispar",
+  "ru": "Непарный шелкопряд",
+  "en": "Spongy moth",
+  "fam": "Волнянки",
+  "lo": 37,
+  "hi": 70,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c8b8a0",
+   "#8a7a60"
+  ],
+  "h": [
+   "#a89878",
+   "#7a6a50"
+  ],
+  "opts": {
+   "edge": [
+    "#4a3a28",
+    1
+   ],
+   "zz": [
+    "#4a3a28",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#6a5a40",
+    0.1
+   ]
+  },
+  "hab": "Дубравы, берёзовые рощи, сады",
+  "hab_en": "Oak woods, birch groves, gardens",
+  "range": "Европа, Азия, Северная Африка",
+  "range_en": "Europe, Asia, N Africa",
+  "host": "дуб, берёза, яблоня",
+  "host_en": "oak, birch, apple",
+  "fact": "Самки крупнее самцов, но летать почти не способны.",
+  "fact_en": "Females are larger than males and barely fly."
+ },
+ {
+  "la": "Calliteara pudibunda",
+  "ru": "Волнянка букофаг",
+  "en": "Pale tussock",
+  "fam": "Волнянки",
+  "lo": 45,
+  "hi": 60,
+  "rar": 1,
+  "beh": "moth",
+  "shape": "eggar",
+  "tail": "none",
+  "f": [
+   "#c8c4bc",
+   "#a8a49c"
+  ],
+  "h": [
+   "#d0ccc4",
+   "#b0aca4"
+  ],
+  "opts": {
+   "edge": [
+    "#6a6a64",
+    1
+   ],
+   "zz": [
+    "#6a6a64",
+    3,
+    "f"
+   ],
+   "band": [
+    "f",
+    0.45,
+    0.55,
+    "#8a8a84"
+   ]
+  },
+  "hab": "Лиственные леса, парки",
+  "hab_en": "Deciduous woods, parks",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "бук, дуб, берёза",
+  "host_en": "beech, oak, birch",
+  "fact": "Гусеница с кистями волосков хорошо известна садоводам.",
+  "fact_en": "The tufted caterpillar is well known to gardeners."
+ },
+ {
+  "la": "Cerura vinula",
+  "ru": "Хохлатка большая",
+  "en": "Puss moth",
+  "fam": "Хохлатки",
+  "lo": 58,
+  "hi": 75,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#e8e4dc",
+   "#c0bcb4"
+  ],
+  "h": [
+   "#d8d4cc",
+   "#b0aca4"
+  ],
+  "opts": {
+   "edge": [
+    "#4a4a4a",
+    1
+   ],
+   "zz": [
+    "#3a3a3a",
+    3,
+    "f"
+   ],
+   "sp": [
+    [
+     "f",
+     0.3,
+     0.35,
+     1,
+     "#2a2a2a"
+    ]
+   ],
+   "noise": [
+    "#8a8a84",
+    0.08
+   ]
+  },
+  "hab": "Ивняки, тополевые рощи",
+  "hab_en": "Willow thickets, poplar groves",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "ивы, тополя",
+  "host_en": "willows, poplars",
+  "fact": "Гусеница при испуге выставляет красную маску и хвостовые нити.",
+  "fact_en": "When alarmed the caterpillar shows a red mask and tail filaments."
+ },
+ {
+  "la": "Phalera bucephala",
+  "ru": "Хохлатка серебристая",
+  "en": "Buff-tip",
+  "fam": "Хохлатки",
+  "lo": 55,
+  "hi": 68,
+  "rar": 1,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#b8b8b0",
+   "#9a9a92"
+  ],
+  "h": [
+   "#d8d4c0",
+   "#c0bca8"
+  ],
+  "opts": {
+   "edge": [
+    "#6a6a64",
+    1
+   ],
+   "patch": [
+    "f",
+    0.9,
+    0.5,
+    2,
+    "#e8d890"
+   ],
+   "zz": [
+    "#7a7a74",
+    1,
+    "f"
+   ]
+  },
+  "hab": "Леса, парки, сады",
+  "hab_en": "Woods, parks, gardens",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "дуб, липа, ива",
+  "host_en": "oak, lime, willow",
+  "fact": "Сложенные крылья похожи на обломанную берёзовую веточку.",
+  "fact_en": "Folded wings look like a broken birch twig."
+ },
+ {
+  "la": "Stauropus fagi",
+  "ru": "Хохлатка-омар",
+  "en": "Lobster moth",
+  "fam": "Хохлатки",
+  "lo": 45,
+  "hi": 65,
+  "rar": 3,
+  "beh": "rester",
+  "shape": "prominent",
+  "tail": "none",
+  "f": [
+   "#b8a898",
+   "#9a8a7a"
+  ],
+  "h": [
+   "#c8b8a8",
+   "#a89888"
+  ],
+  "opts": {
+   "edge": [
+    "#5a4a3a",
+    1
+   ],
+   "zz": [
+    "#5a4a3a",
+    2,
+    "f"
+   ],
+   "noise": [
+    "#7a6a5a",
+    0.1
+   ]
+  },
+  "hab": "Широколиственные леса",
+  "hab_en": "Broadleaf forests",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "бук, дуб, берёза",
+  "host_en": "beech, oak, birch",
+  "fact": "Гусеница напоминает омара с длинными ногами.",
+  "fact_en": "The caterpillar looks like a lobster with long legs."
+ },
+ {
+  "la": "Pterophorus pentadactyla",
+  "ru": "Пальцекрылка белая",
+  "en": "White plume moth",
+  "fam": "Пальцекрылки",
+  "lo": 28,
+  "hi": 40,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "plume",
+  "tail": "none",
+  "f": [
+   "#f4f4f0",
+   "#e8e8e4"
+  ],
+  "h": [
+   "#f0f0ec",
+   "#e4e4e0"
+  ],
+  "opts": {
+   "edge": [
+    "#c8c8c0",
+    1
+   ],
+   "veins": "#dcdcd4"
+  },
+  "hab": "Луга, обочины, сады",
+  "hab_en": "Meadows, verges, gardens",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "вьюнок полевой",
+  "host_en": "field bindweed",
+  "fact": "Пять перистых крыльев делают его похожим на снежинку.",
+  "fact_en": "Its five feathery plumes make it look like a snowflake."
+ },
+ {
+  "la": "Hepialus humuli",
+  "ru": "Корневая моль хмелевая",
+  "en": "Ghost moth",
+  "fam": "Тонкопряды",
+  "lo": 44,
+  "hi": 70,
+  "rar": 2,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#f0ece0",
+   "#e0dcd0"
+  ],
+  "h": [
+   "#e8e4d8",
+   "#d8d4c8"
+  ],
+  "opts": {
+   "edge": [
+    "#a8a498",
+    1
+   ],
+   "veins": "#c8c4b8"
+  },
+  "hab": "Влажные луга, опушки",
+  "hab_en": "Damp meadows, edges",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "корни трав и хмеля",
+  "host_en": "roots of grasses and hops",
+  "fact": "Самцы белые, зависают над лугом в сумерках, как призраки.",
+  "fact_en": "Pale males hover over meadows at dusk like ghosts."
+ },
+ {
+  "la": "Cossus cossus",
+  "ru": "Древоточец пахучий",
+  "en": "Goat moth",
+  "fam": "Древоточцы",
+  "lo": 68,
+  "hi": 96,
+  "rar": 3,
+  "beh": "moth",
+  "shape": "ghost",
+  "tail": "none",
+  "f": [
+   "#8a8478",
+   "#605a50"
+  ],
+  "h": [
+   "#9a9488",
+   "#7a746a"
+  ],
+  "opts": {
+   "edge": [
+    "#3a3630",
+    1
+   ],
+   "zz": [
+    "#3a3630",
+    3,
+    "f"
+   ],
+   "noise": [
+    "#4a463e",
+    0.15
+   ]
+  },
+  "hab": "Ивняки, старые деревья у воды",
+  "hab_en": "Willow thickets, old trees near water",
+  "range": "Европа, Азия",
+  "range_en": "Europe, Asia",
+  "host": "ивы, тополя, дуб",
+  "host_en": "willows, poplars, oak",
+  "fact": "Гусеница пахнет козлом и несколько лет питается внутри ствола.",
+  "fact_en": "The caterpillar smells of goats and eats inside trunks for years."
+ }
+]

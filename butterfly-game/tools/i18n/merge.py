@@ -7,11 +7,13 @@ keys = json.load(open(os.path.join(D, 'keys.json'), encoding='utf-8'))
 out = {}; bad = []
 for f in sorted(glob.glob(os.path.join(D, 'chunks', 'en_*.json'))):
     out.update(json.load(open(f, encoding='utf-8')))
+mo = os.path.join(D, 'moths_en.json')
+if os.path.exists(mo): out.update({k: v for k, v in json.load(open(mo, encoding='utf-8')).items() if v})      # the texts of the moth rows (tools/moths)
 # manual fixes (applied last)
 fix = os.path.join(D, 'fixes.json')
 if os.path.exists(fix): out.update(json.load(open(fix, encoding='utf-8')))
 out.update(json.load(open(os.path.join(D, 'auto.json'), encoding='utf-8')))
-miss = [k for k in keys if k not in out]
+miss = [k for k in keys if k not in out and not k.startswith('[')]
 for k, v in out.items():
     lead = len(k) - len(k.lstrip()); trail = len(k) - len(k.rstrip())
     if not v.strip(): bad.append(('empty', k)); continue

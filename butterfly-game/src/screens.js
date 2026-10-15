@@ -246,23 +246,26 @@ const Screens = (() => {
   };
 
   // ------------------------------------------------------------------ JOURNAL (entomological drawer)
+  const JB = () => S_journal_moth() ? visibleBiomes().filter(b => b.moths.length).map(b => b.nightB) : visibleBiomes();       // the locations of the journal: butterflies, or (moth mode) the night fauna
+  const S_journal_moth = () => journal.moth;
   const journal = {
-    tab: 0, sel: 0, btns: [], slots: [], tabs: [],
+    tab: 0, sel: 0, btns: [], slots: [], tabs: [], moth: false,       // moth: the pages of the night fauna (a toggle in the top bar)
+    list() { return JB(); },
     layout() {
-      const VB = visibleBiomes(), tw = Math.min(51, Math.floor(468 / VB.length) - 2), ts = Math.min(53, 468 / VB.length); this.tab = Math.min(this.tab, VB.length - 1); this.tabs = VB.map((b, i) => ({ id: 'tab' + i, i, x: 6 + Math.round(i * ts), y: 22, w: tw, h: 15 }));
+      const VB = JB(), tw = Math.min(51, Math.floor(468 / VB.length) - 2), ts = Math.min(53, 468 / VB.length); this.tab = Math.min(this.tab, VB.length - 1); this.tabs = VB.map((b, i) => ({ id: 'tab' + i, i, x: 6 + Math.round(i * ts), y: 22, w: tw, h: 15 }));
       this.slots = []; const b = VB[this.tab]; this.sel = clamp(this.sel, 0, b.species.length - 1); this.page = Math.floor(this.sel / 6); this.pages = Math.ceil(b.species.length / 6);
       b.species.forEach((sp, k) => { if (Math.floor(k / 6) !== this.page) return; const j = k % 6; this.slots.push({ k, sp, x: 10 + (j % 2) * 103, y: 46 + Math.floor(j / 2) * 72, w: 101, h: 68 }); });
       this.pgBtns = [{ id: 'prev', label: '←', x: 262, y: 4, w: 22, h: 15, disabled: this.page === 0 }, { id: 'next', label: '→', x: 350, y: 4, w: 22, h: 15, disabled: this.page >= this.pages - 1 }];
-      this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 };
+      this.close = { id: 'close', label: 'Закрыть ✕', x: SW - 82, y: 4, w: 74, h: 15 }; this.moBtn = { id: 'moth', label: this.moth ? '← Дневные' : 'Ночные →', x: 74, y: 4, w: 74, h: 15 };
       this.fragRect = (this.tab === VB.length - 1 && this.page === this.pages - 1 && !Secret.has(4)) ? { x: SW - 6 - 84, y: 204, w: 76, h: 56 } : null;     // the last piece of the note, taped to the last page
     },
     draw(ctx, t, m) {
       if (this.ab && this.ab.tab !== this.tab) this.ab = null;
       if (this.ab) return this.drawAb(ctx, t, m);
-      this.layout(); const b = visibleBiomes()[this.tab];
+      this.layout(); const b = JB()[this.tab];
       ctx.fillStyle = '#1c1410'; ctx.fillRect(0, 0, SW, SH); for (let i = 0; i < SW; i += 3) { ctx.fillStyle = (i % 9 === 0) ? '#241a14' : '#201610'; ctx.fillRect(i, 0, 3, SH); }
-      T.draw(ctx, 'Энтомологическая коллекция', 8, 6, { size: 10, color: c.gold }); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
-      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = visibleBiomes()[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898', shadow: '#000' }); if (on) { ctx.fillStyle = '#4a3220'; ctx.fillRect(tb.x + 1, tb.y + tb.h - 1, tb.w - 2, 2); ctx.fillStyle = c.gold; ctx.fillRect(tb.x + 2, tb.y + 1, tb.w - 4, 1); } if (full) { ctx.fillStyle = c.gold; ctx.fillRect(tb.x + tb.w - 4, tb.y + 2, 2, 2); } });
+      T.draw(ctx, 'Коллекция', 8, 6, { size: 10, color: c.gold }); UIK.btn(ctx, this.moBtn, UIK.hit(this.moBtn, m.x, m.y)); T.draw(ctx, collText() + (Save.aberrTotal() ? `  · аберр. ${Save.aberrTotal()}` : ''), 200, 7, { size: 8, color: c.text });
+      this.tabs.forEach(tb => { const on = tb.i === this.tab, hv = UIK.hit(tb, m.x, m.y); const bb = JB()[tb.i]; const full = Save.biomeCount(bb) === bb.species.length; UIK.panel(ctx, tb.x, tb.y, tb.w, tb.h, { fill: on ? '#4a3220' : hv ? '#34261a' : '#2a1e16', border: on ? c.gold : '#5a4430' }); T.draw(ctx, short[bb.id], tb.x + tb.w / 2, tb.y + 3, { size: 8, align: 'c', color: on ? '#fff' : full ? c.gold : '#c8b898', shadow: '#000' }); if (on) { ctx.fillStyle = '#4a3220'; ctx.fillRect(tb.x + 1, tb.y + tb.h - 1, tb.w - 2, 2); ctx.fillStyle = c.gold; ctx.fillRect(tb.x + 2, tb.y + 1, tb.w - 4, 1); } if (full) { ctx.fillStyle = c.gold; ctx.fillRect(tb.x + tb.w - 4, tb.y + 2, 2, 2); } });
       // drawer with cork
       UIK.panel(ctx, 6, 42, 216, 222, { fill: '#6a4a2a', border: '#2a1a0c' }); ctx.fillStyle = '#c8a870'; ctx.fillRect(9, 45, 210, 216);
       for (let i = 0; i < 240; i++) { const x = 9 + (i * 97) % 210, y = 45 + (i * 53) % 216; ctx.fillStyle = i % 3 ? '#b89860' : '#d8b880'; ctx.fillRect(x, y, 2, 1); }
@@ -329,12 +332,13 @@ const Screens = (() => {
       });
       if (!list.length) T.draw(ctx, 'Пока ни одного аберранта', SW / 2, 150, { size: 8, align: 'c', color: c.dim });
     },
-    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = visibleBiomes()[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
+    turn(d) { if (this.ab) { this.ab.page = clamp(this.ab.page + d, 0, (this.ab.pages || 1) - 1); Snd.sfx.page(); return; } const b = JB()[this.tab]; const pg = clamp(Math.floor(this.sel / 6) + d, 0, Math.ceil(b.species.length / 6) - 1); this.sel = Math.min(pg * 6, b.species.length - 1); Snd.sfx.page(); },
     click(x, y) {
       if (UIK.hit(this.close, x, y)) return 'close';
+      if (!this.ab && this.moBtn && UIK.hit(this.moBtn, x, y)) { this.moth = !this.moth; this.tab = 0; this.sel = 0; Snd.sfx.page(); return 'mode'; }
       if (!this.ab && this.fragRect && UIK.hit(this.fragRect, x, y)) { if (Secret.take(4)) { this.msg = 'Обрывок записки: 01. Он лежит на складе (I).'; this.msgUntil = performance.now() + 4500; Snd.sfx.coin(); } return 'frag'; }
       if (this.ab) { const bt = (this.abBtns || []).find(b => !b.disabled && UIK.hit(b, x, y)); if (bt) { if (bt.id === 'abback') this.ab = null; else this.turn(bt.id === 'abnext' ? 1 : -1); Snd.sfx.page(); return 'ab'; } return null; }
-      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: visibleBiomes()[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
+      if (this.abBtn && UIK.hit(this.abBtn, x, y)) { this.ab = { base: JB()[this.tab].species[this.sel].id, page: 0, tab: this.tab }; Snd.sfx.page(); return 'ab'; }
       const pb = this.pgBtns.find(b => !b.disabled && UIK.hit(b, x, y)); if (pb) { this.turn(pb.id === 'next' ? 1 : -1); return 'page'; }
       const tb = this.tabs.find(t => UIK.hit(t, x, y)); if (tb) { this.tab = tb.i; this.sel = 0; Snd.sfx.page(); return 'tab'; }
       const s = this.slots.find(s => UIK.hit(s, x, y)); if (s) { this.sel = s.k; Snd.sfx.click(); return 'slot'; }

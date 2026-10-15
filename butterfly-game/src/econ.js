@@ -3,6 +3,7 @@
 //  * species value: common ~6, uncommon ~16, rare ~42 coins (+-15% per species, stable); the secret ocean butterflies are worth ~30-40 raw (base 55-73), doubled like the other secret places
 //  * aberrants are worth several times more than the regular form of their species
 //  * a spread and pinned specimen is worth more than a raw one of the same species: from 1.45x (poorly spread) up to 3x (perfect, quality 100)
+//  * the moths (the night fauna) are worth twice as much as the day butterflies of their location, so in a secret location four times as much
 //  * the butterflies of the secret locations Bog and New Guinea are worth twice as much (except Queen Alexandra's birdwing, which has a fixed price)
 const Econ = (() => {
   const BASE = { 1: 6, 2: 16, 3: 42 }, RAW_K = 0.55, SPREAD_LO = 1.45, SPREAD_HI = 3, AB_K = 6, LOC_K = { bog: 2, papua: 2, vietnam: 2, chihuahua: 2, ocean: 2 };
@@ -11,7 +12,7 @@ const Econ = (() => {
   const isSpread = spec => spec.q !== null && spec.q !== undefined;
   const spreadX = spec => lerp(SPREAD_LO, SPREAD_HI, clamp(spec.q / 100));       // how many times a raw specimen the spread one is worth
   const condK = spec => isSpread(spec) ? RAW_K * spreadX(spec) : RAW_K;
-  const locK = sp => sp.fixedPrice ? 1 : (LOC_K[sp.biome] || 1);
+  const locK = sp => sp.fixedPrice ? 1 : (LOC_K[sp.biome] || 1) * (sp.moth ? 2 : 1);       // a moth is worth twice a butterfly of its location (a secret location: 2 x 2 = four times)
   // full breakdown for one specimen
   function info(spec) {
     const sp = SPECIES_BY_ID[spec.sp]; if (!sp) return null;

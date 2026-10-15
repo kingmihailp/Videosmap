@@ -101,6 +101,10 @@ function makeNetModel(cfg) {
       for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.005, 4, 10), steel); f.position.set(0, 0.075, gz + 0.06 - k * 0.04); g.add(f); }
       const lens = new THREE.Mesh(new THREE.CircleGeometry(0.03, 10), new THREE.MeshBasicMaterial({ color: '#ff3a20' })); lens.position.set(0, 0.075, gz - 0.101); lens.rotation.y = Math.PI; g.add(lens); mats.irLens = lens.material;
       const br = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.05, 0.03), steel); br.position.set(0, 0.03, gz); g.add(br);
+    } else if (id === 'g_torch') {  // a flashlight clamped to the pole: a barrel with a warm lens
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.038, 0.17, 10), dark); tube.rotation.x = Math.PI / 2; tube.position.set(0, 0.07, gz); g.add(tube);
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.034, 10), new THREE.MeshBasicMaterial({ color: '#fff2c0' })); lens.position.set(0, 0.07, gz - 0.086); lens.rotation.y = Math.PI; g.add(lens);
+      const br = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.045, 0.03), steel); br.position.set(0, 0.03, gz); g.add(br);
     } else if (id === 'g_auto') {  // the autonomy module: a housing with a toggle lever on a slotted plate, ON / OFF lamps, screws, a status LED
       autoSwitch3d(g, 0.055, 0.0, gz, mats, dark, steel, brass);
     }
@@ -170,6 +174,7 @@ function makeCannonModel(cfg) {
     const gz = -0.5 - i * 0.12;
     if (id === 'g_map') { const box = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.08, 0.05), dark); box.position.set(-0.1, 0.07, gz); g.add(box); const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.062), new THREE.MeshBasicMaterial({ color: '#2ad060' })); sc.position.set(-0.1, 0.07, gz + 0.027); sc.scale.x = -1; g.add(sc); mats.mapScreen = sc.material; }
     else if (id === 'g_ir') { const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.18, 10), dark); tube.rotation.x = Math.PI / 2; tube.position.set(-0.11, 0.0, gz); g.add(tube); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.026, 10), new THREE.MeshBasicMaterial({ color: '#ff3a20' })); lens.position.set(-0.11, 0, gz - 0.091); lens.rotation.y = Math.PI; g.add(lens); mats.irLens = lens.material; }
+    else if (id === 'g_torch') { const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.036, 0.16, 10), dark); tube.rotation.x = Math.PI / 2; tube.position.set(-0.1, 0.0, gz); g.add(tube); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.03, 10), new THREE.MeshBasicMaterial({ color: '#fff2c0' })); lens.position.set(-0.1, 0.0, gz - 0.081); lens.rotation.y = Math.PI; g.add(lens); }
     else if (id === 'g_auto') autoSwitch3d(g, -0.1, -0.06, gz, mats, dark, steel, brass);
   });
   g.userData.mats = mats;

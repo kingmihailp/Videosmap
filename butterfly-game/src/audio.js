@@ -126,8 +126,10 @@ const Snd = (() => {
     vietnam:    { wind: 0.55, bird: 'song', insect: ['cicada', 5000, 0.06], water: true, base: 53, scale: [0, 2, 3, 7, 9], mus: 0.85 },
     forest:     { wind: 0.3, bird: 'song', insect: ['cicada', 5600, 0.06], water: true, base: 54, scale: [0, 2, 5, 7, 9], mus: 0.9 },
   };
-  function startAmbient(kind) {
-    if (!ac) return; stopAmbient(); const cfg = AMB[kind] || AMB.meadow; ambKind = kind; amb = { cfg, nodes: [] };
+  // a night location: the daytime birds are silent, crickets and frogs sing, an owl calls now and then, the wind is softer, and the music turns slow and minor (see music())
+  const nightCfg = c => ({ wind: (c.wind || 0.3) * 0.55, bird: null, owl: true, insect: ['cricket', 3300, 0.07], frog: !!(c.frog || c.water), water: c.water, bell: false, base: (c.base || 50) - 9, scale: [0, 3, 5, 7, 10], mus: 0.7, night: true });
+  function startAmbient(kind, night) {
+    if (!ac) return; stopAmbient(); const cfg = night ? nightCfg(AMB[kind] || AMB.meadow) : (AMB[kind] || AMB.meadow); ambKind = kind; amb = { cfg, nodes: [] };
     const t = now();
     // wind
     if (cfg.wind) { const w = noiseSrc(true), wf = ac.createBiquadFilter(), wg = ac.createGain(); wf.type = 'bandpass'; wf.frequency.value = 420; wf.Q.value = 0.6;
@@ -183,6 +185,7 @@ const Snd = (() => {
     else if (c.bird === 'tropic') { if (Math.random() < 0.5) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(700, t); o.frequency.exponentialRampToValueAtTime(1500, t + 0.25); o.frequency.exponentialRampToValueAtTime(900, t + 0.4); env(g, t, 0.02, 0.42, 0.08); o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 0.5); } else chirp(t, 3800, 3, 0.05); }
     else if (c.bird === 'dove') { [0, 0.28, 0.5].forEach((d, i) => osc('sine', 420 - i * 20, t + d, 0.22, 0.06, ambG)); }
     else if (c.bird === 'lark') { [0, 0.18, 0.34, 0.56, 0.7].forEach((d, i) => osc('sine', [1700, 2100, 1900, 2400, 2100][i], t + d, 0.15, 0.06, ambG)); }
+    if (c.owl && Math.random() < 0.3) { const f0 = 330 + Math.random() * 60; [0, 0.55, 1.1].slice(0, 2 + (Math.random() * 2 | 0)).forEach((d, i) => { const o = ac.createOscillator(), g = ac.createGain(), v = ac.createOscillator(), vg = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f0 * (i ? 0.92 : 1), t + d); o.frequency.exponentialRampToValueAtTime(f0 * 0.88, t + d + 0.4); v.frequency.value = 6; vg.gain.value = 5; v.connect(vg); vg.connect(o.frequency); env(g, t + d, 0.08, 0.42, 0.075); o.connect(g); g.connect(ambG); o.start(t + d); v.start(t + d); o.stop(t + d + 0.55); v.stop(t + d + 0.55); }); }
     if (c.frog && Math.random() < 0.6) { for (let i = 0; i < 3; i++) { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'square'; o.frequency.value = 170 + Math.random() * 60; env(g, t + i * 0.13, 0.01, 0.1, 0.03); const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 600; o.connect(f); f.connect(g); g.connect(ambG); o.start(t + i * 0.13); o.stop(t + i * 0.13 + 0.14); } }
     if (c.eerie && Math.random() < 0.28) { const f0 = 110 * Math.pow(2, (Math.random() * 7 | 0) / 12); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * (Math.random() < 0.5 ? 0.94 : 1.06), t + 3); env(g, t, 1.2, 3, 0.07); o.connect(g); g.connect(ambG); o.start(t); o.stop(t + 3.5); }
     if (c.crowd && Math.random() < 0.5) { const f0 = 180 + Math.random() * 120; for (let i = 0; i < 2 + (Math.random() * 3 | 0); i++) { const o = ac.createOscillator(), g = ac.createGain(), fl = ac.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.value = f0 * (0.9 + Math.random() * 0.4); fl.type = 'bandpass'; fl.frequency.value = 700 + Math.random() * 500; fl.Q.value = 3; const tt = t + i * 0.16 + Math.random() * 0.4; env(g, tt, 0.02, 0.12, 0.012); o.connect(fl); fl.connect(g); g.connect(ambG); o.start(tt); o.stop(tt + 0.2); } }
@@ -190,6 +193,16 @@ const Snd = (() => {
   }
   function music(t) {
     const c = amb.cfg; const sc = c.scale;
+    if (c.night) {      // slow night music: a minor pad that swells for ten seconds, a low drone, a few sparse celesta-like notes with an echo
+      if (t >= musNext) {
+        const step = musStep++, beat = 2.8, root = c.base + [0, 3, -2, 5][(step / 4 | 0) % 4];
+        if (step % 4 === 0) [0, 3, 7, 10].forEach((i, k) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = midi(root + i + (k === 3 ? 12 : 0)); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.07, t + 4); g.gain.linearRampToValueAtTime(0.0001, t + beat * 4); o.connect(g); g.connect(musG); o.start(t); o.stop(t + beat * 4 + 0.2); });
+        if (step % 8 === 0) osc('sine', midi(root - 12), t, beat * 6, 0.08, musG);
+        if (Math.random() < 0.55) { const n = c.base + 24 + sc[(Math.random() * sc.length) | 0]; bell(midi(n), t + 0.3, 0.05, 2.4, musG); if (Math.random() < 0.6) bell(midi(n), t + 0.3 + 0.9, 0.022, 2.4, musG); }
+        musNext = t + beat;
+      }
+      return;
+    }
     if (t >= musNext) {
       const step = musStep++; const beat = 1.8;
       if (step % 4 === 0) { // pad chord

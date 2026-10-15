@@ -42,6 +42,7 @@ const NetParts = (() => {
   const GADGETS = {
     g_map: { id: 'g_map', ru: 'Карта', price: 100000, desc: 'Пока надето на сачок, у края экрана показывается уменьшенная карта природных зон — с помехами, как на старом экране.' },
     g_ir: { id: 'g_ir', ru: 'Инфракрасный сканер', price: 130000, desc: 'Раз в 10 секунд испускает инфракрасный луч: все бабочки на его пути подсвечиваются по контуру.' },
+    g_torch: { id: 'g_torch', ru: 'Фонарик', price: 90000, desc: 'Крепится на сачок: его луч освещает ночную локацию и показывает мотыльков, а руки остаются свободными. Нужен только в ночных локациях.' },
     g_auto: { id: 'g_auto', ru: 'Автономность', price: 70000, desc: 'Появляется переключатель: включённый, сачок сам замахивается на бабочек поблизости. Выключается обратно.' },
   };
   const CANNON = { id: 'cannon', ru: 'Пушка-сачок', price: 150000, desc: 'Стреляет огромной сетью, ловит ею бабочек и подтягивает сеть обратно. Надевается как сачок, на неё тоже можно ставить приспособления.' };
@@ -52,7 +53,7 @@ const NetParts = (() => {
   function stats(cfg) { let sp = 0, rd = 0, ab = 0, q = 0, db = 0, co = 0, mech = 0, lunge = 0, shock = 0, lure = 0, loud = 0, slow = 0;
     for (const p of parts(cfg || BASIC)) { const f = p.fx; sp += f.speed || 0; rd += f.radius || 0; ab += f.ab || 0; q += f.quiet || 0; db += f.dbl || 0; co += f.coin || 0; mech = Math.max(mech, f.mech || 0); lunge += f.lunge || 0; shock += f.shock || 0; lure += f.lure || 0; loud += f.loud || 0; slow += f.slow || 0; }
     const g = (cfg && cfg.g) || [];
-    return { speed: Math.max(0.3, 1 + sp), radius: 1 + rd, ab: Math.min(0.95, ab), quiet: Math.min(0.6, q), dbl: db, coin: co, mech, lunge, shock, lure, loud, slow: Math.min(0.5, slow), cannon: !!(cfg && cfg.cannon), map: g.includes('g_map'), ir: g.includes('g_ir'), auto: g.includes('g_auto') }; }
+    return { speed: Math.max(0.3, 1 + sp), radius: 1 + rd, ab: Math.min(0.95, ab), quiet: Math.min(0.6, q), dbl: db, coin: co, mech, lunge, shock, lure, loud, slow: Math.min(0.5, slow), cannon: !!(cfg && cfg.cannon), map: g.includes('g_map'), ir: g.includes('g_ir'), auto: g.includes('g_auto'), torch: g.includes('g_torch') }; }
   function vis(cfg) {
     const v = { handle: '#9a6a38', grip: '#2a2018', len: 1, th: 1, hoop: '#eef2f4', R: 1, hth: 1, mesh: '#d4e8e0', wire: '#6f9088', op: 0.4, bag: 1, mech: 0, piston: 0, shock: 0, rope: 0 };
     for (const p of parts(cfg || BASIC)) { const q = p.vis; for (const k in q) { if (k === 'th') { if (p.slot === 'r') v.hth = q.th; else v.th = q.th; } else v[k] = q[k]; } }
@@ -77,7 +78,7 @@ const NetParts = (() => {
     R(16, 7, 12, 6, '#7e8794'); for (let i = 0; i < 4; i++) R(17 + i * 3, 7, 1, 6, '#c8b078'); R(15, 6, 1, 8, '#c8a040'); R(28, 6, 1, 8, '#c8a040'); R(29, 9, 3, 1, '#2a2e36');
     R(20, 19, 14, 5, '#b83a2a'); R(20, 19, 14, 1, '#e86a58'); R(21, 24, 1, 1, '#5a6068'); R(33, 24, 1, 1, '#5a6068'); R(34, 20, 3, 3, '#c8a040'); R(35, 21, 1, 1, '#f2ecd8');
     for (let i = 0; i < 4; i++) R(24 + i * 4, 12, 2, 1, '#58d8ff');
-    const g = (cfg && cfg.g) || []; if (g.includes('g_map')) { R(26, 2, 6, 4, '#1a1c20'); R(27, 3, 4, 2, '#3ad870'); } if (g.includes('g_ir')) { R(34, 3, 7, 3, '#2a2e36'); R(41, 3, 1, 3, '#ff3a20'); } if (g.includes('g_auto')) { R(8, 9, 5, 4, '#2a2e36'); R(9, 9, 1, 1, '#4aff6a'); }
+    const g = (cfg && cfg.g) || []; if (g.includes('g_map')) { R(26, 2, 6, 4, '#1a1c20'); R(27, 3, 4, 2, '#3ad870'); } if (g.includes('g_ir')) { R(34, 3, 7, 3, '#2a2e36'); R(41, 3, 1, 3, '#ff3a20'); } if (g.includes('g_auto')) { R(8, 9, 5, 4, '#2a2e36'); R(9, 9, 1, 1, '#4aff6a'); } if (g.includes('g_torch')) { R(14, 2, 6, 3, '#2a2e36'); R(20, 2, 1, 3, '#ffe9a0'); }
   }
   // 2D picture of a net (pixel lines), used by the workbench and the shop
   function line(ctx, x0, y0, x1, y1, w) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy; for (let n = 0; n < 600; n++) { ctx.fillRect(x0, y0, w, w); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }

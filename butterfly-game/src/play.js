@@ -72,6 +72,7 @@ class Fly {
     this.id = opts.id || play.nextFid++; this.puppet = !!opts.puppet; this.netPos = new THREE.Vector3(); this.netYaw = 0; this.hid = false; this.seen = performance.now(); this.baseScale = this.kind === 'timothy' ? 0.55 : 1;
     if (this.kind === 'timothy') this.mesh.scale.setScalar(0.55);
     if (!this.puppet) this.place(nearPlayer);
+    if (play.world.night && sp.moth) this.mesh.visible = false;       // a moth is not seen until a lamp lights it (play.js update)
     this.play.world.scene.add(this.mesh);
     this.shadow = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT); this.shadow.rotation.x = -Math.PI / 2; this.play.world.scene.add(this.shadow);
     if (!this.puppet) this.pickTarget();
@@ -260,13 +261,14 @@ class Fly {
 // ---------------------------------------------------------------- the play session
 class Play {
   constructor(biome, seed, mp, at, born) {
-    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); if (!this.world.flyH) this.world.flyH = this.world.heightAt; if (!this.world.groundAt) this.world.groundAt = this.world.heightAt; this.seed = this.world.seedStr; this.scene = this.world.scene;
+    this.mp = mp || null; this.isHost = !mp || !!mp.host; this.nextFid = 1; this.netAcc = 0; this.biome = biome; this.world = biome.id === 'ocean' ? Ocean.build(biome, seed) : World.build(biome, seed); if (!this.world.flyH) this.world.flyH = this.world.heightAt; if (!this.world.groundAt) this.world.groundAt = this.world.heightAt; this.seed = this.world.seedStr; this.scene = this.world.scene; if (this.world.night && biome.nightB) { biome = biome.nightB; this.biome = biome; }       // a night generation: the moths of the location replace its butterflies (see night.js)
     this.camera = new THREE.PerspectiveCamera(70, SW / SH, 0.07, 700); this.scene.add(this.camera);
     this.t = 0; this.flies = []; this.cards = []; this.sparks = []; this.toasts = []; this.respawns = []; this.sense = false; this.caughtHere = new Set(); this.completeShown = false;
     this.player = { pos: new THREE.Vector3(0, 0, 0), yaw: this.world.spawnYaw, speedNow: 0, pitch: 0, vel: new THREE.Vector2(), noise: 0.1, bob: 0, stepD: 0, y: 0, moving: false, swingNoise: 0 };
     const sx = at ? at.x : 0, sz = at ? at.z : 0; this.player.pos.set(sx, this.world.heightAt(sx, sz) + 1.65, sz); this.player.y = this.player.pos.y; if (at) this.player.yaw = at.yaw;     // coming back out of a house: stand in front of its door
     this.fwd = new THREE.Vector3(0, 0, -1); this.flickT = 0; this.guideT = 0; this.revealT = 0; this.mod = null;
     if (this.world.hasFlash) { this.flashOn = true; this.flash = new THREE.SpotLight('#fff2d4', 2.8, 44, 0.46, 0.5, 1.05); this.flash.position.set(0.14, -0.1, 0); this.flashTarget = new THREE.Object3D(); this.flashTarget.position.set(0, 0, -6); this.camera.add(this.flash, this.flashTarget); this.flash.target = this.flashTarget; }
+    else if (this.world.night) { Lamps.attach(this); }       // a night location: the lamps of the player (see lamps.js)
     this.buildNet(); this.net = { phase: -1, cd: 0, caughtThisSwing: false, started: false, extT: 1 }; Gear.init(this);
     this.hintT = 12; this.msgT = 0; this.reticle = 0;
     this.stats = { swings: 0, catches: 0 };
@@ -283,13 +285,14 @@ class Play {
     if (mp && mp.flies && mp.flies.length) this.adoptSnapshot(mp.flies, !mp.host);
     else if (!mp || mp.host) this.spawnInitial();
     this.applyQuality(); this.perfT = 0; this.perfN = 0; this.tier = 0;
-    Snd.startAmbient(this.world.env.amb);
-    this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
+    Snd.startAmbient(this.world.env.amb, this.world.night);
+    this.toast(`${biome.name} — ${biome.place}`, 4.2, true); if (this.world.night) setTimeout(() => { if (this.traps) this.toast(this.lamp ? 'Ночь! Мотыльки видны только в луче фонаря: F — включить и выключить, Shift+F — сменить фонарь' : 'Ночь! Мотыльков не видно без фонаря — его продаёт торговец ловушками, а приспособление «Фонарик» для сачка — энтузиаст', 7); }, 4400);
+    if (Traps.owned('tr').length) setTimeout(() => { if (this.traps) this.toast('У вас есть ловушки: G — поставить, E у ловушки — положить приманку', 5); }, 4300);
   }
   regenLeft() { return (this.regenAt - performance.now()) / 1000; }
   applyQuality() { const low = Save.data.settings.quality === 'low'; this.world.grassK = low ? 0.55 : 1; this.world.sun.castShadow = !low; }
   dist(v) { return v.distanceTo(this.player.pos); }
-  lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > 34) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > 0.93; }
+  lit(pos) { if (!this.flash || !this.flashOn || this.flash.intensity < 0.8) return false; _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); if (d > (this.lampDist || 34)) return false; if (d < 0.5) return true; return _v2.normalize().dot(this.fwd) > (this.lampCos || 0.93); }
   looked(pos, cos) { _v2.copy(pos).sub(this.camera.position); const d = _v2.length(); return d < 45 && d > 0.2 && _v2.normalize().dot(this.fwd) > cos; }
   toggleFlash() { if (!this.flash) return false; this.flashOn = !this.flashOn; Snd.sfx.flash(); return true; }
   hasMod(id) { return !!this.mod && this.mod.id === id; }
@@ -431,7 +434,7 @@ class Play {
   netBusy() { return this.net.phase >= 0 && this.net.phase < 0.6; }
   swing() {
     if (this.netStats.cannon) { if (this.net.cd > 0) return; if (Gear.fire(this)) { this.net.cd = 0.1; this.stats.swings++; this.hoopWorld(_v); for (const f of this.flies) { if (f.state !== CAUGHT && f.pos.distanceTo(this.camera.position) < 7 && Math.random() < 0.25) f.startFlee(new THREE.Vector3(f.pos.x - this.player.pos.x, 0, f.pos.z - this.player.pos.z)); } } return; }
-    if (this.net.phase >= 0 || this.net.cd > 0) return; this._hpOn = false; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7 * (1 - this.netStats.quiet); Snd.sfx.swing();
+    if (this.net.phase >= 0 || this.net.cd > 0) return; if (this.lampHands && this.flashOn) { if (!this.handsT || this.t - this.handsT > 3) { this.toast('Руки заняты фонарём — выключите его (F), чтобы взмахнуть сачком', 3); this.handsT = this.t; } return; } this._hpOn = false; this.net.phase = 0; this.net.caughtThisSwing = false; this.stats.swings++; this.player.swingNoise = 0.7 * (1 - this.netStats.quiet); Snd.sfx.swing();
     // the motorised handle: it extends to the butterfly in front of you (up to three times the usual reach); the piston handle throws you forward
     this.net.extT = 1; if (this.netStats.mech) {       // forward reach of the hoop at the centre of the swing: R1 with the pole closed, S1 more for every pole length added; the limit is «mech» metres (12)
       const R1 = 1.5, S1 = 1.08, maxReach = this.netStats.mech, fw = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion); let best = 1e9;
@@ -543,7 +546,7 @@ class Play {
     this.fwd.set(0, 0, -1).applyEuler(this.camera.rotation);
     if (this.flash) { this.flickT = Math.max(0, this.flickT - dt); if (this.hasMod('flicker') && Math.random() < dt * 2.5) this.flickT = Math.max(this.flickT, 0.3);
       if (this.hasMod('blackout')) { this.blackT -= dt; if (this.blackT < -2.8) this.blackT = 7 + Math.random() * 5; }
-      let I = this.flashOn && !(this.hasMod('blackout') && this.blackT < 0) ? (this.hasMod('dim') ? 1.05 : 2.8) : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01; }
+      let I = this.flashOn && !(this.hasMod('blackout') && this.blackT < 0) ? (this.hasMod('dim') ? 0.375 * (this.lampI || 2.8) : (this.lampI || 2.8)) : 0; if (this.flickT > 0 && this.flashOn) I *= Math.random() < 0.55 ? 0.03 : 0.5; this.flash.intensity = I; this.flash.visible = I > 0.01; }
     this.guideT = Math.max(0, this.guideT - dt); this.revealT = Math.max(0, this.revealT - dt);
     if (this.mod) { this.mod.t -= dt; if (this.mod.t <= 0) { this.mod = null; this.world.mod.storm = 1; this.world.mod.bright = 0; this.toast('Модификатор закончился', 2.5); } }
     // swing
@@ -560,11 +563,11 @@ class Play {
       if (left <= 0 && !this.mp && !this.regenDone) { this.regenDone = true; F0W.autoRegen(this); }
     }
     if (this.helperT <= 0 && (!this.mp || this.isHost)) { this.helperT = 40; for (const sp of this.pool) if (BEH[sp.beh].light && !this.flies.some(f => f.sp === sp) && !this.respawns.some(r => r.sp === sp) && Math.random() < 0.34 * (sp.thin || 1)) this.flies.push(new Fly(this, sp, false)); }
-    let dt2 = 0; const ghosts = this.hasMod('ghosts');
+    let dt2 = 0; const ghosts = this.hasMod('ghosts'), nightW = this.world.night;
     for (const f of this.flies) { if (f._gh) { f.mesh.visible = true; f._gh = false; }
-      if (this.sectors && !f.kind && !f.puppet && f.state !== CAUGHT && f.pos.distanceToSquared(P.pos) > 9000 && !(this.mp && this.others().length)) { f._acc = (f._acc || 0) + dt; f._skip = (f._skip || 0) + 1; if (f._skip % 3) continue; dt2 = f._acc; f._acc = 0; f.update(dt2, this.t); f._far = true; f.mesh.visible = f.pos.distanceToSquared(P.pos) < 16900; continue; }       // (and a butterfly lost in the fog is not drawn at all)
+      if (this.sectors && !f.kind && !f.puppet && f.state !== CAUGHT && f.pos.distanceToSquared(P.pos) > 9000 && !(this.mp && this.others().length)) { f._acc = (f._acc || 0) + dt; f._skip = (f._skip || 0) + 1; if (f._skip % 3) { if (nightW && f.sp.moth) f.mesh.visible = false; continue; } dt2 = f._acc; f._acc = 0; f.update(dt2, this.t); f._far = true; f.mesh.visible = f.pos.distanceToSquared(P.pos) < 16900 && !(nightW && f.sp.moth); continue; }       // (and a butterfly lost in the fog is not drawn at all)
       if (f._far) { f._far = false; f.mesh.visible = true; }       // far away on the big map: a butterfly nobody sees is simulated every third frame
-      f.update(dt, this.t); if (ghosts && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > 5 && !this.lit(f.pos)) { f.mesh.visible = false; f._gh = true; } }
+      f.update(dt, this.t); if ((ghosts || (nightW && f.sp.moth)) && f.mesh.visible && f.state !== CAUGHT && f.pos.distanceTo(P.pos) > (ghosts ? 5 : 1.1) && !this.lit(f.pos)) { f.mesh.visible = false; f.shadow.visible = false; f._gh = true; } }       // night: a moth is seen only in the beam of a lamp (or from a hand's breadth)
     for (let i = this.flies.length - 1; i >= 0; i--) if (!this.flies[i].alive) { this.scene.remove(this.flies[i].mesh); this.scene.remove(this.flies[i].shadow); this.flies.splice(i, 1); }
     for (let i = this.respawns.length - 1; i >= 0; i--) { const r = this.respawns[i]; r.t -= dt; if (r.t <= 0) { if (!this.mp || this.isHost) this.flies.push(new Fly(this, Aberr.roll(r.sp), false)); this.respawns.splice(i, 1); } }
     // reticle: is something in the sweep zone?
